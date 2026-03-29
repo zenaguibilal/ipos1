@@ -27,30 +27,8 @@ export function BottomNavBar() {
 
   return (
     <div className="fixed bottom-0 left-0 z-30 w-full border-t bg-background/80 backdrop-blur-xl md:hidden print-hide">
-      <div className="grid grid-cols-5 items-stretch justify-around h-16">
-        {navLinks.slice(0, 2).map(link => (
-          <Link
-            key={link.href}
-            href={link.href}
-            className={cn(
-              'flex flex-col items-center justify-center gap-1 text-muted-foreground transition-colors hover:text-primary h-full',
-              (pathname.startsWith(link.href)) ? 'text-primary' : ''
-            )}
-          >
-            <link.icon className="h-5 w-5" />
-            <span className="text-[10px] text-center">{link.label}</span>
-          </Link>
-        ))}
-
-        <div className="flex items-center justify-center">
-            <Link href="/sell" className="-mt-8">
-                 <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg ring-4 ring-background">
-                    <ShoppingCart className="h-7 w-7" />
-                 </div>
-            </Link>
-        </div>
-
-        {navLinks.slice(2).map(link => (
+      <div className="grid grid-cols-4 items-stretch justify-around h-16">
+        {navLinks.map(link => (
           <Link
             key={link.href}
             href={link.href}

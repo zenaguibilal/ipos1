@@ -62,10 +62,6 @@ export function AppHeader() {
     }
   }
 
-  const mainActionLinks = [
-    { href: '/sell', label: 'Point de Vente', icon: ShoppingCart },
-  ];
-  
   const navLinks = allNavLinks.filter(link => !link.managerOnly || isManagerOrAdmin);
 
   return (
@@ -85,26 +81,6 @@ export function AppHeader() {
         <div className="flex-1 flex justify-center">
             <TooltipProvider>
                 <nav className="hidden md:flex items-center gap-1 rounded-full border bg-black/20 p-1">
-                    {mainActionLinks.map(link => (
-                         <Tooltip key={link.href} delayDuration={0}>
-                            <TooltipTrigger asChild>
-                                <Button 
-                                    asChild
-                                    variant={pathname.startsWith(link.href) ? "secondary" : "ghost"}
-                                    className="rounded-full relative h-10 px-6 text-base"
-                                >
-                                    <Link href={link.href}>
-                                        <link.icon className="h-5 w-5 mr-2" />
-                                        {link.label}
-                                    </Link>
-                                </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                                <p>{link.label}</p>
-                            </TooltipContent>
-                        </Tooltip>
-                    ))}
-                    <div className="h-6 w-px bg-border/50 mx-2" />
                     {navLinks.map(link => (
                         <Tooltip key={link.href} delayDuration={0}>
                             <TooltipTrigger asChild>
