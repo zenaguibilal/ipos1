@@ -10,20 +10,24 @@ import { MoreHorizontal, FileText, Trash2, Hash, Clock, User } from 'lucide-reac
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { safeToDate, formatCurrency, cn } from '@/lib/utils';
+import { Checkbox } from '../ui/checkbox';
 
 interface ReturnTableProps {
     returns: ProductReturn[];
     customerMap: Map<string, Customer>;
+    selectedReturns: Set<string>;
+    onToggleSelection: (uuid: string) => void;
     onViewDetails: (pr: ProductReturn) => void;
     onCancel: (pr: ProductReturn) => void;
 }
 
-export function ReturnTable({ returns, customerMap, onViewDetails, onCancel }: ReturnTableProps) {
+export function ReturnTable({ returns, customerMap, selectedReturns, onToggleSelection, onViewDetails, onCancel }: ReturnTableProps) {
     return (
         <div className="rounded-2xl border bg-card/50 backdrop-blur-sm overflow-hidden shadow-sm">
             <Table>
                 <TableHeader className="bg-muted/30">
                     <TableRow className="border-none">
+                        <TableHead className="w-[40px] px-4"></TableHead>
                         <TableHead className="font-black text-[10px] uppercase tracking-widest text-muted-foreground">Date & Heure</TableHead>
                         <TableHead className="font-black text-[10px] uppercase tracking-widest text-muted-foreground">Facture Origine</TableHead>
                         <TableHead className="font-black text-[10px] uppercase tracking-widest text-muted-foreground">Client</TableHead>
@@ -35,13 +39,24 @@ export function ReturnTable({ returns, customerMap, onViewDetails, onCancel }: R
                 <TableBody>
                     {returns.map((r) => {
                         const customer = r.customerUuid ? customerMap.get(r.customerUuid) : undefined;
+                        const isSelected = selectedReturns.has(r.uuid);
 
                         return (
                             <TableRow 
                                 key={r.uuid} 
-                                className="group transition-all border-b border-border/50 hover:bg-muted/30 cursor-pointer"
-                                onClick={() => onViewDetails(r)}
+                                className={cn(
+                                    "group transition-all border-b border-border/50 cursor-pointer",
+                                    isSelected ? "bg-primary/10" : "hover:bg-muted/30"
+                                )}
+                                onClick={() => onToggleSelection(r.uuid)}
                             >
+                                <TableCell className="px-4" onClick={(e) => e.stopPropagation()}>
+                                    <Checkbox 
+                                        checked={isSelected} 
+                                        onCheckedChange={() => onToggleSelection(r.uuid)}
+                                        className="border-primary data-[state=checked]:bg-primary"
+                                    />
+                                </TableCell>
                                 <TableCell className="whitespace-nowrap">
                                     <div className="flex items-center gap-3">
                                         <div className="p-2 rounded-xl bg-muted/50 text-muted-foreground">
