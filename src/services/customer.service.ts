@@ -122,7 +122,7 @@ class CustomerService {
         }
 
         if (customer.outstandingBalance !== 0) {
-            throw new Error("Suppression impossible: le solde du client n'est pas à zéro.");
+            throw new Error("Suppression impossible: le solده du client n'est pas à zéro.");
         }
         
         if (customer.id) {
@@ -130,12 +130,13 @@ class CustomerService {
         }
     }
     
-    async getStats(): Promise<{ total: number; overdue: number; overLimit: number; }> {
+    async getStats(): Promise<{ total: number; overdue: number; overLimit: number; totalOutstanding: number }> {
         const allCustomers = await db.customers.toArray();
         return {
             total: allCustomers.length,
             overdue: allCustomers.filter(c => c.debtStatus === 'overdue').length,
             overLimit: allCustomers.filter(c => c.isOverLimit === true).length,
+            totalOutstanding: allCustomers.reduce((sum, c) => sum + (c.outstandingBalance || 0), 0)
         };
     }
     

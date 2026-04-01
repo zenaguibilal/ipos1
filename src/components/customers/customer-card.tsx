@@ -6,7 +6,7 @@ import type { Customer } from '@/lib/types';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { MoreHorizontal, Edit, Trash2, FileText, Phone, BellRing, ShieldCheck, Calendar, Hourglass, User, ChevronRight, Wheat } from 'lucide-react';
+import { MoreHorizontal, Edit, Trash2, FileText, Phone, BellRing, ShieldCheck, Calendar, Hourglass, User, ChevronRight, Wheat, MessageCircle } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import Link from 'next/link';
 import { formatCurrency, cn } from '@/lib/utils';
@@ -65,25 +65,31 @@ export const CustomerCard = React.memo(({ customer, onEdit, onDelete }: Customer
         setIsMounted(true);
     }, []);
 
+    const handleWhatsApp = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        if (!customer.phone) return;
+        const message = encodeURIComponent(`Bonjour ${customer.firstName}, c'est iPOS. Votre solde actuel est de ${formatCurrency(balance)}. Merci.`);
+        window.open(`https://wa.me/${customer.phone}?text=${message}`, '_blank');
+    };
+
     return (
         <Card className={cn(
             "group flex flex-col transition-all duration-300 hover:shadow-2xl hover:-translate-y-1 bg-card border-none relative overflow-hidden rounded-3xl",
             balance > 0 && "ring-1 ring-white/5"
         )}>
             <div className="absolute top-3 right-3 z-10 flex gap-1 items-center">
-                {customer.isBreadClient && (
+                {customer.phone && (
                     <TooltipProvider>
                         <Tooltip>
                             <TooltipTrigger asChild>
-                                <div className="p-1.5 bg-primary/20 rounded-xl">
-                                    <Wheat className="h-4 w-4 text-primary" />
-                                </div>
+                                <Button variant="secondary" size="icon" onClick={handleWhatsApp} className="h-8 w-8 bg-green-500/10 text-green-500 hover:bg-green-500 hover:text-white border-none shadow-sm rounded-xl">
+                                    <MessageCircle className="h-4 w-4" />
+                                </Button>
                             </TooltipTrigger>
-                            <TooltipContent className="rounded-xl font-bold text-xs">Client Service Pain</TooltipContent>
+                            <TooltipContent className="rounded-xl font-bold text-xs">Contacter via WhatsApp</TooltipContent>
                         </Tooltip>
                     </TooltipProvider>
                 )}
-                <DebtStatusIcon status={customer.debtStatus} />
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                         <Button variant="secondary" size="icon" className="h-8 w-8 bg-background/80 backdrop-blur-md border-none shadow-sm rounded-xl">
@@ -115,9 +121,12 @@ export const CustomerCard = React.memo(({ customer, onEdit, onDelete }: Customer
                         <User className="h-5 w-5" />
                     </div>
                     <div className="min-w-0">
-                        <CardTitle className="text-lg font-black leading-none tracking-tight truncate group-hover:text-primary transition-colors">
-                            {customer.firstName} {customer.lastName}
-                        </CardTitle>
+                        <div className="flex items-center gap-2">
+                            <CardTitle className="text-lg font-black leading-none tracking-tight truncate group-hover:text-primary transition-colors">
+                                {customer.firstName} {customer.lastName}
+                            </CardTitle>
+                            {customer.isBreadClient && <Wheat className="h-3 w-3 text-primary opacity-50" />}
+                        </div>
                         {customer.phone && (
                             <p className="text-[10px] font-bold text-muted-foreground mt-1.5 flex items-center gap-1.5 uppercase opacity-60">
                                 <Phone className="h-2.5 w-2.5" /> {customer.phone}
@@ -148,7 +157,10 @@ export const CustomerCard = React.memo(({ customer, onEdit, onDelete }: Customer
                         balance > 0 ? "bg-destructive/5 border-destructive/20" : "bg-muted/30 border-border/50"
                     )}>
                         <p className={cn("text-[9px] font-black uppercase tracking-tighter opacity-60 mb-1", balance > 0 ? "text-destructive" : "text-muted-foreground")}>Dette Actuelle</p>
-                        <p className={cn("font-black text-sm", balance > 0 ? "text-destructive" : "")}>{formatCurrency(balance)}</p>
+                        <div className="flex items-center justify-between">
+                            <p className={cn("font-black text-sm", balance > 0 ? "text-destructive" : "")}>{formatCurrency(balance)}</p>
+                            <DebtStatusIcon status={customer.debtStatus} />
+                        </div>
                     </div>
                  </div>
             </CardContent>
