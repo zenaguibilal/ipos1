@@ -12,27 +12,25 @@ export default function SellPage() {
     // Global Keyboard Shortcuts
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
-            // F1: Focus Search
+            // Ignore if in an input unless it's Escape
+            const isInput = ['INPUT', 'TEXTAREA', 'SELECT'].includes((e.target as HTMLElement).tagName);
+            
             if (e.key === 'F1') {
                 e.preventDefault();
                 document.getElementById('sell-search-input')?.focus();
             }
-            // F2: Pay / Finalize
             if (e.key === 'F2') {
                 e.preventDefault();
                 document.getElementById('sell-pay-button')?.click();
             }
-            // F4: Customer Select
             if (e.key === 'F4') {
                 e.preventDefault();
                 document.getElementById('sell-customer-combobox')?.focus();
             }
-            // F10: Custom Item
             if (e.key === 'F10') {
                 e.preventDefault();
                 document.getElementById('sell-custom-item-button')?.click();
             }
-            // Escape: Clear Focus or Close
             if (e.key === 'Escape') {
                 (document.activeElement as HTMLElement)?.blur();
             }
@@ -64,12 +62,12 @@ export default function SellPage() {
             </div>
 
             {/* Shortcut Help Legend */}
-            <div className="hidden md:flex gap-6 text-[10px] text-muted-foreground uppercase font-bold tracking-widest px-2 border-t pt-2">
-                <span className="flex items-center gap-1"><kbd className="bg-muted px-1.5 py-0.5 rounded border">F1</kbd> Rechercher</span>
-                <span className="flex items-center gap-1"><kbd className="bg-muted px-1.5 py-0.5 rounded border">F2</kbd> Payer</span>
-                <span className="flex items-center gap-1"><kbd className="bg-muted px-1.5 py-0.5 rounded border">F4</kbd> Client</span>
-                <span className="flex items-center gap-1"><kbd className="bg-muted px-1.5 py-0.5 rounded border">F10</kbd> Art. Personnalisé</span>
-                <span className="flex items-center gap-1"><kbd className="bg-muted px-1.5 py-0.5 rounded border">Esc</kbd> Annuler</span>
+            <div className="hidden md:flex flex-wrap gap-6 text-[10px] text-muted-foreground uppercase font-bold tracking-widest px-2 border-t pt-2">
+                <span className="flex items-center gap-1.5"><kbd className="bg-muted px-1.5 py-0.5 rounded border border-border/50 text-foreground">F1</kbd> Rechercher</span>
+                <span className="flex items-center gap-1.5"><kbd className="bg-muted px-1.5 py-0.5 rounded border border-border/50 text-foreground">F2</kbd> Payer</span>
+                <span className="flex items-center gap-1.5"><kbd className="bg-muted px-1.5 py-0.5 rounded border border-border/50 text-foreground">F4</kbd> Client</span>
+                <span className="flex items-center gap-1.5"><kbd className="bg-muted px-1.5 py-0.5 rounded border border-border/50 text-foreground">F10</kbd> Article Spécial</span>
+                <span className="flex items-center gap-1.5"><kbd className="bg-muted px-1.5 py-0.5 rounded border border-border/50 text-foreground">Esc</kbd> Annuler</span>
             </div>
         </div>
     );

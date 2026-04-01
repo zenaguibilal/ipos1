@@ -62,11 +62,11 @@ export function AddPaymentDialog({ isOpen, onOpenChange, customer, onPaymentSucc
         notes: notes || undefined,
       });
 
-      toast.success(`Paiement de ${formatCurrency(paymentAmount)} enregistré pour ${customer.firstName}.`);
+      toast.success(`Paiement de ${formatCurrency(paymentAmount)} enregistré.`);
       onPaymentSuccess();
       onOpenChange(false);
     } catch (error: any) {
-      toast.error("Erreur lors de l'enregistrement du paiement.", { description: error.message });
+      toast.error("Erreur lors de l'enregistrement.", { description: error.message });
     } finally {
       setIsLoading(false);
     }
@@ -74,7 +74,7 @@ export function AddPaymentDialog({ isOpen, onOpenChange, customer, onPaymentSucc
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px] overflow-hidden border-none shadow-2xl p-0 gap-0">
+      <DialogContent className="sm:max-w-[500px] overflow-hidden border-none shadow-2xl p-0 gap-0 bg-card">
         <div className="bg-primary/5 p-6 border-b border-primary/10">
             <DialogHeader className="space-y-1">
                 <div className="flex items-center gap-3">
@@ -94,23 +94,23 @@ export function AddPaymentDialog({ isOpen, onOpenChange, customer, onPaymentSucc
         <div className="p-6 space-y-6">
           {/* Financial Summary Cards */}
           <div className="grid grid-cols-2 gap-4">
-            <div className="p-4 rounded-2xl border bg-card shadow-sm">
+            <div className="p-4 rounded-2xl border bg-background/50 shadow-sm">
                 <p className="text-[10px] uppercase font-bold text-muted-foreground mb-1 tracking-wider">Dette Actuelle</p>
                 <p className="text-xl font-black text-destructive">{formatCurrency(customer.outstandingBalance)}</p>
             </div>
             <div className={cn(
                 "p-4 rounded-2xl border transition-all duration-300",
-                isFullySettled ? "bg-green-500/5 border-green-500/30" : "bg-card shadow-sm"
+                isFullySettled ? "bg-green-500/10 border-green-500/30" : "bg-background/50 shadow-sm"
             )}>
                 <p className="text-[10px] uppercase font-bold text-muted-foreground mb-1 tracking-wider">Nouveau Solde</p>
                 <div className="flex items-center gap-2">
                     <p className={cn(
                         "text-xl font-black",
-                        newBalance <= 0 ? "text-green-600" : "text-foreground"
+                        newBalance <= 0 ? "text-green-500" : "text-foreground"
                     )}>
                         {formatCurrency(Math.max(0, newBalance))}
                     </p>
-                    {isFullySettled && <CheckCircle2 className="h-5 w-5 text-green-600 animate-in zoom-in" />}
+                    {isFullySettled && <CheckCircle2 className="h-5 w-5 text-green-500 animate-in zoom-in" />}
                 </div>
             </div>
           </div>
@@ -145,7 +145,7 @@ export function AddPaymentDialog({ isOpen, onOpenChange, customer, onPaymentSucc
                 </div>
               </div>
               {isOverpaying && (
-                  <div className="flex items-center gap-2 text-[11px] font-medium text-amber-600 bg-amber-500/10 p-2 rounded-lg border border-amber-500/20">
+                  <div className="flex items-center gap-2 text-[11px] font-medium text-amber-500 bg-amber-500/10 p-2 rounded-lg border border-amber-500/20">
                       <Info className="h-3 w-3" />
                       <span>Le montant dépasse la dette. Le surplus sera crédité au client.</span>
                   </div>
