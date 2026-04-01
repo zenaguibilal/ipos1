@@ -6,7 +6,7 @@ import type { Product } from '@/lib/types';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { MoreHorizontal, Edit, Trash2, CalendarClock, Package, AlertTriangle, Info } from 'lucide-react';
+import { MoreHorizontal, Edit, Trash2, CalendarClock, Package, AlertTriangle, Info, Tag } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { cn, formatCurrency } from '@/lib/utils';
 import { Checkbox } from '../ui/checkbox';
@@ -47,18 +47,18 @@ const ProductCardComponent = ({ product, onEdit, onDelete, isSelected, onToggleS
         <Card
             onClick={handleCardClick}
             className={cn(
-                "group flex flex-col justify-between transition-all duration-300 hover:shadow-2xl hover:-translate-y-1 bg-card border-none relative overflow-hidden cursor-pointer p-1",
+                "group flex flex-col justify-between transition-all duration-300 hover:shadow-2xl hover:-translate-y-1 bg-card border-none relative overflow-hidden cursor-pointer min-h-[180px]",
                 isSelected && "ring-2 ring-primary shadow-lg"
             )}
         >
             {/* Selection Overlay */}
             <div className={cn(
-                "absolute inset-0 bg-primary/10 transition-opacity duration-300 pointer-events-none",
+                "absolute inset-0 bg-primary/5 transition-opacity duration-300 pointer-events-none",
                 isSelected ? "opacity-100" : "opacity-0"
             )} />
 
             {/* Action Bar (Hover only) */}
-            <div className="absolute top-2 right-2 z-10 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+            <div className="absolute top-3 right-3 z-10 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                 <div onClick={(e) => e.stopPropagation()} className="p-1.5 bg-background/80 backdrop-blur-md rounded-lg shadow-sm border border-white/5">
                     <Checkbox
                         checked={isSelected}
@@ -83,25 +83,28 @@ const ProductCardComponent = ({ product, onEdit, onDelete, isSelected, onToggleS
                 </DropdownMenu>
             </div>
 
-            <CardHeader className="p-4 pb-1 space-y-1">
-                <div className="flex flex-col gap-1">
+            <CardHeader className="p-5 pb-2 space-y-2">
+                <div className="flex flex-wrap gap-1.5">
                     {product.quantity <= 0 ? (
-                        <Badge variant="destructive" className="w-fit rounded-md font-black uppercase text-[8px] tracking-widest">En Rupture</Badge>
+                        <Badge variant="destructive" className="rounded-md font-black uppercase text-[8px] tracking-widest px-2 py-0">En Rupture</Badge>
                     ) : product.quantity <= product.minStockLevel ? (
-                        <Badge variant="outline" className="w-fit rounded-md bg-amber-500 text-black border-none font-black uppercase text-[8px] tracking-widest">Stock Faible</Badge>
+                        <Badge variant="outline" className="rounded-md bg-amber-500 text-black border-none font-black uppercase text-[8px] tracking-widest px-2 py-0">Stock Faible</Badge>
                     ) : null}
                     {expirationStatus && (
-                        <Badge className={cn("w-fit rounded-md font-black uppercase text-[8px] tracking-widest", expirationStatus.color)}>
-                            <CalendarClock className="h-2 w-2 mr-1" />
+                        <Badge className={cn("rounded-md font-black uppercase text-[8px] tracking-widest px-2 py-0", expirationStatus.color)}>
+                            <CalendarClock className="h-2.5 w-2.5 mr-1" />
                             {expirationStatus.text}
                         </Badge>
                     )}
                 </div>
-                <CardTitle className="text-base font-bold leading-tight line-clamp-2 mt-1">{product.name}</CardTitle>
-                <div className="flex items-center justify-between">
-                    <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground opacity-60">
-                        {product.category || 'Non classé'}
-                    </p>
+                <CardTitle className="text-lg font-black leading-tight line-clamp-2 tracking-tight group-hover:text-primary transition-colors">
+                    {product.name}
+                </CardTitle>
+                <div className="flex items-center gap-2">
+                    <div className="px-2 py-0.5 rounded-lg bg-muted/50 text-[9px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-1">
+                        <Tag className="h-2.5 w-2.5" />
+                        {product.category || 'Sans catégorie'}
+                    </div>
                     {isPriceOld && (
                         <TooltipProvider>
                             <Tooltip>
@@ -117,21 +120,21 @@ const ProductCardComponent = ({ product, onEdit, onDelete, isSelected, onToggleS
                 </div>
             </CardHeader>
 
-            <CardContent className="p-4 py-2">
-                <div className="flex items-center gap-1.5 text-[11px] font-bold text-muted-foreground">
+            <CardContent className="p-5 py-2">
+                <div className="flex items-center gap-2 text-xs font-bold text-muted-foreground bg-muted/20 px-3 py-2 rounded-xl w-fit border border-border/50">
                     <Package className="h-3.5 w-3.5 opacity-50" />
-                    <span>Stock: <span className={cn(product.quantity <= product.minStockLevel ? "text-amber-500" : "text-primary")}>{product.quantity}</span> {product.unite || ''}</span>
+                    <span>Stock: <span className={cn(product.quantity <= product.minStockLevel ? "text-amber-500" : "text-primary")}>{product.quantity}</span> <span className="opacity-50">{product.unite || ''}</span></span>
                 </div>
             </CardContent>
 
-            <CardFooter className="p-4 pt-3 flex justify-between items-end border-t border-white/5 bg-muted/5">
-                 <div>
-                    <p className="text-2xl font-black text-primary tracking-tighter">{formatCurrency(product.price)}</p>
-                    <p className="text-[10px] text-muted-foreground font-medium italic">Achat: {formatCurrency(product.purchasePrice)}</p>
+            <CardFooter className="p-5 pt-3 flex justify-between items-end border-t border-white/5 bg-muted/5">
+                 <div className="space-y-0.5">
+                    <p className="text-2xl font-black text-primary tracking-tighter leading-none">{formatCurrency(product.price)}</p>
+                    <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-tight opacity-60">Achat: {formatCurrency(product.purchasePrice)}</p>
                 </div>
                 
                 {product.quantity <= product.minStockLevel && product.quantity > 0 && (
-                    <AlertTriangle className="h-5 w-5 text-amber-500 animate-pulse mb-1" />
+                    <AlertTriangle className="h-6 w-6 text-amber-500 animate-pulse mb-1" />
                 )}
             </CardFooter>
         </Card>
