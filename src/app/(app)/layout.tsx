@@ -13,7 +13,7 @@ export default function AppLayout({
 }) {
   const { fetchCompanyProfile } = useAppStore(state => state.actions);
 
-  // Fetch company profile on initial load, as there is no user session anymore.
+  // Fetch company profile on initial load.
   useEffect(() => {
     fetchCompanyProfile();
   }, [fetchCompanyProfile]);

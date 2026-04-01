@@ -1,3 +1,4 @@
+
 'use client';
 
 import { createClient } from "@/utils/supabase/client";
@@ -42,8 +43,7 @@ class CompanyRepository {
     private supabase = createClient();
     
     async get(): Promise<CompanyProfile | null> {
-        // Since there's no user, we assume a single profile for the app.
-        // We fetch the first one we find.
+        // Fetch the first company profile found, assuming a single profile for the app.
         const { data, error } = await this.supabase
             .from('company_profile')
             .select('*')
