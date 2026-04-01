@@ -1,3 +1,4 @@
+
 'use client';
 
 import React from 'react';
@@ -10,16 +11,27 @@ import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { safeToDate, formatCurrency, cn } from '@/lib/utils';
 import { Badge } from '../ui/badge';
+import { Checkbox } from '../ui/checkbox';
 
 interface SalesHistoryTableProps {
     sales: Sale[];
     customerMap: Map<string, Customer>;
+    selectedSales: Set<string>;
+    onToggleSelection: (uuid: string) => void;
     onViewDetails: (sale: Sale) => void;
     onPrint: (sale: Sale) => void;
     onCancel: (sale: Sale) => void;
 }
 
-export function SalesHistoryTable({ sales, customerMap, onViewDetails, onPrint, onCancel }: SalesHistoryTableProps) {
+export function SalesHistoryTable({ 
+    sales, 
+    customerMap, 
+    selectedSales,
+    onToggleSelection,
+    onViewDetails, 
+    onPrint, 
+    onCancel 
+}: SalesHistoryTableProps) {
     const statusMap = {
         paid: { text: 'Payé', icon: CheckCircle, className: 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' },
         partial: { text: 'Partiel', icon: AlertCircle, className: 'bg-amber-500/10 text-amber-500 border-amber-500/20' },
@@ -27,16 +39,17 @@ export function SalesHistoryTable({ sales, customerMap, onViewDetails, onPrint, 
     };
 
     return (
-        <div className="rounded-2xl border bg-card overflow-hidden shadow-sm">
+        <div className="rounded-2xl border bg-card/50 backdrop-blur-sm overflow-hidden shadow-sm">
             <Table>
                 <TableHeader className="bg-muted/30">
-                    <TableRow>
+                    <TableRow className="border-none">
+                        <TableHead className="w-[40px] px-4"></TableHead>
                         <TableHead className="font-black text-[10px] uppercase tracking-widest text-muted-foreground">Date & Heure</TableHead>
                         <TableHead className="font-black text-[10px] uppercase tracking-widest text-muted-foreground">N° Facture</TableHead>
                         <TableHead className="font-black text-[10px] uppercase tracking-widest text-muted-foreground">Client</TableHead>
                         <TableHead className="font-black text-[10px] uppercase tracking-widest text-muted-foreground">Statut</TableHead>
-                        <TableHead className="text-right font-black text-[10px] uppercase tracking-widest text-muted-foreground">Total</TableHead>
                         <TableHead className="text-right font-black text-[10px] uppercase tracking-widest text-muted-foreground">Payé</TableHead>
+                        <TableHead className="text-right font-black text-[10px] uppercase tracking-widest text-primary">Total</TableHead>
                         <TableHead className="w-[50px] text-right"></TableHead>
                     </TableRow>
                 </TableHeader>
@@ -44,9 +57,24 @@ export function SalesHistoryTable({ sales, customerMap, onViewDetails, onPrint, 
                     {sales.map((sale) => {
                         const customer = sale.customerUuid ? customerMap.get(sale.customerUuid) : undefined;
                         const status = statusMap[sale.paymentStatus];
+                        const isSelected = selectedSales.has(sale.uuid);
 
                         return (
-                            <TableRow key={sale.uuid} className="group hover:bg-muted/20 transition-all border-b border-border/50">
+                            <TableRow 
+                                key={sale.uuid} 
+                                className={cn(
+                                    "group transition-all border-b border-border/50 cursor-pointer",
+                                    isSelected ? "bg-primary/10" : "hover:bg-muted/30"
+                                )}
+                                onClick={() => onToggleSelection(sale.uuid)}
+                            >
+                                <TableCell className="px-4" onClick={(e) => e.stopPropagation()}>
+                                    <Checkbox 
+                                        checked={isSelected} 
+                                        onCheckedChange={() => onToggleSelection(sale.uuid)}
+                                        className="border-primary data-[state=checked]:bg-primary"
+                                    />
+                                </TableCell>
                                 <TableCell className="whitespace-nowrap">
                                     <div className="flex flex-col">
                                         <span className="font-bold text-xs">{format(safeToDate(sale.createdAt!), 'dd MMM yyyy', { locale: fr })}</span>
@@ -72,12 +100,12 @@ export function SalesHistoryTable({ sales, customerMap, onViewDetails, onPrint, 
                                     </Badge>
                                 </TableCell>
                                 <TableCell className="text-right">
-                                    <span className="font-black text-primary text-sm">{formatCurrency(sale.total)}</span>
+                                    <span className="text-xs text-muted-foreground font-mono">{formatCurrency(sale.amountPaid)}</span>
                                 </TableCell>
                                 <TableCell className="text-right">
-                                    <span className="text-xs text-muted-foreground">{formatCurrency(sale.amountPaid)}</span>
+                                    <span className="font-black text-primary text-sm font-mono">{formatCurrency(sale.total)}</span>
                                 </TableCell>
-                                <TableCell className="text-right">
+                                <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                                     <DropdownMenu>
                                         <DropdownMenuTrigger asChild>
                                             <Button variant="ghost" size="icon" className="h-8 w-8 rounded-xl hover:bg-muted">
