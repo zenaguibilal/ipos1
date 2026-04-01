@@ -11,7 +11,6 @@ import { fr } from 'date-fns/locale';
 import { safeToDate, formatCurrency } from '@/lib/utils';
 import { Badge } from '../ui/badge';
 import { cn } from '@/lib/utils';
-import { useIsManagerOrAdmin } from '@/stores/appStore';
 
 interface SalesHistoryCardProps {
     sale: Sale;
@@ -21,7 +20,6 @@ interface SalesHistoryCardProps {
 }
 
 const SalesHistoryCardComponent = ({ sale, customerName, onViewDetails, onCancelSale }: SalesHistoryCardProps) => {
-    const isManagerOrAdmin = useIsManagerOrAdmin();
     const paymentStatusMap = {
         paid: { text: 'Payé', icon: CheckCircle, color: 'text-chart-quaternary' },
         partial: { text: 'Partiel', icon: AlertCircle, color: 'text-chart-secondary' },
@@ -47,11 +45,9 @@ const SalesHistoryCardComponent = ({ sale, customerName, onViewDetails, onCancel
                             <DropdownMenuItem onClick={() => onViewDetails(sale)}>
                                 <FileText className="mr-2 h-4 w-4" /> Voir les détails
                             </DropdownMenuItem>
-                            {isManagerOrAdmin && (
-                                <DropdownMenuItem onClick={() => onCancelSale(sale)} className="text-destructive focus:text-destructive">
-                                    <Trash2 className="mr-2 h-4 w-4" /> Annuler la vente
-                                </DropdownMenuItem>
-                            )}
+                            <DropdownMenuItem onClick={() => onCancelSale(sale)} className="text-destructive focus:text-destructive">
+                                <Trash2 className="mr-2 h-4 w-4" /> Annuler la vente
+                            </DropdownMenuItem>
                         </DropdownMenuContent>
                     </DropdownMenu>
                 </div>
