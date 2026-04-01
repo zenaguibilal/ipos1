@@ -6,7 +6,6 @@ import type { Expense } from "@/lib/types";
 // Helper to convert DB snake_case to app camelCase
 const fromSupabase = (expense: any): Expense => ({
     uuid: expense.uuid,
-    user_id: expense.user_id,
     description: expense.description,
     category: expense.category,
     amount: expense.amount,
@@ -18,7 +17,6 @@ const fromSupabase = (expense: any): Expense => ({
 // Helper to convert app camelCase to DB snake_case
 const toSupabase = (expense: Partial<Expense>) => ({
     uuid: expense.uuid,
-    user_id: expense.user_id,
     description: expense.description,
     category: expense.category,
     amount: expense.amount,
@@ -77,8 +75,8 @@ class ExpenseRepository {
         if (error) throw error;
     }
 
-    async deleteAllForUser(userId: string): Promise<void> {
-        const { error } = await this.supabase.from('expenses').delete().eq('user_id', userId);
+    async deleteAll(): Promise<void> {
+        const { error } = await this.supabase.from('expenses').delete().gt('id', 0); // Placeholder to delete all
         if (error) throw error;
     }
 

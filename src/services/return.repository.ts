@@ -5,7 +5,6 @@ import type { ProductReturn } from "@/lib/types";
 
 const fromSupabase = (pr: any): ProductReturn => ({
     uuid: pr.uuid,
-    user_id: pr.user_id,
     originalSaleUuid: pr.original_sale_uuid,
     originalInvoiceNumber: pr.original_invoice_number,
     totalReturnValue: pr.total_return_value,
@@ -82,7 +81,6 @@ class ReturnRepository {
 
         const { data: newReturn, error: returnError } = await this.supabase.from('product_returns').insert({
             uuid: returnData.uuid,
-            user_id: returnData.user_id,
             original_sale_uuid: returnData.originalSaleUuid,
             original_invoice_number: returnData.originalInvoiceNumber,
             total_return_value: returnData.totalReturnValue,
@@ -119,15 +117,14 @@ class ReturnRepository {
         if (error) throw error;
     }
 
-    async deleteAllForUser(userId: string): Promise<void> {
-        const { error } = await this.supabase.from('product_returns').delete().eq('user_id', userId);
+    async deleteAll(): Promise<void> {
+        const { error } = await this.supabase.from('product_returns').delete().gt('id', 0); // Placeholder to delete all
         if (error) throw error;
     }
 
     async bulkUpsert(returns: ProductReturn[]): Promise<void> {
         const returnRecords = returns.map(({ items, ...returnData }) => ({
             uuid: returnData.uuid,
-            user_id: returnData.user_id,
             original_sale_uuid: returnData.originalSaleUuid,
             original_invoice_number: returnData.originalInvoiceNumber,
             total_return_value: returnData.totalReturnValue,

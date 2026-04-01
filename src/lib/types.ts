@@ -1,5 +1,4 @@
 
-export type AppRole = 'admin' | 'manager' | 'cashier';
 
 export interface Product {
     uuid: string;
@@ -119,7 +118,6 @@ export interface CompanyProfile {
     goldPricePerGram?: number;
     prix_pain?: number;
     updatedAt?: Date;
-    role: AppRole;
 }
 
 export interface StockIntakeItem {

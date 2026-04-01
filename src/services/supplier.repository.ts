@@ -5,7 +5,6 @@ import type { Supplier } from "@/lib/types";
 
 const fromSupabase = (supplier: any): Supplier => supplier ? ({
     uuid: supplier.uuid,
-    user_id: supplier.user_id,
     name: supplier.name,
     contactPerson: supplier.contact_person,
     phone: supplier.phone,
@@ -18,7 +17,6 @@ const fromSupabase = (supplier: any): Supplier => supplier ? ({
 
 const toSupabase = (supplier: Partial<Supplier>) => ({
     uuid: supplier.uuid,
-    user_id: supplier.user_id,
     name: supplier.name,
     contact_person: supplier.contactPerson,
     phone: supplier.phone,
@@ -74,8 +72,8 @@ class SupplierRepository {
         return fromSupabase(data);
     }
     
-    async deleteAllForUser(userId: string): Promise<void> {
-        const { error } = await this.supabase.from('suppliers').delete().eq('user_id', userId);
+    async deleteAll(): Promise<void> {
+        const { error } = await this.supabase.from('suppliers').delete().gt('id', 0); // Placeholder to delete all
         if (error) throw error;
     }
 

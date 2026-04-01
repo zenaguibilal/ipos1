@@ -11,12 +11,11 @@ class ProfileService {
             let profile = await companyRepository.get();
             if (!profile) {
                 // If no profile exists, create a default one.
-                const newProfile: CompanyProfile = {
+                const newProfile: Omit<CompanyProfile, 'updatedAt'> = {
                     uuid: uuidv4(),
                     companyName: "Mon Magasin",
-                    role: 'admin', // Default role for new installation
                 };
-                return await companyRepository.add(newProfile);
+                return await companyRepository.add(newProfile as CompanyProfile);
             }
             return profile;
         } catch (error) {

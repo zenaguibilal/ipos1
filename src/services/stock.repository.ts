@@ -5,7 +5,6 @@ import type { StockIntake } from "@/lib/types";
 
 const fromSupabase = (intake: any): StockIntake => ({
     uuid: intake.uuid,
-    user_id: intake.user_id,
     supplierUuid: intake.supplier_uuid,
     invoiceNumber: intake.invoice_number,
     invoiceDate: intake.invoice_date,
@@ -44,12 +43,22 @@ class StockRepository {
         return data.map(fromSupabase);
     }
 
-    async filter(filters: { query?: string; from?: Date; to?: Date }): Promise<StockIntake[]> {
+    async filter(filters: { invoiceNumberQuery?: string; supplierUuids?: string[]; from?: Date; to?: Date }): Promise<StockIntake[]> {
         let query = this.baseQuery.order('created_at', { ascending: false });
 
-        if (filters.query) {
-             query = query.ilike('invoice_number', `%${filters.query}%`);
+        if (filters.invoiceNumberQuery || (filters.supplierUuids && filters.supplierUuids.length > 0)) {
+            const orConditions = [];
+            if (filters.invoiceNumberQuery) {
+                orConditions.push(`invoice_number.ilike.%${filters.invoiceNumberQuery}%`);
+            }
+            if (filters.supplierUuids && filters.supplierUuids.length > 0) {
+                orConditions.push(`supplier_uuid.in.("${filters.supplierUuids.join('","')}")`);
+            }
+            if (orConditions.length > 0) {
+                query = query.or(orConditions.join(','));
+            }
         }
+        
         if (filters.from) {
             query = query.gte('created_at', filters.from.toISOString());
         }
@@ -67,7 +76,6 @@ class StockRepository {
 
         const { data: newIntake, error: intakeError } = await this.supabase.from('stock_intakes').insert({
             uuid: intakeData.uuid,
-            user_id: intakeData.user_id,
             supplier_uuid: intakeData.supplierUuid,
             invoice_number: intakeData.invoiceNumber,
             invoice_date: intakeData.invoiceDate,
@@ -96,15 +104,19 @@ class StockRepository {
         return fromSupabase({ ...newIntake, stock_intake_items: items });
     }
 
-    async deleteAllForUser(userId: string): Promise<void> {
-        const { error } = await this.supabase.from('stock_intakes').delete().eq('user_id', userId);
+    async delete(uuid: string): Promise<void> {
+        const { error } = await this.supabase.from('stock_intakes').delete().eq('uuid', uuid);
+        if (error) throw error;
+    }
+
+    async deleteAll(): Promise<void> {
+        const { error } = await this.supabase.from('stock_intakes').delete().gt('id', 0); // Placeholder to delete all
         if (error) throw error;
     }
 
     async bulkUpsert(intakes: StockIntake[]): Promise<void> {
         const intakeRecords = intakes.map(({ items, ...intakeData }) => ({
             uuid: intakeData.uuid,
-            user_id: intakeData.user_id,
             supplier_uuid: intakeData.supplierUuid,
             invoice_number: intakeData.invoiceNumber,
             invoice_date: intakeData.invoiceDate,

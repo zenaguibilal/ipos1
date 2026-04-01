@@ -18,7 +18,6 @@ const fromSupabase = (profile: any): CompanyProfile => profile ? ({
     goldPricePerGram: profile.gold_price_per_gram,
     prix_pain: profile.prix_pain,
     updatedAt: profile.updated_at,
-    role: profile.role,
 }) : ({} as CompanyProfile);
 
 const toSupabase = (profile: Partial<CompanyProfile>) => ({
@@ -36,7 +35,6 @@ const toSupabase = (profile: Partial<CompanyProfile>) => ({
     gold_price_per_gram: profile.goldPricePerGram,
     prix_pain: profile.prix_pain,
     updated_at: profile.updatedAt,
-    role: profile.role,
 });
 
 

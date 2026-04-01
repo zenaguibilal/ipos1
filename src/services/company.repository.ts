@@ -2,11 +2,9 @@
 
 import { createClient } from "@/utils/supabase/client";
 import type { CompanyProfile } from "@/lib/types";
-import { useAppStore } from "@/stores/appStore";
 
 const fromSupabase = (profile: any): CompanyProfile => profile ? ({
     uuid: profile.uuid,
-    user_id: profile.user_id,
     companyName: profile.company_name,
     address: profile.address,
     city: profile.city,
@@ -20,12 +18,10 @@ const fromSupabase = (profile: any): CompanyProfile => profile ? ({
     goldPricePerGram: profile.gold_price_per_gram,
     prix_pain: profile.prix_pain,
     updatedAt: profile.updated_at,
-    role: profile.role,
 }) : ({} as CompanyProfile);
 
 const toSupabase = (profile: Partial<CompanyProfile>) => ({
     uuid: profile.uuid,
-    user_id: profile.user_id,
     company_name: profile.companyName,
     address: profile.address,
     city: profile.city,
@@ -39,25 +35,19 @@ const toSupabase = (profile: Partial<CompanyProfile>) => ({
     gold_price_per_gram: profile.goldPricePerGram,
     prix_pain: profile.prix_pain,
     updated_at: profile.updatedAt,
-    role: profile.role,
 });
 
 
 class CompanyRepository {
     private supabase = createClient();
     
-    private getUserId(): string | undefined {
-        return useAppStore.getState().session?.user?.id;
-    }
-
     async get(): Promise<CompanyProfile | null> {
-        const userId = this.getUserId();
-        if (!userId) return null;
-
+        // Since there's no user, we assume a single profile for the app.
+        // We fetch the first one we find.
         const { data, error } = await this.supabase
             .from('company_profile')
             .select('*')
-            .eq('user_id', userId)
+            .limit(1)
             .single();
 
         if (error && error.code !== 'PGRST116') throw error;
@@ -71,13 +61,14 @@ class CompanyRepository {
     }
     
     async update(data: Partial<CompanyProfile>): Promise<CompanyProfile> {
-        const userId = this.getUserId();
-        if (!userId) throw new Error("User not authenticated for profile update.");
+        // Since there is only one profile, we can update using its UUID.
+        const existing = await this.get();
+        if (!existing) throw new Error("No profile found to update.");
 
         const { data: updatedData, error } = await this.supabase
             .from('company_profile')
             .update(toSupabase(data))
-            .eq('user_id', userId)
+            .eq('uuid', existing.uuid)
             .select()
             .single();
 
@@ -85,8 +76,8 @@ class CompanyRepository {
         return fromSupabase(updatedData);
     }
 
-    async deleteAllForUser(userId: string): Promise<void> {
-        const { error } = await this.supabase.from('company_profile').delete().eq('user_id', userId);
+    async deleteAll(): Promise<void> {
+        const { error } = await this.supabase.from('company_profile').delete().gt('id', 0); // Placeholder to delete all
         if (error) throw error;
     }
 
