@@ -1,16 +1,16 @@
+
 'use client';
 
 import React, { useState, useEffect } from 'react';
 import type { Customer } from '@/lib/types';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { MoreHorizontal, Edit, Trash2, FileText, Phone, DollarSign, BellRing, ShieldCheck, Home, Calendar, Hourglass } from 'lucide-react';
+import { MoreHorizontal, Edit, Trash2, FileText, Phone, DollarSign, BellRing, ShieldCheck, Home, Calendar, Hourglass, Landmark, User, ChevronRight } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import Link from 'next/link';
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrency, cn } from '@/lib/utils';
 import { Progress } from '../ui/progress';
-import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
 
@@ -27,11 +27,11 @@ const DebtStatusIcon = ({ status }: { status: Customer['debtStatus']}) => {
                 <TooltipProvider>
                     <Tooltip>
                         <TooltipTrigger asChild>
-                            <div className="absolute top-3 right-12 p-1 bg-destructive/20 rounded-full">
+                            <div className="p-1.5 bg-destructive/20 rounded-xl">
                                 <BellRing className="h-4 w-4 text-destructive animate-pulse" />
                             </div>
                         </TooltipTrigger>
-                        <TooltipContent><p>Paiement en retard</p></TooltipContent>
+                        <TooltipContent className="rounded-xl font-bold text-xs">Retard de paiement</TooltipContent>
                     </Tooltip>
                 </TooltipProvider>
             );
@@ -40,11 +40,11 @@ const DebtStatusIcon = ({ status }: { status: Customer['debtStatus']}) => {
                 <TooltipProvider>
                     <Tooltip>
                         <TooltipTrigger asChild>
-                            <div className="absolute top-3 right-12 p-1 bg-chart-secondary/20 rounded-full">
-                                <Hourglass className="h-4 w-4 text-chart-secondary" />
+                            <div className="p-1.5 bg-amber-500/20 rounded-xl">
+                                <Hourglass className="h-4 w-4 text-amber-500" />
                             </div>
                         </TooltipTrigger>
-                        <TooltipContent><p>Échéance proche</p></TooltipContent>
+                        <TooltipContent className="rounded-xl font-bold text-xs">Échéance proche</TooltipContent>
                     </Tooltip>
                 </TooltipProvider>
             );
@@ -53,8 +53,7 @@ const DebtStatusIcon = ({ status }: { status: Customer['debtStatus']}) => {
     }
 };
 
-
-const CustomerCardComponent = ({ customer, onEdit, onDelete }: CustomerCardProps) => {
+export const CustomerCard = React.memo(({ customer, onEdit, onDelete }: CustomerCardProps) => {
     const [isMounted, setIsMounted] = useState(false);
     const creditUsage = customer.creditLimit && customer.creditLimit > 0 ? (customer.outstandingBalance / customer.creditLimit) * 100 : 0;
 
@@ -63,96 +62,93 @@ const CustomerCardComponent = ({ customer, onEdit, onDelete }: CustomerCardProps
     }, []);
 
     return (
-        <Card className="flex flex-col transition-all duration-300 hover:shadow-xl hover:-translate-y-1 relative">
-            <CardHeader>
-                <div className="flex justify-between items-start">
-                    <div className="space-y-1">
-                        <CardTitle className="text-xl">
-                            <Link href={`/customers/${customer.uuid}`} className="hover:underline">
-                                {customer.firstName} {customer.lastName}
+        <Card className={cn(
+            "group flex flex-col transition-all duration-300 hover:shadow-2xl hover:-translate-y-1 bg-card border-none relative overflow-hidden rounded-3xl",
+            customer.outstandingBalance > 0 && "ring-1 ring-white/5"
+        )}>
+            <div className="absolute top-3 right-3 z-10 flex gap-1 items-center">
+                <DebtStatusIcon status={customer.debtStatus} />
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <Button variant="secondary" size="icon" className="h-8 w-8 bg-background/80 backdrop-blur-md border-none shadow-sm rounded-xl">
+                            <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="rounded-2xl border-none shadow-xl">
+                        <DropdownMenuItem asChild className="rounded-xl">
+                            <Link href={`/customers/${customer.uuid}`}>
+                                <FileText className="mr-2 h-4 w-4" /> Voir l'historique
                             </Link>
-                        </CardTitle>
-                        <div className="flex items-center text-sm text-muted-foreground gap-4">
-                             {customer.phone && (
-                                <div className="flex items-center gap-2">
-                                    <Phone className="h-3 w-3" />
-                                    <span>{customer.phone}</span>
-                                </div>
-                            )}
-                             {customer.address && (
-                                <div className="flex items-center gap-2">
-                                    <Home className="h-3 w-3" />
-                                    <span className="truncate">{customer.address}</span>
-                                </div>
-                            )}
-                        </div>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => onEdit(customer)} className="rounded-xl">
+                            <Edit className="mr-2 h-4 w-4" /> Modifier
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => onDelete(customer)} className="text-destructive focus:text-destructive rounded-xl">
+                            <Trash2 className="mr-2 h-4 w-4" /> Supprimer
+                        </DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
+            </div>
+
+            <CardHeader className="p-5 pb-2">
+                <div className="flex items-center gap-3 mb-2">
+                    <div className={cn(
+                        "p-2.5 rounded-2xl bg-muted/50 text-muted-foreground transition-colors group-hover:bg-primary/10 group-hover:text-primary",
+                        customer.outstandingBalance > 0 && "bg-primary/5 text-primary"
+                    )}>
+                        <User className="h-5 w-5" />
                     </div>
-                     <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-8 w-8">
-                                <MoreHorizontal className="h-5 w-5" />
-                            </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                            <DropdownMenuItem asChild>
-                                <Link href={`/customers/${customer.uuid}`}>
-                                    <FileText className="mr-2 h-4 w-4" />
-                                    Voir les détails
-                                </Link>
-                            </DropdownMenuItem>
-                            <>
-                                <DropdownMenuItem onClick={() => onEdit(customer)}>
-                                    <Edit className="mr-2 h-4 w-4" />
-                                    Modifier
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => onDelete(customer)} className="text-destructive focus:text-destructive">
-                                    <Trash2 className="mr-2 h-4 w-4" />
-                                    Supprimer
-                                </DropdownMenuItem>
-                            </>
-                        </DropdownMenuContent>
-                    </DropdownMenu>
+                    <div className="min-w-0">
+                        <CardTitle className="text-lg font-black leading-none tracking-tight truncate group-hover:text-primary transition-colors">
+                            {customer.firstName} {customer.lastName}
+                        </CardTitle>
+                        {customer.phone && (
+                            <p className="text-[10px] font-bold text-muted-foreground mt-1.5 flex items-center gap-1.5 uppercase opacity-60">
+                                <Phone className="h-2.5 w-2.5" /> {customer.phone}
+                            </p>
+                        )}
+                    </div>
                 </div>
-                 <DebtStatusIcon status={customer.debtStatus} />
             </CardHeader>
-            <CardContent className="flex-grow space-y-3">
+
+            <CardContent className="p-5 py-2 space-y-4 flex-grow">
                  <div className="space-y-2">
-                    <div className="flex items-center text-sm">
-                        <ShieldCheck className="h-4 w-4 mr-2 text-muted-foreground"/>
-                        <span className="text-muted-foreground">Limite crédit:</span>
-                         <span className="font-semibold ml-auto">{typeof customer.creditLimit === 'number' ? formatCurrency(customer.creditLimit) : 'N/A'}</span>
+                    <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+                        <span className="flex items-center gap-1.5"><ShieldCheck className="h-3 w-3 opacity-50"/> Crédit</span>
+                        <span className="text-foreground">{typeof customer.creditLimit === 'number' ? formatCurrency(customer.creditLimit) : 'Illimité'}</span>
                     </div>
                     {customer.creditLimit && customer.creditLimit > 0 && (
-                        <Progress value={creditUsage} className={cn("h-1.5", creditUsage > 100 ? "[&>div]:bg-destructive" : creditUsage > 90 ? "[&>div]:bg-chart-secondary" : "")} />
+                        <Progress value={creditUsage} className={cn("h-1.5 bg-muted/30", creditUsage > 100 ? "[&>div]:bg-destructive" : creditUsage > 90 ? "[&>div]:bg-amber-500" : "")} />
                     )}
                  </div>
-                 <div className="flex items-center text-sm">
-                    <DollarSign className="h-4 w-4 mr-2 text-muted-foreground"/>
-                    <span className="text-muted-foreground">Total Dépensé:</span>
-                     <span className={`font-semibold ml-auto`}>{formatCurrency(customer.totalSpent)}</span>
-                </div>
-                <div className="flex items-center text-sm">
-                    <DollarSign className="h-4 w-4 mr-2 text-muted-foreground"/>
-                    <span className="text-muted-foreground">Solde impayé:</span>
-                     <span className={`font-semibold ml-auto ${customer.outstandingBalance > 0 ? 'text-destructive' : ''}`}>{formatCurrency(customer.outstandingBalance)}</span>
-                </div>
-                 <div className="flex items-center text-sm">
-                    <Calendar className="h-4 w-4 mr-2 text-muted-foreground"/>
-                    <span className="text-muted-foreground">Dernière activité:</span>
-                     <span className="font-semibold ml-auto">
-                        {isMounted && customer.lastActivityDate ? formatDistanceToNow(new Date(customer.lastActivityDate), { addSuffix: true, locale: fr }) : 'N/A'}
-                     </span>
-                </div>
+
+                 <div className="grid grid-cols-2 gap-3">
+                    <div className="p-3 rounded-2xl bg-muted/30 border border-border/50">
+                        <p className="text-[9px] font-black uppercase tracking-tighter text-muted-foreground opacity-60 mb-1">Dépensé</p>
+                        <p className="font-black text-sm">{formatCurrency(customer.totalSpent)}</p>
+                    </div>
+                    <div className={cn(
+                        "p-3 rounded-2xl border transition-all",
+                        customer.outstandingBalance > 0 ? "bg-destructive/5 border-destructive/20" : "bg-muted/30 border-border/50"
+                    )}>
+                        <p className={cn("text-[9px] font-black uppercase tracking-tighter opacity-60 mb-1", customer.outstandingBalance > 0 ? "text-destructive" : "text-muted-foreground")}>Dette</p>
+                        <p className={cn("font-black text-sm", customer.outstandingBalance > 0 ? "text-destructive" : "")}>{formatCurrency(customer.outstandingBalance)}</p>
+                    </div>
+                 </div>
             </CardContent>
-            <CardFooter className="pt-0">
-                <Button variant="outline" asChild className="w-full">
+
+            <CardFooter className="p-5 pt-3 border-t border-white/5 bg-muted/5 flex items-center justify-between">
+                <div className="flex items-center gap-2 text-[9px] font-bold text-muted-foreground uppercase opacity-50">
+                    <Calendar className="h-3 w-3" />
+                    <span>{isMounted && customer.lastActivityDate ? formatDistanceToNow(new Date(customer.lastActivityDate), { addSuffix: true, locale: fr }) : 'Aucun achat'}</span>
+                </div>
+                <Button variant="ghost" size="sm" asChild className="h-8 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-primary/10 hover:text-primary transition-all">
                     <Link href={`/customers/${customer.uuid}`}>
-                        Voir l'historique
+                        Détails <ChevronRight className="ml-1 h-3 w-3" />
                     </Link>
                 </Button>
             </CardFooter>
         </Card>
     );
-}
-
-export const CustomerCard = React.memo(CustomerCardComponent);
+});
+CustomerCard.displayName = 'CustomerCard';

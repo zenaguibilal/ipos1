@@ -7,30 +7,41 @@ import { useDebounce } from '@/hooks/useDebounce';
 import type { Customer, ImportAnalysis } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Plus, Search, Users, FileDown, Loader2 } from 'lucide-react';
+import { Plus, Search, Users, FileDown, Loader2, FileUp, FilterX, RefreshCw, SortAsc } from 'lucide-react';
 import { CustomerCard } from '@/components/customers/customer-card';
 import { CustomerDialog } from '@/components/customers/customer-dialog';
 import { DeleteCustomerDialog } from '@/components/customers/delete-customer-dialog';
 import { toast } from 'sonner';
 import { CustomerStats } from '@/components/customers/CustomerStats';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuCheckboxItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuCheckboxItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger, DropdownMenuRadioGroup, DropdownMenuRadioItem } from "@/components/ui/dropdown-menu";
 import { PageHeader } from '@/components/layout/PageHeader';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardHeader, CardContent, CardFooter } from '@/components/ui/card';
 import { customerService } from '@/services/customer.service';
 import { ImportPreviewDialog } from '@/components/customers/import-preview-dialog';
+import { cn } from '@/lib/utils';
+import Papa from 'papaparse';
 
 type FilterStatus = 'all' | 'has_debt' | 'overdue' | 'over_limit';
+
+const sortOptions: { [key: string]: string } = {
+    'createdAt_desc': 'Plus récents',
+    'searchName_asc': 'Nom (A-Z)',
+    'totalSpent_desc': 'Plus dépensier',
+    'outstandingBalance_desc': 'Plus endetté',
+};
 
 export default function CustomersPage() {
     const searchParams = useSearchParams();
 
     const [searchQuery, setSearchQuery] = useState('');
     const [filterStatus, setFilterStatus] = useState<FilterStatus>('all');
+    const [sortBy, setSortBy] = useState('createdAt_desc');
     const [isCustomerDialogOpen, setIsCustomerDialogOpen] = useState(false);
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
     const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
+    const [isRefreshing, setIsRefreshing] = useState(false);
     
     const debouncedSearchQuery = useDebounce(searchQuery, 300);
 
@@ -51,15 +62,21 @@ export default function CustomersPage() {
     }, [searchParams]);
 
     const fetchCustomers = useCallback(async () => {
-        setCustomers(undefined); // Set to loading state
+        setIsRefreshing(true);
         try {
-            const data = await customerService.filterCustomers({ query: debouncedSearchQuery, status: filterStatus });
+            const data = await customerService.filterCustomers({ 
+                query: debouncedSearchQuery, 
+                status: filterStatus,
+                sortBy
+            });
             setCustomers(data);
         } catch (error: any) {
-            toast.error("Impossible de charger les clients.", { description: error.message });
-            setCustomers([]); // Set to empty array on error
+            toast.error("Impossible de charger les clients.");
+            setCustomers([]);
+        } finally {
+            setIsRefreshing(false);
         }
-    }, [debouncedSearchQuery, filterStatus]);
+    }, [debouncedSearchQuery, filterStatus, sortBy]);
     
     useEffect(() => {
         fetchCustomers();
@@ -75,6 +92,34 @@ export default function CustomersPage() {
         setIsDeleteDialogOpen(true);
     }, []);
 
+    const handleExportCsv = () => {
+        if (!customers || customers.length === 0) {
+            toast.error("Aucun client à exporter.");
+            return;
+        }
+
+        const csv = Papa.unparse(customers.map(c => ({
+            Prénom: c.firstName,
+            Nom: c.lastName,
+            Téléphone: c.phone || '',
+            Adresse: c.address || '',
+            Total_Dépensé: c.totalSpent,
+            Solde_Impayé: c.outstandingBalance,
+            Limite_Crédit: c.creditLimit || 'N/A',
+            Dernière_Activité: c.lastActivityDate ? new Date(c.lastActivityDate).toLocaleDateString() : 'N/A'
+        })));
+
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', `ipos-clients-${new Date().toISOString().split('T')[0]}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        toast.success("Exportation terminée.");
+    };
+
     const handleFileSelected = async (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
         if (!file) return;
@@ -85,10 +130,9 @@ export default function CustomersPage() {
             setImportAnalysis(analysis);
             setIsImportPreviewOpen(true);
         } catch (error: any) {
-            toast.error("Erreur lors de l'analyse du fichier.", { description: error.message });
+            toast.error("Erreur d'analyse CSV.");
         } finally {
             setIsAnalyzing(false);
-            // Reset file input to allow re-uploading the same file
             event.target.value = '';
         }
     };
@@ -97,44 +141,53 @@ export default function CustomersPage() {
         setIsImporting(true);
         try {
             await customerService.executeImport(confirmedData);
-            toast.success("Importation terminée avec succès !");
+            toast.success("Importation réussie !");
             setIsImportPreviewOpen(false);
             setImportAnalysis(null);
             fetchCustomers();
         } catch (error: any) {
-            toast.error("Erreur lors de l'importation des données.", { description: error.message });
+            toast.error("Échec de l'importation.");
         } finally {
             setIsImporting(false);
         }
     };
+
+    const resetFilters = () => {
+        setSearchQuery('');
+        setFilterStatus('all');
+        setSortBy('createdAt_desc');
+    };
+
+    const isFiltered = searchQuery !== '' || filterStatus !== 'all' || sortBy !== 'createdAt_desc';
     
     const renderSkeletons = () => (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[...Array(6)].map((_, i) => <Card key={i}><CardHeader><Skeleton className="h-6 w-32" /></CardHeader><CardContent><Skeleton className="h-24 w-full" /></CardContent><CardFooter><Skeleton className="h-10 w-full" /></CardFooter></Card>)}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {[...Array(8)].map((_, i) => <Card key={i} className="rounded-3xl border-none animate-pulse h-48 bg-card" />)}
         </div>
     );
 
     const renderContent = () => {
-        if (isLoading) {
-            return renderSkeletons();
-        }
+        if (isLoading) return renderSkeletons();
 
         if (!customers || customers.length === 0) {
             return (
                 <EmptyState
                     icon={Users}
                     title="Aucun client trouvé"
-                    description="Commencez par ajouter votre premier client ou ajustez vos filtres."
+                    description={isFiltered ? "Essayez d'ajuster vos filtres." : "Commencez par ajouter votre premier client."}
                 >
-                     <Button onClick={() => { setSelectedCustomer(null); setIsCustomerDialogOpen(true); }}>
-                        <Plus className="mr-2 h-4 w-4" /> Ajouter un client
-                    </Button>
+                    <div className="flex gap-2 justify-center">
+                        {isFiltered && <Button variant="outline" onClick={resetFilters} className="rounded-xl"><FilterX className="mr-2 h-4 w-4" /> Effacer</Button>}
+                        <Button onClick={() => { setSelectedCustomer(null); setIsCustomerDialogOpen(true); }} className="rounded-xl shadow-lg shadow-primary/20">
+                            <Plus className="mr-2 h-4 w-4" /> Ajouter un client
+                        </Button>
+                    </div>
                 </EmptyState>
             );
         }
         
         return (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                 {customers.map(c => (
                     <CustomerCard 
                         key={c.uuid} 
@@ -148,53 +201,102 @@ export default function CustomersPage() {
     }
 
     return (
-        <div className="p-4 sm:p-6 space-y-6">
+        <div className="p-4 sm:p-6 space-y-6 max-w-[1600px] mx-auto">
             <PageHeader
                 title="Gestion des Clients"
-                description="Recherchez, ajoutez et gérez vos clients."
+                description="Suivez les dettes, les dépenses et l'activité de vos clients."
             >
-                <Button asChild variant="outline" disabled={isAnalyzing}>
-                    <label htmlFor="csv-importer">
-                        {isAnalyzing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileDown className="mr-2 h-4 w-4" />}
-                        {isAnalyzing ? 'Analyse...' : 'Importer'}
-                        <input type="file" id="csv-importer" accept=".csv" className="sr-only" onChange={handleFileSelected} />
-                    </label>
-                </Button>
-                <Button onClick={() => { setSelectedCustomer(null); setIsCustomerDialogOpen(true); }}>
-                    <Plus className="mr-2 h-4 w-4" /> Ajouter
-                </Button>
+                <div className="flex gap-2 w-full sm:w-auto">
+                    <Button variant="outline" onClick={handleExportCsv} className="rounded-xl font-bold border-primary/20 hover:bg-primary/5">
+                        <FileUp className="mr-2 h-4 w-4 text-primary" /> Exporter
+                    </Button>
+                    <Button asChild variant="outline" disabled={isAnalyzing} className="rounded-xl font-bold border-primary/20 hover:bg-primary/5">
+                        <label htmlFor="csv-importer" className="cursor-pointer">
+                            {isAnalyzing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileDown className="mr-2 h-4 w-4 text-primary" />}
+                            {isAnalyzing ? 'Analyse...' : 'Importer'}
+                            <input type="file" id="csv-importer" accept=".csv" className="sr-only" onChange={handleFileSelected} />
+                        </label>
+                    </Button>
+                    <Button onClick={() => { setSelectedCustomer(null); setIsCustomerDialogOpen(true); }} className="rounded-xl font-bold shadow-lg shadow-primary/20">
+                        <Plus className="mr-2 h-4 w-4" /> Nouveau
+                    </Button>
+                </div>
             </PageHeader>
 
             <CustomerStats />
 
-            <div className="flex flex-col sm:flex-row gap-2">
+            <div className="flex flex-col lg:flex-row gap-3">
                 <div className="relative flex-grow">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/50" />
                     <Input 
                         placeholder="Rechercher par nom ou téléphone..."
-                        className="pl-10"
+                        className="pl-10 h-11 rounded-xl bg-card border-none shadow-sm focus-visible:ring-primary/20"
                         value={searchQuery}
                         onChange={e => setSearchQuery(e.target.value)}
                     />
                 </div>
-                 <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                        <Button variant="outline" className="w-full sm:w-auto">
-                            Filtrer
+                
+                <div className="flex flex-wrap gap-2">
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="outline" className="rounded-xl h-11 border-none shadow-sm bg-card hover:bg-primary/5 min-w-[140px] font-medium">
+                                <Users className="mr-2 h-4 w-4 opacity-50" />
+                                {filterStatus === 'all' ? 'Tous les clients' : filterStatus === 'has_debt' ? 'Avec une dette' : filterStatus === 'overdue' ? 'Retard de paiement' : 'Plafond dépassé'}
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent className="rounded-xl border-none shadow-xl min-w-[200px]">
+                            <DropdownMenuLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Filtrer par Statut</DropdownMenuLabel>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuCheckboxItem checked={filterStatus === 'all'} onCheckedChange={() => setFilterStatus('all')}>Tous les clients</DropdownMenuCheckboxItem>
+                            <DropdownMenuCheckboxItem checked={filterStatus === 'has_debt'} onCheckedChange={() => setFilterStatus('has_debt')}>Avec une dette</DropdownMenuCheckboxItem>
+                            <DropdownMenuCheckboxItem checked={filterStatus === 'overdue'} onCheckedChange={() => setFilterStatus('overdue')}>En retard de paiement</DropdownMenuCheckboxItem>
+                            <DropdownMenuCheckboxItem checked={filterStatus === 'over_limit'} onCheckedChange={() => setFilterStatus('over_limit')}>Plafond dépassé</DropdownMenuCheckboxItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="outline" className="rounded-xl h-11 border-none shadow-sm bg-card hover:bg-primary/5 font-medium min-w-[140px]">
+                                <SortAsc className="mr-2 h-4 w-4 opacity-50" />
+                                {sortOptions[sortBy]}
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent className="rounded-xl border-none shadow-xl min-w-[200px]">
+                            <DropdownMenuLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Trier par</DropdownMenuLabel>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuRadioGroup value={sortBy} onValueChange={setSortBy}>
+                                {Object.entries(sortOptions).map(([key, value]) => (
+                                    <DropdownMenuRadioItem key={key} value={key} className="text-xs">{value}</DropdownMenuRadioItem>
+                                ))}
+                            </DropdownMenuRadioGroup>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+
+                    {isFiltered && (
+                        <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-11 w-11 rounded-xl text-destructive hover:bg-destructive/10"
+                            onClick={resetFilters}
+                            title="Réinitialiser"
+                        >
+                            <FilterX className="h-4 w-4" />
                         </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent>
-                        <DropdownMenuLabel>Statut du Client</DropdownMenuLabel>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuCheckboxItem checked={filterStatus === 'all'} onCheckedChange={() => setFilterStatus('all')}>Tous les clients</DropdownMenuCheckboxItem>
-                        <DropdownMenuCheckboxItem checked={filterStatus === 'has_debt'} onCheckedChange={() => setFilterStatus('has_debt')}>Avec une dette</DropdownMenuCheckboxItem>
-                        <DropdownMenuCheckboxItem checked={filterStatus === 'overdue'} onCheckedChange={() => setFilterStatus('overdue')}>En retard de paiement</DropdownMenuCheckboxItem>
-                        <DropdownMenuCheckboxItem checked={filterStatus === 'over_limit'} onCheckedChange={() => setFilterStatus('over_limit')}>Plafond dépassé</DropdownMenuCheckboxItem>
-                    </DropdownMenuContent>
-                </DropdownMenu>
+                    )}
+
+                    <Button 
+                        variant="outline" 
+                        size="icon" 
+                        className="h-11 w-11 rounded-xl border-none shadow-sm bg-card"
+                        onClick={fetchCustomers}
+                        disabled={isRefreshing}
+                    >
+                        <RefreshCw className={cn("h-4 w-4 text-primary", isRefreshing && "animate-spin")} />
+                    </Button>
+                </div>
             </div>
             
-            <div>
+            <div className="min-h-[450px] animate-in fade-in duration-500">
                {renderContent()}
             </div>
 
@@ -205,21 +307,20 @@ export default function CustomersPage() {
                 onSuccess={fetchCustomers}
             />
             
-            <>
-                <DeleteCustomerDialog 
-                    isOpen={isDeleteDialogOpen}
-                    onOpenChange={setIsDeleteDialogOpen}
-                    customer={selectedCustomer}
-                    onSuccess={fetchCustomers}
-                />
-                <ImportPreviewDialog
-                    isOpen={isImportPreviewOpen}
-                    onOpenChange={setIsImportPreviewOpen}
-                    analysis={importAnalysis}
-                    onConfirm={handleConfirmImport}
-                    isImporting={isImporting}
-                />
-            </>
+            <DeleteCustomerDialog 
+                isOpen={isDeleteDialogOpen}
+                onOpenChange={setIsDeleteDialogOpen}
+                customer={selectedCustomer}
+                onSuccess={fetchCustomers}
+            />
+            
+            <ImportPreviewDialog
+                isOpen={isImportPreviewOpen}
+                onOpenChange={setIsImportPreviewOpen}
+                analysis={importAnalysis}
+                onConfirm={handleConfirmImport}
+                isImporting={isImporting}
+            />
         </div>
     );
 }

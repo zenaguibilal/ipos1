@@ -15,7 +15,7 @@ class CustomerService {
         return db.customers.where('uuid').equals(uuid).first();
     }
 
-    async filterCustomers(filters: { query?: string; status?: string }): Promise<Customer[]> {
+    async filterCustomers(filters: { query?: string; status?: string; sortBy?: string }): Promise<Customer[]> {
         let collection = db.customers.toCollection();
 
         if (filters.status) {
@@ -29,11 +29,30 @@ class CustomerService {
         let customers = await collection.toArray();
 
         if (filters.query) {
-            const lowerQuery = filters.query.toLowerCase();
-            customers = customers.filter(c => c.searchName?.toLowerCase().includes(lowerQuery));
+            const lowerQuery = filters.query.toLowerCase().trim();
+            customers = customers.filter(c => 
+                c.searchName?.toLowerCase().includes(lowerQuery) || 
+                c.phone?.includes(lowerQuery)
+            );
         }
 
-        return customers.sort((a,b) => (b.createdAt?.getTime() || 0) - (a.createdAt?.getTime() || 0));
+        // Sorting Logic
+        if (filters.sortBy) {
+            const [field, order] = filters.sortBy.split('_');
+            const isAsc = order === 'asc';
+            
+            customers.sort((a: any, b: any) => {
+                const valA = a[field] ?? 0;
+                const valB = b[field] ?? 0;
+                if (valA < valB) return isAsc ? -1 : 1;
+                if (valA > valB) return isAsc ? 1 : -1;
+                return 0;
+            });
+        } else {
+            customers.sort((a,b) => (b.createdAt?.getTime() || 0) - (a.createdAt?.getTime() || 0));
+        }
+
+        return customers;
     }
     
     async addCustomer(customerData: Partial<Omit<Customer, 'uuid'>>): Promise<Customer> {
@@ -91,7 +110,6 @@ class CustomerService {
         const customer = await this.getCustomerByUuid(uuid);
         if (!customer) return;
 
-        // Check for any associated financial or transactional records.
         const [salesCount, returnsCount, paymentsCount, breadOrdersCount] = await Promise.all([
             db.sales.where('customerUuid').equals(uuid).count(),
             db.product_returns.where('customerUuid').equals(uuid).count(),
@@ -100,10 +118,9 @@ class CustomerService {
         ]);
         
         if (salesCount > 0 || returnsCount > 0 || paymentsCount > 0 || breadOrdersCount > 0) {
-            throw new Error("Suppression impossible: ce client a un historique de transactions (ventes, retours, paiements, etc.).");
+            throw new Error("Suppression impossible: ce client a un historique de transactions.");
         }
 
-        // A final check on the balance, although the above should ensure it's zero.
         if (customer.outstandingBalance !== 0) {
             throw new Error("Suppression impossible: le solde du client n'est pas à zéro.");
         }
@@ -168,7 +185,6 @@ class CustomerService {
         const netCreditFromReturns = returns.reduce((sum, r) => sum + (r.totalReturnValue - r.amountRefunded), 0);
         
         const newBalance = totalInvoiced - totalPaidViaPayments - netCreditFromReturns;
-        
         const totalSpent = totalInvoiced;
 
         const isOverLimit = customer.creditLimit != null && customer.creditLimit > 0 ? newBalance > customer.creditLimit : false;
