@@ -7,7 +7,7 @@ import { useDebounce } from '@/hooks/useDebounce';
 import type { Customer, ImportAnalysis } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Plus, Search, Users, FileDown, Loader2, FileUp, FilterX, RefreshCw, SortAsc } from 'lucide-react';
+import { Plus, Search, Users, FileDown, Loader2, FileUp, FilterX, RefreshCw, SortAsc, Printer } from 'lucide-react';
 import { CustomerCard } from '@/components/customers/customer-card';
 import { CustomerDialog } from '@/components/customers/customer-dialog';
 import { DeleteCustomerDialog } from '@/components/customers/delete-customer-dialog';
@@ -16,11 +16,10 @@ import { CustomerStats } from '@/components/customers/CustomerStats';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuCheckboxItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger, DropdownMenuRadioGroup, DropdownMenuRadioItem } from "@/components/ui/dropdown-menu";
 import { PageHeader } from '@/components/layout/PageHeader';
 import { EmptyState } from '@/components/ui/EmptyState';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Card, CardHeader, CardContent, CardFooter } from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
 import { customerService } from '@/services/customer.service';
 import { ImportPreviewDialog } from '@/components/customers/import-preview-dialog';
-import { cn } from '@/lib/utils';
+import { cn, formatCurrency } from '@/lib/utils';
 import Papa from 'papaparse';
 
 type FilterStatus = 'all' | 'has_debt' | 'overdue' | 'over_limit';
@@ -45,7 +44,7 @@ export default function CustomersPage() {
     
     const debouncedSearchQuery = useDebounce(searchQuery, 300);
 
-    const [customers, setCustomers] = useState<Customer[] | undefined>(undefined);
+    const [customers, setProducts] = useState<Customer[] | undefined>(undefined);
     const isLoading = customers === undefined;
 
     // States for CSV Import
@@ -69,10 +68,10 @@ export default function CustomersPage() {
                 status: filterStatus,
                 sortBy
             });
-            setCustomers(data);
+            setProducts(data);
         } catch (error: any) {
             toast.error("Impossible de charger les clients.");
-            setCustomers([]);
+            setProducts([]);
         } finally {
             setIsRefreshing(false);
         }
@@ -118,6 +117,62 @@ export default function CustomersPage() {
         link.click();
         document.body.removeChild(link);
         toast.success("Exportation terminée.");
+    };
+
+    const handlePrintDebtList = () => {
+        if (!customers) return;
+        const debtors = customers.filter(c => c.outstandingBalance > 0);
+        if (debtors.length === 0) {
+            toast.info("Aucun client n'a de dette à imprimer.");
+            return;
+        }
+
+        const printWindow = window.open('', '_blank');
+        if (!printWindow) return;
+
+        const html = `
+            <html>
+                <head>
+                    <title>Liste des Dettes Clients</title>
+                    <style>
+                        body { font-family: sans-serif; padding: 20px; }
+                        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+                        th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
+                        th { background-color: #f4f4f4; font-size: 12px; text-transform: uppercase; }
+                        h1 { text-align: center; }
+                        .total { text-align: right; font-weight: bold; margin-top: 20px; font-size: 18px; }
+                    </style>
+                </head>
+                <body>
+                    <h1>Rapport des Dettes Clients</h1>
+                    <p>Date: ${new Date().toLocaleDateString()}</p>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Client</th>
+                                <th>Téléphone</th>
+                                <th>Dernière Activité</th>
+                                <th style="text-align: right;">Solde Impayé</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${debtors.map(c => `
+                                <tr>
+                                    <td>${c.firstName} ${c.lastName}</td>
+                                    <td>${c.phone || '-'}</td>
+                                    <td>${c.lastActivityDate ? new Date(c.lastActivityDate).toLocaleDateString() : 'Jamais'}</td>
+                                    <td style="text-align: right;">${formatCurrency(c.outstandingBalance)}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                    <div class="total">Total Global: ${formatCurrency(debtors.reduce((sum, c) => sum + c.outstandingBalance, 0))}</div>
+                </body>
+            </html>
+        `;
+        printWindow.document.write(html);
+        printWindow.document.close();
+        printWindow.print();
     };
 
     const handleFileSelected = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -207,6 +262,9 @@ export default function CustomersPage() {
                 description="Suivez les dettes, les dépenses et l'activité de vos clients."
             >
                 <div className="flex gap-2 w-full sm:w-auto">
+                    <Button variant="outline" onClick={handlePrintDebtList} className="rounded-xl font-bold border-primary/20 hover:bg-primary/5">
+                        <Printer className="mr-2 h-4 w-4 text-primary" /> Dettes
+                    </Button>
                     <Button variant="outline" onClick={handleExportCsv} className="rounded-xl font-bold border-primary/20 hover:bg-primary/5">
                         <FileUp className="mr-2 h-4 w-4 text-primary" /> Exporter
                     </Button>

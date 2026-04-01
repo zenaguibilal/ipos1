@@ -6,7 +6,7 @@ import type { Customer } from '@/lib/types';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { MoreHorizontal, Edit, Trash2, FileText, Phone, DollarSign, BellRing, ShieldCheck, Home, Calendar, Hourglass, Landmark, User, ChevronRight } from 'lucide-react';
+import { MoreHorizontal, Edit, Trash2, FileText, Phone, BellRing, ShieldCheck, Calendar, Hourglass, User, ChevronRight } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import Link from 'next/link';
 import { formatCurrency, cn } from '@/lib/utils';
@@ -31,7 +31,7 @@ const DebtStatusIcon = ({ status }: { status: Customer['debtStatus']}) => {
                                 <BellRing className="h-4 w-4 text-destructive animate-pulse" />
                             </div>
                         </TooltipTrigger>
-                        <TooltipContent className="rounded-xl font-bold text-xs">Retard de paiement</TooltipContent>
+                        <TooltipContent className="rounded-xl font-bold text-xs bg-destructive text-destructive-foreground">Retard de paiement</TooltipContent>
                     </Tooltip>
                 </TooltipProvider>
             );
@@ -55,7 +55,11 @@ const DebtStatusIcon = ({ status }: { status: Customer['debtStatus']}) => {
 
 export const CustomerCard = React.memo(({ customer, onEdit, onDelete }: CustomerCardProps) => {
     const [isMounted, setIsMounted] = useState(false);
-    const creditUsage = customer.creditLimit && customer.creditLimit > 0 ? (customer.outstandingBalance / customer.creditLimit) * 100 : 0;
+    
+    // Safety check for math
+    const balance = customer.outstandingBalance || 0;
+    const limit = customer.creditLimit || 0;
+    const creditUsage = limit > 0 ? (balance / limit) * 100 : 0;
 
     useEffect(() => {
         setIsMounted(true);
@@ -64,7 +68,7 @@ export const CustomerCard = React.memo(({ customer, onEdit, onDelete }: Customer
     return (
         <Card className={cn(
             "group flex flex-col transition-all duration-300 hover:shadow-2xl hover:-translate-y-1 bg-card border-none relative overflow-hidden rounded-3xl",
-            customer.outstandingBalance > 0 && "ring-1 ring-white/5"
+            balance > 0 && "ring-1 ring-white/5"
         )}>
             <div className="absolute top-3 right-3 z-10 flex gap-1 items-center">
                 <DebtStatusIcon status={customer.debtStatus} />
@@ -94,7 +98,7 @@ export const CustomerCard = React.memo(({ customer, onEdit, onDelete }: Customer
                 <div className="flex items-center gap-3 mb-2">
                     <div className={cn(
                         "p-2.5 rounded-2xl bg-muted/50 text-muted-foreground transition-colors group-hover:bg-primary/10 group-hover:text-primary",
-                        customer.outstandingBalance > 0 && "bg-primary/5 text-primary"
+                        balance > 0 && "bg-primary/5 text-primary"
                     )}>
                         <User className="h-5 w-5" />
                     </div>
@@ -114,25 +118,25 @@ export const CustomerCard = React.memo(({ customer, onEdit, onDelete }: Customer
             <CardContent className="p-5 py-2 space-y-4 flex-grow">
                  <div className="space-y-2">
                     <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-widest text-muted-foreground">
-                        <span className="flex items-center gap-1.5"><ShieldCheck className="h-3 w-3 opacity-50"/> Crédit</span>
-                        <span className="text-foreground">{typeof customer.creditLimit === 'number' ? formatCurrency(customer.creditLimit) : 'Illimité'}</span>
+                        <span className="flex items-center gap-1.5"><ShieldCheck className="h-3 w-3 opacity-50"/> État Crédit</span>
+                        <span className="text-foreground">{limit > 0 ? formatCurrency(limit) : 'Illimité'}</span>
                     </div>
-                    {customer.creditLimit && customer.creditLimit > 0 && (
-                        <Progress value={creditUsage} className={cn("h-1.5 bg-muted/30", creditUsage > 100 ? "[&>div]:bg-destructive" : creditUsage > 90 ? "[&>div]:bg-amber-500" : "")} />
+                    {limit > 0 && (
+                        <Progress value={Math.min(100, creditUsage)} className={cn("h-1.5 bg-muted/30", creditUsage > 100 ? "[&>div]:bg-destructive" : creditUsage > 90 ? "[&>div]:bg-amber-500" : "")} />
                     )}
                  </div>
 
                  <div className="grid grid-cols-2 gap-3">
                     <div className="p-3 rounded-2xl bg-muted/30 border border-border/50">
-                        <p className="text-[9px] font-black uppercase tracking-tighter text-muted-foreground opacity-60 mb-1">Dépensé</p>
+                        <p className="text-[9px] font-black uppercase tracking-tighter text-muted-foreground opacity-60 mb-1">Total Dépensé</p>
                         <p className="font-black text-sm">{formatCurrency(customer.totalSpent)}</p>
                     </div>
                     <div className={cn(
                         "p-3 rounded-2xl border transition-all",
-                        customer.outstandingBalance > 0 ? "bg-destructive/5 border-destructive/20" : "bg-muted/30 border-border/50"
+                        balance > 0 ? "bg-destructive/5 border-destructive/20" : "bg-muted/30 border-border/50"
                     )}>
-                        <p className={cn("text-[9px] font-black uppercase tracking-tighter opacity-60 mb-1", customer.outstandingBalance > 0 ? "text-destructive" : "text-muted-foreground")}>Dette</p>
-                        <p className={cn("font-black text-sm", customer.outstandingBalance > 0 ? "text-destructive" : "")}>{formatCurrency(customer.outstandingBalance)}</p>
+                        <p className={cn("text-[9px] font-black uppercase tracking-tighter opacity-60 mb-1", balance > 0 ? "text-destructive" : "text-muted-foreground")}>Dette Actuelle</p>
+                        <p className={cn("font-black text-sm", balance > 0 ? "text-destructive" : "")}>{formatCurrency(balance)}</p>
                     </div>
                  </div>
             </CardContent>
