@@ -13,6 +13,7 @@ export interface Product {
     dateExpiration?: Date;
     supplierUuid?: string;
     dateMajPrix?: Date;
+    imageUrl?: string; // New field for product photo
     createdAt?: Date;
     updatedAt?: Date;
     stockStatus?: 'in_stock' | 'low_stock' | 'out_of_stock';
@@ -129,6 +130,7 @@ export interface StockIntakeItem {
     purchasePrice: number;
     price: number;
     isNew: boolean;
+    imageUrl?: string;
     unite?: 'Pièce' | 'Kg' | 'Litre' | 'Boîte' | 'Carton' | 'Sachet' | 'Bouteille';
 }
 

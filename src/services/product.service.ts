@@ -1,3 +1,4 @@
+
 'use client';
 
 import { v4 as uuidv4 } from 'uuid';
@@ -39,8 +40,6 @@ class ProductService {
         const now = new Date();
         const thirtyDaysFromNow = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
 
-        // 1. Use the most specific indexed query available as the starting point.
-        //    Priority: Date-based Status > Status > Category > Supplier.
         if (filters.stockStatus === 'expired') {
             collection = db.products.where('dateExpiration').below(now);
         } else if (filters.stockStatus === 'expiring_soon') {
@@ -57,7 +56,6 @@ class ProductService {
 
         let products = await collection.toArray();
         
-        // 2. Apply remaining filters in-memory on the smaller, pre-filtered dataset.
         if (filters.category && filters.category !== 'all') {
             products = products.filter(p => p.category === filters.category);
         }
@@ -81,7 +79,6 @@ class ProductService {
             );
         }
 
-        // 3. Sort the final results.
         if (filters.sortBy) {
             const [field, order] = filters.sortBy.split('_');
             const isAsc = order === 'asc';
@@ -94,7 +91,7 @@ class ProductService {
                 const bExists = valB !== undefined && valB !== null;
 
                 if (!aExists && !bExists) return 0;
-                if (!aExists) return 1; // Put nulls/undefined at the end
+                if (!aExists) return 1; 
                 if (!bExists) return -1;
 
                 if (valA < valB) return isAsc ? -1 : 1;
@@ -234,8 +231,8 @@ class ProductService {
         };
 
         for (const row of csvData) {
-            const name = row.name || row.nom;
-            const price = row.price || row.prix_vente;
+            const name = row.name || row.nom || row.Désignation;
+            const price = row.price || row.prix_vente || row.Prix;
             
             if (!name || !price) {
                 analysis.errorRows.push({ ...row, error: "Nom ou prix manquant" });
@@ -246,12 +243,13 @@ class ProductService {
 
             const productData = {
                 name,
-                category: row.category || row.categorie || 'Non classé',
+                category: row.category || row.categorie || row.Catégorie || 'Non classé',
                 price: parseFloat(price),
-                purchasePrice: row.purchasePrice || row.prix_achat ? parseFloat(row.purchasePrice || row.prix_achat) : 0,
-                quantity: row.quantity || row.stock ? parseInt(row.quantity || row.stock) : 0,
+                purchasePrice: row.purchasePrice || row.prix_achat || row.Achat ? parseFloat(row.purchasePrice || row.prix_achat || row.Achat) : 0,
+                quantity: row.quantity || row.stock || row.Quantité ? parseInt(row.quantity || row.stock || row.Quantité) : 0,
                 minStockLevel: row.minStockLevel || row.stock_minimum ? parseInt(row.minStockLevel || row.stock_minimum) : 10,
                 barcodes: row.barcodes || row.codes_barres ? String(row.barcodes || row.codes_barres).split(',').map((b:string) => b.trim()).filter(Boolean) : [],
+                imageUrl: row.imageUrl || row.image,
             };
 
             if (isNaN(productData.price)) {

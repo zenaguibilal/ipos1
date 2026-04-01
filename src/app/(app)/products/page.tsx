@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -6,7 +7,7 @@ import { useDebounce } from '@/hooks/useDebounce';
 import type { Product, Supplier, ProductImportAnalysis } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Plus, Search, LayoutGrid, List, Printer, Trash2, PackageCheck, PackageX, AlertTriangle, Archive, SortAsc, FileDown, Building, Package, Loader2, CalendarClock, CalendarX } from 'lucide-react';
+import { Plus, Search, LayoutGrid, List, Printer, Trash2, PackageCheck, PackageX, AlertTriangle, Archive, SortAsc, FileDown, Building, Package, Loader2, CalendarClock, CalendarX, FileUp } from 'lucide-react';
 import { ProductCard } from '@/components/products/product-card';
 import { ProductTable } from '@/components/products/product-table';
 import { ProductTableSkeleton } from '@/components/products/product-table-skeleton';
@@ -35,6 +36,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { productService } from '@/services/product.service';
 import { supplierService } from '@/services/supplier.service';
 import { useAppStore } from '@/stores/appStore';
+import Papa from 'papaparse';
 
 type StockStatus = 'all' | 'in_stock' | 'low_stock' | 'out_of_stock' | 'expiring_soon' | 'expired';
 
@@ -135,7 +137,7 @@ export default function ProductsPage() {
             setCategories(cats);
             setSuppliers(sups);
         } catch(error: any) {
-            toast.error("Impossible de charger les métadonnées.", { description: error.message });
+            toast.error("Impossible de charger les métادونات.", { description: error.message });
             setCategories([]);
             setSuppliers([]);
         }
@@ -151,7 +153,7 @@ export default function ProductsPage() {
 
     const onDialogSuccess = () => {
         fetchProducts();
-        fetchMeta(); // Re-fetch categories/suppliers in case they were changed
+        fetchMeta();
     }
 
     const handleEditProduct = useCallback((product: Product) => {
@@ -193,7 +195,7 @@ export default function ProductsPage() {
             toast.error("Erreur lors de l'analyse du fichier.", { description: error.message });
         } finally {
             setIsAnalyzing(false);
-            e.target.value = ''; // Reset input
+            e.target.value = ''; 
         }
     };
 
@@ -204,12 +206,40 @@ export default function ProductsPage() {
             toast.success("Importation des produits terminée !");
             setIsImportPreviewOpen(false);
             setImportAnalysis(null);
-            onDialogSuccess(); // Refresh products and meta
+            onDialogSuccess();
         } catch (error: any) {
             toast.error("Erreur lors de l'importation des produits.", { description: error.message });
         } finally {
             setIsImporting(false);
         }
+    };
+
+    const handleExportCsv = () => {
+        if (!products || products.length === 0) {
+            toast.error("Aucun produit à exporter.");
+            return;
+        }
+
+        const csv = Papa.unparse(products.map(p => ({
+            Nom: p.name,
+            Catégorie: p.category,
+            Prix_Vente: p.price,
+            Prix_Achat: p.purchasePrice,
+            Stock: p.quantity,
+            Unité: p.unite,
+            Codes_Barres: p.barcodes?.join(', '),
+            Date_Expiration: p.dateExpiration ? new Date(p.dateExpiration).toLocaleDateString() : '',
+        })));
+
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', `ipos-produits-${new Date().toISOString().split('T')[0]}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        toast.success("Exportation CSV terminée.");
     };
     
     const renderSkeletons = () => (
@@ -252,7 +282,7 @@ export default function ProductsPage() {
                 <EmptyState
                     icon={Package}
                     title="Aucun produit trouvé"
-                    description="Essayez d'ajuster votre recherche ou vos filtres, ou ajoutez un nouveau produit."
+                    description="Essayez d'ajuster votre recherche ou vos filtres، أو أضف منتجاً جديداً."
                 >
                      <Button onClick={() => setIsProductDialogOpen(true)}>
                         <Plus className="mr-2 h-4 w-4" /> Ajouter un produit
@@ -303,157 +333,171 @@ export default function ProductsPage() {
         <div className="p-4 sm:p-6 space-y-6">
             <PageHeader
                 title="Gestion des Produits"
-                description="Recherchez, filtrez et gérez votre inventaire."
+                description="Recherchez, filtrez et gérez votre inventaire avec style."
             >
-                <>
-                    <Button asChild variant="outline" disabled={isAnalyzing}>
+                <div className="flex gap-2 w-full sm:w-auto overflow-x-auto pb-1 sm:pb-0 scrollbar-hide">
+                    <Button variant="outline" onClick={handleExportCsv} className="flex-shrink-0">
+                        <FileUp className="mr-2 h-4 w-4" /> Exporter
+                    </Button>
+                    <Button asChild variant="outline" disabled={isAnalyzing} className="flex-shrink-0">
                         <label htmlFor="csv-product-importer">
                             {isAnalyzing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileDown className="mr-2 h-4 w-4" />}
                             {isAnalyzing ? 'Analyse...' : 'Importer'}
                             <input type="file" id="csv-product-importer" accept=".csv" className="sr-only" onChange={handleFileSelected} />
                         </label>
                     </Button>
-                    <Button onClick={() => { setSelectedProduct(null); setIsProductDialogOpen(true); }}>
+                    <Button onClick={() => { setSelectedProduct(null); setIsProductDialogOpen(true); }} className="flex-shrink-0">
                         <Plus className="mr-2 h-4 w-4" /> Ajouter
                     </Button>
-                </>
+                </div>
             </PageHeader>
 
             <InventoryStats products={products} isLoading={isLoading} />
 
-            <div className="flex flex-col sm:flex-row gap-2">
+            <div className="flex flex-col lg:flex-row gap-3">
                 <div className="relative flex-grow">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input 
                         placeholder="Rechercher par nom ou code-barres..."
-                        className="pl-10"
+                        className="pl-10 h-11 rounded-xl bg-card border-none shadow-sm focus-visible:ring-primary/20"
                         value={searchQuery}
                         onChange={e => setSearchQuery(e.target.value)}
                     />
                 </div>
                 
-                 <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                        <Button variant="outline" className="w-full sm:w-auto">Filtrer par catégorie</Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent>
-                        <DropdownMenuLabel>Catégories</DropdownMenuLabel>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuCheckboxItem
-                            checked={selectedCategory === 'all'}
-                            onCheckedChange={() => setSelectedCategory('all')}
-                        >Toutes</DropdownMenuCheckboxItem>
-                         {categories && categories.map(cat => (
-                             <DropdownMenuCheckboxItem
-                                key={cat}
-                                checked={selectedCategory === cat}
-                                onCheckedChange={() => setSelectedCategory(cat)}
-                            >{cat}</DropdownMenuCheckboxItem>
-                         ))}
-                    </DropdownMenuContent>
-                </DropdownMenu>
-
-                <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                        <Button variant="outline" className="w-full sm:w-auto">
-                            <Building className="mr-2 h-4 w-4" />
-                            Filtrer par Fournisseur
-                        </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent>
-                        <DropdownMenuLabel>Fournisseurs</DropdownMenuLabel>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuCheckboxItem
-                            checked={selectedSupplier === 'all'}
-                            onCheckedChange={() => setSelectedSupplier('all')}
-                        >Tous</DropdownMenuCheckboxItem>
-                        {suppliers?.map(sup => (
+                <div className="flex flex-wrap gap-2">
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="outline" className="rounded-xl h-11 border-none shadow-sm bg-card hover:bg-primary/5">Catégorie</Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent className="rounded-xl border-none shadow-xl">
+                            <DropdownMenuLabel>Filtrer par catégorie</DropdownMenuLabel>
+                            <DropdownMenuSeparator />
                             <DropdownMenuCheckboxItem
-                                key={sup.uuid}
-                                checked={selectedSupplier === sup.uuid}
-                                onCheckedChange={() => setSelectedSupplier(sup.uuid)}
-                            >{sup.name}</DropdownMenuCheckboxItem>
-                        ))}
-                    </DropdownMenuContent>
-                </DropdownMenu>
-
-                <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                        <Button variant="outline" className="w-full sm:w-auto">
-                            <currentStockStatusOption.icon className="mr-2 h-4 w-4" />
-                            {currentStockStatusOption.label}
-                        </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent>
-                        <DropdownMenuLabel>Statut du Stock</DropdownMenuLabel>
-                        <DropdownMenuSeparator />
-                        {stockStatusOptions.map(option => (
-                             <DropdownMenuCheckboxItem
-                                key={option.value}
-                                checked={stockStatus === option.value}
-                                onCheckedChange={() => setStockStatus(option.value)}
-                            >
-                                <option.icon className="mr-2 h-4 w-4" />
-                                {option.label}
-                            </DropdownMenuCheckboxItem>
-                         ))}
-                    </DropdownMenuContent>
-                </DropdownMenu>
-                
-                <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                        <Button variant="outline" className="w-full sm:w-auto">
-                            <SortAsc className="mr-2 h-4 w-4" />
-                            Trier par: {sortOptions[sortBy]}
-                        </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent>
-                        <DropdownMenuLabel>Trier les produits par</DropdownMenuLabel>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuRadioGroup value={sortBy} onValueChange={setSortBy}>
-                            {Object.entries(sortOptions).map(([key, value]) => (
-                                <DropdownMenuRadioItem key={key} value={key}>{value}</DropdownMenuRadioItem>
+                                checked={selectedCategory === 'all'}
+                                onCheckedChange={() => setSelectedCategory('all')}
+                            >Toutes</DropdownMenuCheckboxItem>
+                            {categories && categories.map(cat => (
+                                <DropdownMenuCheckboxItem
+                                    key={cat}
+                                    checked={selectedCategory === cat}
+                                    onCheckedChange={() => setSelectedCategory(cat)}
+                                >{cat}</DropdownMenuCheckboxItem>
                             ))}
-                        </DropdownMenuRadioGroup>
-                    </DropdownMenuContent>
-                </DropdownMenu>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
 
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="outline" className="rounded-xl h-11 border-none shadow-sm bg-card hover:bg-primary/5">
+                                <Building className="mr-2 h-4 w-4 opacity-50" />
+                                Fournisseur
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent className="rounded-xl border-none shadow-xl">
+                            <DropdownMenuLabel>Filtrer par Fournisseur</DropdownMenuLabel>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuCheckboxItem
+                                checked={selectedSupplier === 'all'}
+                                onCheckedChange={() => setSelectedSupplier('all')}
+                            >Tous</DropdownMenuCheckboxItem>
+                            {suppliers?.map(sup => (
+                                <DropdownMenuCheckboxItem
+                                    key={sup.uuid}
+                                    checked={selectedSupplier === sup.uuid}
+                                    onCheckedChange={() => setSelectedSupplier(sup.uuid)}
+                                >{sup.name}</DropdownMenuCheckboxItem>
+                            ))}
+                        </DropdownMenuContent>
+                    </DropdownMenu>
 
-                <div className="flex items-center gap-1 rounded-md bg-muted p-1">
-                    <Button variant={viewMode === 'grid' ? 'secondary': 'ghost'} size="icon" onClick={() => setViewMode('grid')}>
-                        <LayoutGrid className="h-5 w-5"/>
-                    </Button>
-                    <Button variant={viewMode === 'list' ? 'secondary': 'ghost'} size="icon" onClick={() => setViewMode('list')}>
-                        <List className="h-5 w-5"/>
-                    </Button>
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="outline" className="rounded-xl h-11 border-none shadow-sm bg-card hover:bg-primary/5">
+                                <currentStockStatusOption.icon className="mr-2 h-4 w-4 opacity-50" />
+                                {currentStockStatusOption.label}
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent className="rounded-xl border-none shadow-xl">
+                            <DropdownMenuLabel>Statut du Stock</DropdownMenuLabel>
+                            <DropdownMenuSeparator />
+                            {stockStatusOptions.map(option => (
+                                <DropdownMenuCheckboxItem
+                                    key={option.value}
+                                    checked={stockStatus === option.value}
+                                    onCheckedChange={() => setStockStatus(option.value)}
+                                >
+                                    <option.icon className="mr-2 h-4 w-4" />
+                                    {option.label}
+                                </DropdownMenuCheckboxItem>
+                            ))}
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                    
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="outline" className="rounded-xl h-11 border-none shadow-sm bg-card hover:bg-primary/5">
+                                <SortAsc className="mr-2 h-4 w-4 opacity-50" />
+                                {sortOptions[sortBy]}
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent className="rounded-xl border-none shadow-xl">
+                            <DropdownMenuLabel>Trier par</DropdownMenuLabel>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuRadioGroup value={sortBy} onValueChange={setSortBy}>
+                                {Object.entries(sortOptions).map(([key, value]) => (
+                                    <DropdownMenuRadioItem key={key} value={key}>{value}</DropdownMenuRadioItem>
+                                ))}
+                            </DropdownMenuRadioGroup>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+
+                    <div className="flex items-center gap-1 rounded-xl bg-card border-none shadow-sm p-1">
+                        <Button 
+                            variant={viewMode === 'grid' ? 'secondary': 'ghost'} 
+                            size="icon" 
+                            className="rounded-lg h-9 w-9"
+                            onClick={() => setViewMode('grid')}
+                        >
+                            <LayoutGrid className="h-4 w-4"/>
+                        </Button>
+                        <Button 
+                            variant={viewMode === 'list' ? 'secondary': 'ghost'} 
+                            size="icon" 
+                            className="rounded-lg h-9 w-9"
+                            onClick={() => setViewMode('list')}
+                        >
+                            <List className="h-4 w-4"/>
+                        </Button>
+                    </div>
                 </div>
             </div>
 
-            <div className="flex flex-col sm:flex-row gap-2 justify-between items-center bg-card border rounded-lg p-3">
-                <div className="flex items-center gap-3">
-                    <Checkbox
-                        id="select-all"
-                        checked={!isLoading && products && products.length > 0 && selectedProducts.size === products.length}
-                        onCheckedChange={handleToggleSelectAll}
-                        disabled={isLoading || !products || products.length === 0}
-                    />
-                    <label htmlFor="select-all" className="text-sm font-medium">
-                        {selectedProducts.size > 0 ? `${selectedProducts.size} sélectionné(s)` : "Tout sélectionner"}
-                    </label>
-                </div>
-                {selectedProducts.size > 0 && (
+            {selectedProducts.size > 0 && (
+                <div className="flex flex-col sm:flex-row gap-3 justify-between items-center bg-primary/10 border border-primary/20 rounded-2xl p-4 animate-in slide-in-from-top-2">
+                    <div className="flex items-center gap-3">
+                        <Checkbox
+                            id="select-all"
+                            checked={!isLoading && products && products.length > 0 && selectedProducts.size === products.length}
+                            onCheckedChange={handleToggleSelectAll}
+                            className="h-5 w-5 border-primary data-[state=checked]:bg-primary"
+                        />
+                        <label htmlFor="select-all" className="text-sm font-black text-primary uppercase tracking-widest">
+                            {selectedProducts.size} sélectionné(s)
+                        </label>
+                    </div>
                     <div className="flex gap-2">
-                        <Button variant="outline" onClick={() => setIsPrintDialogOpen(true)}>
-                            <Printer className="mr-2 h-4 w-4" /> Imprimer
+                        <Button variant="outline" onClick={() => setIsPrintDialogOpen(true)} className="rounded-xl bg-background border-none shadow-sm hover:bg-primary/10">
+                            <Printer className="mr-2 h-4 w-4 text-primary" /> Étiquettes
                         </Button>
-                        <Button variant="destructive" onClick={() => setIsBulkDeleteDialogOpen(true)}>
+                        <Button variant="destructive" onClick={() => setIsBulkDeleteDialogOpen(true)} className="rounded-xl shadow-lg shadow-destructive/20">
                             <Trash2 className="mr-2 h-4 w-4" /> Supprimer
                         </Button>
                     </div>
-                )}
-            </div>
+                </div>
+            )}
             
-            <div>
+            <div className="min-h-[400px]">
                {renderContent()}
             </div>
 
