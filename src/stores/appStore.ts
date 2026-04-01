@@ -1,3 +1,4 @@
+
 import { create } from 'zustand';
 import { produce } from 'immer';
 import type { CompanyProfile, ReturnItem, StockIntakeItem, Sale } from '@/lib/types';
@@ -43,7 +44,8 @@ interface AppActions {
         invoiceNumber: string,
         invoiceDate: Date,
         items: StockIntakeItem[],
-        totalValue: number
+        totalValue: number,
+        shippingCost: number
     }) => Promise<boolean>;
     setProductViewMode: (mode: 'grid' | 'list') => void;
     setStockViewMode: (mode: 'grid' | 'list') => void;
@@ -104,16 +106,24 @@ export const useAppStore = create<AppState>()(
                          await db.transaction('rw', db.stock_intakes, db.products, db.suppliers, db.inventory_logs, async () => {
                             const supplier = await supplierService.findOrCreateSupplier(intakeData.supplierName, intakeData.supplierUuid);
             
+                            // Calculate shipping distribution factor
+                            const itemsTotalValue = intakeData.items.reduce((sum, item) => sum + (item.quantity * item.purchasePrice), 0);
+                            const shippingFactor = itemsTotalValue > 0 ? intakeData.shippingCost / itemsTotalValue : 0;
+
                             const finalItems = [];
                             for (const item of intakeData.items) {
                                 let productUuid = item.productUuid;
+                                
+                                // Calculate landing cost for this item (Purchase Price + share of shipping)
+                                const landingCost = item.purchasePrice * (1 + shippingFactor);
+
                                 if (item.isNew) {
                                     const newProduct = await productService.addProduct({
                                         name: item.name,
                                         category: item.category,
                                         price: item.price,
-                                        purchasePrice: item.purchasePrice,
-                                        quantity: 0, // Initial quantity is 0, will be adjusted by inventory service
+                                        purchasePrice: landingCost, // Use landing cost as base purchase price
+                                        quantity: 0, 
                                         minStockLevel: 10,
                                         supplierUuid: supplier.uuid,
                                         unite: item.unite,
@@ -122,8 +132,9 @@ export const useAppStore = create<AppState>()(
                                     productUuid = newProduct.uuid;
                                 } else {
                                     const p = await inventoryService.getProductInfo(productUuid!);
-                                    if (p && p.purchasePrice !== item.purchasePrice) {
-                                        await productService.updateProduct(p.uuid, { purchasePrice: item.purchasePrice, dateMajPrix: new Date() });
+                                    if (p) {
+                                        // Update product with the new landing cost
+                                        await productService.updateProduct(p.uuid, { purchasePrice: landingCost, dateMajPrix: new Date() });
                                     }
                                 }
             
@@ -138,6 +149,7 @@ export const useAppStore = create<AppState>()(
                                         quantityReceived: item.quantity,
                                         quantityDamaged: item.quantityDamaged,
                                         purchasePrice: item.purchasePrice,
+                                        landingCost: landingCost,
                                     });
                                 }
                             }
@@ -146,14 +158,15 @@ export const useAppStore = create<AppState>()(
                                 supplierUuid: supplier.uuid,
                                 invoiceNumber: intakeData.invoiceNumber,
                                 invoiceDate: intakeData.invoiceDate,
+                                shippingCost: intakeData.shippingCost,
                                 items: finalItems,
-                                totalValue: intakeData.totalValue,
+                                totalValue: itemsTotalValue + intakeData.shippingCost,
                             });
                             
-                            await supplierService.updateSupplierBalance(supplier.uuid, intakeData.totalValue);
+                            await supplierService.updateSupplierBalance(supplier.uuid, itemsTotalValue + intakeData.shippingCost);
                         });
 
-                        toast.success("Réception de stock enregistrée et solde fournisseur mis à jour.");
+                        toast.success("Réception de stock enregistrée.");
                         return true;
                     } catch (error: any) {
                         toast.error("Échec du traitement de la réception de stock.", { description: error.message });

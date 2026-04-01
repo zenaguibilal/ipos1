@@ -138,14 +138,16 @@ export interface StockIntake {
     supplierUuid?: string;
     invoiceNumber: string;
     invoiceDate: Date;
+    shippingCost: number;
     items: {
         productUuid?: string;
         productName: string;
         quantityReceived: number;
         quantityDamaged: number;
-        purchasePrice: number;
+        purchasePrice: number; // Base purchase price
+        landingCost: number; // Purchase price + share of shipping
     }[];
-    totalValue: number;
+    totalValue: number; // Total items value + shipping
     createdAt?: Date;
     updatedAt?: Date;
 }

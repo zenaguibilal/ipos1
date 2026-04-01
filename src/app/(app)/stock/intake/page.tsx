@@ -5,7 +5,7 @@ import { useState, useMemo, useCallback, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Trash2, Save, AlertTriangle, ChevronsUpDown, Plus } from 'lucide-react';
+import { ArrowLeft, Trash2, Save, AlertTriangle, ChevronsUpDown, Plus, Truck } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
@@ -41,6 +41,7 @@ export default function NewStockIntakePage() {
     const [supplierPopoverOpen, setSupplierPopoverOpen] = useState(false);
     
     const [invoiceNumber, setInvoiceNumber] = useState('');
+    const [shippingCost, setShippingCost] = useState<number>(0);
     const [invoiceDate, setInvoiceDate] = useState<Date | undefined>(new Date());
     const [items, setItems] = useState<StockIntakeItem[]>([]);
     const [isSaving, setIsSaving] = useState(false);
@@ -128,7 +129,9 @@ export default function NewStockIntakePage() {
         setItems(prev => prev.filter(item => item.id !== id));
     };
 
-    const totalValue = items.reduce((acc, item) => acc + (item.quantity * item.purchasePrice), 0);
+    const itemsTotalValue = items.reduce((acc, item) => acc + (item.quantity * item.purchasePrice), 0);
+    const grandTotal = itemsTotalValue + (Number(shippingCost) || 0);
+    const shippingFactor = itemsTotalValue > 0 ? (Number(shippingCost) || 0) / itemsTotalValue : 0;
 
     const handleSave = async () => {
         if (!supplierName) {
@@ -163,7 +166,8 @@ export default function NewStockIntakePage() {
             invoiceNumber,
             invoiceDate: invoiceDate || new Date(),
             items,
-            totalValue
+            totalValue: itemsTotalValue,
+            shippingCost: Number(shippingCost) || 0
         });
 
         if (success) {
@@ -191,7 +195,7 @@ export default function NewStockIntakePage() {
         <div className="p-4 sm:p-6 space-y-6">
             <PageHeader
                 title="Nouvelle Réception de Stock"
-                description="Enregistrez les marchandises reçues de vos fournisseurs."
+                description="Enregistrez les marchandises reçues et répartissez les frais de transport."
             >
                 <div className="flex items-center gap-4">
                      <Button variant="outline" size="icon" asChild>
@@ -205,7 +209,7 @@ export default function NewStockIntakePage() {
             </PageHeader>
 
             <Card>
-                <CardContent className="p-6 grid md:grid-cols-3 gap-6">
+                <CardContent className="p-6 grid md:grid-cols-4 gap-6">
                     <div className="space-y-2">
                         <Label htmlFor="supplier">Fournisseur</Label>
                          <Popover open={supplierPopoverOpen} onOpenChange={setSupplierPopoverOpen}>
@@ -215,7 +219,7 @@ export default function NewStockIntakePage() {
                                     role="combobox"
                                     className="w-full justify-between"
                                 >
-                                    {supplierName || "Sélectionner ou créer un fournisseur..."}
+                                    {supplierName || "Sélectionner ou créer..."}
                                     <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                                 </Button>
                             </PopoverTrigger>
@@ -232,7 +236,7 @@ export default function NewStockIntakePage() {
                                                 className="w-full"
                                                 onClick={handleSupplierCreate}>
                                                 <Plus className="mr-2 h-4 w-4" />
-                                                Créer le fournisseur "{supplierSearch}"
+                                                Créer "{supplierSearch}"
                                             </Button>
                                         </CommandEmpty>
                                         <CommandGroup>
@@ -252,12 +256,25 @@ export default function NewStockIntakePage() {
                         </Popover>
                     </div>
                      <div className="space-y-2">
-                        <Label htmlFor="invoiceNumber">N° de Facture/Bon (Optionnel)</Label>
+                        <Label htmlFor="invoiceNumber">N° Facture/Bon</Label>
                         <Input id="invoiceNumber" value={invoiceNumber} onChange={e => setInvoiceNumber(e.target.value)} placeholder="INV-12345" />
                     </div>
                     <div className="space-y-2">
-                        <Label>Date de la facture</Label>
+                        <Label>Date Facture</Label>
                         <DatePicker date={invoiceDate} setDate={setInvoiceDate} />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="shippingCost" className="flex items-center gap-2 text-primary font-bold">
+                            <Truck className="h-4 w-4" /> Frais de Transport (DA)
+                        </Label>
+                        <Input 
+                            id="shippingCost" 
+                            type="number" 
+                            className="border-primary/30 focus-visible:ring-primary font-bold"
+                            value={shippingCost} 
+                            onChange={e => setShippingCost(Number(e.target.value) || 0)} 
+                            placeholder="0.00" 
+                        />
                     </div>
                 </CardContent>
             </Card>
@@ -275,72 +292,97 @@ export default function NewStockIntakePage() {
                         <table className="w-full text-sm">
                             <thead>
                                 <tr className="border-b">
-                                    <th className="p-2 text-left min-w-48">Produit</th>
-                                    <th className="p-2 text-left w-40">Catégorie</th>
-                                    <th className="p-2 text-left w-32">Unité</th>
-                                    <th className="p-2 text-left w-32">Qté Reçue</th>
-                                    <th className="p-2 text-left w-32">Qté Endommagée</th>
-                                    <th className="p-2 text-left w-40">Prix Achat U.</th>
-                                    <th className="p-2 text-left w-40">Prix Vente U.</th>
-                                    <th className="p-2 text-right w-20">Actions</th>
+                                    <th className="p-2 text-left min-w-[200px]">Produit</th>
+                                    <th className="p-2 text-left w-24 text-center">Unité</th>
+                                    <th className="p-2 text-left w-24 text-center">Qté</th>
+                                    <th className="p-2 text-left w-32 text-right">P.U Achat</th>
+                                    <th className="p-2 text-left w-32 text-right bg-primary/5 text-primary">Coût de Revient</th>
+                                    <th className="p-2 text-left w-32 text-right">P.U Vente</th>
+                                    <th className="p-2 text-right w-12"></th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {items.map(item => {
-                                    const isLoss = item.isNew && item.price > 0 && item.purchasePrice > 0 && item.price < item.purchasePrice;
+                                    const landingCost = item.purchasePrice * (1 + shippingFactor);
+                                    const isLoss = item.price > 0 && landingCost > 0 && item.price < landingCost;
+                                    
                                     return (
-                                        <tr key={item.id} className="border-b">
+                                        <tr key={item.id} className="border-b hover:bg-muted/20 transition-colors">
                                             <td className="p-2">
                                                 {item.isNew ? (
-                                                    <Input placeholder="Nom du nouveau produit" value={item.name} onChange={e => handleItemChange(item.id, 'name', e.target.value)} />
-                                                ) : item.name}
-                                            </td>
-                                            <td className="p-2">
-                                                {item.isNew ? (
-                                                    <Input placeholder="Catégorie" value={item.category || ''} onChange={e => handleItemChange(item.id, 'category', e.target.value)} />
-                                                ) : item.category || 'N/A'}
+                                                    <Input placeholder="Nom produit" value={item.name} onChange={e => handleItemChange(item.id, 'name', e.target.value)} />
+                                                ) : (
+                                                    <div className="flex flex-col">
+                                                        <span className="font-bold">{item.name}</span>
+                                                        <span className="text-[10px] text-muted-foreground uppercase">{item.category || 'N/A'}</span>
+                                                    </div>
+                                                )}
                                             </td>
                                             <td className="p-2">
                                                 {item.isNew ? (
                                                     <Select value={item.unite} onValueChange={(value) => handleItemChange(item.id, 'unite', value)}>
-                                                        <SelectTrigger><SelectValue /></SelectTrigger>
+                                                        <SelectTrigger className="h-8"><SelectValue /></SelectTrigger>
                                                         <SelectContent>
                                                             {units.map(u => <SelectItem key={u} value={u}>{u}</SelectItem>)}
                                                         </SelectContent>
                                                     </Select>
-                                                ) : item.unite || 'N/A'}
+                                                ) : <div className="text-center">{item.unite || 'N/A'}</div>}
                                             </td>
-                                            <td className="p-2"><Input type="number" min="1" value={item.quantity} onChange={e => handleItemChange(item.id, 'quantity', parseInt(e.target.value) || 0)} /></td>
-                                            <td className="p-2"><Input type="number" min="0" value={item.quantityDamaged} onChange={e => handleItemChange(item.id, 'quantityDamaged', parseInt(e.target.value) || 0)} /></td>
-                                            <td className="p-2"><Input type="number" min="0" step="0.1" value={item.purchasePrice} onChange={e => handleItemChange(item.id, 'purchasePrice', parseFloat(e.target.value) || 0)} /></td>
+                                            <td className="p-2"><Input type="number" className="h-8 text-center" value={item.quantity} onChange={e => handleItemChange(item.id, 'quantity', parseInt(e.target.value) || 0)} /></td>
+                                            <td className="p-2"><Input type="number" step="0.1" className="h-8 text-right" value={item.purchasePrice} onChange={e => handleItemChange(item.id, 'purchasePrice', parseFloat(e.target.value) || 0)} /></td>
+                                            <td className="p-2 text-right bg-primary/5 font-black text-primary">
+                                                {landingCost.toFixed(1)}
+                                            </td>
                                             <td className="p-2">
                                                 <div className="relative">
-                                                     <Input type="number" min="0" step="0.1" value={item.price} onChange={e => handleItemChange(item.id, 'price', parseFloat(e.target.value) || 0)} disabled={!item.isNew} />
+                                                     <Input type="number" step="0.1" className="h-8 text-right font-bold" value={item.price} onChange={e => handleItemChange(item.id, 'price', parseFloat(e.target.value) || 0)} disabled={!item.isNew} />
                                                      {isLoss && (
-                                                        <div className="absolute -bottom-5 left-0 text-xs text-destructive flex items-center gap-1">
+                                                        <div className="absolute -bottom-5 left-0 text-[10px] text-destructive flex items-center gap-1 font-bold uppercase">
                                                           <AlertTriangle className="h-3 w-3" /> Vente à perte
                                                         </div>
                                                      )}
                                                 </div>
                                             </td>
                                             <td className="p-2 text-right">
-                                                <Button variant="ghost" size="icon" className="text-destructive" onClick={() => handleRemoveItem(item.id)}><Trash2 className="h-4 w-4" /></Button>
+                                                <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => handleRemoveItem(item.id)}><Trash2 className="h-4 w-4" /></Button>
                                             </td>
                                         </tr>
                                     )
                                 })}
                                 {items.length === 0 && (
                                     <tr>
-                                        <td colSpan={8} className="p-8 text-center text-muted-foreground">Aucun article ajouté.</td>
+                                        <td colSpan={7} className="p-8 text-center text-muted-foreground">Aucun article ajouté.</td>
                                     </tr>
                                 )}
                             </tbody>
                         </table>
                     </div>
-                     <div className="flex justify-end pt-4 border-t">
-                        <div className="text-right">
-                            <p className="text-muted-foreground">Valeur totale de la réception</p>
-                            <p className="text-2xl font-bold">{formatCurrency(totalValue)}</p>
+
+                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-6 border-t">
+                        <div className="p-4 rounded-xl bg-muted/30 border space-y-2">
+                            <h4 className="text-xs font-black uppercase tracking-widest text-muted-foreground">Résumé Distribution</h4>
+                            <div className="flex justify-between text-sm">
+                                <span>Part du transport par DA d'achat:</span>
+                                <span className="font-bold text-primary">{(shippingFactor * 100).toFixed(2)}%</span>
+                            </div>
+                            <p className="text-[10px] text-muted-foreground">
+                                * يتم توزيع مصاريف النقل على سعر الشراء لكل منتج آلياً لاستخراج سعر التكلفة الحقيقي.
+                            </p>
+                        </div>
+
+                        <div className="space-y-2">
+                            <div className="flex justify-between items-center text-sm text-muted-foreground px-1">
+                                <span>Valeur Marchandise:</span>
+                                <span className="font-bold">{formatCurrency(itemsTotalValue)}</span>
+                            </div>
+                            <div className="flex justify-between items-center text-sm text-primary px-1">
+                                <span>Frais Transport:</span>
+                                <span className="font-bold">+ {formatCurrency(shippingCost)}</span>
+                            </div>
+                            <div className="flex justify-between items-center p-4 bg-primary/10 rounded-xl border border-primary/20">
+                                <span className="font-black uppercase tracking-tighter">Total à Payer:</span>
+                                <span className="text-2xl font-black text-primary">{formatCurrency(grandTotal)}</span>
+                            </div>
                         </div>
                     </div>
                 </CardContent>

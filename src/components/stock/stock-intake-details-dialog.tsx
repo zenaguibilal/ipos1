@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useRef } from 'react';
@@ -22,7 +23,7 @@ import type { StockIntake, CompanyProfile } from '@/lib/types';
 import { formatCurrency, safeToDate } from '@/lib/utils';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { Printer, X, Archive, Hash, Calendar, Building } from 'lucide-react';
+import { Printer, X, Archive, Hash, Calendar, Building, Truck } from 'lucide-react';
 import { useAppStore } from '@/stores/appStore';
 
 interface StockIntakeDetailsDialogProps {
@@ -58,8 +59,8 @@ const PrintableIntake = React.forwardRef<HTMLDivElement, { intake: StockIntake, 
                     <tr className="border-b-2 border-black bg-gray-100">
                         <th className="py-3 text-left px-2">Désignation Produit</th>
                         <th className="py-3 text-center px-2">Qté Reçue</th>
-                        <th className="py-3 text-center px-2">Témoin (Taille/Type)</th>
                         <th className="py-3 text-right px-2">P.U Achat</th>
+                        <th className="py-3 text-right px-2">Coût Revient</th>
                         <th className="py-3 text-right px-2">Montant</th>
                     </tr>
                 </thead>
@@ -68,10 +69,8 @@ const PrintableIntake = React.forwardRef<HTMLDivElement, { intake: StockIntake, 
                         <tr key={index} className="border-b border-gray-300">
                             <td className="py-3 px-2 font-medium">{item.productName}</td>
                             <td className="py-3 px-2 text-center">{item.quantityReceived}</td>
-                            <td className="py-3 px-2 text-center text-xs text-gray-500">
-                                {item.quantityDamaged > 0 ? `(${item.quantityDamaged} endommagé)` : '-'}
-                            </td>
                             <td className="py-3 px-2 text-right">{item.purchasePrice.toFixed(2)}</td>
+                            <td className="py-3 px-2 text-right">{(item.landingCost || item.purchasePrice).toFixed(2)}</td>
                             <td className="py-3 px-2 text-right font-bold">{(item.quantityReceived * item.purchasePrice).toFixed(2)}</td>
                         </tr>
                     ))}
@@ -79,9 +78,17 @@ const PrintableIntake = React.forwardRef<HTMLDivElement, { intake: StockIntake, 
             </table>
 
             <div className="flex justify-end">
-                <div className="w-64 space-y-2">
+                <div className="w-80 space-y-2">
+                    <div className="flex justify-between text-sm">
+                        <span>Sous-total Marchandise:</span>
+                        <span>{formatCurrency(intake.totalValue - (intake.shippingCost || 0))}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                        <span>Frais de Transport:</span>
+                        <span>{formatCurrency(intake.shippingCost || 0)}</span>
+                    </div>
                     <div className="flex justify-between text-lg font-black border-t-2 border-black pt-2">
-                        <span>TOTAL HT:</span>
+                        <span>TOTAL GÉNÉRAL:</span>
                         <span>{formatCurrency(intake.totalValue)}</span>
                     </div>
                 </div>
@@ -141,20 +148,26 @@ export function StockIntakeDetailsDialog({
 
                 <div className="flex-grow overflow-y-auto p-6 space-y-6 custom-scrollbar">
                     {/* Summary Info */}
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                         <div className="p-4 rounded-2xl bg-muted/30 border border-border/50">
                             <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest mb-1 flex items-center gap-1">
                                 <Calendar className="h-3 w-3" /> Date Facture
                             </p>
-                            <p className="font-bold">{format(safeToDate(intake.invoiceDate), 'dd MMMM yyyy', { locale: fr })}</p>
+                            <p className="font-bold text-xs">{format(safeToDate(intake.invoiceDate), 'dd MMM yyyy', { locale: fr })}</p>
                         </div>
                         <div className="p-4 rounded-2xl bg-muted/30 border border-border/50">
-                            <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest mb-1">Nombre d'Articles</p>
-                            <p className="font-bold">{intake.items.length} types de produits</p>
+                            <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest mb-1">Articles</p>
+                            <p className="font-bold text-xs">{intake.items.length} types</p>
                         </div>
-                        <div className="p-4 rounded-2xl bg-primary/10 border border-primary/20 col-span-2 sm:col-span-1">
-                            <p className="text-[10px] uppercase font-bold text-primary tracking-widest mb-1">Valeur Totale</p>
-                            <p className="text-xl font-black text-primary">{formatCurrency(intake.totalValue)}</p>
+                        <div className="p-4 rounded-2xl bg-primary/10 border border-primary/20">
+                            <p className="text-[10px] uppercase font-bold text-primary tracking-widest mb-1 flex items-center gap-1">
+                                <Truck className="h-3 w-3" /> Transport
+                            </p>
+                            <p className="font-black text-primary">{formatCurrency(intake.shippingCost || 0)}</p>
+                        </div>
+                        <div className="p-4 rounded-2xl bg-primary text-primary-foreground shadow-lg shadow-primary/20">
+                            <p className="text-[10px] uppercase font-bold opacity-70 tracking-widest mb-1">Total Général</p>
+                            <p className="text-lg font-black">{formatCurrency(intake.totalValue)}</p>
                         </div>
                     </div>
 
@@ -164,9 +177,9 @@ export function StockIntakeDetailsDialog({
                             <TableHeader className="bg-muted/30">
                                 <TableRow>
                                     <TableHead className="font-bold">Produit</TableHead>
-                                    <TableHead className="text-center font-bold">Qté Reçue</TableHead>
-                                    <TableHead className="text-right font-bold">Prix Achat</TableHead>
-                                    <TableHead className="text-right font-bold">Sous-total</TableHead>
+                                    <TableHead className="text-center font-bold">Qté</TableHead>
+                                    <TableHead className="text-right font-bold">P.U Achat</TableHead>
+                                    <TableHead className="text-right font-bold bg-primary/5 text-primary">C. Revient</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -174,11 +187,6 @@ export function StockIntakeDetailsDialog({
                                     <TableRow key={index} className="hover:bg-muted/10 transition-colors">
                                         <TableCell>
                                             <div className="font-bold text-sm tracking-tight">{item.productName}</div>
-                                            {item.quantityDamaged > 0 && (
-                                                <div className="text-[10px] text-destructive font-bold uppercase mt-0.5">
-                                                    {item.quantityDamaged} endommagé(s)
-                                                </div>
-                                            )}
                                         </TableCell>
                                         <TableCell className="text-center">
                                             <span className="px-2 py-1 rounded-md bg-muted font-mono font-bold text-xs">
@@ -188,8 +196,8 @@ export function StockIntakeDetailsDialog({
                                         <TableCell className="text-right font-medium text-xs">
                                             {formatCurrency(item.purchasePrice)}
                                         </TableCell>
-                                        <TableCell className="text-right font-bold text-primary">
-                                            {formatCurrency(item.quantityReceived * item.purchasePrice)}
+                                        <TableCell className="text-right font-black text-primary bg-primary/5">
+                                            {formatCurrency(item.landingCost || item.purchasePrice)}
                                         </TableCell>
                                     </TableRow>
                                 ))}
