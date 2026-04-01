@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
@@ -36,11 +35,16 @@ import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ConfirmAlertDialog } from '@/components/ui/ConfirmAlertDialog';
+import { useAppStore } from '@/stores/appStore';
 import Papa from 'papaparse';
 
 export default function ReturnsPage() {
+    const { viewMode, setViewMode } = useAppStore(state => ({
+        viewMode: state.returnsViewMode,
+        setViewMode: state.actions.setReturnsViewMode,
+    }));
+
     const [searchQuery, setSearchQuery] = useState('');
-    const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
     const debouncedSearchQuery = useDebounce(searchQuery, 300);
     const { dateRange, setDate, isMounted } = useDateRange(29);
     

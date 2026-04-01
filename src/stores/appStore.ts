@@ -22,6 +22,7 @@ interface AppState {
     
     productViewMode: 'grid' | 'list';
     stockViewMode: 'grid' | 'list';
+    returnsViewMode: 'grid' | 'list';
     actions: AppActions;
 }
 
@@ -48,6 +49,7 @@ interface AppActions {
     }) => Promise<boolean>;
     setProductViewMode: (mode: 'grid' | 'list') => void;
     setStockViewMode: (mode: 'grid' | 'list') => void;
+    setReturnsViewMode: (mode: 'grid' | 'list') => void;
 }
 
 // Initial State
@@ -56,6 +58,7 @@ const initialState: Omit<AppState, 'actions'> = {
     isCompanyProfileLoading: true,
     productViewMode: 'grid',
     stockViewMode: 'grid',
+    returnsViewMode: 'grid',
 };
 
 // Store Implementation
@@ -177,6 +180,7 @@ export const useAppStore = create<AppState>()(
                 },
                 setProductViewMode: (mode) => set({ productViewMode: mode }),
                 setStockViewMode: (mode) => set({ stockViewMode: mode }),
+                setReturnsViewMode: (mode) => set({ returnsViewMode: mode }),
             }
         }),
         {
@@ -185,6 +189,7 @@ export const useAppStore = create<AppState>()(
           partialize: (state) => ({ 
               productViewMode: state.productViewMode,
               stockViewMode: state.stockViewMode,
+              returnsViewMode: state.returnsViewMode,
           }),
         }
     )
