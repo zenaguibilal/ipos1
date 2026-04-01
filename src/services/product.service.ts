@@ -7,6 +7,7 @@ import { calculateStockStatus } from '@/lib/utils';
 import { inventoryService } from './inventory.service';
 import Papa from 'papaparse';
 import { supplierService } from './supplier.service';
+import type Dexie from 'dexie';
 
 class ProductService {
 
@@ -34,38 +35,43 @@ class ProductService {
         stockStatus?: 'all' | 'in_stock' | 'low_stock' | 'out_of_stock' | 'expiring_soon' | 'expired';
         sortBy?: string;
     }): Promise<Product[]> {
-        let collection = db.products.toCollection();
+        let collection: Dexie.Collection<Product, number>;
+        const now = new Date();
+        const thirtyDaysFromNow = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
 
-        if (filters.category && filters.category !== 'all') {
-            collection = collection.filter(p => p.category === filters.category);
-        }
-        if (filters.supplierUuid && filters.supplierUuid !== 'all') {
-            collection = collection.filter(p => p.supplierUuid === filters.supplierUuid);
-        }
-
-        if (filters.stockStatus && filters.stockStatus !== 'all') {
-            const now = new Date();
-            const thirtyDaysFromNow = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
-            switch (filters.stockStatus) {
-                case 'in_stock':
-                    collection = collection.filter(p => p.stockStatus === 'in_stock');
-                    break;
-                case 'low_stock':
-                    collection = collection.filter(p => p.stockStatus === 'low_stock');
-                    break;
-                case 'out_of_stock':
-                    collection = collection.filter(p => p.stockStatus === 'out_of_stock');
-                    break;
-                case 'expired':
-                    collection = collection.filter(p => p.dateExpiration ? new Date(p.dateExpiration) < now : false);
-                    break;
-                case 'expiring_soon':
-                    collection = collection.filter(p => p.dateExpiration ? (new Date(p.dateExpiration) >= now && new Date(p.dateExpiration) <= thirtyDaysFromNow) : false);
-                    break;
-            }
+        // 1. Use the most specific indexed query available as the starting point.
+        //    Priority: Date-based Status > Status > Category > Supplier.
+        if (filters.stockStatus === 'expired') {
+            collection = db.products.where('dateExpiration').below(now);
+        } else if (filters.stockStatus === 'expiring_soon') {
+            collection = db.products.where('dateExpiration').between(now, thirtyDaysFromNow, true, true);
+        } else if (filters.stockStatus && ['in_stock', 'low_stock', 'out_of_stock'].includes(filters.stockStatus)) {
+            collection = db.products.where('stockStatus').equals(filters.stockStatus);
+        } else if (filters.category && filters.category !== 'all') {
+            collection = db.products.where('category').equals(filters.category);
+        } else if (filters.supplierUuid && filters.supplierUuid !== 'all') {
+            collection = db.products.where('supplierUuid').equals(filters.supplierUuid);
+        } else {
+            collection = db.products.toCollection();
         }
 
         let products = await collection.toArray();
+        
+        // 2. Apply remaining filters in-memory on the smaller, pre-filtered dataset.
+        if (filters.category && filters.category !== 'all') {
+            products = products.filter(p => p.category === filters.category);
+        }
+        if (filters.supplierUuid && filters.supplierUuid !== 'all') {
+            products = products.filter(p => p.supplierUuid === filters.supplierUuid);
+        }
+        if (filters.stockStatus && ['in_stock', 'low_stock', 'out_of_stock'].includes(filters.stockStatus)) {
+            products = products.filter(p => p.stockStatus === filters.stockStatus);
+        }
+        if (filters.stockStatus === 'expired') {
+             products = products.filter(p => p.dateExpiration ? new Date(p.dateExpiration) < now : false);
+        } else if (filters.stockStatus === 'expiring_soon') {
+            products = products.filter(p => p.dateExpiration ? (new Date(p.dateExpiration) >= now && new Date(p.dateExpiration) <= thirtyDaysFromNow) : false);
+        }
 
         if (filters.query) {
             const lowerQuery = filters.query.toLowerCase();
@@ -75,6 +81,7 @@ class ProductService {
             );
         }
 
+        // 3. Sort the final results.
         if (filters.sortBy) {
             const [field, order] = filters.sortBy.split('_');
             const isAsc = order === 'asc';
@@ -83,12 +90,19 @@ class ProductService {
                 const valA = a[field];
                 const valB = b[field];
 
+                const aExists = valA !== undefined && valA !== null;
+                const bExists = valB !== undefined && valB !== null;
+
+                if (!aExists && !bExists) return 0;
+                if (!aExists) return 1; // Put nulls/undefined at the end
+                if (!bExists) return -1;
+
                 if (valA < valB) return isAsc ? -1 : 1;
                 if (valA > valB) return isAsc ? 1 : -1;
                 return 0;
             });
         } else {
-             products.sort((a,b) => (b.createdAt?.getTime() || 0) - (a.createdAt?.getTime() || 0));
+            products.sort((a,b) => (b.createdAt?.getTime() || 0) - (a.createdAt?.getTime() || 0));
         }
 
         return products;
