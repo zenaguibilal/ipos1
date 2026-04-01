@@ -1,12 +1,11 @@
-
 'use client';
 
 import { useState, useCallback, useEffect } from 'react';
 import { useDebounce } from '@/hooks/useDebounce';
-import type { StockIntake, Supplier } from '@/lib/types';
+import type { StockIntake, Supplier, InventoryLog } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Search, Plus, Archive, LayoutGrid, List } from 'lucide-react';
+import { Search, Plus, Archive, LayoutGrid, List, History, ArrowUpDown } from 'lucide-react';
 import { DateRangePicker } from '@/components/ui/date-range-picker';
 import { useDateRange } from '@/hooks/useDateRange';
 import { StockIntakeCard } from '@/components/stock/stock-intake-card';
@@ -20,9 +19,14 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
 import { stockService } from '@/services/stock.service';
 import { supplierService } from '@/services/supplier.service';
+import { inventoryService } from '@/services/inventory.service';
 import { useAppStore } from '@/stores/appStore';
 import { CancelIntakeDialog } from '@/components/stock/CancelIntakeDialog';
 import { StockIntakeStats } from '@/components/stock/StockIntakeStats';
+import { InventoryLogTable } from '@/components/stock/InventoryLogTable';
+import { StockAdjustmentDialog } from '@/components/stock/StockAdjustmentDialog';
+
+type StockTab = 'intakes' | 'logs';
 
 export default function StockPage() {
     const { viewMode, setViewMode } = useAppStore(state => ({
@@ -30,6 +34,7 @@ export default function StockPage() {
         setViewMode: state.actions.setStockViewMode,
     }));
 
+    const [activeTab, setActiveTab] = useState<StockTab>('intakes');
     const [searchQuery, setSearchQuery] = useState('');
     const debouncedSearchQuery = useDebounce(searchQuery, 300);
     const { dateRange, setDate, isMounted } = useDateRange(29);
@@ -37,35 +42,49 @@ export default function StockPage() {
     const [selectedIntake, setSelectedIntake] = useState<StockIntake | null>(null);
     const [isDetailsOpen, setIsDetailsOpen] = useState(false);
     const [isCancelOpen, setIsCancelOpen] = useState(false);
+    const [isAdjustmentOpen, setIsAdjustmentOpen] = useState(false);
 
     const [stockIntakes, setStockIntakes] = useState<StockIntake[] | undefined>(undefined);
+    const [inventoryLogs, setInventoryLogs] = useState<(InventoryLog & { productName: string })[] | undefined>(undefined);
     const [supplierMap, setSupplierMap] = useState<Map<string, Supplier>>(new Map());
-    const isLoading = stockIntakes === undefined;
+    
+    const isLoading = activeTab === 'intakes' ? stockIntakes === undefined : inventoryLogs === undefined;
 
-    const fetchStockIntakesAndSuppliers = useCallback(async () => {
+    const fetchData = useCallback(async () => {
         if (!isMounted || !dateRange?.from) return;
-        setStockIntakes(undefined);
+        
         try {
-            const [intakesData, suppliersData] = await Promise.all([
-                stockService.getStockIntakes({
+            if (activeTab === 'intakes') {
+                setStockIntakes(undefined);
+                const [intakesData, suppliersData] = await Promise.all([
+                    stockService.getStockIntakes({
+                        query: debouncedSearchQuery,
+                        from: dateRange.from,
+                        to: dateRange.to
+                    }),
+                    supplierService.getSuppliers()
+                ]);
+                setStockIntakes(intakesData);
+                setSupplierMap(new Map(suppliersData.map(s => [s.uuid, s])));
+            } else {
+                setInventoryLogs(undefined);
+                const logsData = await inventoryService.getLogs({
                     query: debouncedSearchQuery,
                     from: dateRange.from,
                     to: dateRange.to
-                }),
-                supplierService.getSuppliers()
-            ]);
-
-            setStockIntakes(intakesData);
-            setSupplierMap(new Map(suppliersData.map(s => [s.uuid, s])));
+                });
+                setInventoryLogs(logsData);
+            }
         } catch (error: any) {
-            toast.error("Impossible de charger l'historique des réceptions.", { description: error.message });
-            setStockIntakes([]);
+            toast.error("Erreur lors du chargement des données.", { description: error.message });
+            if (activeTab === 'intakes') setStockIntakes([]);
+            else setInventoryLogs([]);
         }
-    }, [isMounted, debouncedSearchQuery, dateRange]);
+    }, [isMounted, debouncedSearchQuery, dateRange, activeTab]);
 
     useEffect(() => {
-        fetchStockIntakesAndSuppliers();
-    }, [fetchStockIntakesAndSuppliers]);
+        fetchData();
+    }, [fetchData]);
 
 
     const handleViewDetails = useCallback((intake: StockIntake) => {
@@ -79,21 +98,17 @@ export default function StockPage() {
     }, []);
 
     const renderSkeletons = () => {
-        if (viewMode === 'list') {
+        if (activeTab === 'intakes' && viewMode === 'list') {
             return <StockIntakeTableSkeleton />;
         }
         return (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {[...Array(6)].map((_, i) => <Skeleton key={i} className="h-44 w-full" />)}
+                {[...Array(6)].map((_, i) => <Skeleton key={i} className="h-44 w-full rounded-2xl" />)}
             </div>
         );
     }
 
-    const renderContent = () => {
-        if (isLoading) {
-            return renderSkeletons();
-        }
-
+    const renderIntakesContent = () => {
         if (!stockIntakes || stockIntakes.length === 0) {
             return (
                 <EmptyState
@@ -137,41 +152,88 @@ export default function StockPage() {
         );
     }
 
+    const renderLogsContent = () => {
+        if (!inventoryLogs || inventoryLogs.length === 0) {
+            return (
+                <EmptyState
+                    icon={History}
+                    title="Aucun mouvement de stock"
+                    description="Toutes les variations de stock apparaîtront ici."
+                />
+            );
+        }
+        return <InventoryLogTable logs={inventoryLogs} />;
+    }
+
     return (
         <div className="p-4 sm:p-6 space-y-6">
             <PageHeader
-                title="Historique des Réceptions de Stock"
-                description="Recherchez et consultez toutes les réceptions de marchandises."
+                title="Gestion du Stock"
+                description="Suivez vos réceptions et surveillez les mouvements de vos produits."
             >
-                <Button asChild>
-                    <Link href="/stock/intake"><Plus className="mr-2 h-4 w-4" /> Nouvelle Réception</Link>
-                </Button>
+                <div className="flex gap-2">
+                    <Button variant="outline" onClick={() => setIsAdjustmentOpen(true)}>
+                        <ArrowUpDown className="mr-2 h-4 w-4" /> Correction Manuelle
+                    </Button>
+                    <Button asChild>
+                        <Link href="/stock/intake"><Plus className="mr-2 h-4 w-4" /> Nouvelle Réception</Link>
+                    </Button>
+                </div>
             </PageHeader>
 
-            <StockIntakeStats intakes={stockIntakes} isLoading={isLoading} />
+            <StockIntakeStats intakes={stockIntakes} isLoading={isLoading && activeTab === 'intakes'} />
+
+            {/* Navigation Tabs */}
+            <div className="flex items-center gap-4 border-b pb-1 overflow-x-auto">
+                <button 
+                    onClick={() => setActiveTab('intakes')}
+                    className={`pb-2 px-4 text-sm font-bold transition-all border-b-2 whitespace-nowrap ${activeTab === 'intakes' ? 'border-primary text-primary' : 'border-transparent text-muted-foreground'}`}
+                >
+                    <div className="flex items-center gap-2">
+                        <Archive className="h-4 w-4" />
+                        Réceptions (Achats)
+                    </div>
+                </button>
+                <button 
+                    onClick={() => setActiveTab('logs')}
+                    className={`pb-2 px-4 text-sm font-bold transition-all border-b-2 whitespace-nowrap ${activeTab === 'logs' ? 'border-primary text-primary' : 'border-transparent text-muted-foreground'}`}
+                >
+                    <div className="flex items-center gap-2">
+                        <History className="h-4 w-4" />
+                        Mouvements (Sajal)
+                    </div>
+                </button>
+            </div>
 
             <div className="flex flex-col sm:flex-row gap-2">
                 <div className="relative flex-grow">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input 
-                        placeholder="Rechercher par Fournisseur ou N° Facture..."
+                        placeholder={activeTab === 'intakes' ? "Rechercher par Fournisseur ou N° Facture..." : "Rechercher par nom de produit..."}
                         className="pl-10"
                         value={searchQuery}
                         onChange={e => setSearchQuery(e.target.value)}
                     />
                 </div>
                 <DateRangePicker date={dateRange} setDate={setDate} />
-                <div className="flex items-center gap-1 rounded-md bg-muted p-1">
-                    <Button variant={viewMode === 'grid' ? 'secondary': 'ghost'} size="icon" onClick={() => setViewMode('grid')}>
-                        <LayoutGrid className="h-5 w-5"/>
-                    </Button>
-                    <Button variant={viewMode === 'list' ? 'secondary': 'ghost'} size="icon" onClick={() => setViewMode('list')}>
-                        <List className="h-5 w-5"/>
-                    </Button>
-                </div>
+                
+                {activeTab === 'intakes' && (
+                    <div className="flex items-center gap-1 rounded-md bg-muted p-1">
+                        <Button variant={viewMode === 'grid' ? 'secondary': 'ghost'} size="icon" onClick={() => setViewMode('grid')}>
+                            <LayoutGrid className="h-5 w-5"/>
+                        </Button>
+                        <Button variant={viewMode === 'list' ? 'secondary': 'ghost'} size="icon" onClick={() => setViewMode('list')}>
+                            <List className="h-5 w-5"/>
+                        </Button>
+                    </div>
+                )}
             </div>
             
-            <div>{renderContent()}</div>
+            <div className="min-h-[400px]">
+                {isLoading ? renderSkeletons() : (
+                    activeTab === 'intakes' ? renderIntakesContent() : renderLogsContent()
+                )}
+            </div>
 
             <StockIntakeDetailsDialog 
                 isOpen={isDetailsOpen}
@@ -184,7 +246,13 @@ export default function StockPage() {
                 isOpen={isCancelOpen}
                 onOpenChange={setIsCancelOpen}
                 intake={selectedIntake}
-                onSuccess={fetchStockIntakesAndSuppliers}
+                onSuccess={fetchData}
+            />
+
+            <StockAdjustmentDialog
+                isOpen={isAdjustmentOpen}
+                onOpenChange={setIsAdjustmentOpen}
+                onSuccess={fetchData}
             />
         </div>
     );

@@ -8,7 +8,7 @@ class InventoryService {
 
     async adjustStock(productUuid: string | null | undefined, quantityChange: number, reason: InventoryLogReason, relatedUuid?: string): Promise<void> {
         if (!productUuid || productUuid === 'BREAD_PRODUCT' || productUuid.startsWith('custom-')) {
-            return; // Do not track stock for special/custom products
+            return; 
         }
 
         const product = await db.products.where('uuid').equals(productUuid).first();
@@ -40,6 +40,34 @@ class InventoryService {
         };
 
         await db.inventory_logs.add(logEntry);
+    }
+
+    async getLogs(filters: { query?: string, from?: Date, to?: Date }): Promise<(InventoryLog & { productName: string })[]> {
+        let collection = db.inventory_logs.toCollection();
+
+        if (filters.from) {
+            collection = collection.filter(l => new Date(l.createdAt) >= filters.from!);
+        }
+        if (filters.to) {
+            collection = collection.filter(l => new Date(l.createdAt) <= filters.to!);
+        }
+
+        const logs = await collection.toArray();
+        const productUuids = [...new Set(logs.map(l => l.productUuid))];
+        const products = await db.products.where('uuid').anyOf(productUuids).toArray();
+        const productMap = new Map(products.map(p => [p.uuid, p.name]));
+
+        let result = logs.map(l => ({
+            ...l,
+            productName: productMap.get(l.productUuid) || 'Produit inconnu'
+        }));
+
+        if (filters.query) {
+            const q = filters.query.toLowerCase();
+            result = result.filter(l => l.productName.toLowerCase().includes(q));
+        }
+
+        return result.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
     }
 
     async getProductInfo(productUuid: string): Promise<Product | undefined> {
