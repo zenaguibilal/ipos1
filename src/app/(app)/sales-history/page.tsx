@@ -6,7 +6,7 @@ import { customerService } from '@/services/customer.service';
 import { useDebounce } from '@/hooks/useDebounce';
 import type { Sale, Customer } from '@/lib/types';
 import { Input } from '@/components/ui/input';
-import { Search, History, LayoutGrid, List, RefreshCw, FilterX, Printer, CheckCircle2, Clock, AlertCircle } from 'lucide-react';
+import { Search, History, LayoutGrid, List, RefreshCw, FilterX, Printer, CheckCircle2, Clock, AlertCircle, FileUp, Download, PieChart, Banknote, Percent } from 'lucide-react';
 import { DateRangePicker } from '@/components/ui/date-range-picker';
 import { useDateRange } from '@/hooks/useDateRange';
 import { SalesHistoryCard } from '@/components/sales/SalesHistoryCard';
@@ -22,6 +22,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuCheckboxItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { toast } from 'sonner';
 import { cn, formatCurrency } from '@/lib/utils';
+import Papa from 'papaparse';
 
 type SalesStatus = 'all' | 'paid' | 'partial' | 'unpaid';
 
@@ -71,13 +72,14 @@ export default function SalesHistoryPage() {
     }, [fetchSalesAndCustomers]);
 
     const stats = useMemo(() => {
-        if (!sales) return { total: 0, received: 0, debt: 0, count: 0 };
+        if (!sales) return { total: 0, received: 0, debt: 0, count: 0, discount: 0 };
         return sales.reduce((acc, s) => ({
             total: acc.total + s.total,
             received: acc.received + s.amountPaid,
             debt: acc.debt + (s.total - s.amountPaid),
-            count: acc.count + 1
-        }), { total: 0, received: 0, debt: 0, count: 0 });
+            count: acc.count + 1,
+            discount: acc.discount + (s.discountAmount || 0)
+        }), { total: 0, received: 0, debt: 0, count: 0, discount: 0 });
     }, [sales]);
 
     const handleViewDetails = (sale: Sale) => {
@@ -95,6 +97,39 @@ export default function SalesHistoryPage() {
         setIsPrintOpen(true);
     };
 
+    const handleExportCsv = () => {
+        if (!sales || sales.length === 0) {
+            toast.error("Aucune vente à exporter.");
+            return;
+        }
+
+        const csvData = sales.map(s => {
+            const customer = s.customerUuid ? customerMap.get(s.customerUuid) : null;
+            return {
+                Date: s.createdAt ? new Date(s.createdAt).toLocaleString('fr-FR') : 'N/A',
+                Facture: s.invoiceNumber,
+                Client: customer ? `${customer.firstName} ${customer.lastName}` : 'Passage',
+                Total: s.total,
+                'Montant Payé': s.amountPaid,
+                'Reste à Payer': s.remainingBalance,
+                Statut: s.paymentStatus === 'paid' ? 'Payé' : s.paymentStatus === 'partial' ? 'Partiel' : 'Impayé',
+                Remise: s.discountAmount || 0,
+                Articles: s.items.length
+            };
+        });
+
+        const csv = Papa.unparse(csvData);
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', `ipos-ventes-${new Date().toISOString().split('T')[0]}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        toast.success("Rapport CSV généré.");
+    };
+
     const resetFilters = () => {
         setSearchQuery('');
         setFilterStatus('all');
@@ -105,8 +140,8 @@ export default function SalesHistoryPage() {
     const renderContent = () => {
         if (isLoading) {
             return (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {[...Array(6)].map((_, i) => <Card key={i} className="rounded-3xl border-none animate-pulse h-48 bg-card" />)}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                    {[...Array(8)].map((_, i) => <Card key={i} className="rounded-3xl border-none animate-pulse h-48 bg-card" />)}
                 </div>
             );
         }
@@ -158,29 +193,34 @@ export default function SalesHistoryPage() {
         <div className="p-4 sm:p-6 space-y-6 max-w-[1600px] mx-auto">
             <PageHeader
                 title="Historique des Ventes"
-                description="Consultez et gérez vos factures passées."
+                description="Contrôlez vos revenus et suivez vos créances clients."
             >
-                <Button 
-                    variant="outline" 
-                    size="icon" 
-                    className="rounded-xl border-none shadow-sm bg-card h-10 w-10"
-                    onClick={fetchSalesAndCustomers}
-                    disabled={isRefreshing}
-                >
-                    <RefreshCw className={cn("h-4 w-4 text-primary", isRefreshing && "animate-spin")} />
-                </Button>
+                <div className="flex gap-2 w-full sm:w-auto">
+                    <Button variant="outline" onClick={handleExportCsv} className="rounded-xl font-bold border-primary/20 hover:bg-primary/5">
+                        <FileUp className="mr-2 h-4 w-4 text-primary" /> Exporter CSV
+                    </Button>
+                    <Button 
+                        variant="outline" 
+                        size="icon" 
+                        className="rounded-xl border-none shadow-sm bg-card h-10 w-10"
+                        onClick={fetchSalesAndCustomers}
+                        disabled={isRefreshing}
+                    >
+                        <RefreshCw className={cn("h-4 w-4 text-primary", isRefreshing && "animate-spin")} />
+                    </Button>
+                </div>
             </PageHeader>
 
-            {/* Stats Summary Cards */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* Enhanced Intelligence Summary */}
+            <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
                 <Card className="rounded-2xl border-none shadow-sm bg-card overflow-hidden">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Total Période</CardTitle>
-                        <History className="h-4 w-4 text-primary opacity-50" />
+                        <CardTitle className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">CA Total</CardTitle>
+                        <Banknote className="h-4 w-4 text-primary opacity-50" />
                     </CardHeader>
                     <CardContent>
                         <div className="text-xl font-black">{formatCurrency(stats.total)}</div>
-                        <p className="text-[10px] text-muted-foreground mt-1 font-bold">{stats.count} Factures</p>
+                        <p className="text-[10px] text-muted-foreground mt-1 font-bold">{stats.count} Ventes</p>
                     </CardContent>
                 </Card>
                 <Card className="rounded-2xl border-none shadow-sm bg-card overflow-hidden">
@@ -203,8 +243,17 @@ export default function SalesHistoryPage() {
                 </Card>
                 <Card className="rounded-2xl border-none shadow-sm bg-card overflow-hidden">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Moyenne / Vente</CardTitle>
-                        <AlertCircle className="h-4 w-4 text-primary opacity-50" />
+                        <CardTitle className="text-[10px] font-black uppercase tracking-widest text-amber-500">Total Remises</CardTitle>
+                        <Percent className="h-4 w-4 text-amber-500 opacity-50" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-xl font-black text-amber-500">{formatCurrency(stats.discount)}</div>
+                    </CardContent>
+                </Card>
+                <Card className="rounded-2xl border-none shadow-sm bg-card overflow-hidden hidden lg:block">
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Panier Moyen</CardTitle>
+                        <PieChart className="h-4 w-4 text-primary opacity-50" />
                     </CardHeader>
                     <CardContent>
                         <div className="text-xl font-black">{formatCurrency(stats.count > 0 ? stats.total / stats.count : 0)}</div>
@@ -226,17 +275,17 @@ export default function SalesHistoryPage() {
                 <div className="flex flex-wrap gap-2">
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                            <Button variant="outline" className="rounded-xl h-11 border-none shadow-sm bg-card hover:bg-primary/5 min-w-[140px] font-medium">
+                            <Button variant="outline" className="rounded-xl h-11 border-none shadow-sm bg-card hover:bg-primary/5 min-w-[140px] font-medium text-xs">
                                 {filterStatus === 'all' ? 'Tous les paiements' : filterStatus === 'paid' ? 'Payés' : filterStatus === 'partial' ? 'Partiels' : 'Impayés'}
                             </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent className="rounded-xl border-none shadow-xl min-w-[200px]">
                             <DropdownMenuLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Statut de Paiement</DropdownMenuLabel>
                             <DropdownMenuSeparator />
-                            <DropdownMenuCheckboxItem checked={filterStatus === 'all'} onCheckedChange={() => setFilterStatus('all')}>Tous</DropdownMenuCheckboxItem>
-                            <DropdownMenuCheckboxItem checked={filterStatus === 'paid'} onCheckedChange={() => setFilterStatus('paid')}>Payés</DropdownMenuCheckboxItem>
-                            <DropdownMenuCheckboxItem checked={filterStatus === 'partial'} onCheckedChange={() => setFilterStatus('partial')}>Partiels</DropdownMenuCheckboxItem>
-                            <DropdownMenuCheckboxItem checked={filterStatus === 'unpaid'} onCheckedChange={() => setFilterStatus('unpaid')}>Impayés</DropdownMenuCheckboxItem>
+                            <DropdownMenuCheckboxItem checked={filterStatus === 'all'} onCheckedChange={() => setFilterStatus('all')}>Toutes les factures</DropdownMenuCheckboxItem>
+                            <DropdownMenuCheckboxItem checked={filterStatus === 'paid'} onCheckedChange={() => setFilterStatus('paid')}>Entièrement payées</DropdownMenuCheckboxItem>
+                            <DropdownMenuCheckboxItem checked={filterStatus === 'partial'} onCheckedChange={() => setFilterStatus('partial')}>Paiements partiels</DropdownMenuCheckboxItem>
+                            <DropdownMenuCheckboxItem checked={filterStatus === 'unpaid'} onCheckedChange={() => setFilterStatus('unpaid')}>Dettes totales (0% payé)</DropdownMenuCheckboxItem>
                         </DropdownMenuContent>
                     </DropdownMenu>
 
@@ -260,6 +309,18 @@ export default function SalesHistoryPage() {
                             <List className="h-4 w-4"/>
                         </Button>
                     </div>
+
+                    {isFiltered && (
+                        <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-11 w-11 rounded-xl text-destructive hover:bg-destructive/10"
+                            onClick={resetFilters}
+                            title="Réinitialiser"
+                        >
+                            <FilterX className="h-4 w-4" />
+                        </Button>
+                    )}
                 </div>
             </div>
             
