@@ -5,7 +5,6 @@ import type { StockIntake } from "@/lib/types";
 
 const fromSupabase = (intake: any): StockIntake => ({
     uuid: intake.uuid,
-    user_id: intake.user_id,
     supplierUuid: intake.supplier_uuid,
     invoiceNumber: intake.invoice_number,
     invoiceDate: intake.invoice_date,
@@ -83,7 +82,6 @@ class StockRepository {
 
         const { data: newIntake, error: intakeError } = await this.supabase.from('stock_intakes').insert({
             uuid: intakeData.uuid,
-            user_id: intakeData.user_id,
             supplier_uuid: intakeData.supplierUuid,
             invoice_number: intakeData.invoiceNumber,
             invoice_date: intakeData.invoiceDate,
@@ -117,15 +115,14 @@ class StockRepository {
         if (error) throw error;
     }
 
-    async deleteAllForUser(userId: string): Promise<void> {
-        const { error } = await this.supabase.from('stock_intakes').delete().eq('user_id', userId);
+    async deleteAll(): Promise<void> {
+        const { error } = await this.supabase.from('stock_intakes').delete().gt('id', 0); // Placeholder to delete all
         if (error) throw error;
     }
 
     async bulkUpsert(intakes: StockIntake[]): Promise<void> {
         const intakeRecords = intakes.map(({ items, ...intakeData }) => ({
             uuid: intakeData.uuid,
-            user_id: intakeData.user_id,
             supplier_uuid: intakeData.supplierUuid,
             invoice_number: intakeData.invoiceNumber,
             invoice_date: intakeData.invoiceDate,

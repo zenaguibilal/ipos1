@@ -3,18 +3,9 @@
 import type { Expense } from '@/lib/types';
 import { expenseRepository } from '@/repositories/expense.repository';
 import { v4 as uuidv4 } from 'uuid';
-import { useAppStore } from '@/stores/appStore';
 
 class ExpenseService {
 
-    private getUserId(): string {
-        const session = useAppStore.getState().session;
-        if (!session?.user?.id) {
-            throw new Error("User not authenticated");
-        }
-        return session.user.id;
-    }
-    
     async filter(params: { category?: string; from?: Date; to?: Date }): Promise<Expense[]> {
         try {
             return await expenseRepository.filter(params);
@@ -31,12 +22,11 @@ class ExpenseService {
         }
     }
     
-    async addExpense(expenseData: Omit<Expense, 'uuid' | 'user_id' | 'createdAt' | 'updatedAt'>): Promise<Expense> {
+    async addExpense(expenseData: Omit<Expense, 'uuid' | 'createdAt' | 'updatedAt'>): Promise<Expense> {
         try {
             const newExpense: Expense = {
                 ...expenseData,
                 uuid: uuidv4(),
-                user_id: this.getUserId(),
                 createdAt: new Date(),
                 updatedAt: new Date(),
             };

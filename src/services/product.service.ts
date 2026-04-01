@@ -6,19 +6,10 @@ import type { Product, ProductImportAnalysis } from '@/lib/types';
 import { productRepository } from '@/repositories/product.repository';
 import { calculateStockStatus } from '@/lib/utils';
 import { inventoryRepository } from '@/repositories/inventory.repository';
-import { useAppStore } from '@/stores/appStore';
 import Papa from 'papaparse';
 import { supplierService } from './supplier.service';
 
 class ProductService {
-
-    private getUserId(): string {
-        const session = useAppStore.getState().session;
-        if (!session?.user?.id) {
-            throw new Error("User not authenticated");
-        }
-        return session.user.id;
-    }
 
     async getProducts(options?: { sortBy?: string }): Promise<Product[]> {
         try {
@@ -75,7 +66,7 @@ class ProductService {
         }
     }
 
-    async addProduct(productData: Omit<Product, 'uuid' | 'user_id'> & { supplierName?: string }): Promise<Product> {
+    async addProduct(productData: Omit<Product, 'uuid'> & { supplierName?: string }): Promise<Product> {
         try {
             let finalSupplierUuid = productData.supplierUuid;
             if (productData.supplierName) {
@@ -87,9 +78,8 @@ class ProductService {
             delete (dataForRepo as any).supplierName;
 
             const newProduct: Product = {
-                ...(dataForRepo as Omit<Product, 'uuid' | 'user_id'>),
+                ...(dataForRepo as Omit<Product, 'uuid'>),
                 uuid: uuidv4(),
-                user_id: this.getUserId(),
                 supplierUuid: finalSupplierUuid,
                 createdAt: new Date(),
                 updatedAt: new Date(),
@@ -233,13 +223,11 @@ class ProductService {
 
     async executeImport(confirmedData: { toAdd: any[], toUpdate: any[] }): Promise<void> {
         try {
-            const userId = this.getUserId();
             const now = new Date();
 
             const toAdd = confirmedData.toAdd.map(p => ({
                 ...p,
                 uuid: uuidv4(),
-                user_id: userId,
                 createdAt: now,
                 updatedAt: now,
                 stockStatus: calculateStockStatus(p.quantity, p.minStockLevel),

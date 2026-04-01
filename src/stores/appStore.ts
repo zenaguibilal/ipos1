@@ -1,13 +1,11 @@
 
 import { create } from 'zustand';
 import { produce } from 'immer';
-import type { Session, User } from '@supabase/supabase-js';
 import type { Cart, Customer, CompanyProfile, Product, CartItem, ReturnItem, StockIntakeItem, Sale } from '@/lib/types';
 import { toast } from 'sonner';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { v4 as uuidv4 } from 'uuid';
 
-import { authService } from '@/services/auth.service';
 import { salesService } from '@/services/sales.service';
 import { customerService } from '@/services/customer.service';
 import { inventoryService } from '@/services/inventory.service';
@@ -19,9 +17,6 @@ import { productService } from '@/services/product.service';
 
 // Main State Interface
 interface AppState {
-    session: Session | null;
-    sessionLoading: boolean;
-    user: User | null;
     profile: CompanyProfile | null;
     isSettingsLoading: boolean;
     
@@ -37,10 +32,6 @@ interface AppState {
 
 // Actions Interface
 interface AppActions {
-    setSession: (session: Session | null) => void;
-    signIn: (email: string, password?: string) => Promise<void>;
-    signUp: (email: string, password?: string) => Promise<void>;
-    signOut: () => Promise<void>;
     fetchProfile: () => Promise<void>;
     updateProfile: (profileData: Partial<CompanyProfile>) => Promise<void>;
     addProductToCart: (product: Product, quantity: number) => void;
@@ -95,9 +86,6 @@ const initialCart: Cart = {
 };
 
 const initialState: Omit<AppState, 'actions'> = {
-    session: null,
-    sessionLoading: true,
-    user: null,
     profile: null,
     isSettingsLoading: true,
     carts: [initialCart],
@@ -113,19 +101,6 @@ export const useAppStore = create<AppState>()(
         (set, get) => ({
             ...initialState,
             actions: {
-                setSession: (session) => set({ session, user: session?.user ?? null, sessionLoading: false }),
-                signIn: async (email, password) => {
-                    const session = await authService.signIn(email, password);
-                    set({ session, user: session?.user ?? null, sessionLoading: false });
-                },
-                signUp: async (email, password) => {
-                    const session = await authService.signUp(email, password);
-                    set({ session, user: session?.user ?? null, sessionLoading: false });
-                },
-                signOut: async () => {
-                    await authService.signOut();
-                    set({ ...initialState, session: null, user: null, profile: null, sessionLoading: false });
-                },
                 fetchProfile: async () => {
                     if (get().profile) return; // Fetch only once
                     try {
@@ -148,7 +123,7 @@ export const useAppStore = create<AppState>()(
 
                     const existingItem = activeCart.items.find(item => item.uuid === product.uuid);
                     if (product.uuid.startsWith('custom-')) {
-                         activeCart.items.unshift({ ...product, cartQuantity: quantity, flash: true });
+                         activeCart.items.unshift({ ...(product as CartItem), cartQuantity: quantity, flash: true });
                          return;
                     }
                     
@@ -163,7 +138,7 @@ export const useAppStore = create<AppState>()(
                         if (quantity > product.quantity) {
                            throw new Error(`Quantité en stock insuffisante pour ${product.name}. Disponible: ${product.quantity}`);
                         }
-                        activeCart.items.unshift({ ...product, cartQuantity: quantity, flash: true });
+                        activeCart.items.unshift({ ...(product as CartItem), cartQuantity: quantity, flash: true });
                     }
                 })),
                 updateCartItemQuantity: (productUuid, newQuantity) => set(produce((state: AppState) => {
@@ -344,7 +319,6 @@ export const useAppStore = create<AppState>()(
                                 });
                                 productUuid = newProduct.uuid;
                             } else {
-                                // Update product purchase price if it has changed
                                 const p = await inventoryService.getProductInfo(productUuid!);
                                 if (p && p.purchasePrice !== item.purchasePrice) {
                                     await productService.updateProduct(p.uuid, { purchasePrice: item.purchasePrice, dateMajPrix: new Date() });
@@ -396,11 +370,6 @@ export const useAppStore = create<AppState>()(
               productViewMode: state.productViewMode,
               stockViewMode: state.stockViewMode,
           }),
-          onRehydrateStorage: () => (state) => {
-              if (state) {
-                  state.sessionLoading = false;
-              }
-          },
         }
     )
 );
@@ -409,6 +378,6 @@ export const useAppStore = create<AppState>()(
 export const useAppActions = () => useAppStore((state) => state.actions);
 
 export const useIsManagerOrAdmin = () => {
-    const role = useAppStore(state => state.profile?.role);
-    return role === 'admin' || role === 'manager';
+    // With the login system removed, we assume all access is admin-level.
+    return true;
 };

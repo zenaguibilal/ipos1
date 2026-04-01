@@ -5,7 +5,6 @@ import type { BreadOrder, BreadOrderWithCustomer, Customer } from "@/lib/types";
 
 const fromSupabase = (order: any): BreadOrder => ({
     uuid: order.uuid,
-    user_id: order.user_id,
     customerUuid: order.customer_uuid,
     date: order.date,
     quantite: order.quantite,
@@ -19,7 +18,6 @@ const fromSupabase = (order: any): BreadOrder => ({
 
 const toSupabase = (order: Partial<BreadOrder>) => ({
     uuid: order.uuid,
-    user_id: order.user_id,
     customer_uuid: order.customerUuid,
     date: order.date,
     quantite: order.quantite,
@@ -112,8 +110,8 @@ class BreadOrderRepository {
         if (error) throw error;
     }
 
-    async deleteAllForUser(userId: string): Promise<void> {
-        const { error } = await this.supabase.from('bread_orders').delete().eq('user_id', userId);
+    async deleteAll(): Promise<void> {
+        const { error } = await this.supabase.from('bread_orders').delete().gt('id', 0); // Placeholder to delete all
         if (error) throw error;
     }
 

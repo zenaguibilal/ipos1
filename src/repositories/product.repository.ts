@@ -7,7 +7,6 @@ import type { Product } from "@/lib/types";
 // Helper to convert DB snake_case to app camelCase
 const fromSupabase = (product: any): Product => product ? ({
     uuid: product.uuid,
-    user_id: product.user_id,
     name: product.name,
     category: product.category,
     price: product.price,
@@ -28,7 +27,6 @@ const fromSupabase = (product: any): Product => product ? ({
 // Helper to convert app camelCase to DB snake_case
 const toSupabase = (product: Partial<Product>) => ({
     uuid: product.uuid,
-    user_id: product.user_id,
     name: product.name,
     category: product.category,
     price: product.price,
@@ -155,8 +153,8 @@ class ProductRepository {
         if (error) throw error;
     }
     
-    async deleteAllForUser(userId: string): Promise<void> {
-        const { error } = await this.supabase.from('products').delete().eq('user_id', userId);
+    async deleteAll(): Promise<void> {
+        const { error } = await this.supabase.from('products').delete().gt('id', 0); // Placeholder to delete all
         if (error) throw error;
     }
 

@@ -6,18 +6,9 @@ import { customerRepository } from '@/repositories/customer.repository';
 import { breadOrderRepository } from '@/repositories/breadOrder.repository';
 import { salesService } from './sales.service';
 import { customerService } from './customer.service';
-import { useAppStore } from '@/stores/appStore';
 import { BREAD_WEEK_DAYS } from '@/lib/constants';
 
 class BreadService {
-    
-    private getUserId(): string {
-        const session = useAppStore.getState().session;
-        if (!session?.user?.id) {
-            throw new Error("User not authenticated");
-        }
-        return session.user.id;
-    }
     
     async generateAndGetOrdersForDate(date: string) {
         try {
@@ -51,7 +42,6 @@ class BreadService {
                 if (quantity > 0) {
                      ordersToCreate.push({
                         uuid: uuidv4(),
-                        user_id: this.getUserId(),
                         customerUuid: client.uuid,
                         date: date,
                         quantite: quantity,
@@ -81,7 +71,6 @@ class BreadService {
 
             const newOrder: BreadOrder = {
                 uuid: uuidv4(),
-                user_id: this.getUserId(),
                 customerUuid,
                 date,
                 quantite: quantity,
@@ -134,7 +123,6 @@ class BreadService {
 
                 const breadCartItem: CartItem = {
                     uuid: 'BREAD_PRODUCT',
-                    user_id: this.getUserId(),
                     name: 'Pain',
                     price: breadPrice,
                     purchasePrice: 0, 

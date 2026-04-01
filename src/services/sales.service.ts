@@ -5,17 +5,8 @@ import type { Sale, CartItem, SaleItem } from '@/lib/types';
 import { saleRepository } from '@/repositories/sale.repository';
 import { inventoryService } from './inventory.service';
 import { customerService } from './customer.service';
-import { useAppStore } from '@/stores/appStore';
 
 class SalesService {
-
-    private getUserId(): string {
-        const session = useAppStore.getState().session;
-        if (!session?.user?.id) {
-            throw new Error("User not authenticated");
-        }
-        return session.user.id;
-    }
 
     async getAllSales(): Promise<Sale[]> {
         try {
@@ -91,7 +82,6 @@ class SalesService {
 
             const newSale: Sale = {
                 uuid: uuidv4(),
-                user_id: this.getUserId(),
                 invoiceNumber,
                 items: saleItems,
                 subtotal,

@@ -5,19 +5,10 @@ import { customerRepository } from '@/repositories/customer.repository';
 import { saleRepository } from '@/repositories/sale.repository';
 import { returnRepository } from '@/repositories/return.repository';
 import { paymentRepository } from '@/repositories/payment.repository';
-import { useAppStore } from '@/stores/appStore';
 import Papa from 'papaparse';
 
 class CustomerService {
     
-    private getUserId(): string {
-        const session = useAppStore.getState().session;
-        if (!session?.user?.id) {
-            throw new Error("User not authenticated");
-        }
-        return session.user.id;
-    }
-
     async getCustomers(): Promise<Customer[]> {
         try {
             return await customerRepository.getAll();
@@ -42,7 +33,7 @@ class CustomerService {
         }
     }
     
-    async addCustomer(customerData: Partial<Omit<Customer, 'uuid' | 'user_id'>>): Promise<Customer> {
+    async addCustomer(customerData: Partial<Omit<Customer, 'uuid'>>): Promise<Customer> {
         try {
             if (!customerData.firstName || !customerData.lastName) {
                 throw new Error("Le prénom et le nom sont requis.");
@@ -58,7 +49,6 @@ class CustomerService {
             
             const newCustomer: Customer = {
                 uuid: uuidv4(),
-                user_id: this.getUserId(),
                 firstName: customerData.firstName,
                 lastName: customerData.lastName,
                 searchName,
@@ -276,13 +266,11 @@ class CustomerService {
 
     async executeImport(confirmedData: { toAdd: any[], toUpdate: any[] }): Promise<void> {
         try {
-            const userId = this.getUserId();
             const now = new Date();
 
             const toAdd = confirmedData.toAdd.map(c => ({
                 ...c,
                 uuid: uuidv4(),
-                user_id: userId,
                 searchName: `${c.firstName} ${c.lastName}`.toLowerCase().trim(),
                 totalSpent: 0,
                 outstandingBalance: c.outstandingBalance || 0,

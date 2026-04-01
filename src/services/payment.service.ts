@@ -4,18 +4,9 @@ import type { Payment } from '@/lib/types';
 import { paymentRepository } from '@/repositories/payment.repository';
 import { customerRepository } from '@/repositories/customer.repository';
 import { customerService } from './customer.service';
-import { useAppStore } from '@/stores/appStore';
 
 class PaymentService {
     
-    private getUserId(): string {
-        const session = useAppStore.getState().session;
-        if (!session?.user?.id) {
-            throw new Error("User not authenticated");
-        }
-        return session.user.id;
-    }
-
     async addPayment(paymentData: { customerUuid: string, amount: number, paymentDate: Date, notes?: string }): Promise<void> {
         const { customerUuid, amount, paymentDate, notes } = paymentData;
 
@@ -27,7 +18,6 @@ class PaymentService {
 
             const newPayment: Payment = {
                 uuid: uuidv4(),
-                user_id: this.getUserId(),
                 customerUuid,
                 amount,
                 paymentDate,

@@ -5,17 +5,8 @@ import { returnRepository } from '@/repositories/return.repository';
 import { saleRepository } from '@/repositories/sale.repository';
 import { inventoryService } from './inventory.service';
 import { customerService } from './customer.service';
-import { useAppStore } from '@/stores/appStore';
 
 class ReturnService {
-
-     private getUserId(): string {
-        const session = useAppStore.getState().session;
-        if (!session?.user?.id) {
-            throw new Error("User not authenticated");
-        }
-        return session.user.id;
-    }
 
     async getReturnByUuid(uuid: string): Promise<ProductReturn | undefined> {
         try {
@@ -50,7 +41,6 @@ class ReturnService {
             const now = new Date();
             const newReturn: ProductReturn = {
                 uuid: uuidv4(),
-                user_id: this.getUserId(),
                 originalSaleUuid: returnData.originalSaleUuid,
                 originalInvoiceNumber: sale.invoiceNumber,
                 items: returnData.items,

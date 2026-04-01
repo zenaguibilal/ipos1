@@ -3,7 +3,6 @@ export type AppRole = 'admin' | 'manager' | 'cashier';
 
 export interface Product {
     uuid: string;
-    user_id: string;
     name: string;
     category?: string;
     price: number;
@@ -23,7 +22,6 @@ export interface Product {
 
 export interface Customer {
     uuid: string;
-    user_id: string;
     firstName: string;
     lastName: string;
     searchName?: string;
@@ -80,7 +78,6 @@ export interface SalePayment {
 
 export interface Sale {
     uuid: string;
-    user_id: string;
     invoiceNumber: string;
     items: SaleItem[];
     subtotal: number;
@@ -99,7 +96,6 @@ export interface Sale {
 
 export interface Payment {
     uuid: string;
-    user_id: string;
     customerUuid: string;
     amount: number;
     paymentDate: Date;
@@ -110,7 +106,6 @@ export interface Payment {
 
 export interface CompanyProfile {
     uuid: string;
-    user_id: string;
     companyName: string;
     address?: string;
     city?: string;
@@ -143,7 +138,6 @@ export interface StockIntakeItem {
 
 export interface StockIntake {
     uuid: string;
-    user_id: string;
     supplierUuid?: string;
     invoiceNumber: string;
     invoiceDate: Date;
@@ -170,7 +164,6 @@ export interface ReturnItem {
 
 export interface ProductReturn {
     uuid: string;
-    user_id: string;
     originalSaleUuid?: string;
     originalInvoiceNumber: string;
     items: ReturnItem[];
@@ -186,7 +179,6 @@ export type ExpenseCategory = 'Loyer' | 'Salaires' | 'Fournisseurs' | 'Services 
 
 export interface Expense {
     uuid: string;
-    user_id: string;
     description: string;
     category: ExpenseCategory;
     amount: number;
@@ -199,7 +191,6 @@ export type InventoryLogReason = 'sale' | 'return' | 'stock_intake' | 'cancellat
 
 export interface InventoryLog {
     uuid: string;
-    user_id: string;
     productUuid: string;
     change: number; // e.g., -2 for sale, +50 for stock intake
     newQuantity: number;
@@ -210,7 +201,6 @@ export interface InventoryLog {
 
 export interface Supplier {
     uuid: string;
-    user_id: string;
     name: string;
     contactPerson?: string;
     phone?: string;
@@ -225,7 +215,6 @@ export interface Supplier {
 
 export interface BreadOrder {
     uuid: string;
-    user_id: string;
     customerUuid: string;
     date: string; // YYYY-MM-DD
     quantite: number;

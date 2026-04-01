@@ -6,7 +6,6 @@ import type { Customer } from "@/lib/types";
 // Helper to convert DB snake_case to app camelCase
 const fromSupabase = (customer: any): Customer => customer ? ({
     uuid: customer.uuid,
-    user_id: customer.user_id,
     firstName: customer.first_name,
     lastName: customer.last_name,
     searchName: customer.search_name,
@@ -30,7 +29,6 @@ const fromSupabase = (customer: any): Customer => customer ? ({
 // Helper to convert app camelCase to DB snake_case
 const toSupabase = (customer: Partial<Customer>) => ({
     uuid: customer.uuid,
-    user_id: customer.user_id,
     first_name: customer.firstName,
     last_name: customer.lastName,
     search_name: customer.searchName,
@@ -109,8 +107,8 @@ class CustomerRepository {
         if (error) throw error;
     }
     
-    async deleteAllForUser(userId: string): Promise<void> {
-        const { error } = await this.supabase.from('customers').delete().eq('user_id', userId);
+    async deleteAll(): Promise<void> {
+        const { error } = await this.supabase.from('customers').delete().gt('id', 0); // Placeholder to delete all
         if (error) throw error;
     }
 

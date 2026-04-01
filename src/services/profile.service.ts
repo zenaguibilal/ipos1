@@ -3,27 +3,18 @@
 import { v4 as uuidv4 } from 'uuid';
 import { companyRepository } from '@/repositories/company.repository';
 import type { CompanyProfile } from '@/lib/types';
-import { useAppStore } from '@/stores/appStore';
 
 class ProfileService {
     
-    private getUserId(): string {
-        const session = useAppStore.getState().session;
-        if (!session?.user?.id) {
-            throw new Error("User not authenticated");
-        }
-        return session.user.id;
-    }
-
     async getProfile(): Promise<CompanyProfile | null> {
         try {
             let profile = await companyRepository.get();
             if (!profile) {
+                // If no profile exists, create a default one.
                 const newProfile: CompanyProfile = {
                     uuid: uuidv4(),
-                    user_id: this.getUserId(),
                     companyName: "Mon Magasin",
-                    role: 'admin', // Default role for new user
+                    role: 'admin', // Default role for new installation
                 };
                 return await companyRepository.add(newProfile);
             }

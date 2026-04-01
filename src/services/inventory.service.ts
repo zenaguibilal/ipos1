@@ -5,17 +5,8 @@ import type { InventoryLog, InventoryLogReason, Product } from '@/lib/types';
 import { inventoryRepository } from '@/repositories/inventory.repository';
 import { productRepository } from '@/repositories/product.repository';
 import { calculateStockStatus } from '@/lib/utils';
-import { useAppStore } from '@/stores/appStore';
 
 class InventoryService {
-
-    private getUserId(): string {
-        const session = useAppStore.getState().session;
-        if (!session?.user?.id) {
-            throw new Error("User not authenticated");
-        }
-        return session.user.id;
-    }
 
     async adjustStock(productUuid: string | null | undefined, quantityChange: number, reason: InventoryLogReason, relatedUuid?: string): Promise<void> {
         try {
@@ -47,7 +38,6 @@ class InventoryService {
         try {
             const logEntry: InventoryLog = {
                 uuid: uuidv4(),
-                user_id: this.getUserId(),
                 productUuid: productUuid,
                 change: change,
                 newQuantity: newQuantity,

@@ -3,17 +3,8 @@
 import { v4 as uuidv4 } from 'uuid';
 import type { Supplier } from '@/lib/types';
 import { supplierRepository } from '@/repositories/supplier.repository';
-import { useAppStore } from '@/stores/appStore';
 
 class SupplierService {
-
-    private getUserId(): string {
-        const session = useAppStore.getState().session;
-        if (!session?.user?.id) {
-            throw new Error("User not authenticated");
-        }
-        return session.user.id;
-    }
 
     async getSuppliers(): Promise<Supplier[]> {
         try {
@@ -43,7 +34,6 @@ class SupplierService {
 
             const newSupplier: Supplier = {
                 uuid: uuidv4(),
-                user_id: this.getUserId(),
                 name: name,
                 balance: 0,
                 createdAt: new Date(),

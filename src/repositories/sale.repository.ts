@@ -5,7 +5,6 @@ import type { Sale } from "@/lib/types";
 
 const fromSupabase = (sale: any): Sale => sale ? ({
     uuid: sale.uuid,
-    user_id: sale.user_id,
     invoiceNumber: sale.invoice_number,
     subtotal: sale.subtotal,
     discountType: sale.discount_type,
@@ -101,7 +100,6 @@ class SaleRepository {
         const { items, ...saleData } = sale;
         const { data: newSale, error: saleError } = await this.supabase.from('sales').insert({
             uuid: saleData.uuid,
-            user_id: saleData.user_id,
             invoice_number: saleData.invoiceNumber,
             subtotal: saleData.subtotal,
             discount_type: saleData.discountType,
@@ -144,15 +142,14 @@ class SaleRepository {
         if (error) throw error;
     }
     
-    async deleteAllForUser(userId: string): Promise<void> {
-        const { error } = await this.supabase.from('sales').delete().eq('user_id', userId);
+    async deleteAll(): Promise<void> {
+        const { error } = await this.supabase.from('sales').delete().gt('id', 0); // Placeholder to delete all
         if (error) throw error;
     }
     
     async bulkUpsert(sales: Sale[]): Promise<void> {
         const saleRecords = sales.map(({ items, ...saleData }) => ({
             uuid: saleData.uuid,
-            user_id: saleData.user_id,
             invoice_number: saleData.invoiceNumber,
             subtotal: saleData.subtotal,
             discount_type: saleData.discountType,

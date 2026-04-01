@@ -5,7 +5,6 @@ import type { InventoryLog } from "@/lib/types";
 
 const fromSupabase = (log: any): InventoryLog => ({
     uuid: log.uuid,
-    user_id: log.user_id,
     productUuid: log.product_uuid,
     change: log.change,
     newQuantity: log.new_quantity,
@@ -16,7 +15,6 @@ const fromSupabase = (log: any): InventoryLog => ({
 
 const toSupabase = (log: InventoryLog) => ({
     uuid: log.uuid,
-    user_id: log.user_id,
     product_uuid: log.productUuid,
     change: log.change,
     new_quantity: log.newQuantity,
@@ -44,8 +42,8 @@ class InventoryRepository {
         return (count ?? 0) > 0;
     }
 
-    async deleteAllForUser(userId: string): Promise<void> {
-        const { error } = await this.supabase.from('inventory_logs').delete().eq('user_id', userId);
+    async deleteAll(): Promise<void> {
+        const { error } = await this.supabase.from('inventory_logs').delete().gt('id', 0); // Placeholder to delete all
         if (error) throw error;
     }
 }
