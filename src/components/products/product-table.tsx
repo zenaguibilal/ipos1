@@ -5,11 +5,12 @@ import type { Product, Supplier } from '@/lib/types';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { MoreHorizontal, Edit, Trash2, AlertCircle, PackageX, CalendarClock, ImageIcon } from 'lucide-react';
+import { MoreHorizontal, Edit, Trash2, AlertCircle, PackageX, CalendarClock, ImageIcon, Info } from 'lucide-react';
 import { cn, formatCurrency } from '@/lib/utils';
 import { Checkbox } from '../ui/checkbox';
 import { useMemo } from 'react';
-import { differenceInDays } from 'date-fns';
+import { differenceInDays, format } from 'date-fns';
+import { fr } from 'date-fns/locale';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
 import Image from 'next/image';
 import placeholders from '@/app/lib/placeholder-images.json';
@@ -45,12 +46,12 @@ export function ProductTable({ products, onEdit, onDelete, selectedProducts, onT
                             />
                         </TableHead>
                         <TableHead className="w-[60px]"></TableHead>
-                        <TableHead className="font-bold">Désignation</TableHead>
-                        <TableHead className="font-bold">Catégorie</TableHead>
-                        <TableHead className="font-bold">Fournisseur</TableHead>
-                        <TableHead className="font-bold">Stock</TableHead>
-                        <TableHead className="text-right font-bold">P.U Achat</TableHead>
-                        <TableHead className="text-right font-bold">P.U Vente</TableHead>
+                        <TableHead className="font-black text-[10px] uppercase tracking-widest text-muted-foreground">Désignation</TableHead>
+                        <TableHead className="font-black text-[10px] uppercase tracking-widest text-muted-foreground">Catégorie</TableHead>
+                        <TableHead className="font-black text-[10px] uppercase tracking-widest text-muted-foreground">Fournisseur</TableHead>
+                        <TableHead className="font-black text-[10px] uppercase tracking-widest text-muted-foreground">Stock</TableHead>
+                        <TableHead className="text-right font-black text-[10px] uppercase tracking-widest text-muted-foreground">P.U Achat</TableHead>
+                        <TableHead className="text-right font-black text-[10px] uppercase tracking-widest text-primary">P.U Vente</TableHead>
                         <TableHead className="w-[50px] text-right"></TableHead>
                     </TableRow>
                 </TableHeader>
@@ -64,8 +65,8 @@ export function ProductTable({ products, onEdit, onDelete, selectedProducts, onT
                             const expirationDate = new Date(product.dateExpiration);
                             const daysUntilExpiration = differenceInDays(expirationDate, today);
                             if (daysUntilExpiration < 0) return { color: 'text-destructive', text: `Expiré` };
-                            if (daysUntilExpiration <= 30) return { color: 'text-yellow-500', text: `Expire dans ${daysUntilExpiration} j` };
-                            return { color: 'text-muted-foreground', text: new Date(expirationDate).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: '2-digit' }) };
+                            if (daysUntilExpiration <= 30) return { color: 'text-amber-500', text: `Expire dans ${daysUntilExpiration} j` };
+                            return { color: 'text-muted-foreground/60', text: format(expirationDate, 'dd/MM/yyyy') };
                         })();
                         
                         const isPriceOld = product.dateMajPrix && differenceInDays(new Date(), new Date(product.dateMajPrix)) > 30;
@@ -83,7 +84,10 @@ export function ProductTable({ products, onEdit, onDelete, selectedProducts, onT
                                 key={productUuid} 
                                 data-state={selectedProducts.has(productUuid) ? "selected" : ""}
                                 onClick={() => handleRowClick(product)}
-                                className={cn("cursor-pointer hover:bg-muted/20 border-b border-border/50 transition-all")}
+                                className={cn(
+                                    "cursor-pointer hover:bg-muted/20 border-b border-border/50 transition-all",
+                                    selectedProducts.has(productUuid) && "bg-primary/5"
+                                )}
                             >
                                  <TableCell className="px-4" onClick={(e) => e.stopPropagation()}>
                                     <Checkbox
@@ -93,7 +97,7 @@ export function ProductTable({ products, onEdit, onDelete, selectedProducts, onT
                                     />
                                 </TableCell>
                                 <TableCell>
-                                    <div className="relative h-10 w-10 rounded-lg overflow-hidden bg-muted flex items-center justify-center">
+                                    <div className="relative h-10 w-10 rounded-xl overflow-hidden bg-muted/30 border border-white/5 flex items-center justify-center">
                                         <Image 
                                             src={displayImage} 
                                             alt="" 
@@ -105,20 +109,25 @@ export function ProductTable({ products, onEdit, onDelete, selectedProducts, onT
                                 <TableCell>
                                     <div className="flex flex-col">
                                         <span className="font-bold text-sm tracking-tight">{product.name}</span>
-                                        {expirationStatus && (
-                                            <span className={cn("text-[10px] font-black uppercase flex items-center gap-1 mt-0.5", expirationStatus.color)}>
-                                                <CalendarClock className="h-2.5 w-2.5" /> {expirationStatus.text}
-                                            </span>
-                                        )}
+                                        <div className="flex items-center gap-2 mt-0.5">
+                                            {expirationStatus && (
+                                                <span className={cn("text-[9px] font-black uppercase flex items-center gap-1", expirationStatus.color)}>
+                                                    <CalendarClock className="h-2.5 w-2.5" /> {expirationStatus.text}
+                                                </span>
+                                            )}
+                                            {product.barcodes && product.barcodes.length > 0 && (
+                                                <span className="text-[9px] font-mono text-muted-foreground/40">#{product.barcodes[0]}</span>
+                                            )}
+                                        </div>
                                     </div>
                                 </TableCell>
                                 <TableCell>
-                                    <span className="px-2 py-0.5 rounded-md bg-muted text-[10px] font-black uppercase tracking-widest text-muted-foreground opacity-70">
+                                    <span className="px-2 py-0.5 rounded-lg bg-muted/50 text-[9px] font-black uppercase tracking-widest text-muted-foreground">
                                         {product.category || 'N/A'}
                                     </span>
                                 </TableCell>
                                 <TableCell>
-                                    <span className="text-xs font-medium text-muted-foreground">
+                                    <span className="text-xs font-medium text-muted-foreground/70">
                                         {product.supplierUuid ? supplierMap.get(product.supplierUuid) : '-'}
                                     </span>
                                 </TableCell>
@@ -127,12 +136,12 @@ export function ProductTable({ products, onEdit, onDelete, selectedProducts, onT
                                         <div className={cn(
                                             "inline-flex items-center justify-center px-2.5 py-1 rounded-xl font-mono font-black text-xs shadow-inner",
                                             product.quantity <= 0 ? "bg-destructive/10 text-destructive border border-destructive/20" : 
-                                            product.quantity <= product.minStockLevel ? "bg-yellow-500/10 text-yellow-600 border border-yellow-500/20" : 
-                                            "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20"
+                                            product.quantity <= product.minStockLevel ? "bg-amber-500/10 text-amber-600 border border-amber-500/20" : 
+                                            "bg-primary/10 text-primary border border-primary/20"
                                         )}>
                                             {product.quantity}
                                         </div>
-                                        <span className="text-[10px] text-muted-foreground uppercase font-black">{product.unite}</span>
+                                        <span className="text-[9px] text-muted-foreground/50 uppercase font-black">{product.unite}</span>
                                     </div>
                                 </TableCell>
                                 <TableCell className="text-right font-mono text-xs">
@@ -141,15 +150,15 @@ export function ProductTable({ products, onEdit, onDelete, selectedProducts, onT
                                             <TooltipProvider>
                                                 <Tooltip>
                                                     <TooltipTrigger>
-                                                        <AlertCircle className="h-3 w-3 text-yellow-500" />
+                                                        <Info className="h-3 w-3 text-amber-500 opacity-60" />
                                                     </TooltipTrigger>
-                                                    <TooltipContent className="rounded-xl border-none shadow-xl">
-                                                        <p className="text-[10px] font-bold">Prix d'achat non actualisé depuis 30j+</p>
+                                                    <TooltipContent className="rounded-xl border-none shadow-xl bg-card">
+                                                        <p className="text-[10px] font-bold">Dernière M.A.J: {product.dateMajPrix ? format(new Date(product.dateMajPrix), 'dd MMM yy', { locale: fr }) : 'Inconnue'}</p>
                                                     </TooltipContent>
                                                 </Tooltip>
                                             </TooltipProvider>
                                         )}
-                                        {formatCurrency(product.purchasePrice)}
+                                        <span className="text-muted-foreground/80">{formatCurrency(product.purchasePrice)}</span>
                                     </div>
                                 </TableCell>
                                 <TableCell className="text-right">
@@ -160,7 +169,7 @@ export function ProductTable({ products, onEdit, onDelete, selectedProducts, onT
                                 <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                                     <DropdownMenu>
                                         <DropdownMenuTrigger asChild>
-                                            <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-muted">
+                                            <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-muted rounded-xl">
                                                 <MoreHorizontal className="h-4 w-4" />
                                             </Button>
                                         </DropdownMenuTrigger>

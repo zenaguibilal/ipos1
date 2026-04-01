@@ -1,13 +1,13 @@
 
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useDebounce } from '@/hooks/useDebounce';
 import type { Product, Supplier, ProductImportAnalysis } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Plus, Search, LayoutGrid, List, Printer, Trash2, PackageCheck, PackageX, AlertTriangle, Archive, SortAsc, FileDown, Building, Package, Loader2, CalendarClock, CalendarX, FileUp } from 'lucide-react';
+import { Plus, Search, LayoutGrid, List, Printer, Trash2, PackageCheck, PackageX, AlertTriangle, Archive, SortAsc, FileDown, Building, Package, Loader2, CalendarClock, CalendarX, FileUp, FilterX } from 'lucide-react';
 import { ProductCard } from '@/components/products/product-card';
 import { ProductTable } from '@/components/products/product-table';
 import { ProductTableSkeleton } from '@/components/products/product-table-skeleton';
@@ -36,6 +36,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { productService } from '@/services/product.service';
 import { supplierService } from '@/services/supplier.service';
 import { useAppStore } from '@/stores/appStore';
+import { cn } from '@/lib/utils';
 import Papa from 'papaparse';
 
 type StockStatus = 'all' | 'in_stock' | 'low_stock' | 'out_of_stock' | 'expiring_soon' | 'expired';
@@ -137,7 +138,7 @@ export default function ProductsPage() {
             setCategories(cats);
             setSuppliers(sups);
         } catch(error: any) {
-            toast.error("Impossible de charger les métادونات.", { description: error.message });
+            toast.error("Impossible de charger les métadonnées.", { description: error.message });
             setCategories([]);
             setSuppliers([]);
         }
@@ -192,7 +193,7 @@ export default function ProductsPage() {
             setImportAnalysis(analysis);
             setIsImportPreviewOpen(true);
         } catch (error: any) {
-            toast.error("Erreur lors de l'analyse du fichier.", { description: error.message });
+            toast.error("Erreur lors de l'analyse du ملف.", { description: error.message });
         } finally {
             setIsAnalyzing(false);
             e.target.value = ''; 
@@ -221,7 +222,7 @@ export default function ProductsPage() {
         }
 
         const csv = Papa.unparse(products.map(p => ({
-            Nom: p.name,
+            Désignation: p.name,
             Catégorie: p.category,
             Prix_Vente: p.price,
             Prix_Achat: p.purchasePrice,
@@ -235,38 +236,32 @@ export default function ProductsPage() {
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
-        link.setAttribute('download', `ipos-produits-${new Date().toISOString().split('T')[0]}.csv`);
+        link.setAttribute('download', `ipos-inventaire-${new Date().toISOString().split('T')[0]}.csv`);
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
         toast.success("Exportation CSV terminée.");
     };
+
+    const resetFilters = () => {
+        setSearchQuery('');
+        setSelectedCategory('all');
+        setSelectedSupplier('all');
+        setStockStatus('all');
+        setSortBy('createdAt_desc');
+    };
+
+    const isFiltered = searchQuery !== '' || selectedCategory !== 'all' || selectedSupplier !== 'all' || stockStatus !== 'all' || sortBy !== 'createdAt_desc';
     
     const renderSkeletons = () => (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
             {[...Array(8)].map((_, i) => (
-                <Card key={i}>
-                    <CardHeader>
-                        <div className="flex justify-between">
-                            <div className="space-y-2">
-                                <Skeleton className="h-5 w-32" />
-                                <Skeleton className="h-4 w-24" />
-                            </div>
-                            <Skeleton className="h-5 w-5" />
-                        </div>
-                    </CardHeader>
-                    <CardContent className="pt-0">
-                         <Skeleton className="h-4 w-20" />
-                    </CardContent>
-                    <CardFooter className="pt-0">
-                        <div className="flex justify-between items-center w-full">
-                            <div className="space-y-2">
-                                <Skeleton className="h-5 w-16" />
-                                <Skeleton className="h-4 w-12" />
-                            </div>
-                            <Skeleton className="h-8 w-8" />
-                        </div>
-                    </CardFooter>
+                <Card key={i} className="h-80 rounded-2xl border-none bg-card shadow-sm animate-pulse">
+                    <div className="aspect-square bg-muted/20 w-full" />
+                    <div className="p-4 space-y-2">
+                        <Skeleton className="h-4 w-3/4" />
+                        <Skeleton className="h-3 w-1/2" />
+                    </div>
                 </Card>
             ))}
         </div>
@@ -282,18 +277,19 @@ export default function ProductsPage() {
                 <EmptyState
                     icon={Package}
                     title="Aucun produit trouvé"
-                    description="Essayez d'ajuster votre recherche ou vos filtres، أو أضف منتجاً جديداً."
+                    description={isFiltered ? "Essayez d'ajuster votre recherche أو مسح الفلاتر." : "Commencez par ajouter votre premier produit."}
                 >
-                     <Button onClick={() => setIsProductDialogOpen(true)}>
-                        <Plus className="mr-2 h-4 w-4" /> Ajouter un produit
-                    </Button>
+                    <div className="flex gap-2 justify-center">
+                        {isFiltered && <Button variant="outline" onClick={resetFilters}><FilterX className="mr-2 h-4 w-4" /> Effacer</Button>}
+                        <Button onClick={() => { setSelectedProduct(null); setIsProductDialogOpen(true); }}><Plus className="mr-2 h-4 w-4" /> Ajouter</Button>
+                    </div>
                 </EmptyState>
             );
         }
         
         if (viewMode === 'grid') {
             return (
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
                     {products.map(p => (
                         <ProductCard 
                             key={p.uuid} 
@@ -330,23 +326,23 @@ export default function ProductsPage() {
     const currentStockStatusOption = stockStatusOptions.find(o => o.value === stockStatus)!;
 
     return (
-        <div className="p-4 sm:p-6 space-y-6">
+        <div className="p-4 sm:p-6 space-y-6 max-w-[1600px] mx-auto">
             <PageHeader
                 title="Gestion des Produits"
-                description="Recherchez, filtrez et gérez votre inventaire avec style."
+                description="Contrôlez votre inventaire avec une précision absolue."
             >
                 <div className="flex gap-2 w-full sm:w-auto overflow-x-auto pb-1 sm:pb-0 scrollbar-hide">
-                    <Button variant="outline" onClick={handleExportCsv} className="flex-shrink-0">
-                        <FileUp className="mr-2 h-4 w-4" /> Exporter
+                    <Button variant="outline" onClick={handleExportCsv} className="flex-shrink-0 rounded-xl font-bold">
+                        <FileUp className="mr-2 h-4 w-4 text-primary" /> Exporter
                     </Button>
-                    <Button asChild variant="outline" disabled={isAnalyzing} className="flex-shrink-0">
-                        <label htmlFor="csv-product-importer">
-                            {isAnalyzing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileDown className="mr-2 h-4 w-4" />}
+                    <Button asChild variant="outline" disabled={isAnalyzing} className="flex-shrink-0 rounded-xl font-bold">
+                        <label htmlFor="csv-product-importer" className="cursor-pointer">
+                            {isAnalyzing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileDown className="mr-2 h-4 w-4 text-primary" />}
                             {isAnalyzing ? 'Analyse...' : 'Importer'}
                             <input type="file" id="csv-product-importer" accept=".csv" className="sr-only" onChange={handleFileSelected} />
                         </label>
                     </Button>
-                    <Button onClick={() => { setSelectedProduct(null); setIsProductDialogOpen(true); }} className="flex-shrink-0">
+                    <Button onClick={() => { setSelectedProduct(null); setIsProductDialogOpen(true); }} className="flex-shrink-0 rounded-xl font-bold shadow-lg shadow-primary/20">
                         <Plus className="mr-2 h-4 w-4" /> Ajouter
                     </Button>
                 </div>
@@ -356,9 +352,9 @@ export default function ProductsPage() {
 
             <div className="flex flex-col lg:flex-row gap-3">
                 <div className="relative flex-grow">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/50" />
                     <Input 
-                        placeholder="Rechercher par nom ou code-barres..."
+                        placeholder="Rechercher par nom أو code-barres..."
                         className="pl-10 h-11 rounded-xl bg-card border-none shadow-sm focus-visible:ring-primary/20"
                         value={searchQuery}
                         onChange={e => setSearchQuery(e.target.value)}
@@ -368,58 +364,47 @@ export default function ProductsPage() {
                 <div className="flex flex-wrap gap-2">
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                            <Button variant="outline" className="rounded-xl h-11 border-none shadow-sm bg-card hover:bg-primary/5">Catégorie</Button>
+                            <Button variant="outline" className="rounded-xl h-11 border-none shadow-sm bg-card hover:bg-primary/5 min-w-[120px] font-medium">
+                                <Archive className="mr-2 h-4 w-4 opacity-50" />
+                                {selectedCategory === 'all' ? 'Catégories' : selectedCategory}
+                            </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent className="rounded-xl border-none shadow-xl">
-                            <DropdownMenuLabel>Filtrer par catégorie</DropdownMenuLabel>
+                        <DropdownMenuContent className="rounded-xl border-none shadow-xl min-w-[200px] max-h-80 overflow-y-auto custom-scrollbar">
+                            <DropdownMenuLabel className="font-black text-[10px] uppercase tracking-widest text-muted-foreground">Rayons</DropdownMenuLabel>
                             <DropdownMenuSeparator />
-                            <DropdownMenuCheckboxItem
-                                checked={selectedCategory === 'all'}
-                                onCheckedChange={() => setSelectedCategory('all')}
-                            >Toutes</DropdownMenuCheckboxItem>
-                            {categories && categories.map(cat => (
-                                <DropdownMenuCheckboxItem
-                                    key={cat}
-                                    checked={selectedCategory === cat}
-                                    onCheckedChange={() => setSelectedCategory(cat)}
-                                >{cat}</DropdownMenuCheckboxItem>
+                            <DropdownMenuCheckboxItem checked={selectedCategory === 'all'} onCheckedChange={() => setSelectedCategory('all')}>Toutes</DropdownMenuCheckboxItem>
+                            {categories?.map(cat => (
+                                <DropdownMenuCheckboxItem key={cat} checked={selectedCategory === cat} onCheckedChange={() => setSelectedCategory(cat)}>{cat}</DropdownMenuCheckboxItem>
                             ))}
                         </DropdownMenuContent>
                     </DropdownMenu>
 
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                            <Button variant="outline" className="rounded-xl h-11 border-none shadow-sm bg-card hover:bg-primary/5">
+                            <Button variant="outline" className="rounded-xl h-11 border-none shadow-sm bg-card hover:bg-primary/5 min-w-[120px] font-medium">
                                 <Building className="mr-2 h-4 w-4 opacity-50" />
                                 Fournisseur
                             </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent className="rounded-xl border-none shadow-xl">
-                            <DropdownMenuLabel>Filtrer par Fournisseur</DropdownMenuLabel>
+                        <DropdownMenuContent className="rounded-xl border-none shadow-xl min-w-[200px] max-h-80 overflow-y-auto custom-scrollbar">
+                            <DropdownMenuLabel className="font-black text-[10px] uppercase tracking-widest text-muted-foreground">Moteurs</DropdownMenuLabel>
                             <DropdownMenuSeparator />
-                            <DropdownMenuCheckboxItem
-                                checked={selectedSupplier === 'all'}
-                                onCheckedChange={() => setSelectedSupplier('all')}
-                            >Tous</DropdownMenuCheckboxItem>
+                            <DropdownMenuCheckboxItem checked={selectedSupplier === 'all'} onCheckedChange={() => setSelectedSupplier('all')}>Tous</DropdownMenuCheckboxItem>
                             {suppliers?.map(sup => (
-                                <DropdownMenuCheckboxItem
-                                    key={sup.uuid}
-                                    checked={selectedSupplier === sup.uuid}
-                                    onCheckedChange={() => setSelectedSupplier(sup.uuid)}
-                                >{sup.name}</DropdownMenuCheckboxItem>
+                                <DropdownMenuCheckboxItem key={sup.uuid} checked={selectedSupplier === sup.uuid} onCheckedChange={() => setSelectedSupplier(sup.uuid)}>{sup.name}</DropdownMenuCheckboxItem>
                             ))}
                         </DropdownMenuContent>
                     </DropdownMenu>
 
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                            <Button variant="outline" className="rounded-xl h-11 border-none shadow-sm bg-card hover:bg-primary/5">
+                            <Button variant="outline" className="rounded-xl h-11 border-none shadow-sm bg-card hover:bg-primary/5 min-w-[120px] font-medium">
                                 <currentStockStatusOption.icon className="mr-2 h-4 w-4 opacity-50" />
                                 {currentStockStatusOption.label}
                             </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent className="rounded-xl border-none shadow-xl">
-                            <DropdownMenuLabel>Statut du Stock</DropdownMenuLabel>
+                        <DropdownMenuContent className="rounded-xl border-none shadow-xl min-w-[200px]">
+                            <DropdownMenuLabel className="font-black text-[10px] uppercase tracking-widest text-muted-foreground">État du Stock</DropdownMenuLabel>
                             <DropdownMenuSeparator />
                             {stockStatusOptions.map(option => (
                                 <DropdownMenuCheckboxItem
@@ -436,13 +421,13 @@ export default function ProductsPage() {
                     
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                            <Button variant="outline" className="rounded-xl h-11 border-none shadow-sm bg-card hover:bg-primary/5">
+                            <Button variant="outline" className="rounded-xl h-11 border-none shadow-sm bg-card hover:bg-primary/5 font-medium">
                                 <SortAsc className="mr-2 h-4 w-4 opacity-50" />
                                 {sortOptions[sortBy]}
                             </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent className="rounded-xl border-none shadow-xl">
-                            <DropdownMenuLabel>Trier par</DropdownMenuLabel>
+                        <DropdownMenuContent className="rounded-xl border-none shadow-xl min-w-[200px]">
+                            <DropdownMenuLabel className="font-black text-[10px] uppercase tracking-widest text-muted-foreground">Trier par</DropdownMenuLabel>
                             <DropdownMenuSeparator />
                             <DropdownMenuRadioGroup value={sortBy} onValueChange={setSortBy}>
                                 {Object.entries(sortOptions).map(([key, value]) => (
@@ -452,7 +437,7 @@ export default function ProductsPage() {
                         </DropdownMenuContent>
                     </DropdownMenu>
 
-                    <div className="flex items-center gap-1 rounded-xl bg-card border-none shadow-sm p-1">
+                    <div className="flex items-center gap-1 rounded-xl bg-card border-none shadow-sm p-1 h-11">
                         <Button 
                             variant={viewMode === 'grid' ? 'secondary': 'ghost'} 
                             size="icon" 
@@ -474,7 +459,7 @@ export default function ProductsPage() {
             </div>
 
             {selectedProducts.size > 0 && (
-                <div className="flex flex-col sm:flex-row gap-3 justify-between items-center bg-primary/10 border border-primary/20 rounded-2xl p-4 animate-in slide-in-from-top-2">
+                <div className="flex flex-col sm:flex-row gap-3 justify-between items-center bg-primary/15 border border-primary/20 rounded-2xl p-4 animate-in slide-in-from-top-2 shadow-inner">
                     <div className="flex items-center gap-3">
                         <Checkbox
                             id="select-all"
@@ -482,15 +467,15 @@ export default function ProductsPage() {
                             onCheckedChange={handleToggleSelectAll}
                             className="h-5 w-5 border-primary data-[state=checked]:bg-primary"
                         />
-                        <label htmlFor="select-all" className="text-sm font-black text-primary uppercase tracking-widest">
+                        <label htmlFor="select-all" className="text-xs font-black text-primary uppercase tracking-widest">
                             {selectedProducts.size} sélectionné(s)
                         </label>
                     </div>
                     <div className="flex gap-2">
-                        <Button variant="outline" onClick={() => setIsPrintDialogOpen(true)} className="rounded-xl bg-background border-none shadow-sm hover:bg-primary/10">
+                        <Button variant="outline" onClick={() => setIsPrintDialogOpen(true)} className="rounded-xl bg-background border-none shadow-sm hover:bg-primary/10 font-bold">
                             <Printer className="mr-2 h-4 w-4 text-primary" /> Étiquettes
                         </Button>
-                        <Button variant="destructive" onClick={() => setIsBulkDeleteDialogOpen(true)} className="rounded-xl shadow-lg shadow-destructive/20">
+                        <Button variant="destructive" onClick={() => setIsBulkDeleteDialogOpen(true)} className="rounded-xl shadow-lg shadow-destructive/20 font-bold">
                             <Trash2 className="mr-2 h-4 w-4" /> Supprimer
                         </Button>
                     </div>

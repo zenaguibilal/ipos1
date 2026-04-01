@@ -40,6 +40,7 @@ class ProductService {
         const now = new Date();
         const thirtyDaysFromNow = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
 
+        // Optimization: Use Index for major filters if possible
         if (filters.stockStatus === 'expired') {
             collection = db.products.where('dateExpiration').below(now);
         } else if (filters.stockStatus === 'expiring_soon') {
@@ -56,6 +57,7 @@ class ProductService {
 
         let products = await collection.toArray();
         
+        // Manual cross-filtering for combined filters
         if (filters.category && filters.category !== 'all') {
             products = products.filter(p => p.category === filters.category);
         }
@@ -71,14 +73,16 @@ class ProductService {
             products = products.filter(p => p.dateExpiration ? (new Date(p.dateExpiration) >= now && new Date(p.dateExpiration) <= thirtyDaysFromNow) : false);
         }
 
+        // Search Query
         if (filters.query) {
-            const lowerQuery = filters.query.toLowerCase();
+            const lowerQuery = filters.query.toLowerCase().trim();
             products = products.filter(p => 
                 p.name.toLowerCase().includes(lowerQuery) ||
                 (p.barcodes && p.barcodes.some(b => b.includes(lowerQuery)))
             );
         }
 
+        // Advanced Sorting
         if (filters.sortBy) {
             const [field, order] = filters.sortBy.split('_');
             const isAsc = order === 'asc';
@@ -99,6 +103,7 @@ class ProductService {
                 return 0;
             });
         } else {
+            // Default sort: newest first
             products.sort((a,b) => (b.createdAt?.getTime() || 0) - (a.createdAt?.getTime() || 0));
         }
 
@@ -116,7 +121,7 @@ class ProductService {
     async getCategories(): Promise<string[]> {
         const products = await db.products.toArray();
         const categories = new Set(products.map(p => p.category).filter(Boolean) as string[]);
-        return Array.from(categories);
+        return Array.from(categories).sort();
     }
 
     async addProduct(productData: Omit<Product, 'uuid'> & { supplierName?: string }): Promise<Product> {
@@ -129,12 +134,14 @@ class ProductService {
         const dataForRepo = { ...productData };
         delete (dataForRepo as any).supplierName;
 
+        const now = new Date();
         const newProduct: Product = {
             ...(dataForRepo as Omit<Product, 'uuid'>),
             uuid: uuidv4(),
             supplierUuid: finalSupplierUuid,
-            createdAt: new Date(),
-            updatedAt: new Date(),
+            createdAt: now,
+            updatedAt: now,
+            dateMajPrix: now, // Initial price update date
             stockStatus: calculateStockStatus(productData.quantity, productData.minStockLevel),
         };
         const id = await db.products.add(newProduct);
@@ -158,11 +165,15 @@ class ProductService {
             }
         }
        
-
         const dataToUpdate: Partial<Product> = { ...productData };
         delete (dataToUpdate as any).supplierName;
         dataToUpdate.supplierUuid = finalSupplierUuid;
         dataToUpdate.updatedAt = new Date();
+
+        // If price changed, update the last price update date
+        if (productData.purchasePrice !== undefined && productData.purchasePrice !== existingProduct.purchasePrice) {
+            dataToUpdate.dateMajPrix = new Date();
+        }
 
         const newQuantity = productData.quantity ?? existingProduct.quantity;
         const newMinStock = productData.minStockLevel ?? existingProduct.minStockLevel;
@@ -235,7 +246,7 @@ class ProductService {
             const price = row.price || row.prix_vente || row.Prix;
             
             if (!name || !price) {
-                analysis.errorRows.push({ ...row, error: "Nom ou prix manquant" });
+                analysis.errorRows.push({ ...row, error: "Nom أو prix manquant" });
                 continue;
             }
             
@@ -250,6 +261,7 @@ class ProductService {
                 minStockLevel: row.minStockLevel || row.stock_minimum ? parseInt(row.minStockLevel || row.stock_minimum) : 10,
                 barcodes: row.barcodes || row.codes_barres ? String(row.barcodes || row.codes_barres).split(',').map((b:string) => b.trim()).filter(Boolean) : [],
                 imageUrl: row.imageUrl || row.image,
+                unite: row.unite || row.unité || 'Pièce',
             };
 
             if (isNaN(productData.price)) {
@@ -274,12 +286,14 @@ class ProductService {
             uuid: uuidv4(),
             createdAt: now,
             updatedAt: now,
+            dateMajPrix: now,
             stockStatus: calculateStockStatus(p.quantity, p.minStockLevel),
         }));
 
          const toUpdate = confirmedData.toUpdate.map(p => ({
             ...p,
             updatedAt: now,
+            dateMajPrix: now,
             stockStatus: calculateStockStatus(p.quantity, p.minStockLevel),
         }));
         
