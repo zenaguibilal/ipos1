@@ -126,7 +126,6 @@ class BreadService {
                 discountType: 'fixed',
                 discountValue: 0,
                 amountPaid: 0,
-                payments: [],
                 customerUuid: customerUuid,
             });
 

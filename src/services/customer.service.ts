@@ -151,10 +151,7 @@ class CustomerService {
         const totalPaidViaPayments = payments.reduce((sum, p) => sum + p.amount, 0);
         const netCreditFromReturns = returns.reduce((sum, r) => sum + (r.totalReturnValue - r.amountRefunded), 0);
         
-        // amountPaid on sale records is now part of the `payments` property on Sale, but for simplicity, we assume payments are separate.
-        // Let's adjust based on the old logic where amountPaid was on the sale.
-        const totalPaidOnSales = sales.reduce((sum, s) => sum + s.amountPaid, 0);
-        const newBalance = totalInvoiced - totalPaidOnSales - totalPaidViaPayments - netCreditFromReturns;
+        const newBalance = totalInvoiced - totalPaidViaPayments - netCreditFromReturns;
         
         const totalSpent = totalInvoiced;
 

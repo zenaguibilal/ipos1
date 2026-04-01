@@ -1,5 +1,6 @@
 
 
+
 export interface Product {
     id?: number;
     uuid: string;
@@ -73,11 +74,6 @@ export interface Cart {
     };
 }
 
-export interface SalePayment {
-    method: 'cash' | 'card' | 'other';
-    amount: number;
-}
-
 export interface Sale {
     id?: number;
     uuid: string;
@@ -90,7 +86,6 @@ export interface Sale {
     amountPaid: number;
     remainingBalance: number;
     paymentStatus: 'paid' | 'partial' | 'unpaid';
-    payments: SalePayment[];
     customerUuid?: string;
     createdAt?: Date;
     updatedAt?: Date;

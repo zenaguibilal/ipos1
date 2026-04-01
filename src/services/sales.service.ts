@@ -57,7 +57,6 @@ class SalesService {
         discountType: 'fixed' | 'percentage',
         discountValue: number,
         amountPaid: number,
-        payments: { method: 'cash' | 'card' | 'other', amount: number }[],
         customerUuid?: string | null,
         dueDate?: Date,
     }): Promise<Sale> {
@@ -94,7 +93,6 @@ class SalesService {
             amountPaid: saleData.amountPaid,
             remainingBalance,
             paymentStatus,
-            payments: saleData.payments,
             customerUuid: saleData.customerUuid || undefined,
             createdAt: now,
             updatedAt: now,
