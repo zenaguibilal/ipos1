@@ -11,12 +11,12 @@ export default function AppLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { fetchProfile } = useAppStore(state => state.actions);
+  const { fetchCompanyProfile } = useAppStore(state => state.actions);
 
   // Fetch company profile on initial load, as there is no user session anymore.
   useEffect(() => {
-    fetchProfile();
-  }, [fetchProfile]);
+    fetchCompanyProfile();
+  }, [fetchCompanyProfile]);
 
   return (
     <div className="flex h-screen flex-col bg-transparent">

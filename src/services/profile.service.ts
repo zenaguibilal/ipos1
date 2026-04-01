@@ -1,10 +1,11 @@
+
 'use client';
 
 import { v4 as uuidv4 } from 'uuid';
 import { companyRepository } from '@/repositories/company.repository';
 import type { CompanyProfile } from '@/lib/types';
 
-class ProfileService {
+class CompanyProfileService {
     
     async getProfile(): Promise<CompanyProfile | null> {
         try {
@@ -43,4 +44,4 @@ class ProfileService {
     }
 }
 
-export const profileService = new ProfileService();
+export const companyProfileService = new CompanyProfileService();

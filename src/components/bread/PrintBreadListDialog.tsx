@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useRef, useState } from 'react';
@@ -70,7 +71,7 @@ PrintableList.displayName = 'PrintableList';
 
 export function PrintBreadListDialog({ orders, currentDate }: PrintBreadListDialogProps) {
     const [isOpen, setIsOpen] = useState(false);
-    const profile = useAppStore((state) => state.profile);
+    const profile = useAppStore((state) => state.companyProfile);
     const printRef = useRef<HTMLDivElement>(null);
 
     const handlePrint = () => {

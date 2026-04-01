@@ -13,19 +13,19 @@ import { Loader2 } from 'lucide-react';
 import { useAppStore } from '@/stores/appStore';
 
 export function CompanyProfileForm() {
-    const { profile, isSettingsLoading } = useAppStore(state => ({
-        profile: state.profile,
-        isSettingsLoading: state.isSettingsLoading,
+    const { companyProfile, isCompanyProfileLoading } = useAppStore(state => ({
+        companyProfile: state.companyProfile,
+        isCompanyProfileLoading: state.isCompanyProfileLoading,
     }));
-    const { updateProfile } = useAppStore(state => state.actions);
+    const { updateCompanyProfile } = useAppStore(state => state.actions);
     const [formState, setFormState] = useState<Partial<CompanyProfile>>({});
     const [isSaving, setIsSaving] = useState(false);
 
     useEffect(() => {
-        if (profile) {
-            setFormState(profile);
+        if (companyProfile) {
+            setFormState(companyProfile);
         }
-    }, [profile]);
+    }, [companyProfile]);
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { id, value } = e.target;
@@ -37,7 +37,7 @@ export function CompanyProfileForm() {
         
         setIsSaving(true);
         try {
-            await updateProfile({
+            await updateCompanyProfile({
                 companyName: formState.companyName || undefined,
                 address: formState.address || undefined,
                 city: formState.city || undefined,
@@ -59,7 +59,7 @@ export function CompanyProfileForm() {
         }
     };
 
-    if (isSettingsLoading) {
+    if (isCompanyProfileLoading) {
         return (
             <CardContent className="space-y-6">
                 <div className="space-y-4">
@@ -131,7 +131,7 @@ export function CompanyProfileForm() {
                 </div>
             </CardContent>
             <CardFooter className="border-t pt-6">
-                <Button type="submit" className="w-full sm:w-auto" disabled={isSaving || isSettingsLoading}>
+                <Button type="submit" className="w-full sm:w-auto" disabled={isSaving || isCompanyProfileLoading}>
                     {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
                     {isSaving ? 'Enregistrement...' : 'Enregistrer le profil'}
                 </Button>

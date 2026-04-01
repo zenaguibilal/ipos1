@@ -5,7 +5,7 @@ import type { CompanyProfile, ReturnItem, StockIntakeItem } from '@/lib/types';
 import { toast } from 'sonner';
 import { persist, createJSONStorage } from 'zustand/middleware';
 
-import { profileService } from '@/services/profile.service';
+import { companyProfileService } from '@/services/profile.service';
 import { returnService } from '@/services/return.service';
 import { inventoryService } from '@/services/inventory.service';
 import { supplierService } from '@/services/supplier.service';
@@ -15,8 +15,8 @@ import { customerService } from '@/services/customer.service';
 
 // Main State Interface
 interface AppState {
-    profile: CompanyProfile | null;
-    isSettingsLoading: boolean;
+    companyProfile: CompanyProfile | null;
+    isCompanyProfileLoading: boolean;
     
     productViewMode: 'grid' | 'list';
     stockViewMode: 'grid' | 'list';
@@ -25,8 +25,8 @@ interface AppState {
 
 // Actions Interface
 interface AppActions {
-    fetchProfile: () => Promise<void>;
-    updateProfile: (profileData: Partial<CompanyProfile>) => Promise<void>;
+    fetchCompanyProfile: () => Promise<void>;
+    updateCompanyProfile: (profileData: Partial<CompanyProfile>) => Promise<void>;
     processReturn: (returnData: {
         originalSaleUuid: string,
         items: ReturnItem[],
@@ -49,8 +49,8 @@ interface AppActions {
 
 // Initial State
 const initialState: Omit<AppState, 'actions'> = {
-    profile: null,
-    isSettingsLoading: true,
+    companyProfile: null,
+    isCompanyProfileLoading: true,
     productViewMode: 'grid',
     stockViewMode: 'grid',
 };
@@ -61,21 +61,21 @@ export const useAppStore = create<AppState>()(
         (set, get) => ({
             ...initialState,
             actions: {
-                fetchProfile: async () => {
-                    if (get().profile) return; // Fetch only once
+                fetchCompanyProfile: async () => {
+                    if (get().companyProfile) return; // Fetch only once
                     try {
-                        set({ isSettingsLoading: true });
-                        const profile = await profileService.getProfile();
-                        set({ profile });
+                        set({ isCompanyProfileLoading: true });
+                        const profile = await companyProfileService.getProfile();
+                        set({ companyProfile: profile });
                     } catch (error: any) {
                         toast.error("Impossible de charger le profil de l'entreprise.", { description: error.message });
                     } finally {
-                        set({ isSettingsLoading: false });
+                        set({ isCompanyProfileLoading: false });
                     }
                 },
-                updateProfile: async (profileData) => {
-                    const updatedProfile = await profileService.updateProfile(profileData);
-                    set({ profile: updatedProfile });
+                updateCompanyProfile: async (profileData) => {
+                    const updatedProfile = await companyProfileService.updateProfile(profileData);
+                    set({ companyProfile: updatedProfile });
                 },
                 processReturn: async (returnData) => {
                      try {

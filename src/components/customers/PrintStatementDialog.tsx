@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useRef, useState, useEffect } from 'react';
@@ -18,7 +19,7 @@ interface PrintStatementDialogProps {
 }
 
 export function PrintStatementDialog({ isOpen, onOpenChange, customer }: PrintStatementDialogProps) {
-    const profile = useAppStore((state) => state.profile);
+    const profile = useAppStore((state) => state.companyProfile);
     const printRef = useRef<HTMLDivElement>(null);
 
     const [statementData, setStatementData] = useState<{ customer: Customer, unpaidSales: Sale[]}| undefined>(undefined);

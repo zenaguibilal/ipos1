@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -10,7 +11,7 @@ export default function ProfilePage() {
     return (
         <div className="p-4 sm:p-6 space-y-6">
             <PageHeader 
-                title="Profil & Paramètres"
+                title="Entreprise & Paramètres"
                 description="Gérez les informations de votre entreprise et vos données."
             />
 

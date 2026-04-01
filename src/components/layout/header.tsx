@@ -88,7 +88,7 @@ export function AppHeader() {
                 <Button asChild variant="secondary" size="icon" className="rounded-full">
                     <Link href="/profile">
                         <Settings className="h-5 w-5" />
-                        <span className="sr-only">Profil & Paramètres</span>
+                        <span className="sr-only">Paramètres</span>
                     </Link>
                 </Button>
             </div>

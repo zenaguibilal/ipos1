@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -25,7 +26,7 @@ interface BreadDayViewProps {
 export function BreadDayView({ orders, currentDate, onOrdersChange }: BreadDayViewProps) {
     const [selectedOrders, setSelectedOrders] = useState(new Set<string>());
     const [isConverting, setIsConverting] = useState(false);
-    const breadPrice = useAppStore((state) => state.profile?.prix_pain) || 0;
+    const breadPrice = useAppStore((state) => state.companyProfile?.prix_pain) || 0;
 
     const handleToggleSelection = (orderUuid: string) => {
         setSelectedOrders(prev => {
