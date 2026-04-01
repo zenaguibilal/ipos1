@@ -27,7 +27,7 @@ class SalesService {
         return db.sales.where({ customerUuid }).and(s => s.paymentStatus !== 'paid').sortBy('createdAt');
     }
 
-    async filterSales(filters: { query?: string, from?: Date, to?: Date }): Promise<Sale[]> {
+    async filterSales(filters: { query?: string, from?: Date, to?: Date, status?: 'all' | 'paid' | 'partial' | 'unpaid' }): Promise<Sale[]> {
         let collection = db.sales.toCollection();
 
         if (filters.from) {
@@ -36,11 +36,15 @@ class SalesService {
         if (filters.to) {
             collection = collection.filter(s => new Date(s.createdAt!) <= filters.to!);
         }
+        
+        if (filters.status && filters.status !== 'all') {
+            collection = collection.filter(s => s.paymentStatus === filters.status);
+        }
 
         let sales = await collection.toArray();
 
         if (filters.query) {
-            const lowerQuery = filters.query.toLowerCase();
+            const lowerQuery = filters.query.toLowerCase().trim();
             const customerUuids = (await db.customers.filter(c => c.searchName!.toLowerCase().includes(lowerQuery)).toArray()).map(c => c.uuid);
 
             sales = sales.filter(s => 
