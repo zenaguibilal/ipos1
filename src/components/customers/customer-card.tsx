@@ -1,3 +1,4 @@
+
 'use client';
 
 import React from 'react';
@@ -13,7 +14,6 @@ import { Progress } from '../ui/progress';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { useIsManagerOrAdmin } from '@/stores/appStore';
 
 interface CustomerCardProps {
     customer: Customer;
@@ -56,7 +56,6 @@ const DebtStatusIcon = ({ status }: { status: Customer['debtStatus']}) => {
 
 
 const CustomerCardComponent = ({ customer, onEdit, onDelete }: CustomerCardProps) => {
-    const isManagerOrAdmin = useIsManagerOrAdmin();
     const creditUsage = customer.creditLimit && customer.creditLimit > 0 ? (customer.outstandingBalance / customer.creditLimit) * 100 : 0;
 
     return (
@@ -97,18 +96,16 @@ const CustomerCardComponent = ({ customer, onEdit, onDelete }: CustomerCardProps
                                     Voir les détails
                                 </Link>
                             </DropdownMenuItem>
-                            {isManagerOrAdmin && (
-                                <>
-                                    <DropdownMenuItem onClick={() => onEdit(customer)}>
-                                        <Edit className="mr-2 h-4 w-4" />
-                                        Modifier
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem onClick={() => onDelete(customer)} className="text-destructive focus:text-destructive">
-                                        <Trash2 className="mr-2 h-4 w-4" />
-                                        Supprimer
-                                    </DropdownMenuItem>
-                                </>
-                            )}
+                            <>
+                                <DropdownMenuItem onClick={() => onEdit(customer)}>
+                                    <Edit className="mr-2 h-4 w-4" />
+                                    Modifier
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => onDelete(customer)} className="text-destructive focus:text-destructive">
+                                    <Trash2 className="mr-2 h-4 w-4" />
+                                    Supprimer
+                                </DropdownMenuItem>
+                            </>
                         </DropdownMenuContent>
                     </DropdownMenu>
                 </div>

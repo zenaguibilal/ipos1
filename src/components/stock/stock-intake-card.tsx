@@ -1,3 +1,4 @@
+
 'use client';
 
 import React from 'react';
@@ -9,7 +10,6 @@ import { MoreHorizontal, FileText, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { safeToDate, formatCurrency } from '@/lib/utils';
-import { useIsManagerOrAdmin } from '@/stores/appStore';
 
 interface StockIntakeCardProps {
     intake: StockIntake;
@@ -19,7 +19,6 @@ interface StockIntakeCardProps {
 }
 
 export const StockIntakeCard = React.memo<StockIntakeCardProps>(({ intake, supplierName, onViewDetails, onCancelIntake }) => {
-    const isManagerOrAdmin = useIsManagerOrAdmin();
     const name = supplierName || 'Fournisseur inconnu';
 
     return (
@@ -40,11 +39,9 @@ export const StockIntakeCard = React.memo<StockIntakeCardProps>(({ intake, suppl
                             <DropdownMenuItem onClick={() => onViewDetails(intake)}>
                                 <FileText className="mr-2 h-4 w-4" /> Voir les détails
                             </DropdownMenuItem>
-                            {isManagerOrAdmin && (
-                                <DropdownMenuItem onClick={() => onCancelIntake(intake)} className="text-destructive focus:text-destructive">
-                                    <Trash2 className="mr-2 h-4 w-4" /> Annuler la réception
-                                </DropdownMenuItem>
-                            )}
+                            <DropdownMenuItem onClick={() => onCancelIntake(intake)} className="text-destructive focus:text-destructive">
+                                <Trash2 className="mr-2 h-4 w-4" /> Annuler la réception
+                            </DropdownMenuItem>
                         </DropdownMenuContent>
                     </DropdownMenu>
                 </div>

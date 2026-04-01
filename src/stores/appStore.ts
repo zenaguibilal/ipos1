@@ -376,8 +376,3 @@ export const useAppStore = create<AppState>()(
 
 // Convenience hooks
 export const useAppActions = () => useAppStore((state) => state.actions);
-
-export const useIsManagerOrAdmin = () => {
-    // With the login system removed, we assume all access is admin-level.
-    return true;
-};

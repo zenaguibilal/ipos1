@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -24,10 +25,8 @@ import { formatCurrency } from '@/lib/utils';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { toast } from 'sonner';
-import { useIsManagerOrAdmin } from '@/stores/appStore';
 
 export default function ExpensesPage() {
-    const isManagerOrAdmin = useIsManagerOrAdmin();
     const [selectedCategory, setSelectedCategory] = useState<string>('all');
     const [isExpenseDialogOpen, setIsExpenseDialogOpen] = useState(false);
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -107,7 +106,6 @@ export default function ExpensesPage() {
                 >
                      <Button 
                         onClick={() => { setSelectedExpense(null); setIsExpenseDialogOpen(true); }}
-                        disabled={!isManagerOrAdmin}
                     >
                         <Plus className="mr-2 h-4 w-4" /> Ajouter une dépense
                     </Button>
@@ -137,7 +135,6 @@ export default function ExpensesPage() {
             >
                 <Button 
                     onClick={() => { setSelectedExpense(null); setIsExpenseDialogOpen(true); }}
-                    disabled={!isManagerOrAdmin}
                 >
                     <Plus className="mr-2 h-4 w-4" /> Ajouter
                 </Button>
@@ -184,23 +181,21 @@ export default function ExpensesPage() {
                {renderContent()}
             </div>
             
-            {isManagerOrAdmin && (
-                <>
-                    <ExpenseDialog 
-                        isOpen={isExpenseDialogOpen}
-                        onOpenChange={setIsExpenseDialogOpen}
-                        expense={selectedExpense}
-                        onSuccess={onDialogSuccess}
-                        existingCategories={categories || []}
-                    />
-                    <DeleteExpenseDialog 
-                        isOpen={isDeleteDialogOpen}
-                        onOpenChange={setIsDeleteDialogOpen}
-                        expense={selectedExpense}
-                        onSuccess={fetchExpenses}
-                    />
-                </>
-            )}
+            <>
+                <ExpenseDialog 
+                    isOpen={isExpenseDialogOpen}
+                    onOpenChange={setIsExpenseDialogOpen}
+                    expense={selectedExpense}
+                    onSuccess={onDialogSuccess}
+                    existingCategories={categories || []}
+                />
+                <DeleteExpenseDialog 
+                    isOpen={isDeleteDialogOpen}
+                    onOpenChange={setIsDeleteDialogOpen}
+                    expense={selectedExpense}
+                    onSuccess={fetchExpenses}
+                />
+            </>
         </div>
     );
 }

@@ -23,24 +23,22 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useIsManagerOrAdmin } from '@/stores/appStore';
 
 const allNavLinks = [
-  { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, managerOnly: false },
-  { href: '/stock', label: 'Stock', icon: Archive, managerOnly: true },
-  { href: '/products', label: 'Produits', icon: Package, managerOnly: true },
-  { href: '/customers', label: 'Clients', icon: Users2, managerOnly: false },
-  { href: '/sales-history', label: 'Ventes', icon: History, managerOnly: false },
-  { href: '/returns', label: 'Retours', icon: Undo2, managerOnly: false },
-  { href: '/expenses', label: 'Dépenses', icon: Wallet, managerOnly: true },
-  { href: '/bread', label: 'Pain', icon: Wheat, managerOnly: true },
+  { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { href: '/stock', label: 'Stock', icon: Archive },
+  { href: '/products', label: 'Produits', icon: Package },
+  { href: '/customers', label: 'Clients', icon: Users2 },
+  { href: '/sales-history', label: 'Ventes', icon: History },
+  { href: '/returns', label: 'Retours', icon: Undo2 },
+  { href: '/expenses', label: 'Dépenses', icon: Wallet },
+  { href: '/bread', label: 'Pain', icon: Wheat },
 ];
 
 export function AppHeader() {
   const pathname = usePathname();
-  const isManagerOrAdmin = useIsManagerOrAdmin();
 
-  const navLinks = allNavLinks.filter(link => !link.managerOnly || isManagerOrAdmin);
+  const navLinks = allNavLinks;
 
   return (
     <header className="flex h-16 items-center gap-4 bg-background/80 px-4 sm:px-6 print-hide sticky top-0 z-30 border-b backdrop-blur-xl">

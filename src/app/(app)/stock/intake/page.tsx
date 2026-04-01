@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useCallback, useEffect } from 'react';
@@ -26,13 +27,12 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { supplierService } from '@/services/supplier.service';
-import { useAppActions, useIsManagerOrAdmin } from '@/stores/appStore';
+import { useAppActions } from '@/stores/appStore';
 
 const units: NonNullable<Product['unite']>[] = ['Pièce', 'Kg', 'Litre', 'Boîte', 'Carton', 'Sachet', 'Bouteille'];
 
 export default function NewStockIntakePage() {
     const router = useRouter();
-    const isManagerOrAdmin = useIsManagerOrAdmin();
     const { processStockIntake } = useAppActions();
     
     const [supplierUuid, setSupplierUuid] = useState<string>('');
@@ -46,13 +46,6 @@ export default function NewStockIntakePage() {
     const [isSaving, setIsSaving] = useState(false);
     
     const [suppliers, setSuppliers] = useState<Supplier[] | undefined>(undefined);
-
-    useEffect(() => {
-        if (!isManagerOrAdmin) {
-            toast.error("Accès non autorisé.");
-            router.replace('/sell');
-        }
-    }, [isManagerOrAdmin, router]);
 
     useEffect(() => {
         const fetchSuppliers = async () => {
@@ -194,10 +187,6 @@ export default function NewStockIntakePage() {
         setSupplierPopoverOpen(false);
     };
     
-    if (!isManagerOrAdmin) {
-        return null; // or a loading/unauthorized component
-    }
-
     return (
         <div className="p-4 sm:p-6 space-y-6">
             <PageHeader

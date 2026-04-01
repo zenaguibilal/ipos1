@@ -1,3 +1,4 @@
+
 'use client';
 
 import type { Product, Supplier } from '@/lib/types';
@@ -11,7 +12,6 @@ import { Checkbox } from '../ui/checkbox';
 import { useMemo } from 'react';
 import { differenceInDays } from 'date-fns';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
-import { useIsManagerOrAdmin } from '@/stores/appStore';
 
 interface ProductTableProps {
     products: Product[];
@@ -24,11 +24,9 @@ interface ProductTableProps {
 }
 
 export function ProductTable({ products, onEdit, onDelete, selectedProducts, onToggleProductSelection, onToggleSelectAll, suppliers }: ProductTableProps) {
-    const isManagerOrAdmin = useIsManagerOrAdmin();
     const supplierMap = useMemo(() => new Map(suppliers.map(s => [s.uuid, s.name])), [suppliers]);
 
     const handleRowClick = (product: Product) => {
-        if (!isManagerOrAdmin) return;
         onEdit(product);
     };
 
@@ -41,7 +39,7 @@ export function ProductTable({ products, onEdit, onDelete, selectedProducts, onT
                            <Checkbox
                                 checked={products.length > 0 && selectedProducts.size === products.length}
                                 onCheckedChange={onToggleSelectAll}
-                                disabled={products.length === 0 || !isManagerOrAdmin}
+                                disabled={products.length === 0}
                                 aria-label="Select all rows"
                             />
                         </TableHead>
@@ -80,14 +78,13 @@ export function ProductTable({ products, onEdit, onDelete, selectedProducts, onT
                                 key={productUuid} 
                                 data-state={selectedProducts.has(productUuid) ? "selected" : ""}
                                 onClick={() => handleRowClick(product)}
-                                className={cn(isManagerOrAdmin && "cursor-pointer")}
+                                className={cn("cursor-pointer")}
                             >
                                  <TableCell className="px-4" onClick={(e) => e.stopPropagation()}>
                                     <Checkbox
                                         checked={selectedProducts.has(productUuid)}
                                         onCheckedChange={() => onToggleProductSelection(productUuid)}
                                         aria-label={`Select row for ${product.name}`}
-                                        disabled={!isManagerOrAdmin}
                                     />
                                 </TableCell>
                                 <TableCell>
@@ -148,23 +145,21 @@ export function ProductTable({ products, onEdit, onDelete, selectedProducts, onT
                                 </TableCell>
                                 <TableCell className="text-right font-bold text-primary">{formatCurrency(product.price)}</TableCell>
                                 <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
-                                    {isManagerOrAdmin && (
-                                        <DropdownMenu>
-                                            <DropdownMenuTrigger asChild>
-                                                <Button variant="ghost" size="icon" className="h-8 w-8">
-                                                    <MoreHorizontal className="h-4 w-4" />
-                                                </Button>
-                                            </DropdownMenuTrigger>
-                                            <DropdownMenuContent align="end">
-                                                <DropdownMenuItem onClick={() => onEdit(product)}>
-                                                    <Edit className="mr-2 h-4 w-4" /> Modifier
-                                                </DropdownMenuItem>
-                                                <DropdownMenuItem onClick={() => onDelete(product)} className="text-destructive focus:text-destructive">
-                                                    <Trash2 className="mr-2 h-4 w-4" /> Supprimer
-                                                </DropdownMenuItem>
-                                            </DropdownMenuContent>
-                                        </DropdownMenu>
-                                    )}
+                                    <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                            <Button variant="ghost" size="icon" className="h-8 w-8">
+                                                <MoreHorizontal className="h-4 w-4" />
+                                            </Button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent align="end">
+                                            <DropdownMenuItem onClick={() => onEdit(product)}>
+                                                <Edit className="mr-2 h-4 w-4" /> Modifier
+                                            </DropdownMenuItem>
+                                            <DropdownMenuItem onClick={() => onDelete(product)} className="text-destructive focus:text-destructive">
+                                                <Trash2 className="mr-2 h-4 w-4" /> Supprimer
+                                            </DropdownMenuItem>
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
                                 </TableCell>
                             </TableRow>
                         );

@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useMemo } from 'react';
@@ -11,7 +12,6 @@ import { Badge } from '@/components/ui/badge';
 import { cn, formatCurrency, getPlaceholder } from '@/lib/utils';
 import { Checkbox } from '../ui/checkbox';
 import { differenceInDays } from 'date-fns';
-import { useIsManagerOrAdmin } from '@/stores/appStore';
 
 interface ProductCardProps {
     product: Product;
@@ -22,7 +22,6 @@ interface ProductCardProps {
 }
 
 const ProductCardComponent = ({ product, onEdit, onDelete, isSelected, onToggleSelection }: ProductCardProps) => {
-    const isManagerOrAdmin = useIsManagerOrAdmin();
     const placeholder = getPlaceholder(product.category);
     const imageUrl = product.imageUrl || placeholder.url;
 
@@ -37,7 +36,6 @@ const ProductCardComponent = ({ product, onEdit, onDelete, isSelected, onToggleS
     }, [product.dateExpiration]);
 
     const handleCardClick = () => {
-        if (!isManagerOrAdmin) return;
         onEdit(product);
     };
 
@@ -47,7 +45,7 @@ const ProductCardComponent = ({ product, onEdit, onDelete, isSelected, onToggleS
             className={cn(
                 "flex flex-col transition-all duration-300 hover:shadow-xl hover:-translate-y-1 relative",
                 isSelected && "ring-2 ring-primary",
-                isManagerOrAdmin && "cursor-pointer"
+                "cursor-pointer"
             )}
         >
             <CardHeader className="p-0 relative">
@@ -79,16 +77,14 @@ const ProductCardComponent = ({ product, onEdit, onDelete, isSelected, onToggleS
                         <CardTitle className="text-lg leading-tight">{product.name}</CardTitle>
                         <p className="text-sm text-muted-foreground">{product.category || 'Non classé'}</p>
                     </div>
-                    {isManagerOrAdmin && (
-                        <div onClick={(e) => e.stopPropagation()}>
-                            <Checkbox
-                                checked={isSelected}
-                                onCheckedChange={onToggleSelection}
-                                className="h-5 w-5 flex-shrink-0"
-                                aria-label={`Select ${product.name}`}
-                            />
-                        </div>
-                    )}
+                    <div onClick={(e) => e.stopPropagation()}>
+                        <Checkbox
+                            checked={isSelected}
+                            onCheckedChange={onToggleSelection}
+                            className="h-5 w-5 flex-shrink-0"
+                            aria-label={`Select ${product.name}`}
+                        />
+                    </div>
                 </div>
             </CardContent>
             <CardFooter className="p-4 pt-0 flex justify-between items-center" onClick={(e) => e.stopPropagation()}>
@@ -96,23 +92,21 @@ const ProductCardComponent = ({ product, onEdit, onDelete, isSelected, onToggleS
                     <p className="text-lg font-bold text-primary">{formatCurrency(product.price)}</p>
                     <p className="text-xs font-semibold">Stock: {product.quantity} {product.unite || ''}</p>
                 </div>
-                {isManagerOrAdmin && (
-                    <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon">
-                                <MoreHorizontal className="h-5 w-5" />
-                            </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => onEdit(product)}>
-                                <Edit className="mr-2 h-4 w-4" /> Modifier
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => onDelete(product)} className="text-destructive focus:text-destructive">
-                                <Trash2 className="mr-2 h-4 w-4" /> Supprimer
-                            </DropdownMenuItem>
-                        </DropdownMenuContent>
-                    </DropdownMenu>
-                )}
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon">
+                            <MoreHorizontal className="h-5 w-5" />
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => onEdit(product)}>
+                            <Edit className="mr-2 h-4 w-4" /> Modifier
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => onDelete(product)} className="text-destructive focus:text-destructive">
+                            <Trash2 className="mr-2 h-4 w-4" /> Supprimer
+                        </DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
             </CardFooter>
         </Card>
     );

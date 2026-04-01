@@ -1,3 +1,4 @@
+
 'use client';
 
 import type { StockIntake, Supplier } from '@/lib/types';
@@ -8,7 +9,6 @@ import { MoreHorizontal, FileText, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { formatCurrency, safeToDate } from '@/lib/utils';
-import { useIsManagerOrAdmin } from '@/stores/appStore';
 
 interface StockIntakeTableProps {
     intakes: StockIntake[];
@@ -18,8 +18,6 @@ interface StockIntakeTableProps {
 }
 
 export function StockIntakeTable({ intakes, supplierMap, onViewDetails, onCancelIntake }: StockIntakeTableProps) {
-    const isManagerOrAdmin = useIsManagerOrAdmin();
-
     return (
         <div className="rounded-md border">
             <Table>
@@ -54,11 +52,9 @@ export function StockIntakeTable({ intakes, supplierMap, onViewDetails, onCancel
                                             <DropdownMenuItem onClick={() => onViewDetails(intake)}>
                                                 <FileText className="mr-2 h-4 w-4" /> Voir les détails
                                             </DropdownMenuItem>
-                                            {isManagerOrAdmin && (
-                                                <DropdownMenuItem onClick={() => onCancelIntake(intake)} className="text-destructive focus:text-destructive">
-                                                    <Trash2 className="mr-2 h-4 w-4" /> Annuler la réception
-                                                </DropdownMenuItem>
-                                            )}
+                                            <DropdownMenuItem onClick={() => onCancelIntake(intake)} className="text-destructive focus:text-destructive">
+                                                <Trash2 className="mr-2 h-4 w-4" /> Annuler la réception
+                                            </DropdownMenuItem>
                                         </DropdownMenuContent>
                                     </DropdownMenu>
                                 </TableCell>

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Button } from '@/components/ui/button';
@@ -7,7 +8,7 @@ import { Trash2, ShoppingCart, CalendarClock } from 'lucide-react';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import { formatCurrency, getPlaceholder } from '@/lib/utils';
-import { useAppActions, useIsManagerOrAdmin } from '@/stores/appStore';
+import { useAppActions } from '@/stores/appStore';
 import { toast } from 'sonner';
 import { useEffect, useState, useMemo } from 'react';
 import { useDebounce } from '@/hooks/useDebounce';
@@ -43,7 +44,7 @@ const PriceEditor = ({ item, onPriceChange }: { item: CartItem, onPriceChange: (
     )
 }
 
-const CartListItem = ({ item, isManagerOrAdmin, onQuantityUpdate, onPriceChange, onRemove }: { item: CartItem, isManagerOrAdmin: boolean, onQuantityUpdate: (uuid: string, qty: string) => void, onPriceChange: (uuid: string, price: number) => void, onRemove: (uuid: string) => void }) => {
+const CartListItem = ({ item, onQuantityUpdate, onPriceChange, onRemove }: { item: CartItem, onQuantityUpdate: (uuid: string, qty: string) => void, onPriceChange: (uuid: string, price: number) => void, onRemove: (uuid: string) => void }) => {
     const expirationStatus = useMemo(() => {
         if (!item.dateExpiration) return null;
         const today = new Date();
@@ -70,11 +71,7 @@ const CartListItem = ({ item, isManagerOrAdmin, onQuantityUpdate, onPriceChange,
             />
             <div className="flex-grow">
                 <p className="font-semibold">{item.name}</p>
-                {isManagerOrAdmin ? (
-                    <PriceEditor item={item} onPriceChange={onPriceChange} />
-                ) : (
-                    <p className="text-sm text-muted-foreground">{formatCurrency(item.price)}</p>
-                )}
+                <PriceEditor item={item} onPriceChange={onPriceChange} />
                 {expirationStatus && (
                     <Badge className={cn("mt-1.5", expirationStatus.color)}>
                         <CalendarClock className="h-3 w-3 mr-1" />
@@ -101,7 +98,6 @@ const CartListItem = ({ item, isManagerOrAdmin, onQuantityUpdate, onPriceChange,
 
 export function CartDisplay({ cart }: { cart: Cart | undefined }) {
     const { updateCartItemQuantity, removeCartItem, clearCartFlashes, updateCartItemPrice } = useAppActions();
-    const isManagerOrAdmin = useIsManagerOrAdmin();
     
     const handleQuantityUpdate = (itemUuid: string, newQuantity: string) => {
         const quantity = parseInt(newQuantity, 10);
@@ -139,7 +135,6 @@ export function CartDisplay({ cart }: { cart: Cart | undefined }) {
                              <CartListItem
                                 key={item.uuid}
                                 item={item}
-                                isManagerOrAdmin={isManagerOrAdmin}
                                 onQuantityUpdate={handleQuantityUpdate}
                                 onPriceChange={updateCartItemPrice}
                                 onRemove={removeCartItem}

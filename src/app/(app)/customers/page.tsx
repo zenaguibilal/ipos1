@@ -19,13 +19,11 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardHeader, CardContent, CardFooter } from '@/components/ui/card';
 import { customerService } from '@/services/customer.service';
-import { useIsManagerOrAdmin } from '@/stores/appStore';
 import { ImportPreviewDialog } from '@/components/customers/import-preview-dialog';
 
 type FilterStatus = 'all' | 'has_debt' | 'overdue' | 'over_limit';
 
 export default function CustomersPage() {
-    const isManagerOrAdmin = useIsManagerOrAdmin();
     const searchParams = useSearchParams();
 
     const [searchQuery, setSearchQuery] = useState('');
@@ -155,7 +153,7 @@ export default function CustomersPage() {
                 title="Gestion des Clients"
                 description="Recherchez, ajoutez et gérez vos clients."
             >
-                <Button asChild variant="outline" disabled={!isManagerOrAdmin || isAnalyzing}>
+                <Button asChild variant="outline" disabled={isAnalyzing}>
                     <label htmlFor="csv-importer">
                         {isAnalyzing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileDown className="mr-2 h-4 w-4" />}
                         {isAnalyzing ? 'Analyse...' : 'Importer'}
@@ -207,23 +205,21 @@ export default function CustomersPage() {
                 onSuccess={fetchCustomers}
             />
             
-            {isManagerOrAdmin && (
-                <>
-                    <DeleteCustomerDialog 
-                        isOpen={isDeleteDialogOpen}
-                        onOpenChange={setIsDeleteDialogOpen}
-                        customer={selectedCustomer}
-                        onSuccess={fetchCustomers}
-                    />
-                    <ImportPreviewDialog
-                        isOpen={isImportPreviewOpen}
-                        onOpenChange={setIsImportPreviewOpen}
-                        analysis={importAnalysis}
-                        onConfirm={handleConfirmImport}
-                        isImporting={isImporting}
-                    />
-                </>
-            )}
+            <>
+                <DeleteCustomerDialog 
+                    isOpen={isDeleteDialogOpen}
+                    onOpenChange={setIsDeleteDialogOpen}
+                    customer={selectedCustomer}
+                    onSuccess={fetchCustomers}
+                />
+                <ImportPreviewDialog
+                    isOpen={isImportPreviewOpen}
+                    onOpenChange={setIsImportPreviewOpen}
+                    analysis={importAnalysis}
+                    onConfirm={handleConfirmImport}
+                    isImporting={isImporting}
+                />
+            </>
         </div>
     );
 }
