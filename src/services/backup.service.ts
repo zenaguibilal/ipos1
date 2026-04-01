@@ -15,7 +15,7 @@ import { companyRepository } from "@/repositories/company.repository";
 
 class BackupService {
     private supabase = createClient();
-    private backupFolder = 'default-user'; // Use a generic folder since there's no user id
+    private backupFolder = 'application-data'; // Use a generic folder for app data
 
     private async exportData(): Promise<Record<string, any[]>> {
         try {
