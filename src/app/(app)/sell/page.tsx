@@ -6,8 +6,11 @@ import { CartDisplay } from "@/components/sell/CartDisplay";
 import { CartTotalBar } from "@/components/sell/CartTotalBar";
 import { SaleActions } from "@/components/sell/SaleActions";
 import { CustomerCombobox } from "@/components/sell/CustomerCombobox";
+import { useCartActions } from '@/stores/cartStore';
+import { toast } from 'sonner';
 
 export default function SellPage() {
+    const { createCart } = useCartActions();
     
     // Global Keyboard Shortcuts
     useEffect(() => {
@@ -16,12 +19,11 @@ export default function SellPage() {
             const activeElement = document.activeElement as HTMLElement;
             const isTyping = activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA' || activeElement.contentEditable === 'true';
             
-            // F-Keys should work even if focused on search, but not if focused on dialog inputs (handled by isTyping generally)
-            // However, we want F1 to work to focus back search.
-            
+            // F1 always focuses search, even if typing
             if (e.key === 'F1') {
                 e.preventDefault();
                 document.getElementById('sell-search-input')?.focus();
+                return;
             }
             
             // Other shortcuts only if not typing inside a modal input (unless it's the search input)
@@ -41,6 +43,11 @@ export default function SellPage() {
                 e.preventDefault();
                 document.getElementById('sell-drafts-button')?.click();
             }
+            if (e.key === 'F9') {
+                e.preventDefault();
+                createCart();
+                toast.success("Vente suspendue. Nouveau panier créé.");
+            }
             if (e.key === 'F10') {
                 e.preventDefault();
                 document.getElementById('sell-custom-item-button')?.click();
@@ -52,7 +59,7 @@ export default function SellPage() {
 
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, []);
+    }, [createCart]);
 
     return (
         <div className="h-full flex flex-col p-4 sm:p-6 gap-4 overflow-hidden">
@@ -76,7 +83,7 @@ export default function SellPage() {
             </div>
 
             {/* Shortcut Help Legend - Professional Bar */}
-            <div className="hidden md:flex flex-wrap items-center justify-center gap-8 py-3 px-6 bg-muted/20 border rounded-full text-[11px] font-bold tracking-widest text-muted-foreground uppercase transition-all hover:bg-muted/30">
+            <div className="hidden md:flex flex-wrap items-center justify-center gap-6 py-3 px-6 bg-muted/20 border rounded-full text-[10px] font-bold tracking-widest text-muted-foreground uppercase transition-all hover:bg-muted/30">
                 <div className="flex items-center gap-2 group">
                     <kbd className="bg-background px-2 py-1 rounded-md border-2 border-border shadow-sm text-foreground transition-all group-hover:border-primary group-hover:text-primary">F1</kbd>
                     <span>Rechercher</span>
@@ -94,16 +101,20 @@ export default function SellPage() {
                     <span>Brouillons</span>
                 </div>
                 <div className="flex items-center gap-2 group">
+                    <kbd className="bg-background px-2 py-1 rounded-md border-2 border-border shadow-sm text-foreground transition-all group-hover:border-primary group-hover:text-primary">F9</kbd>
+                    <span>Suspendre</span>
+                </div>
+                <div className="flex items-center gap-2 group">
                     <kbd className="bg-background px-2 py-1 rounded-md border-2 border-border shadow-sm text-foreground transition-all group-hover:border-primary group-hover:text-primary">F10</kbd>
                     <span>Spécial</span>
                 </div>
                 <div className="flex items-center gap-2 group">
-                    <kbd className="bg-background px-2 py-1 rounded-md border-2 border-border shadow-sm text-foreground transition-all group-hover:border-primary group-hover:text-primary">Esc</kbd>
+                    <kbd className="bg-background px-2 py-1 rounded-md border-2 border-border shadow-sm text-foreground transition-all group-hover:border-primary group-hover:text-primary font-black px-1.5">Esc</kbd>
                     <span>Fermer</span>
                 </div>
                 <div className="flex items-center gap-2 group">
                     <kbd className="bg-background px-2 py-1 rounded-md border-2 border-border shadow-sm text-foreground transition-all group-hover:border-primary group-hover:text-primary font-black px-1.5">Enter</kbd>
-                    <span>Confirmer</span>
+                    <span>Valider</span>
                 </div>
             </div>
         </div>
