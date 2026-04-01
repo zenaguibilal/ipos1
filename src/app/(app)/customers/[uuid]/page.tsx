@@ -1,10 +1,21 @@
-
 'use client';
 
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, HandCoins, Printer, Loader2, RefreshCw, Wheat, Settings, MessageCircle, PhoneCall, MapPin } from 'lucide-react';
+import { 
+    ArrowLeft, 
+    HandCoins, 
+    Printer, 
+    Loader2, 
+    RefreshCw, 
+    Wheat, 
+    Settings, 
+    MessageCircle, 
+    PhoneCall, 
+    MapPin, 
+    Phone 
+} from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { CustomerMetrics } from '@/components/customers/CustomerMetrics';
@@ -143,7 +154,7 @@ export default function CustomerDetailPage() {
 
     const handleWhatsApp = () => {
         if (!customer?.phone) return;
-        const message = encodeURIComponent(`Bonjour ${customer.firstName}, je vous contacte concernant votre compte chezنا. Votre solde actuel est de ${formatCurrency(customer.outstandingBalance)}.`);
+        const message = encodeURIComponent(`Bonjour ${customer.firstName}, je vous contactه بشأن حسابكم لدينا. رصيدكم الحالي هو ${formatCurrency(customer.outstandingBalance)}. شكراً.`);
         window.open(`https://wa.me/${customer.phone}?text=${message}`, '_blank');
     };
 
