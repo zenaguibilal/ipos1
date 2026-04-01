@@ -113,7 +113,6 @@ class DashboardService {
                     name: product?.name || 'Produit Inconnu',
                     quantitySold: stats.quantitySold,
                     revenueGenerated: stats.revenueGenerated,
-                    imageUrl: product?.imageUrl,
                     category: product?.category,
                 };
             });
