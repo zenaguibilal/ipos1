@@ -1,32 +1,25 @@
 
 import { create } from 'zustand';
 import { produce } from 'immer';
-import type { Cart, Customer, CompanyProfile, Product, CartItem, ReturnItem, StockIntakeItem, Sale } from '@/lib/types';
+import type { CompanyProfile, ReturnItem, StockIntakeItem } from '@/lib/types';
 import { toast } from 'sonner';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import { v4 as uuidv4 } from 'uuid';
 
-import { salesService } from '@/services/sales.service';
-import { customerService } from '@/services/customer.service';
-import { inventoryService } from '@/services/inventory.service';
 import { profileService } from '@/services/profile.service';
 import { returnService } from '@/services/return.service';
+import { inventoryService } from '@/services/inventory.service';
 import { supplierService } from '@/services/supplier.service';
-import { stockService } from '@/services/stock.service';
 import { productService } from '@/services/product.service';
+import { stockService } from '@/services/stock.service';
+import { customerService } from '@/services/customer.service';
 
 // Main State Interface
 interface AppState {
     profile: CompanyProfile | null;
     isSettingsLoading: boolean;
     
-    // Carts and Drafts
-    carts: Cart[];
-    activeCartId: string;
-
     productViewMode: 'grid' | 'list';
     stockViewMode: 'grid' | 'list';
-    lastCompletedSale: { sale: Sale; customer: Customer | null } | null;
     actions: AppActions;
 }
 
@@ -34,27 +27,6 @@ interface AppState {
 interface AppActions {
     fetchProfile: () => Promise<void>;
     updateProfile: (profileData: Partial<CompanyProfile>) => Promise<void>;
-    addProductToCart: (product: Product, quantity: number) => void;
-    updateCartItemQuantity: (productUuid: string, newQuantity: number) => void;
-    updateCartItemPrice: (productUuid: string, newPrice: number) => void;
-    removeCartItem: (productUuid: string) => void;
-    clearCartFlashes: () => void;
-    setCartCustomer: (customer: Customer | null) => void;
-    setCartDiscount: (discount: { type: 'fixed' | 'percentage'; value: number }) => void;
-    clearCart: () => void;
-    
-    // Draft management
-    createNewCart: () => void;
-    switchToCart: (cartId: string) => void;
-    saveActiveCartAsDraft: (name: string) => void;
-    deleteCart: (cartId: string) => void;
-
-    finalizeSale: (paymentData: {
-        amountPaid: number;
-        payments: { method: 'cash' | 'card' | 'other'; amount: number }[];
-        dueDate?: Date;
-    }) => Promise<boolean>;
-    clearLastCompletedSale: () => void;
     processReturn: (returnData: {
         originalSaleUuid: string,
         items: ReturnItem[],
@@ -76,23 +48,11 @@ interface AppActions {
 }
 
 // Initial State
-const defaultCartId = uuidv4();
-const initialCart: Cart = {
-    id: defaultCartId,
-    name: 'Panier 1',
-    items: [],
-    customerUuid: null,
-    discount: { type: 'fixed', value: 0 },
-};
-
 const initialState: Omit<AppState, 'actions'> = {
     profile: null,
     isSettingsLoading: true,
-    carts: [initialCart],
-    activeCartId: defaultCartId,
     productViewMode: 'grid',
     stockViewMode: 'grid',
-    lastCompletedSale: null,
 };
 
 // Store Implementation
@@ -117,169 +77,6 @@ export const useAppStore = create<AppState>()(
                     const updatedProfile = await profileService.updateProfile(profileData);
                     set({ profile: updatedProfile });
                 },
-                addProductToCart: (product, quantity) => set(produce((state: AppState) => {
-                    const activeCart = state.carts.find(c => c.id === state.activeCartId);
-                    if (!activeCart) return;
-
-                    const existingItem = activeCart.items.find(item => item.uuid === product.uuid);
-                    if (product.uuid.startsWith('custom-')) {
-                         activeCart.items.unshift({ ...(product as CartItem), cartQuantity: quantity, flash: true });
-                         return;
-                    }
-                    
-                    if (existingItem) {
-                        const newQuantity = existingItem.cartQuantity + quantity;
-                        if (newQuantity > existingItem.quantity) {
-                            throw new Error(`Quantité en stock insuffisante pour ${product.name}. Disponible: ${existingItem.quantity}`);
-                        }
-                        existingItem.cartQuantity = newQuantity;
-                        existingItem.flash = true;
-                    } else {
-                        if (quantity > product.quantity) {
-                           throw new Error(`Quantité en stock insuffisante pour ${product.name}. Disponible: ${product.quantity}`);
-                        }
-                        activeCart.items.unshift({ ...(product as CartItem), cartQuantity: quantity, flash: true });
-                    }
-                })),
-                updateCartItemQuantity: (productUuid, newQuantity) => set(produce((state: AppState) => {
-                    const activeCart = state.carts.find(c => c.id === state.activeCartId);
-                    if (!activeCart) return;
-
-                    const item = activeCart.items.find(i => i.uuid === productUuid);
-                    if (item) {
-                        if (newQuantity <= 0) {
-                            activeCart.items = activeCart.items.filter(i => i.uuid !== productUuid);
-                        } else if (!item.uuid.startsWith('custom-') && newQuantity > item.quantity) {
-                             throw new Error(`Quantité en stock insuffisante pour ${item.name}. Disponible: ${item.quantity}`);
-                        } else {
-                            item.cartQuantity = newQuantity;
-                        }
-                    }
-                })),
-                updateCartItemPrice: (productUuid, newPrice) => set(produce((state: AppState) => {
-                    const activeCart = state.carts.find(c => c.id === state.activeCartId);
-                    if (!activeCart) return;
-
-                    const item = activeCart.items.find(i => i.uuid === productUuid);
-                    if (item) {
-                        if (newPrice < 0) {
-                            toast.error("Le prix ne peut pas être négatif.");
-                            return;
-                        }
-                        item.price = newPrice;
-                        if (item.purchasePrice > 0 && newPrice < item.purchasePrice) {
-                            toast.warning(`Vente à perte : Le prix de "${item.name}" est inférieur au prix d'achat.`);
-                        }
-                    }
-                })),
-                removeCartItem: (productUuid) => set(produce((state: AppState) => {
-                    const activeCart = state.carts.find(c => c.id === state.activeCartId);
-                    if (activeCart) {
-                        activeCart.items = activeCart.items.filter(item => item.uuid !== productUuid);
-                    }
-                })),
-                clearCartFlashes: () => set(produce((state: AppState) => {
-                    const activeCart = state.carts.find(c => c.id === state.activeCartId);
-                    if (activeCart) {
-                        activeCart.items.forEach(item => {
-                            if (item.flash) {
-                                delete item.flash;
-                            }
-                        });
-                    }
-                })),
-                setCartCustomer: (customer) => set(produce((state: AppState) => {
-                    const activeCart = state.carts.find(c => c.id === state.activeCartId);
-                    if (activeCart) {
-                        activeCart.customerUuid = customer?.uuid || null;
-                    }
-                })),
-                setCartDiscount: (discount) => set(produce((state: AppState) => {
-                    const activeCart = state.carts.find(c => c.id === state.activeCartId);
-                    if (activeCart) {
-                        activeCart.discount = discount;
-                    }
-                })),
-                clearCart: () => set(produce((state: AppState) => {
-                    const activeCart = state.carts.find(c => c.id === state.activeCartId);
-                    if (activeCart) {
-                        activeCart.items = [];
-                        activeCart.discount = { type: 'fixed', value: 0 };
-                    }
-                })),
-                createNewCart: () => set(produce((state: AppState) => {
-                    const newCartName = `Panier ${state.carts.length + 1}`;
-                    const newCartId = uuidv4();
-                    const newCart: Cart = {
-                        id: newCartId,
-                        name: newCartName,
-                        items: [],
-                        customerUuid: null,
-                        discount: { type: 'fixed', value: 0 },
-                    };
-                    state.carts.push(newCart);
-                    state.activeCartId = newCartId;
-                })),
-                switchToCart: (cartId: string) => set({ activeCartId: cartId }),
-                saveActiveCartAsDraft: (name: string) => set(produce((state: AppState) => {
-                    const activeCart = state.carts.find(c => c.id === state.activeCartId);
-                    if (activeCart) {
-                        activeCart.name = name;
-                    }
-                })),
-                deleteCart: (cartId: string) => set(produce((state: AppState) => {
-                    const isDeletingActive = state.activeCartId === cartId;
-                    state.carts = state.carts.filter(c => c.id !== cartId);
-                    
-                    if (state.carts.length === 0) {
-                        const newCartId = uuidv4();
-                        state.carts.push({ id: newCartId, name: 'Panier 1', items: [], customerUuid: null, discount: { type: 'fixed', value: 0 } });
-                        state.activeCartId = newCartId;
-                    } else if (isDeletingActive) {
-                        state.activeCartId = state.carts[0].id;
-                    }
-                })),
-                finalizeSale: async (paymentData) => {
-                    const { carts, activeCartId, actions } = get();
-                    const activeCart = carts.find(c => c.id === activeCartId);
-
-                    if (!activeCart || activeCart.items.length === 0) {
-                        toast.error("Le panier est vide.");
-                        return false;
-                    }
-        
-                    const cartCustomer = activeCart.customerUuid 
-                        ? await customerService.getCustomerByUuid(activeCart.customerUuid)
-                        : null;
-
-                    try {
-                        const sale = await salesService.createSale({
-                            items: activeCart.items,
-                            discountType: activeCart.discount.type,
-                            discountValue: activeCart.discount.value,
-                            ...paymentData,
-                            customerUuid: activeCart.customerUuid,
-                        });
-                        
-                        set({ lastCompletedSale: { sale, customer: cartCustomer } });
-        
-                        for (const item of sale.items) {
-                            await inventoryService.adjustStock(item.productUuid, -item.quantity, 'sale', sale.uuid);
-                        }
-        
-                        if (sale.customerUuid) {
-                            await customerService.recalculateCustomerStatus(sale.customerUuid);
-                        }
-        
-                        actions.deleteCart(activeCartId);
-                        toast.success("Vente finalisée avec succès !");
-                        return true;
-                    } catch (error: any) {
-                        toast.error("Échec de la finalisation de la vente", { description: error.message });
-                        return false;
-                    }
-                },
-                clearLastCompletedSale: () => set({ lastCompletedSale: null }),
                 processReturn: async (returnData) => {
                      try {
                         const newReturn = await returnService.addReturn(returnData);
@@ -362,11 +159,9 @@ export const useAppStore = create<AppState>()(
             }
         }),
         {
-          name: 'ipos-sell-store',
+          name: 'ipos-app-store',
           storage: createJSONStorage(() => localStorage),
           partialize: (state) => ({ 
-              carts: state.carts, 
-              activeCartId: state.activeCartId,
               productViewMode: state.productViewMode,
               stockViewMode: state.stockViewMode,
           }),
