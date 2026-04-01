@@ -1,4 +1,3 @@
-
 'use client';
 
 import React from 'react';
@@ -6,8 +5,9 @@ import type { Supplier } from '@/lib/types';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { formatCurrency } from '@/lib/utils';
-import { HandCoins, Edit, Trash2, Phone, Building } from 'lucide-react';
+import { HandCoins, Edit, Trash2, Phone, Building, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import Link from 'next/link';
 
 interface SupplierTableProps {
     suppliers: Supplier[];
@@ -32,12 +32,15 @@ export function SupplierTable({ suppliers, onPay, onEdit, onDelete }: SupplierTa
                     {suppliers.map((supplier) => (
                         <TableRow key={supplier.uuid} className="group hover:bg-muted/20 transition-all border-b border-border/50">
                             <TableCell>
-                                <div className="flex items-center gap-3">
+                                <Link href={`/stock/suppliers/${supplier.uuid}`} className="flex items-center gap-3 hover:text-primary transition-colors">
                                     <div className="p-2 rounded-xl bg-primary/10 text-primary">
                                         <Building className="h-4 w-4" />
                                     </div>
-                                    <span className="font-black tracking-tight">{supplier.name}</span>
-                                </div>
+                                    <div className="flex flex-col">
+                                        <span className="font-black tracking-tight">{supplier.name}</span>
+                                        <span className="text-[10px] text-muted-foreground flex items-center gap-1">Voir les détails <ChevronRight className="h-2 w-2" /></span>
+                                    </div>
+                                </Link>
                             </TableCell>
                             <TableCell>
                                 <div className="flex flex-col">
@@ -65,7 +68,7 @@ export function SupplierTable({ suppliers, onPay, onEdit, onDelete }: SupplierTa
                                         className="h-9 w-9 text-primary hover:bg-primary/10"
                                         onClick={() => onPay(supplier)}
                                         disabled={supplier.balance <= 0}
-                                        title="Régler une dette"
+                                        title="Régler μια dette"
                                     >
                                         <HandCoins className="h-4 w-4" />
                                     </Button>

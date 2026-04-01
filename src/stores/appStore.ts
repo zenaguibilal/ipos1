@@ -1,7 +1,6 @@
-
 import { create } from 'zustand';
 import { produce } from 'immer';
-import type { CompanyProfile, ReturnItem, StockIntakeItem, Sale } from '@/lib/types';
+import type { CompanyProfile, ReturnItem, StockIntakeItem, Sale, StockIntake } from '@/lib/types';
 import { toast } from 'sonner';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { db } from '@/lib/db';
@@ -66,7 +65,6 @@ export const useAppStore = create<AppState>()(
             ...initialState,
             actions: {
                 fetchCompanyProfile: async () => {
-                    // Always fetch from DB on load as it's cheap
                     set({ isCompanyProfileLoading: true });
                     try {
                         const profile = await companyProfileService.getProfile();
@@ -110,7 +108,9 @@ export const useAppStore = create<AppState>()(
                             const itemsTotalValue = intakeData.items.reduce((sum, item) => sum + (item.quantity * item.purchasePrice), 0);
                             const shippingFactor = itemsTotalValue > 0 ? intakeData.shippingCost / itemsTotalValue : 0;
 
+                            const intakeUuid = uuidv4();
                             const finalItems = [];
+                            
                             for (const item of intakeData.items) {
                                 let productUuid = item.productUuid;
                                 
@@ -122,7 +122,7 @@ export const useAppStore = create<AppState>()(
                                         name: item.name,
                                         category: item.category,
                                         price: item.price,
-                                        purchasePrice: landingCost, // Use landing cost as base purchase price
+                                        purchasePrice: landingCost,
                                         quantity: 0, 
                                         minStockLevel: 10,
                                         supplierUuid: supplier.uuid,
@@ -133,7 +133,6 @@ export const useAppStore = create<AppState>()(
                                 } else {
                                     const p = await inventoryService.getProductInfo(productUuid!);
                                     if (p) {
-                                        // Update product with the new landing cost
                                         await productService.updateProduct(p.uuid, { purchasePrice: landingCost, dateMajPrix: new Date() });
                                     }
                                 }
@@ -141,7 +140,7 @@ export const useAppStore = create<AppState>()(
                                 if (productUuid) {
                                     const quantityReceived = item.quantity - item.quantityDamaged;
                                     if (quantityReceived > 0) {
-                                        await inventoryService.adjustStock(productUuid, quantityReceived, 'stock_intake');
+                                        await inventoryService.adjustStock(productUuid, quantityReceived, 'stock_intake', intakeUuid);
                                     }
                                     finalItems.push({
                                         productUuid: productUuid,
@@ -154,13 +153,16 @@ export const useAppStore = create<AppState>()(
                                 }
                             }
             
-                            await stockService.addStockIntake({
+                            await db.stock_intakes.add({
+                                uuid: intakeUuid,
                                 supplierUuid: supplier.uuid,
                                 invoiceNumber: intakeData.invoiceNumber,
                                 invoiceDate: intakeData.invoiceDate,
                                 shippingCost: intakeData.shippingCost,
                                 items: finalItems,
                                 totalValue: itemsTotalValue + intakeData.shippingCost,
+                                createdAt: new Date(),
+                                updatedAt: new Date(),
                             });
                             
                             await supplierService.updateSupplierBalance(supplier.uuid, itemsTotalValue + intakeData.shippingCost);
@@ -188,5 +190,4 @@ export const useAppStore = create<AppState>()(
     )
 );
 
-// Convenience hooks
 export const useAppActions = () => useAppStore((state) => state.actions);

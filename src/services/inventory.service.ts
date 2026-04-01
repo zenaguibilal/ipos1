@@ -42,7 +42,7 @@ class InventoryService {
         await db.inventory_logs.add(logEntry);
     }
 
-    async getLogs(filters: { query?: string, from?: Date, to?: Date }): Promise<(InventoryLog & { productName: string })[]> {
+    async getLogs(filters: { query?: string, from?: Date, to?: Date }): Promise<(InventoryLog & { productName: string, reference?: string })[]> {
         let collection = db.inventory_logs.toCollection();
 
         if (filters.from) {
@@ -57,9 +57,23 @@ class InventoryService {
         const products = await db.products.where('uuid').anyOf(productUuids).toArray();
         const productMap = new Map(products.map(p => [p.uuid, p.name]));
 
+        // Fetch related entities for references
+        const intakeUuids = logs.filter(l => l.reason === 'stock_intake' || l.reason === 'cancellation').map(l => l.relatedUuid).filter(Boolean) as string[];
+        const saleUuids = logs.filter(l => l.reason === 'sale' || l.reason === 'cancellation').map(l => l.relatedUuid).filter(Boolean) as string[];
+        
+        const [intakes, sales] = await Promise.all([
+            db.stock_intakes.where('uuid').anyOf(intakeUuids).toArray(),
+            db.sales.where('uuid').anyOf(saleUuids).toArray()
+        ]);
+
+        const referenceMap = new Map<string, string>();
+        intakes.forEach(i => referenceMap.set(i.uuid, i.invoiceNumber || 'Intake'));
+        sales.forEach(s => referenceMap.set(s.uuid, s.invoiceNumber));
+
         let result = logs.map(l => ({
             ...l,
-            productName: productMap.get(l.productUuid) || 'Produit inconnu'
+            productName: productMap.get(l.productUuid) || 'Produit inconnu',
+            reference: l.relatedUuid ? referenceMap.get(l.relatedUuid) : undefined
         }));
 
         if (filters.query) {

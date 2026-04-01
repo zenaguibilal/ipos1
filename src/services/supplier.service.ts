@@ -1,8 +1,7 @@
-
 'use client';
 
 import { v4 as uuidv4 } from 'uuid';
-import type { Supplier, SupplierPayment } from '@/lib/types';
+import type { Supplier, SupplierPayment, StockIntake } from '@/lib/types';
 import { db } from '@/lib/db';
 
 class SupplierService {
@@ -63,6 +62,20 @@ class SupplierService {
         });
     }
 
+    async getSupplierActivity(supplierUuid: string): Promise<any[]> {
+        const [intakes, payments] = await Promise.all([
+            db.stock_intakes.where('supplierUuid').equals(supplierUuid).toArray(),
+            db.supplier_payments.where('supplierUuid').equals(supplierUuid).toArray()
+        ]);
+
+        const activity = [
+            ...intakes.map(i => ({ ...i, type: 'intake', date: i.createdAt })),
+            ...payments.map(p => ({ ...p, type: 'payment', date: p.paymentDate })),
+        ];
+
+        return activity.sort((a, b) => new Date(b.date!).getTime() - new Date(a.date!).getTime());
+    }
+
     async getSupplierPayments(supplierUuid: string): Promise<SupplierPayment[]> {
         return db.supplier_payments.where('supplierUuid').equals(supplierUuid).sortBy('paymentDate');
     }
@@ -78,7 +91,6 @@ class SupplierService {
         const supplier = await this.getSupplierByUuid(uuid);
         if (!supplier?.id) return;
 
-        // Check if supplier has intakes
         const intakesCount = await db.stock_intakes.where('supplierUuid').equals(uuid).count();
         if (intakesCount > 0) {
             throw new Error("Impossible de supprimer : ce fournisseur a des factures enregistrées.");

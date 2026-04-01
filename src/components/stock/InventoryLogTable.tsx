@@ -6,11 +6,11 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { Badge } from '@/components/ui/badge';
-import { ArrowUpRight, ArrowDownLeft, RefreshCcw, ShoppingCart, Undo2, Archive, AlertTriangle, User } from 'lucide-react';
+import { ArrowUpRight, ArrowDownLeft, RefreshCcw, ShoppingCart, Undo2, Archive, AlertTriangle, Hash } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface InventoryLogTableProps {
-    logs: (InventoryLog & { productName: string })[];
+    logs: (InventoryLog & { productName: string, reference?: string })[];
 }
 
 const reasonConfig: Record<string, { label: string, icon: React.ElementType, color: string }> = {
@@ -30,6 +30,7 @@ export function InventoryLogTable({ logs }: InventoryLogTableProps) {
                         <TableHead className="w-[180px] font-bold">Date & Heure</TableHead>
                         <TableHead className="font-bold">Produit</TableHead>
                         <TableHead className="w-[150px] font-bold">Opération</TableHead>
+                        <TableHead className="font-bold">Référence</TableHead>
                         <TableHead className="text-center w-[120px] font-bold">Variation</TableHead>
                         <TableHead className="text-center w-[120px] font-bold">Solde Final</TableHead>
                     </TableRow>
@@ -57,6 +58,16 @@ export function InventoryLogTable({ logs }: InventoryLogTableProps) {
                                         <config.icon className="h-3 w-3" />
                                         {config.label}
                                     </Badge>
+                                </TableCell>
+                                <TableCell>
+                                    {log.reference ? (
+                                        <div className="flex items-center gap-1.5 text-xs font-mono font-bold text-muted-foreground bg-muted/50 px-2 py-1 rounded-md w-fit">
+                                            <Hash className="h-3 w-3" />
+                                            {log.reference}
+                                        </div>
+                                    ) : (
+                                        <span className="text-xs text-muted-foreground/40">-</span>
+                                    )}
                                 </TableCell>
                                 <TableCell className="text-center">
                                     <div className={cn(
