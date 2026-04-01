@@ -119,7 +119,10 @@ export default function SalesHistoryPage() {
         if (!sales) return [];
         const dataMap = new Map<string, { date: string, total: number, received: number }>();
         
-        sales.forEach(s => {
+        // Use last 30 days or filtered range
+        const sortedSales = [...sales].sort((a,b) => safeToDate(a.createdAt!).getTime() - safeToDate(b.createdAt!).getTime());
+        
+        sortedSales.forEach(s => {
             const day = format(safeToDate(s.createdAt!), 'dd/MM');
             const current = dataMap.get(day) || { date: day, total: 0, received: 0 };
             current.total += s.total;
@@ -127,7 +130,7 @@ export default function SalesHistoryPage() {
             dataMap.set(day, current);
         });
 
-        return Array.from(dataMap.values()).reverse();
+        return Array.from(dataMap.values());
     }, [sales]);
 
     const handleToggleSelection = (uuid: string) => {
@@ -381,7 +384,7 @@ export default function SalesHistoryPage() {
 
                     <Card className="rounded-3xl border-none shadow-sm bg-card overflow-hidden">
                         <CardHeader className="pb-3">
-                            <CardTitle className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Filtres de recherche</CardTitle>
+                            <CardTitle className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Fلتير de recherche</CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-4">
                             <div className="relative">
@@ -496,7 +499,7 @@ export default function SalesHistoryPage() {
                                             className="border-primary data-[state=checked]:bg-primary"
                                         />
                                         <label htmlFor="select-all" className="text-[10px] font-black uppercase tracking-widest text-primary cursor-pointer">
-                                            Tout sélectionner (${selectedSales.size})
+                                            Tout sélectionner ({selectedSales.size})
                                         </label>
                                     </div>
                                     <SalesHistoryTable 

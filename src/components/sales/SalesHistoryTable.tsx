@@ -78,7 +78,7 @@ export function SalesHistoryTable({
                                 <TableCell className="whitespace-nowrap">
                                     <div className="flex flex-col">
                                         <span className="font-bold text-xs">{format(safeToDate(sale.createdAt!), 'dd MMM yyyy', { locale: fr })}</span>
-                                        <span className="text-[9px] text-muted-foreground uppercase font-black opacity-60">
+                                        <span className="text-[9px] text-muted-foreground uppercase font-black tracking-tighter opacity-60">
                                             {format(safeToDate(sale.createdAt!), 'HH:mm')}
                                         </span>
                                     </div>
