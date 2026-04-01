@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -8,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import type { Product, Supplier } from '@/lib/types';
-import { Loader2, X, AlertTriangle, ChevronsUpDown, Plus, Package, Tag, Hash, Calendar, Box } from 'lucide-react';
+import { Loader2, X, AlertTriangle, ChevronsUpDown, Plus, Package, Tag, Hash, Calendar, Box, Building } from 'lucide-react';
 import { Badge } from '../ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { DatePicker } from '../ui/date-picker';
@@ -141,7 +140,7 @@ export function ProductDialog({ isOpen, onOpenChange, product, categories, suppl
             onSuccess();
             onOpenChange(false);
         } catch (err: any) {
-            setError(err.message || "Une erreur est survenue.");
+            setError(err.message || "Une erreur است survenue.");
             toast.error("Échec de l'opération.");
         } finally {
             setIsLoading(false);
