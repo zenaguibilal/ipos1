@@ -27,11 +27,11 @@ export function InventoryLogTable({ logs }: InventoryLogTableProps) {
             <Table>
                 <TableHeader className="bg-muted/30">
                     <TableRow>
-                        <TableHead className="w-[180px]">Date & Heure</TableHead>
-                        <TableHead>Produit</TableHead>
-                        <TableHead className="w-[150px]">Opération</TableHead>
-                        <TableHead className="text-center w-[120px]">Variation</TableHead>
-                        <TableHead className="text-center w-[120px]">Solde Final</TableHead>
+                        <TableHead className="w-[180px] font-bold">Date & Heure</TableHead>
+                        <TableHead className="font-bold">Produit</TableHead>
+                        <TableHead className="w-[150px] font-bold">Opération</TableHead>
+                        <TableHead className="text-center w-[120px] font-bold">Variation</TableHead>
+                        <TableHead className="text-center w-[120px] font-bold">Solde Final</TableHead>
                     </TableRow>
                 </TableHeader>
                 <TableBody>
