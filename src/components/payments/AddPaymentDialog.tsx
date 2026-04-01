@@ -2,11 +2,11 @@
 
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
-import { Loader2, Banknote, Calendar, FileText, CheckCircle2, Wallet, Info } from 'lucide-react';
+import { Loader2, Calendar, FileText, CheckCircle2, Wallet, Info } from 'lucide-react';
 import type { Customer } from '@/lib/types';
 import { formatCurrency, cn } from '@/lib/utils';
 import { DatePicker } from '../ui/date-picker';
@@ -102,7 +102,7 @@ export function AddPaymentDialog({ isOpen, onOpenChange, customer, onPaymentSucc
                 "p-4 rounded-2xl border transition-all duration-300",
                 isFullySettled ? "bg-green-500/10 border-green-500/30" : "bg-background/50 shadow-sm"
             )}>
-                <p className="text-[10px] uppercase font-bold text-muted-foreground mb-1 tracking-wider">Nouveau Solde</p>
+                <p className="text-[10px] uppercase font-bold text-muted-foreground mb-1 tracking-wider">Nouveau Solده</p>
                 <div className="flex items-center gap-2">
                     <p className={cn(
                         "text-xl font-black",
@@ -139,6 +139,7 @@ export function AddPaymentDialog({ isOpen, onOpenChange, customer, onPaymentSucc
                     placeholder="0.00"
                     className="text-4xl h-20 text-center font-black pr-14 focus-visible:ring-primary border-2 border-transparent focus-visible:border-primary/20 bg-background rounded-2xl shadow-sm transition-all"
                     autoFocus
+                    onKeyDown={(e) => { if(e.key === 'Enter') handleAddPayment() }}
                 />
                 <div className="absolute right-5 top-1/2 -translate-y-1/2 text-muted-foreground font-black text-lg">
                     DA
@@ -170,6 +171,7 @@ export function AddPaymentDialog({ isOpen, onOpenChange, customer, onPaymentSucc
                         onChange={(e) => setNotes(e.target.value)}
                         placeholder="Espèces, Chèque..."
                         className="h-10 rounded-xl bg-background border-none shadow-sm"
+                        onKeyDown={(e) => { if(e.key === 'Enter') handleAddPayment() }}
                     />
                 </div>
             </div>
@@ -186,7 +188,7 @@ export function AddPaymentDialog({ isOpen, onOpenChange, customer, onPaymentSucc
             className="flex-1 rounded-2xl h-12 font-bold shadow-lg shadow-primary/20 transition-all active:scale-95"
           >
             {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <CheckCircle2 className="mr-2 h-5 w-5" />}
-            Confirmer
+            Confirmer [Enter]
           </Button>
         </div>
       </DialogContent>
