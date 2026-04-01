@@ -1,6 +1,7 @@
 
 
 
+
 export interface Product {
     id?: number;
     uuid: string;
@@ -11,7 +12,6 @@ export interface Product {
     quantity: number; 
     minStockLevel: number;
     barcodes?: string[];
-    imageUrl?: string;
     unite?: 'Pièce' | 'Kg' | 'Litre' | 'Boîte' | 'Carton' | 'Sachet' | 'Bouteille';
     dateExpiration?: Date;
     supplierUuid?: string;
@@ -273,7 +273,6 @@ export interface TopProduct {
     name: string;
     quantitySold: number;
     revenueGenerated: number;
-    imageUrl?: string;
     category?: string;
 }
 
@@ -283,7 +282,7 @@ export interface TopCustomer {
   totalSpent: number;
 }
 
-export interface LowStockProduct extends Pick<Product, 'uuid' | 'name' | 'quantity' | 'minStockLevel' | 'imageUrl' | 'category' | 'unite'> {}
+export interface LowStockProduct extends Pick<Product, 'uuid' | 'name' | 'quantity' | 'minStockLevel' | 'category' | 'unite'> {}
 
 export interface DashboardData {
     stats: {

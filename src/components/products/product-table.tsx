@@ -6,8 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { MoreHorizontal, Edit, Trash2, AlertCircle, PackageX, CalendarClock } from 'lucide-react';
-import Image from 'next/image';
-import { cn, formatCurrency, getPlaceholder } from '@/lib/utils';
+import { cn, formatCurrency } from '@/lib/utils';
 import { Checkbox } from '../ui/checkbox';
 import { useMemo } from 'react';
 import { differenceInDays } from 'date-fns';
@@ -43,7 +42,6 @@ export function ProductTable({ products, onEdit, onDelete, selectedProducts, onT
                                 aria-label="Select all rows"
                             />
                         </TableHead>
-                        <TableHead className="w-[80px]">Image</TableHead>
                         <TableHead>Nom du Produit</TableHead>
                         <TableHead>Catégorie</TableHead>
                         <TableHead>Fournisseur</TableHead>
@@ -57,9 +55,6 @@ export function ProductTable({ products, onEdit, onDelete, selectedProducts, onT
                 <TableBody>
                     {products.map(product => {
                         const productUuid = product.uuid;
-
-                        const placeholder = getPlaceholder(product.category);
-                        const imageUrl = product.imageUrl || placeholder.url;
 
                         const expirationStatus = (() => {
                             if (!product.dateExpiration) return null;
@@ -85,16 +80,6 @@ export function ProductTable({ products, onEdit, onDelete, selectedProducts, onT
                                         checked={selectedProducts.has(productUuid)}
                                         onCheckedChange={() => onToggleProductSelection(productUuid)}
                                         aria-label={`Select row for ${product.name}`}
-                                    />
-                                </TableCell>
-                                <TableCell>
-                                    <Image
-                                        src={imageUrl}
-                                        alt={product.name}
-                                        width={40}
-                                        height={40}
-                                        className="rounded-md object-cover h-10 w-10"
-                                        data-ai-hint={product.imageUrl ? product.name.split(' ').slice(0, 2).join(' ') : placeholder.hint}
                                     />
                                 </TableCell>
                                 <TableCell className="font-medium">{product.name}</TableCell>

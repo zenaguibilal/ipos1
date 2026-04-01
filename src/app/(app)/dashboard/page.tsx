@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -10,12 +9,11 @@ import type { DashboardData, RecentSale, RecentReturn, SalesByDay, TopProduct, T
 import { dashboardService } from '@/services/dashboard.service';
 import { toast } from 'sonner';
 import { TrendingUp, TrendingDown, DollarSign, Receipt, Undo2, Users, CreditCard, Archive, RefreshCw } from 'lucide-react';
-import { formatCurrency, safeToDate, getPlaceholder, cn } from '@/lib/utils';
+import { formatCurrency, safeToDate, cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import Link from 'next/link';
 import { ResponsiveContainer, AreaChart, XAxis, YAxis, Tooltip, Area, CartesianGrid } from 'recharts';
-import Image from 'next/image';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
@@ -186,13 +184,9 @@ const TopProductsCard = ({ products, isLoading }: { products: TopProduct[], isLo
                     {products.map((p, index) => (
                         <div key={p.productUuid} className="flex items-center gap-4">
                             <span className="font-bold text-lg text-muted-foreground w-6 text-center">{index + 1}</span>
-                            <Image 
-                                src={p.imageUrl || getPlaceholder(p.category).url} 
-                                alt={p.name}
-                                width={40} height={40}
-                                className="rounded-md h-10 w-10 object-cover"
-                                data-ai-hint={getPlaceholder(p.category).hint}
-                            />
+                            <div className="flex items-center justify-center h-10 w-10 rounded-md bg-muted text-muted-foreground font-bold">
+                                {p.name.substring(0, 1)}
+                            </div>
                             <div className="flex-grow">
                                 <p className="font-semibold">{p.name}</p>
                                 <p className="text-sm text-muted-foreground">{p.quantitySold} vendus</p>
@@ -350,5 +344,3 @@ export default function DashboardPage() {
         </div>
     );
 }
-
-    

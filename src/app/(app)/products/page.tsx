@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -217,9 +216,27 @@ export default function ProductsPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
             {[...Array(8)].map((_, i) => (
                 <Card key={i}>
-                    <CardHeader className="p-0"><Skeleton className="rounded-t-lg aspect-[4/3]" /></CardHeader>
-                    <CardContent className="p-4 space-y-2"><Skeleton className="h-5 w-3/4" /><Skeleton className="h-4 w-1/2" /></CardContent>
-                    <CardFooter className="p-4 pt-0"><Skeleton className="h-10 w-full" /></CardFooter>
+                    <CardHeader>
+                        <div className="flex justify-between">
+                            <div className="space-y-2">
+                                <Skeleton className="h-5 w-32" />
+                                <Skeleton className="h-4 w-24" />
+                            </div>
+                            <Skeleton className="h-5 w-5" />
+                        </div>
+                    </CardHeader>
+                    <CardContent className="pt-0">
+                         <Skeleton className="h-4 w-20" />
+                    </CardContent>
+                    <CardFooter className="pt-0">
+                        <div className="flex justify-between items-center w-full">
+                            <div className="space-y-2">
+                                <Skeleton className="h-5 w-16" />
+                                <Skeleton className="h-4 w-12" />
+                            </div>
+                            <Skeleton className="h-8 w-8" />
+                        </div>
+                    </CardFooter>
                 </Card>
             ))}
         </div>

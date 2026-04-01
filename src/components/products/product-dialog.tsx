@@ -33,7 +33,6 @@ const initialFormState: Partial<Product> & { supplierName?: string } = {
     quantity: 0,
     minStockLevel: 10,
     barcodes: [],
-    imageUrl: '',
     unite: 'Pièce',
     dateExpiration: undefined,
     supplierUuid: undefined,
@@ -122,7 +121,6 @@ export function ProductDialog({ isOpen, onOpenChange, product, categories, suppl
             quantity: Number(formState.quantity) || 0,
             minStockLevel: Number(formState.minStockLevel) || 0,
             barcodes: formState.barcodes || [],
-            imageUrl: formState.imageUrl || undefined,
             unite: formState.unite || 'Pièce',
             dateExpiration: formState.dateExpiration || undefined,
             supplierUuid: formState.supplierUuid || undefined,
@@ -294,10 +292,6 @@ export function ProductDialog({ isOpen, onOpenChange, product, categories, suppl
                                     </Badge>
                                 ))}
                             </div>
-                        </div>
-                         <div className="space-y-2">
-                            <Label htmlFor="imageUrl">URL de l'image (Optionnel)</Label>
-                            <Input id="imageUrl" value={formState.imageUrl || ''} onChange={handleInputChange} placeholder="https://exemple.com/image.jpg"/>
                         </div>
                     </div>
                     <DialogFooter>

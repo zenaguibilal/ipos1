@@ -7,9 +7,8 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/componen
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { MoreHorizontal, Edit, Trash2, CalendarClock } from 'lucide-react';
-import Image from 'next/image';
 import { Badge } from '@/components/ui/badge';
-import { cn, formatCurrency, getPlaceholder } from '@/lib/utils';
+import { cn, formatCurrency } from '@/lib/utils';
 import { Checkbox } from '../ui/checkbox';
 import { differenceInDays } from 'date-fns';
 
@@ -22,8 +21,6 @@ interface ProductCardProps {
 }
 
 const ProductCardComponent = ({ product, onEdit, onDelete, isSelected, onToggleSelection }: ProductCardProps) => {
-    const placeholder = getPlaceholder(product.category);
-    const imageUrl = product.imageUrl || placeholder.url;
 
     const expirationStatus = useMemo(() => {
         if (!product.dateExpiration) return null;
@@ -43,36 +40,13 @@ const ProductCardComponent = ({ product, onEdit, onDelete, isSelected, onToggleS
         <Card
             onClick={handleCardClick}
             className={cn(
-                "flex flex-col transition-all duration-300 hover:shadow-xl hover:-translate-y-1 relative",
+                "flex flex-col justify-between transition-all duration-300 hover:shadow-xl hover:-translate-y-1",
                 isSelected && "ring-2 ring-primary",
                 "cursor-pointer"
             )}
         >
-            <CardHeader className="p-0 relative">
-                <Image
-                    src={imageUrl}
-                    alt={product.name}
-                    width={placeholder.width}
-                    height={placeholder.height}
-                    className="rounded-t-lg object-cover aspect-[4/3]"
-                    data-ai-hint={product.imageUrl ? product.name.split(' ').slice(0, 2).join(' ') : placeholder.hint}
-                />
-                 <div className="absolute top-2 right-2 flex flex-col gap-1 items-end">
-                    {product.quantity <= 0 ? (
-                        <Badge variant="destructive">En Rupture</Badge>
-                    ) : product.quantity <= product.minStockLevel ? (
-                        <Badge variant="outline" className="border-chart-secondary text-chart-secondary bg-chart-secondary/10">Stock Faible</Badge>
-                    ) : null}
-                     {expirationStatus && (
-                        <Badge className={expirationStatus.color}>
-                            <CalendarClock className="h-3 w-3 mr-1" />
-                            {expirationStatus.text}
-                        </Badge>
-                    )}
-                </div>
-            </CardHeader>
-            <CardContent className="p-4 flex-grow">
-                <div className="flex gap-2 justify-between items-start">
+            <CardHeader className="pb-2">
+                 <div className="flex gap-2 justify-between items-start">
                     <div className="flex-grow">
                         <CardTitle className="text-lg leading-tight">{product.name}</CardTitle>
                         <p className="text-sm text-muted-foreground">{product.category || 'Non classé'}</p>
@@ -85,6 +59,21 @@ const ProductCardComponent = ({ product, onEdit, onDelete, isSelected, onToggleS
                             aria-label={`Select ${product.name}`}
                         />
                     </div>
+                </div>
+            </CardHeader>
+            <CardContent className="p-4 pt-0 flex-grow">
+                 <div className="flex flex-col gap-1 items-start">
+                    {product.quantity <= 0 ? (
+                        <Badge variant="destructive">En Rupture</Badge>
+                    ) : product.quantity <= product.minStockLevel ? (
+                        <Badge variant="outline" className="border-chart-secondary text-chart-secondary bg-chart-secondary/10">Stock Faible</Badge>
+                    ) : null}
+                     {expirationStatus && (
+                        <Badge className={expirationStatus.color}>
+                            <CalendarClock className="h-3 w-3 mr-1" />
+                            {expirationStatus.text}
+                        </Badge>
+                    )}
                 </div>
             </CardContent>
             <CardFooter className="p-4 pt-0 flex justify-between items-center" onClick={(e) => e.stopPropagation()}>

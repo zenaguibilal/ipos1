@@ -5,36 +5,25 @@ import type { Product } from '@/lib/types';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Search, PackagePlus, Tag } from 'lucide-react';
-import { formatCurrency, getPlaceholder } from '@/lib/utils';
+import { formatCurrency } from '@/lib/utils';
 import { useDebounce } from '@/hooks/useDebounce';
 import { productService } from '@/services/product.service';
 import { useCartActions } from '@/stores/cartStore';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import Image from 'next/image';
 import { Skeleton } from '../ui/skeleton';
 import { CustomItemDialog } from './CustomItemDialog';
 
 const QuickAddItem = ({ product, onSelect }: { product: Product, onSelect: (product: Product) => void }) => {
-    const placeholder = getPlaceholder(product.category);
-    const imageUrl = product.imageUrl || placeholder.url;
-
     return (
         <div
             onClick={() => onSelect(product)}
-            className="relative group border rounded-lg flex flex-col items-center justify-center text-center p-2 cursor-pointer hover:bg-accent hover:shadow-md transition-all duration-200 aspect-square"
+            className="group border rounded-lg flex flex-col justify-between text-left p-2 cursor-pointer hover:bg-accent hover:shadow-md transition-all duration-200 aspect-square"
         >
-            <div className="absolute top-1 right-1 bg-background/80 text-primary font-bold text-xs px-1.5 py-0.5 rounded-full">{formatCurrency(product.price)}</div>
-            <div className="relative w-16 h-16 mb-1">
-                <Image
-                    src={imageUrl}
-                    alt={product.name}
-                    fill
-                    className="object-contain"
-                    sizes="(max-width: 768px) 10vw, (max-width: 1200px) 5vw, 5vw"
-                />
+            <div>
+                <p className="text-xs font-semibold leading-tight line-clamp-3">{product.name}</p>
+                <p className="text-[10px] text-muted-foreground">Stock: {product.quantity}</p>
             </div>
-            <p className="text-xs font-semibold leading-tight line-clamp-2">{product.name}</p>
-             <p className="text-[10px] text-muted-foreground">Stock: {product.quantity}</p>
+            <div className="text-primary font-bold text-sm text-right mt-2">{formatCurrency(product.price)}</div>
         </div>
     );
 };
