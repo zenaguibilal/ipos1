@@ -1,14 +1,14 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Banknote, Calendar, FileText, CheckCircle2, ArrowRight } from 'lucide-react';
 import type { Customer } from '@/lib/types';
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrency, cn } from '@/lib/utils';
 import { Textarea } from '../ui/textarea';
 import { DatePicker } from '../ui/date-picker';
 import { paymentService } from '@/services/payment.service';
@@ -28,19 +28,25 @@ export function AddPaymentDialog({ isOpen, onOpenChange, customer, onPaymentSucc
 
   useEffect(() => {
     if (isOpen) {
-      setAmount(String(customer.outstandingBalance > 0 ? customer.outstandingBalance : ''));
+      setAmount('');
       setPaymentDate(new Date());
       setNotes('');
     }
-  }, [isOpen, customer.outstandingBalance]);
+  }, [isOpen]);
+
+  const paymentAmount = parseFloat(amount) || 0;
+  const newBalance = Math.max(0, customer.outstandingBalance - paymentAmount);
+
+  const handlePayAll = () => {
+    setAmount(String(customer.outstandingBalance));
+  };
 
   const handleAddPayment = async () => {
-    const paymentAmount = parseFloat(amount);
-    if (isNaN(paymentAmount) || paymentAmount <= 0) {
-      toast.error('Veuillez entrer un montant valide.');
+    if (paymentAmount <= 0) {
+      toast.error('Veuillez entrer un montant supérieur à zero.');
       return;
     }
-    if (paymentAmount > customer.outstandingBalance) {
+    if (paymentAmount > customer.outstandingBalance + 0.01) {
         toast.error('Le montant du paiement ne peut pas dépasser le solde impayé.');
         return;
     }
@@ -58,7 +64,7 @@ export function AddPaymentDialog({ isOpen, onOpenChange, customer, onPaymentSucc
         notes: notes || undefined,
       });
 
-      toast.success(`Paiement de ${formatCurrency(paymentAmount)} enregistré pour ${customer.firstName} ${customer.lastName}.`);
+      toast.success(`Paiement de ${formatCurrency(paymentAmount)} enregistré avec succès.`);
       onPaymentSuccess();
       onOpenChange(false);
     } catch (error: any) {
@@ -70,47 +76,109 @@ export function AddPaymentDialog({ isOpen, onOpenChange, customer, onPaymentSucc
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>Enregistrer un paiement pour {customer.firstName}</DialogTitle>
+          <DialogTitle className="flex items-center gap-2">
+            <div className="p-2 rounded-full bg-primary/10">
+                <Banknote className="h-5 w-5 text-primary" />
+            </div>
+            Enregistrer un paiement
+          </DialogTitle>
           <DialogDescription>
-             Le solde impayé actuel est de <span className="font-bold text-destructive">{formatCurrency(customer.outstandingBalance)}</span>.
+             Client: <span className="font-bold text-foreground">{customer.firstName} {customer.lastName}</span>
           </DialogDescription>
         </DialogHeader>
-        <div className="space-y-4 py-4">
+
+        <div className="space-y-6 py-4">
+          {/* Financial Summary Cards */}
           <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="payment-amount">Montant (DA)</Label>
-              <Input 
-                  id="payment-amount" 
-                  type="number"
-                  value={amount} 
-                  onChange={(e) => setAmount(e.target.value)} 
-                  placeholder="0.00"
-                  className="text-lg"
-                  autoFocus
-              />
+            <div className="p-3 rounded-xl border bg-muted/30">
+                <p className="text-xs text-muted-foreground mb-1 uppercase font-semibold">Dette Actuelle</p>
+                <p className="text-xl font-bold text-destructive">{formatCurrency(customer.outstandingBalance)}</p>
             </div>
-            <div className="space-y-2">
-              <Label>Date du paiement</Label>
-              <DatePicker date={paymentDate} setDate={setPaymentDate} />
+            <div className={cn(
+                "p-3 rounded-xl border transition-colors",
+                newBalance === 0 ? "bg-green-500/10 border-green-500/50" : "bg-muted/30"
+            )}>
+                <p className="text-xs text-muted-foreground mb-1 uppercase font-semibold">Nouveau Solde</p>
+                <div className="flex items-center gap-2">
+                    <p className={cn("text-xl font-bold", newBalance === 0 ? "text-green-500" : "text-foreground")}>
+                        {formatCurrency(newBalance)}
+                    </p>
+                    {newBalance === 0 && <CheckCircle2 className="h-5 w-5 text-green-500" />}
+                </div>
             </div>
           </div>
-           <div className="space-y-2">
-            <Label htmlFor="payment-notes">Notes (facultatif)</Label>
-            <Textarea
-                id="payment-notes"
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                placeholder="Ex: Paiement partiel, numéro de chèque..."
-            />
+
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <div className="flex justify-between items-center">
+                <Label htmlFor="payment-amount" className="text-base">Montant Reçu (DA)</Label>
+                <Button 
+                    variant="link" 
+                    size="sm" 
+                    className="h-auto p-0 text-primary font-bold"
+                    onClick={handlePayAll}
+                    type="button"
+                >
+                    Tout régler
+                </Button>
+              </div>
+              <div className="relative">
+                <Input 
+                    id="payment-amount" 
+                    type="number"
+                    value={amount} 
+                    onChange={(e) => setAmount(e.target.value)} 
+                    placeholder="0.00"
+                    className="text-3xl h-16 text-center font-bold pr-12 focus-visible:ring-primary border-2"
+                    autoFocus
+                />
+                <div className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground font-bold">
+                    DA
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                    <Label className="flex items-center gap-2">
+                        <Calendar className="h-4 w-4 text-muted-foreground" />
+                        Date du paiement
+                    </Label>
+                    <DatePicker date={paymentDate} setDate={setPaymentDate} />
+                </div>
+                <div className="space-y-2">
+                    <Label className="flex items-center gap-2">
+                        <FileText className="h-4 w-4 text-muted-foreground" />
+                        Notes (facultatif)
+                    </Label>
+                    <Input
+                        value={notes}
+                        onChange={(e) => setNotes(e.target.value)}
+                        placeholder="Ex: Espèces, Chèque..."
+                        className="h-10"
+                    />
+                </div>
+            </div>
           </div>
         </div>
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isLoading}>Annuler</Button>
-          <Button onClick={handleAddPayment} disabled={isLoading || parseFloat(amount) <= 0}>
-            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {isLoading ? 'Enregistrement...' : 'Enregistrer le paiement'}
+
+        <DialogFooter className="gap-2 sm:gap-0">
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isLoading} className="flex-1">
+            Annuler
+          </Button>
+          <Button 
+            onClick={handleAddPayment} 
+            disabled={isLoading || paymentAmount <= 0}
+            className="flex-1 shadow-lg shadow-primary/20"
+          >
+            {isLoading ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+                <CheckCircle2 className="mr-2 h-4 w-4" />
+            )}
+            Confirmer le Paiement
           </Button>
         </DialogFooter>
       </DialogContent>
