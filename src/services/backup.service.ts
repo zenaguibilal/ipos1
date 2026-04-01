@@ -39,7 +39,7 @@ class BackupService {
                 stockRepository.getAll(),
                 paymentRepository.getAll(),
                 returnRepository.getAll(),
-                breadOrderRepository.getAllForUser(),
+                breadOrderRepository.getAll(),
                 companyRepository.get().then(p => p ? [p] : []),
             ]);
             

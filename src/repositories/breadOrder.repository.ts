@@ -33,7 +33,7 @@ const toSupabase = (order: Partial<BreadOrder>) => ({
 class BreadOrderRepository {
     private supabase = createClient();
 
-    async getAllForUser(): Promise<BreadOrder[]> {
+    async getAll(): Promise<BreadOrder[]> {
         const { data, error } = await this.supabase.from('bread_orders').select('*');
         if (error) throw error;
         return data.map(fromSupabase);
