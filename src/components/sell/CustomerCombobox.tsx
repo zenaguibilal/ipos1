@@ -62,10 +62,11 @@ export function CustomerCombobox() {
 
     return (
         <Combobox
+            id="sell-customer-combobox"
             options={customerOptions}
             value={selectedValue}
             onSelect={handleSelect}
-            placeholder="Sélectionner un client..."
+            placeholder="Sélectionner un client [F4]..."
             searchPlaceholder="Rechercher un client..."
             notFoundMessage="Aucun client trouvé."
             onSearchChange={setSearchQuery}

@@ -15,13 +15,14 @@ export function SaleActions() {
         <div className="grid grid-cols-2 gap-2">
             <DraftsDropdown />
             <Button 
+                id="sell-pay-button"
                 size="lg" 
                 className="h-14 text-lg"
                 onClick={() => setIsPaymentOpen(true)}
                 disabled={!cart || cart.items.length === 0}
             >
                 <Wallet className="mr-2 h-6 w-6" />
-                Payer
+                Payer [F2]
             </Button>
             <PaymentDialog isOpen={isPaymentOpen} onOpenChange={setIsPaymentOpen} />
         </div>

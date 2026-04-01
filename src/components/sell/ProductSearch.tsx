@@ -86,14 +86,15 @@ export function ProductSelector() {
                 <div className="relative flex-grow">
                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                     <Input
-                        placeholder="Rechercher par nom ou code-barres..."
+                        id="sell-search-input"
+                        placeholder="Rechercher [F1]..."
                         className="pl-12 text-base h-12"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                     />
                 </div>
                 <CustomItemDialog>
-                    <Button variant="outline" className="h-12 w-12 flex-shrink-0" aria-label="Ajouter un article personnalisé">
+                    <Button id="sell-custom-item-button" variant="outline" className="h-12 w-12 flex-shrink-0" aria-label="Ajouter un article personnalisé">
                         <Tag className="h-5 w-5"/>
                     </Button>
                 </CustomItemDialog>

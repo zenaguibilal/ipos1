@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -37,10 +36,11 @@ interface ComboboxProps {
     searchPlaceholder: string;
     notFoundMessage: string;
     onSearchChange?: (search: string) => void;
+    id?: string;
 }
 
 
-export const Combobox = React.forwardRef<HTMLButtonElement, ComboboxProps>(({ options, onSelect, value, placeholder, searchPlaceholder, notFoundMessage, onSearchChange }, ref) => {
+export const Combobox = React.forwardRef<HTMLButtonElement, ComboboxProps>(({ options, onSelect, value, placeholder, searchPlaceholder, notFoundMessage, onSearchChange, id }, ref) => {
   const [open, setOpen] = React.useState(false)
   const selectedOption = React.useMemo(() => options.find(o => o.value === value), [options, value]);
   
@@ -48,6 +48,7 @@ export const Combobox = React.forwardRef<HTMLButtonElement, ComboboxProps>(({ op
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button
+          id={id}
           ref={ref}
           variant="outline"
           role="combobox"
