@@ -7,10 +7,11 @@ import { useDebounce } from '@/hooks/useDebounce';
 import type { Customer, ImportAnalysis } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Plus, Search, Users, FileDown, Loader2, FileUp, FilterX, RefreshCw, SortAsc, Printer, Wheat } from 'lucide-react';
+import { Plus, Search, Users, FileDown, Loader2, FileUp, FilterX, RefreshCw, SortAsc, Printer, Wheat, Trash2, CheckSquare } from 'lucide-react';
 import { CustomerCard } from '@/components/customers/customer-card';
 import { CustomerDialog } from '@/components/customers/customer-dialog';
 import { DeleteCustomerDialog } from '@/components/customers/delete-customer-dialog';
+import { DeleteMultipleCustomersDialog } from '@/components/customers/DeleteMultipleCustomersDialog';
 import { toast } from 'sonner';
 import { CustomerStats } from '@/components/customers/CustomerStats';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuCheckboxItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger, DropdownMenuRadioGroup, DropdownMenuRadioItem } from "@/components/ui/dropdown-menu";
@@ -20,6 +21,7 @@ import { Card } from '@/components/ui/card';
 import { customerService } from '@/services/customer.service';
 import { ImportPreviewDialog } from '@/components/customers/import-preview-dialog';
 import { cn, formatCurrency } from '@/lib/utils';
+import { Checkbox } from '@/components/ui/checkbox';
 import Papa from 'papaparse';
 
 type FilterStatus = 'all' | 'has_debt' | 'overdue' | 'over_limit' | 'is_bread_client';
@@ -39,7 +41,9 @@ export default function CustomersPage() {
     const [sortBy, setSortBy] = useState('createdAt_desc');
     const [isCustomerDialogOpen, setIsCustomerDialogOpen] = useState(false);
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+    const [isBulkDeleteDialogOpen, setIsBulkDeleteDialogOpen] = useState(false);
     const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
+    const [selectedCustomers, setSelectedCustomers] = useState<Set<string>>(new Set());
     const [isRefreshing, setIsRefreshing] = useState(false);
     
     const debouncedSearchQuery = useDebounce(searchQuery, 300);
@@ -81,6 +85,10 @@ export default function CustomersPage() {
         fetchCustomers();
     }, [fetchCustomers]);
 
+    useEffect(() => {
+        setSelectedCustomers(new Set());
+    }, [customers]);
+
     const handleEditCustomer = useCallback((customer: Customer) => {
         setSelectedCustomer(customer);
         setIsCustomerDialogOpen(true);
@@ -90,6 +98,27 @@ export default function CustomersPage() {
         setSelectedCustomer(customer);
         setIsDeleteDialogOpen(true);
     }, []);
+
+    const handleToggleSelection = useCallback((customerUuid: string) => {
+        setSelectedCustomers(prev => {
+            const newSet = new Set(prev);
+            if (newSet.has(customerUuid)) {
+                newSet.delete(customerUuid);
+            } else {
+                newSet.add(customerUuid);
+            }
+            return newSet;
+        });
+    }, []);
+    
+    const handleToggleSelectAll = useCallback(() => {
+        if (!customers) return;
+        if (selectedCustomers.size === customers.length) {
+            setSelectedCustomers(new Set());
+        } else {
+            setSelectedCustomers(new Set(customers.map(c => c.uuid)));
+        }
+    }, [customers, selectedCustomers.size]);
 
     const handleExportCsv = () => {
         if (!customers || customers.length === 0) {
@@ -231,7 +260,7 @@ export default function CustomersPage() {
                 <EmptyState
                     icon={Users}
                     title="Aucun client trouvé"
-                    description={isFiltered ? "Essayez d'ajuster vos filtres." : "Commencez par ajouter votre premier client."}
+                    description={isFiltered ? "Essayez d'ajستر vos filtres." : "Commencez par ajouter votre premier client."}
                 >
                     <div className="flex gap-2 justify-center">
                         {isFiltered && <Button variant="outline" onClick={resetFilters} className="rounded-xl"><FilterX className="mr-2 h-4 w-4" /> Effacer</Button>}
@@ -251,6 +280,8 @@ export default function CustomersPage() {
                         customer={c} 
                         onEdit={handleEditCustomer} 
                         onDelete={handleDeleteCustomer}
+                        isSelected={selectedCustomers.has(c.uuid)}
+                        onToggleSelection={() => handleToggleSelection(c.uuid)}
                     />
                 ))}
             </div>
@@ -359,6 +390,27 @@ export default function CustomersPage() {
                     </Button>
                 </div>
             </div>
+
+            {selectedCustomers.size > 0 && (
+                <div className="flex flex-col sm:flex-row gap-3 justify-between items-center bg-primary/10 border border-primary/20 rounded-2xl p-4 animate-in slide-in-from-top-2 shadow-inner">
+                    <div className="flex items-center gap-3">
+                        <Checkbox
+                            id="select-all-customers"
+                            checked={!isLoading && customers && customers.length > 0 && selectedCustomers.size === customers.length}
+                            onCheckedChange={handleToggleSelectAll}
+                            className="h-5 w-5 border-primary data-[state=checked]:bg-primary"
+                        />
+                        <label htmlFor="select-all-customers" className="text-xs font-black text-primary uppercase tracking-widest">
+                            {selectedCustomers.size} client(s) sélectionné(s)
+                        </label>
+                    </div>
+                    <div className="flex gap-2">
+                        <Button variant="destructive" onClick={() => setIsBulkDeleteDialogOpen(true)} className="rounded-xl shadow-lg shadow-destructive/20 font-bold">
+                            <Trash2 className="mr-2 h-4 w-4" /> Supprimer
+                        </Button>
+                    </div>
+                </div>
+            )}
             
             <div className="min-h-[450px] animate-in fade-in duration-500">
                {renderContent()}
@@ -376,6 +428,16 @@ export default function CustomersPage() {
                 onOpenChange={setIsDeleteDialogOpen}
                 customer={selectedCustomer}
                 onSuccess={fetchCustomers}
+            />
+
+            <DeleteMultipleCustomersDialog
+                isOpen={isBulkDeleteDialogOpen}
+                onOpenChange={setIsBulkDeleteDialogOpen}
+                customerUuids={Array.from(selectedCustomers)}
+                onSuccess={() => {
+                    setSelectedCustomers(new Set());
+                    fetchCustomers();
+                }}
             />
             
             <ImportPreviewDialog

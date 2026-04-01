@@ -13,11 +13,14 @@ import { formatCurrency, cn } from '@/lib/utils';
 import { Progress } from '../ui/progress';
 import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import { Checkbox } from '../ui/checkbox';
 
 interface CustomerCardProps {
     customer: Customer;
     onEdit: (customer: Customer) => void;
     onDelete: (customer: Customer) => void;
+    isSelected: boolean;
+    onToggleSelection: () => void;
 }
 
 const DebtStatusIcon = ({ status }: { status: Customer['debtStatus']}) => {
@@ -53,7 +56,7 @@ const DebtStatusIcon = ({ status }: { status: Customer['debtStatus']}) => {
     }
 };
 
-export const CustomerCard = React.memo(({ customer, onEdit, onDelete }: CustomerCardProps) => {
+export const CustomerCard = React.memo(({ customer, onEdit, onDelete, isSelected, onToggleSelection }: CustomerCardProps) => {
     const [isMounted, setIsMounted] = useState(false);
     
     // Safety check for math
@@ -75,9 +78,16 @@ export const CustomerCard = React.memo(({ customer, onEdit, onDelete }: Customer
     return (
         <Card className={cn(
             "group flex flex-col transition-all duration-300 hover:shadow-2xl hover:-translate-y-1 bg-card border-none relative overflow-hidden rounded-3xl",
-            balance > 0 && "ring-1 ring-white/5"
+            isSelected ? "ring-2 ring-primary shadow-lg" : balance > 0 ? "ring-1 ring-white/5" : ""
         )}>
             <div className="absolute top-3 right-3 z-10 flex gap-1 items-center">
+                <div onClick={(e) => e.stopPropagation()} className="p-1.5 bg-background/80 backdrop-blur-md rounded-xl shadow-sm border border-white/5">
+                    <Checkbox
+                        checked={isSelected}
+                        onCheckedChange={onToggleSelection}
+                        className="h-5 w-5 border-primary data-[state=checked]:bg-primary"
+                    />
+                </div>
                 {customer.phone && (
                     <TooltipProvider>
                         <Tooltip>

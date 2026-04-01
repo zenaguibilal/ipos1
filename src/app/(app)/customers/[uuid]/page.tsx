@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useParams, useRouter } from 'next/navigation';
@@ -20,6 +21,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Skeleton } from '@/components/ui/skeleton';
 import { CustomerMetrics } from '@/components/customers/CustomerMetrics';
 import { CustomerActivity } from '@/components/customers/CustomerActivity';
+import { CustomerSpendingChart } from '@/components/customers/CustomerSpendingChart';
 import { useState, useCallback, useEffect } from 'react';
 import { AddPaymentDialog } from '@/components/payments/AddPaymentDialog';
 import { SaleDetailsDialog } from '@/components/sales/SaleDetailsDialog';
@@ -42,6 +44,7 @@ export default function CustomerDetailPage() {
     const customerUuid = params.uuid as string;
 
     const [customer, setCustomer] = useState<Customer | undefined | null>(undefined);
+    const [spendingData, setSpendingData] = useState<{ month: string, total: number }[]>([]);
     const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
     const [isStatementDialogOpen, setIsStatementDialogOpen] = useState(false);
     const [isBreadDialogOpen, setIsBreadDialogOpen] = useState(false);
@@ -64,8 +67,12 @@ export default function CustomerDetailPage() {
         }
         setIsRefreshing(true);
         try {
-            const cust = await customerService.getCustomerByUuid(customerUuid);
+            const [cust, spending] = await Promise.all([
+                customerService.getCustomerByUuid(customerUuid),
+                customerService.getCustomerMonthlySpending(customerUuid)
+            ]);
             setCustomer(cust);
+            setSpendingData(spending);
             if (!cust) {
                 toast.error("Client non trouvé.");
             }
@@ -202,7 +209,9 @@ export default function CustomerDetailPage() {
             </div>
 
             <div className="grid md:grid-cols-3 gap-6 items-start">
-                <div className="md:col-span-2">
+                <div className="md:col-span-2 space-y-6">
+                     <CustomerSpendingChart data={spendingData} />
+
                      <Card className="rounded-3xl border-none shadow-sm bg-card overflow-hidden">
                         <CardHeader className="bg-muted/30 border-b border-border/50">
                             <CardTitle className="text-xl font-black tracking-tight">Historique d'activité</CardTitle>

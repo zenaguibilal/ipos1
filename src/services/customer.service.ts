@@ -4,6 +4,8 @@ import { v4 as uuidv4 } from 'uuid';
 import type { Customer, Sale, ImportAnalysis, Payment, ProductReturn } from '@/lib/types';
 import { db } from '@/lib/db';
 import Papa from 'papaparse';
+import { startOfMonth, subMonths, format } from 'date-fns';
+import { fr } from 'date-fns/locale';
 
 class CustomerService {
     
@@ -122,12 +124,33 @@ class CustomerService {
         }
 
         if (customer.outstandingBalance !== 0) {
-            throw new Error("Suppression impossible: le solده du client n'est pas à zéro.");
+            throw new Error("Suppression impossible: le solde du client n'est pas à zéro.");
         }
         
         if (customer.id) {
             await db.customers.delete(customer.id);
         }
+    }
+
+    async bulkDelete(uuids: string[]): Promise<void> {
+        for (const uuid of uuids) {
+            const customer = await this.getCustomerByUuid(uuid);
+            if (!customer) continue;
+            
+            const [salesCount, returnsCount, paymentsCount, breadOrdersCount] = await Promise.all([
+                db.sales.where('customerUuid').equals(uuid).count(),
+                db.product_returns.where('customerUuid').equals(uuid).count(),
+                db.payments.where('customerUuid').equals(uuid).count(),
+                db.bread_orders.where('customerUuid').equals(uuid).count()
+            ]);
+            
+            if (salesCount > 0 || returnsCount > 0 || paymentsCount > 0 || breadOrdersCount > 0 || (customer.outstandingBalance || 0) !== 0) {
+                throw new Error(`Suppression impossible: le client "${customer.firstName} ${customer.lastName}" a un historique ou un solde non nul.`);
+            }
+        }
+        const customersToDelete = await db.customers.where('uuid').anyOf(uuids).toArray();
+        const idsToDelete = customersToDelete.map(c => c.id!);
+        await db.customers.bulkDelete(idsToDelete);
     }
     
     async getStats(): Promise<{ total: number; overdue: number; overLimit: number; totalOutstanding: number }> {
@@ -167,6 +190,34 @@ class CustomerService {
 
         const unpaidSales = await db.sales.where('customerUuid').equals(customerUuid).and(s => s.paymentStatus !== 'paid').sortBy('createdAt');
         return { customer, unpaidSales };
+    }
+
+    async getCustomerMonthlySpending(customerUuid: string): Promise<{ month: string, total: number }[]> {
+        const now = new Date();
+        const sixMonthsAgo = startOfMonth(subMonths(now, 5));
+        
+        const sales = await db.sales
+            .where('customerUuid').equals(customerUuid)
+            .and(s => new Date(s.createdAt!) >= sixMonthsAgo)
+            .toArray();
+
+        const spendingByMonth = new Map<string, number>();
+        for (let i = 0; i < 6; i++) {
+            const date = subMonths(now, i);
+            const monthKey = format(date, 'MMM yyyy', { locale: fr });
+            spendingByMonth.set(monthKey, 0);
+        }
+
+        sales.forEach(sale => {
+            const monthKey = format(new Date(sale.createdAt!), 'MMM yyyy', { locale: fr });
+            if (spendingByMonth.has(monthKey)) {
+                spendingByMonth.set(monthKey, (spendingByMonth.get(monthKey) || 0) + sale.total);
+            }
+        });
+
+        return Array.from(spendingByMonth.entries())
+            .map(([month, total]) => ({ month, total }))
+            .reverse();
     }
 
     async recalculateCustomerStatus(customerUuid: string): Promise<Customer> {
