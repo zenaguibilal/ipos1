@@ -21,11 +21,12 @@ import { DatePicker } from '../ui/date-picker';
 import { addDays } from 'date-fns';
 
 export function PaymentDialog({ isOpen, onOpenChange }: { isOpen: boolean, onOpenChange: (open: boolean) => void }) {
+    const [isMounted, setIsMounted] = useState(false);
     const cart = useActiveCart();
     const { processSale } = useCartActions();
     
     const [amountPaid, setAmountPaid] = useState(0);
-    const [dueDate, setDueDate] = useState<Date | undefined>(addDays(new Date(), 30));
+    const [dueDate, setDueDate] = useState<Date | undefined>();
     const [isLoading, setIsLoading] = useState(false);
     const [lastSale, setLastSale] = useState<Sale | null>(null);
     const [isReceiptOpen, setIsReceiptOpen] = useState(false);
@@ -34,7 +35,11 @@ export function PaymentDialog({ isOpen, onOpenChange }: { isOpen: boolean, onOpe
     const change = amountPaid - total;
 
     useEffect(() => {
-        if (isOpen) {
+        setIsMounted(true);
+    }, []);
+
+    useEffect(() => {
+        if (isOpen && isMounted) {
             setAmountPaid(total); // Default to paying the full amount
             setIsLoading(false);
             setLastSale(null);
@@ -44,7 +49,7 @@ export function PaymentDialog({ isOpen, onOpenChange }: { isOpen: boolean, onOpe
                  setDueDate(undefined);
             }
         }
-    }, [isOpen, total, cart?.customerUuid]);
+    }, [isOpen, total, cart?.customerUuid, isMounted]);
     
     const handleProcessSale = async () => {
         if (amountPaid < 0) return;
@@ -58,7 +63,7 @@ export function PaymentDialog({ isOpen, onOpenChange }: { isOpen: boolean, onOpe
         setIsLoading(false);
     };
 
-    if (!cart) return null;
+    if (!cart || !isMounted) return null;
 
     const isCreditSale = cart.customerUuid && amountPaid < total;
     

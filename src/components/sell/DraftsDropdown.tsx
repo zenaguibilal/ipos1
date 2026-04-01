@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useCartStore, useCartActions, useActiveCart } from '@/stores/cartStore';
 import { Button } from '@/components/ui/button';
 import {
@@ -28,14 +28,18 @@ import { calculateCartTotals, formatCurrency } from '@/lib/utils';
 import { cn } from '@/lib/utils';
 
 export function DraftsDropdown() {
+    const [isMounted, setIsMounted] = useState(false);
     const { carts, activeCartId } = useCartStore();
-    const activeCart = useActiveCart();
     const { createCart, selectCart, deleteCart, renameCart } = useCartActions();
 
     const [renameDialogOpen, setRenameDialogOpen] = useState(false);
     const [cartToRename, setCartToRename] = useState<{ id: string, name: string } | null>(null);
     const [newName, setNewName] = useState('');
     
+    useEffect(() => {
+        setIsMounted(true);
+    }, []);
+
     const handleRename = () => {
         if (cartToRename && newName.trim()) {
             renameCart(cartToRename.id, newName.trim());
@@ -50,6 +54,15 @@ export function DraftsDropdown() {
         const newId = createCart();
         toast.success("Vente actuelle mise en attente. Nouveau panier créé.");
     };
+
+    if (!isMounted) {
+        return (
+            <Button variant="outline" size="lg" className="h-14 text-base opacity-50 cursor-not-allowed">
+                <FileStack className="mr-2 h-5 w-5" />
+                <span className="hidden sm:inline">Chargement...</span>
+            </Button>
+        );
+    }
 
     return (
         <>

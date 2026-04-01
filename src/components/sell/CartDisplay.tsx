@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { useActiveCart, useCartActions } from "@/stores/cartStore";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,8 +10,17 @@ import { formatCurrency } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 
 export function CartDisplay() {
+    const [isMounted, setIsMounted] = useState(false);
     const cart = useActiveCart();
     const { updateItemQuantity, removeItemFromCart } = useCartActions();
+    
+    useEffect(() => {
+        setIsMounted(true);
+    }, []);
+
+    if (!isMounted) {
+        return <div className="flex-grow flex items-center justify-center"><ShoppingCart className="h-16 w-16 opacity-10 animate-pulse" /></div>;
+    }
     
     if (!cart || cart.items.length === 0) {
         return (

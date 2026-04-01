@@ -16,10 +16,15 @@ import { toast } from 'sonner';
 
 export default function BreadPage() {
     const [currentDate, setCurrentDate] = useState(new Date());
+    const [isMounted, setIsMounted] = useState(false);
     const formattedDate = formatDateToYYYYMMDD(currentDate);
 
     const [orders, setOrders] = useState<BreadOrderWithCustomer[] | undefined>(undefined);
     const [isGenerating, setIsGenerating] = useState(false);
+
+    useEffect(() => {
+        setIsMounted(true);
+    }, []);
 
     const fetchAndGenerateOrders = useCallback(async (date: string) => {
         setIsGenerating(true);
@@ -34,22 +39,24 @@ export default function BreadPage() {
     }, []);
 
     useEffect(() => {
-        fetchAndGenerateOrders(formattedDate);
-    }, [formattedDate, fetchAndGenerateOrders]);
+        if (isMounted) {
+            fetchAndGenerateOrders(formattedDate);
+        }
+    }, [formattedDate, fetchAndGenerateOrders, isMounted]);
 
 
     const handleDateChange = useCallback((days: number) => {
         setCurrentDate(prev => addDays(prev, days));
     }, []);
 
-    const isToday = formatDateToYYYYMMDD(new Date()) === formattedDate;
-    const isLoading = orders === undefined || isGenerating;
+    const isToday = isMounted && formatDateToYYYYMMDD(new Date()) === formattedDate;
+    const isLoading = orders === undefined || isGenerating || !isMounted;
 
     return (
         <div className="p-4 sm:p-6 space-y-6 flex flex-col h-full">
             <PageHeader 
                 title="Gestion des Commandes de Pain"
-                description={format(currentDate, 'EEEE d MMMM yyyy', { locale: fr })}
+                description={isMounted ? format(currentDate, 'EEEE d MMMM yyyy', { locale: fr }) : 'Chargement...'}
             >
                 <Button variant="outline" onClick={() => handleDateChange(-1)}>Précédent</Button>
                 <Button variant={isToday ? "secondary" : "outline"} onClick={() => setCurrentDate(new Date())} disabled={isToday}>Aujourd'hui</Button>

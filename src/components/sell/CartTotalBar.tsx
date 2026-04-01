@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { useActiveCart, useCartActions } from "@/stores/cartStore";
 import { calculateCartTotals } from "@/lib/utils";
 import { Label } from "@/components/ui/label";
@@ -8,10 +9,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { formatCurrency } from "@/lib/utils";
 
 export function CartTotalBar() {
+    const [isMounted, setIsMounted] = useState(false);
     const cart = useActiveCart();
     const { setDiscount } = useCartActions();
     
-    if (!cart) return null;
+    useEffect(() => {
+        setIsMounted(true);
+    }, []);
+
+    if (!isMounted || !cart) return <div className="h-24 bg-muted/20 animate-pulse rounded-lg" />;
 
     const { subtotal, total } = calculateCartTotals(cart);
     

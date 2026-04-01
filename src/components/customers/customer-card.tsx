@@ -1,7 +1,6 @@
-
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import type { Customer } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -56,7 +55,12 @@ const DebtStatusIcon = ({ status }: { status: Customer['debtStatus']}) => {
 
 
 const CustomerCardComponent = ({ customer, onEdit, onDelete }: CustomerCardProps) => {
+    const [isMounted, setIsMounted] = useState(false);
     const creditUsage = customer.creditLimit && customer.creditLimit > 0 ? (customer.outstandingBalance / customer.creditLimit) * 100 : 0;
+
+    useEffect(() => {
+        setIsMounted(true);
+    }, []);
 
     return (
         <Card className="flex flex-col transition-all duration-300 hover:shadow-xl hover:-translate-y-1 relative">
@@ -135,7 +139,9 @@ const CustomerCardComponent = ({ customer, onEdit, onDelete }: CustomerCardProps
                  <div className="flex items-center text-sm">
                     <Calendar className="h-4 w-4 mr-2 text-muted-foreground"/>
                     <span className="text-muted-foreground">Dernière activité:</span>
-                     <span className="font-semibold ml-auto">{customer.lastActivityDate ? formatDistanceToNow(new Date(customer.lastActivityDate), { addSuffix: true, locale: fr }) : 'N/A'}</span>
+                     <span className="font-semibold ml-auto">
+                        {isMounted && customer.lastActivityDate ? formatDistanceToNow(new Date(customer.lastActivityDate), { addSuffix: true, locale: fr }) : 'N/A'}
+                     </span>
                 </div>
             </CardContent>
             <CardFooter className="pt-0">
