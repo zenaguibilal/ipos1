@@ -6,7 +6,7 @@ import type { Customer } from '@/lib/types';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { MoreHorizontal, Edit, Trash2, FileText, Phone, BellRing, ShieldCheck, Calendar, Hourglass, User, ChevronRight } from 'lucide-react';
+import { MoreHorizontal, Edit, Trash2, FileText, Phone, BellRing, ShieldCheck, Calendar, Hourglass, User, ChevronRight, Wheat } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import Link from 'next/link';
 import { formatCurrency, cn } from '@/lib/utils';
@@ -71,6 +71,18 @@ export const CustomerCard = React.memo(({ customer, onEdit, onDelete }: Customer
             balance > 0 && "ring-1 ring-white/5"
         )}>
             <div className="absolute top-3 right-3 z-10 flex gap-1 items-center">
+                {customer.isBreadClient && (
+                    <TooltipProvider>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <div className="p-1.5 bg-primary/20 rounded-xl">
+                                    <Wheat className="h-4 w-4 text-primary" />
+                                </div>
+                            </TooltipTrigger>
+                            <TooltipContent className="rounded-xl font-bold text-xs">Client Service Pain</TooltipContent>
+                        </Tooltip>
+                    </TooltipProvider>
+                )}
                 <DebtStatusIcon status={customer.debtStatus} />
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>

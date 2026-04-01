@@ -7,7 +7,7 @@ import { useDebounce } from '@/hooks/useDebounce';
 import type { Customer, ImportAnalysis } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Plus, Search, Users, FileDown, Loader2, FileUp, FilterX, RefreshCw, SortAsc, Printer } from 'lucide-react';
+import { Plus, Search, Users, FileDown, Loader2, FileUp, FilterX, RefreshCw, SortAsc, Printer, Wheat } from 'lucide-react';
 import { CustomerCard } from '@/components/customers/customer-card';
 import { CustomerDialog } from '@/components/customers/customer-dialog';
 import { DeleteCustomerDialog } from '@/components/customers/delete-customer-dialog';
@@ -22,7 +22,7 @@ import { ImportPreviewDialog } from '@/components/customers/import-preview-dialo
 import { cn, formatCurrency } from '@/lib/utils';
 import Papa from 'papaparse';
 
-type FilterStatus = 'all' | 'has_debt' | 'overdue' | 'over_limit';
+type FilterStatus = 'all' | 'has_debt' | 'overdue' | 'over_limit' | 'is_bread_client';
 
 const sortOptions: { [key: string]: string } = {
     'createdAt_desc': 'Plus récents',
@@ -44,7 +44,7 @@ export default function CustomersPage() {
     
     const debouncedSearchQuery = useDebounce(searchQuery, 300);
 
-    const [customers, setProducts] = useState<Customer[] | undefined>(undefined);
+    const [customers, setCustomers] = useState<Customer[] | undefined>(undefined);
     const isLoading = customers === undefined;
 
     // States for CSV Import
@@ -55,7 +55,7 @@ export default function CustomersPage() {
 
     useEffect(() => {
         const statusFromQuery = searchParams.get('status') as FilterStatus;
-        if (statusFromQuery && ['all', 'has_debt', 'overdue', 'over_limit'].includes(statusFromQuery)) {
+        if (statusFromQuery && ['all', 'has_debt', 'overdue', 'over_limit', 'is_bread_client'].includes(statusFromQuery)) {
             setFilterStatus(statusFromQuery);
         }
     }, [searchParams]);
@@ -68,10 +68,10 @@ export default function CustomersPage() {
                 status: filterStatus,
                 sortBy
             });
-            setProducts(data);
+            setCustomers(data);
         } catch (error: any) {
             toast.error("Impossible de charger les clients.");
-            setProducts([]);
+            setCustomers([]);
         } finally {
             setIsRefreshing(false);
         }
@@ -105,7 +105,8 @@ export default function CustomersPage() {
             Total_Dépensé: c.totalSpent,
             Solde_Impayé: c.outstandingBalance,
             Limite_Crédit: c.creditLimit || 'N/A',
-            Dernière_Activité: c.lastActivityDate ? new Date(c.lastActivityDate).toLocaleDateString() : 'N/A'
+            Dernière_Activité: c.lastActivityDate ? new Date(c.lastActivityDate).toLocaleDateString() : 'N/A',
+            Client_Pain: c.isBreadClient ? 'Oui' : 'Non'
         })));
 
         const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
@@ -135,17 +136,18 @@ export default function CustomersPage() {
                 <head>
                     <title>Liste des Dettes Clients</title>
                     <style>
-                        body { font-family: sans-serif; padding: 20px; }
+                        body { font-family: sans-serif; padding: 20px; background: white; color: black; }
                         table { width: 100%; border-collapse: collapse; margin-top: 20px; }
                         th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
                         th { background-color: #f4f4f4; font-size: 12px; text-transform: uppercase; }
-                        h1 { text-align: center; }
-                        .total { text-align: right; font-weight: bold; margin-top: 20px; font-size: 18px; }
+                        h1 { text-align: center; margin-bottom: 5px; }
+                        .subtitle { text-align: center; color: #666; margin-bottom: 20px; }
+                        .total { text-align: right; font-weight: bold; margin-top: 20px; font-size: 18px; border-top: 2px solid black; pt: 10px; }
                     </style>
                 </head>
                 <body>
                     <h1>Rapport des Dettes Clients</h1>
-                    <p>Date: ${new Date().toLocaleDateString()}</p>
+                    <p class="subtitle">Date du rapport: ${new Date().toLocaleDateString('fr-FR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
                     <table>
                         <thead>
                             <tr>
@@ -156,17 +158,17 @@ export default function CustomersPage() {
                             </tr>
                         </thead>
                         <tbody>
-                            ${debtors.map(c => `
+                            ${debtors.sort((a,b) => b.outstandingBalance - a.outstandingBalance).map(c => `
                                 <tr>
-                                    <td>${c.firstName} ${c.lastName}</td>
+                                    <td><b>${c.firstName} ${c.lastName}</b></td>
                                     <td>${c.phone || '-'}</td>
                                     <td>${c.lastActivityDate ? new Date(c.lastActivityDate).toLocaleDateString() : 'Jamais'}</td>
-                                    <td style="text-align: right;">${formatCurrency(c.outstandingBalance)}</td>
+                                    <td style="text-align: right;"><b>${formatCurrency(c.outstandingBalance)}</b></td>
                                 </tr>
                             `).join('')}
                         </tbody>
                     </table>
-                    <div class="total">Total Global: ${formatCurrency(debtors.reduce((sum, c) => sum + c.outstandingBalance, 0))}</div>
+                    <div class="total">Total Global des Créances: ${formatCurrency(debtors.reduce((sum, c) => sum + c.outstandingBalance, 0))}</div>
                 </body>
             </html>
         `;
@@ -299,7 +301,7 @@ export default function CustomersPage() {
                         <DropdownMenuTrigger asChild>
                             <Button variant="outline" className="rounded-xl h-11 border-none shadow-sm bg-card hover:bg-primary/5 min-w-[140px] font-medium">
                                 <Users className="mr-2 h-4 w-4 opacity-50" />
-                                {filterStatus === 'all' ? 'Tous les clients' : filterStatus === 'has_debt' ? 'Avec une dette' : filterStatus === 'overdue' ? 'Retard de paiement' : 'Plafond dépassé'}
+                                {filterStatus === 'all' ? 'Tous les clients' : filterStatus === 'has_debt' ? 'Avec une dette' : filterStatus === 'overdue' ? 'Retard de paiement' : filterStatus === 'over_limit' ? 'Plafond dépassé' : 'Clients de Pain'}
                             </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent className="rounded-xl border-none shadow-xl min-w-[200px]">
@@ -309,6 +311,10 @@ export default function CustomersPage() {
                             <DropdownMenuCheckboxItem checked={filterStatus === 'has_debt'} onCheckedChange={() => setFilterStatus('has_debt')}>Avec une dette</DropdownMenuCheckboxItem>
                             <DropdownMenuCheckboxItem checked={filterStatus === 'overdue'} onCheckedChange={() => setFilterStatus('overdue')}>En retard de paiement</DropdownMenuCheckboxItem>
                             <DropdownMenuCheckboxItem checked={filterStatus === 'over_limit'} onCheckedChange={() => setFilterStatus('over_limit')}>Plafond dépassé</DropdownMenuCheckboxItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuCheckboxItem checked={filterStatus === 'is_bread_client'} onCheckedChange={() => setFilterStatus('is_bread_client')}>
+                                <Wheat className="mr-2 h-3 w-3 text-primary" /> Clients de Pain
+                            </DropdownMenuCheckboxItem>
                         </DropdownMenuContent>
                     </DropdownMenu>
 
@@ -324,7 +330,7 @@ export default function CustomersPage() {
                             <DropdownMenuSeparator />
                             <DropdownMenuRadioGroup value={sortBy} onValueChange={setSortBy}>
                                 {Object.entries(sortOptions).map(([key, value]) => (
-                                    <DropdownMenuRadioItem key={key} value={key} className="text-xs">{value}</DropdownMenuRadioItem>
+                                    <DropdownMenuRadioItem key={key} value={key} className="text-xs font-bold">{value}</DropdownMenuRadioItem>
                                 ))}
                             </DropdownMenuRadioGroup>
                         </DropdownMenuContent>
