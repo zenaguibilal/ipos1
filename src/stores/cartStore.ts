@@ -102,6 +102,25 @@ export const useCartStore = create<CartState>()(
                     }));
                 },
                 addItemToCart: (product, quantity = 1) => {
+                    const { carts, activeCartId } = get();
+                    const cart = carts.find(c => c.id === activeCartId);
+                    if (!cart) return;
+
+                    const existingItem = cart.items.find(item => item.uuid === product.uuid);
+                    const isStockedItem = !product.uuid.startsWith('custom-') && product.uuid !== 'BREAD_PRODUCT';
+
+                    if (isStockedItem) {
+                        const currentCartQuantity = existingItem ? existingItem.cartQuantity : 0;
+                        const requestedTotalQuantity = currentCartQuantity + quantity;
+                        
+                        if (product.quantity < requestedTotalQuantity) {
+                            toast.error(`Stock insuffisant pour "${product.name}"`, {
+                                description: `Demandé: ${requestedTotalQuantity}, Disponible: ${product.quantity}.`,
+                            });
+                            return;
+                        }
+                    }
+                    
                     set(produce(state => {
                         const cart = state.carts.find(c => c.id === state.activeCartId);
                         if (!cart) return;
@@ -139,6 +158,17 @@ export const useCartStore = create<CartState>()(
                         if (cart) {
                             const item = cart.items.find(item => item.uuid === productUuid);
                             if (item) {
+                                const isStockedItem = !item.uuid.startsWith('custom-') && item.uuid !== 'BREAD_PRODUCT';
+                
+                                if (isStockedItem && newQuantity > item.quantity) {
+                                    toast.error(`Stock insuffisant pour "${item.name}"`, {
+                                        description: `Demandé: ${newQuantity}, Disponible: ${item.quantity}.`,
+                                    });
+                                    // Revert to max available quantity
+                                    item.cartQuantity = item.quantity;
+                                    return;
+                                }
+
                                 if (newQuantity > 0) {
                                     item.cartQuantity = newQuantity;
                                 } else {
