@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation';
 
 export default function RootPage() {
-  // Since the login system is removed, redirect all users directly to the dashboard.
+  // توجيه مباشر إلى لوحة التحكم كون التطبيق محلي بالكامل ولا يتطلب تسجيل دخول
   redirect('/dashboard');
 }
