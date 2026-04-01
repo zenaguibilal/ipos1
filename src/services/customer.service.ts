@@ -1,3 +1,4 @@
+
 'use client';
 import { v4 as uuidv4 } from 'uuid';
 import type { Customer, Sale, ImportAnalysis, Payment, ProductReturn } from '@/lib/types';
@@ -87,12 +88,27 @@ class CustomerService {
     }
 
     async deleteCustomer(uuid: string): Promise<void> {
-        const sales = await db.sales.where('customerUuid').equals(uuid).toArray();
-        if (sales.length > 0) {
-            throw new Error("Impossible de supprimer un client avec un historique de ventes.");
-        }
         const customer = await this.getCustomerByUuid(uuid);
-        if (customer?.id) {
+        if (!customer) return;
+
+        // Check for any associated financial or transactional records.
+        const [salesCount, returnsCount, paymentsCount, breadOrdersCount] = await Promise.all([
+            db.sales.where('customerUuid').equals(uuid).count(),
+            db.product_returns.where('customerUuid').equals(uuid).count(),
+            db.payments.where('customerUuid').equals(uuid).count(),
+            db.bread_orders.where('customerUuid').equals(uuid).count()
+        ]);
+        
+        if (salesCount > 0 || returnsCount > 0 || paymentsCount > 0 || breadOrdersCount > 0) {
+            throw new Error("Suppression impossible: ce client a un historique de transactions (ventes, retours, paiements, etc.).");
+        }
+
+        // A final check on the balance, although the above should ensure it's zero.
+        if (customer.outstandingBalance !== 0) {
+            throw new Error("Suppression impossible: le solde du client n'est pas à zéro.");
+        }
+        
+        if (customer.id) {
             await db.customers.delete(customer.id);
         }
     }

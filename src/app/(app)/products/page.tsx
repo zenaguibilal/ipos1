@@ -160,16 +160,6 @@ export default function ProductsPage() {
         setIsProductDialogOpen(true);
     }, []);
 
-    const handleDeleteProduct = useCallback(async (product: Product) => {
-        try {
-            await productService.deleteProduct(product.uuid);
-            toast.success(`Produit "${product.name}" supprimé.`);
-            fetchProducts();
-        } catch (error: any) {
-            toast.error("Échec de la suppression.", { description: error.message });
-        }
-    }, [fetchProducts]);
-
     const handleToggleSelection = useCallback((productUuid: string) => {
         setSelectedProducts(prev => {
             const newSet = new Set(prev);
@@ -463,7 +453,7 @@ export default function ProductsPage() {
                     isOpen={isDeleteDialogOpen}
                     onOpenChange={setIsDeleteDialogOpen}
                     product={selectedProduct}
-                    onConfirmDelete={handleDeleteProduct}
+                    onSuccess={fetchProducts}
                 />
                 <PrintLabelsDialog
                     isOpen={isPrintDialogOpen}
