@@ -1,6 +1,6 @@
 # iPOS - Point de Vente Intelligent
 
-**iPOS** est une application de point de vente (POS) complète, conçue pour la vente au détail et simplifiée pour une utilisation en mode mono-poste. Elle utilise Supabase comme backend, garantissant que vos données sont sécurisées et persistantes. L'application est également une Progressive Web App (PWA), ce qui signifie qu'elle est installable, rapide et peut fonctionner hors ligne.
+**iPOS** est une application de point de vente (POS) complète, conçue pour la vente au détail et simplifiée pour une utilisation en mode mono-poste. Elle utilise IndexedDB, une base de données intégrée à votre navigateur, pour un stockage de données local, rapide et privé. L'application est une Progressive Web App (PWA), ce qui signifie qu'elle est installable, rapide et peut fonctionner hors ligne.
 
 ## 🚀 Pile Technique
 
@@ -8,7 +8,7 @@
 *   **Bibliothèque UI :** React
 *   **Composants :** ShadCN UI
 *   **Style :** Tailwind CSS
-*   **Backend & Base de Données :** Supabase (PostgreSQL)
+*   **Base de Données :** IndexedDB (stockage local dans le navigateur via Dexie.js)
 *   **Gestion d'état :** Zustand
 *   **Langage :** TypeScript
 *   **PWA :** Service Worker pour la mise en cache et le support hors ligne.
@@ -56,4 +56,4 @@ L'application iPOS est dotée d'un ensemble riche de fonctionnalités pour répo
 
 ### Administration et Données
 - **Profil de l'Entreprise :** Personnalisation des informations de l'entreprise pour les reçus et documents.
-- **Sauvegarde et Restauration :** Exportation de l'intégralité de la base de données vers Supabase Storage et restauration à partir d'un fichier de sauvegarde.
+- **Sauvegarde et Restauration :** Exportation de l'intégralité de la base de données locale dans un fichier JSON, et restauration à partir de ce fichier.

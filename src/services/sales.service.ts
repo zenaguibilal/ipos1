@@ -2,6 +2,8 @@
 import { v4 as uuidv4 } from 'uuid';
 import type { Sale, CartItem, SaleItem } from '@/lib/types';
 import { db } from '@/lib/db';
+import { inventoryService } from './inventory.service';
+import { customerService } from './customer.service';
 
 class SalesService {
 
@@ -105,8 +107,27 @@ class SalesService {
     }
 
     async processSaleCancellation(uuid: string): Promise<void> {
-        // This is now handled by the appStore action to ensure atomicity with other services
-        throw new Error("processSaleCancellation should be handled by a transactional action in appStore.");
+        await db.transaction('rw', db.sales, db.products, db.customers, db.inventory_logs, async () => {
+            const sale = await this.getSaleByUuid(uuid);
+            if (!sale || !sale.id) {
+                throw new Error("Vente non trouvée.");
+            }
+
+            // Delete the sale
+            await db.sales.delete(sale.id);
+
+            // Restore stock
+            for (const item of sale.items) {
+                if (item.productUuid) {
+                    await inventoryService.adjustStock(item.productUuid, item.quantity, 'cancellation', sale.uuid);
+                }
+            }
+
+            // Update customer status
+            if (sale.customerUuid) {
+                await customerService.recalculateCustomerStatus(sale.customerUuid);
+            }
+        });
     }
 }
 
