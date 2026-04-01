@@ -6,7 +6,7 @@ import { useActiveCart } from '@/stores/cartStore';
 import { customerService } from '@/services/customer.service';
 import type { Customer } from '@/lib/types';
 import { calculateCartTotals, formatCurrency } from '@/lib/utils';
-import { ShoppingCart, User, Landmark } from 'lucide-react';
+import { ShoppingCart, User, Landmark, File } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 
@@ -52,22 +52,29 @@ export function SaleInfoBar() {
                 <div className="flex flex-col sm:flex-row items-center justify-between h-auto min-h-[3rem] py-2 text-sm gap-x-6 gap-y-2">
                     
                     {/* Cart Info */}
-                    <div className="flex items-center gap-2">
-                        <ShoppingCart className="h-5 w-5 text-primary" />
-                        <span className="font-bold">Total :</span>
-                        <span className="font-mono text-base font-bold text-primary">{formatCurrency(total)}</span>
-                        {itemCount > 0 && (
-                            <span className="text-xs text-muted-foreground">
-                                ({itemCount} article{itemCount > 1 ? 's' : ''})
-                            </span>
-                        )}
+                    <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2">
+                        <div className="flex items-center gap-2">
+                            <File className="h-5 w-5 text-primary" />
+                            <span className="font-bold">Panier:</span>
+                            <span className="font-semibold">{cart.name}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <ShoppingCart className="h-5 w-5 text-primary" />
+                            <span className="font-bold">Total:</span>
+                            <span className="font-mono text-base font-bold text-primary">{formatCurrency(total)}</span>
+                            {itemCount > 0 && (
+                                <span className="text-xs text-muted-foreground">
+                                    ({itemCount} article{itemCount > 1 ? 's' : ''})
+                                </span>
+                            )}
+                        </div>
                     </div>
                     
                     {/* Customer & Debt Info */}
-                    <div className="flex items-center gap-x-6 gap-y-2 flex-wrap justify-center">
+                    <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2">
                          <div className="flex items-center gap-2">
                             <User className="h-5 w-5 text-primary" />
-                            <span className="font-bold">Client :</span>
+                            <span className="font-bold">Client:</span>
                             {customer ? (
                                 <Link href={`/customers/${customer.uuid}`} className="hover:underline font-semibold">
                                     {customerName}
@@ -80,7 +87,7 @@ export function SaleInfoBar() {
                         {customer && (
                              <div className="flex items-center gap-2">
                                 <Landmark className="h-5 w-5 text-primary" />
-                                <span className="font-bold">Dette :</span>
+                                <span className="font-bold">Dette:</span>
                                 <span className={cn("font-mono text-base font-bold", customerDebt > 0 ? 'text-destructive' : '')}>
                                     {formatCurrency(customerDebt)}
                                 </span>
