@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useCallback, useEffect, useMemo } from 'react';
@@ -6,7 +5,7 @@ import { useDebounce } from '@/hooks/useDebounce';
 import type { StockIntake, Supplier, InventoryLog } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Search, Plus, Archive, LayoutGrid, List, History, ArrowUpDown, RefreshCw, Filter, Building, Wallet, Trash2 } from 'lucide-react';
+import { Search, Plus, Archive, LayoutGrid, List, History, ArrowUpDown, RefreshCw, Building, Wallet, Trash2, UserPlus } from 'lucide-react';
 import { DateRangePicker } from '@/components/ui/date-range-picker';
 import { useDateRange } from '@/hooks/useDateRange';
 import { StockIntakeCard } from '@/components/stock/stock-intake-card';
@@ -28,6 +27,7 @@ import { InventoryLogTable } from '@/components/stock/InventoryLogTable';
 import { StockAdjustmentDialog } from '@/components/stock/StockAdjustmentDialog';
 import { SupplierTable } from '@/components/stock/SupplierTable';
 import { SupplierPaymentDialog } from '@/components/stock/SupplierPaymentDialog';
+import { SupplierDialog } from '@/components/stock/SupplierDialog';
 import { ConfirmAlertDialog } from '@/components/ui/ConfirmAlertDialog';
 import { cn, formatCurrency } from '@/lib/utils';
 
@@ -51,6 +51,7 @@ export default function StockPage() {
     const [isCancelOpen, setIsCancelOpen] = useState(false);
     const [isAdjustmentOpen, setIsAdjustmentOpen] = useState(false);
     const [isSupplierPayOpen, setIsSupplierPayOpen] = useState(false);
+    const [isSupplierDialogOpen, setIsSupplierDialogOpen] = useState(false);
     const [isDeleteSupplierOpen, setIsDeleteSupplierOpen] = useState(false);
     const [isRefreshing, setIsRefreshing] = useState(false);
 
@@ -86,7 +87,13 @@ export default function StockPage() {
                 setInventoryLogs(logsData);
             } else {
                 const suppliersData = await supplierService.getSuppliers();
-                setSuppliers(suppliersData);
+                // Client-side search for suppliers since getSuppliers is basic
+                if (debouncedSearchQuery) {
+                    const q = debouncedSearchQuery.toLowerCase();
+                    setSuppliers(suppliersData.filter(s => s.name.toLowerCase().includes(q)));
+                } else {
+                    setSuppliers(suppliersData);
+                }
             }
         } catch (error: any) {
             toast.error("Erreur lors du chargement des données.", { description: error.message });
@@ -116,6 +123,16 @@ export default function StockPage() {
     const handlePaySupplier = (supplier: Supplier) => {
         setSelectedSupplier(supplier);
         setIsSupplierPayOpen(true);
+    };
+
+    const handleEditSupplier = (supplier: Supplier) => {
+        setSelectedSupplier(supplier);
+        setIsSupplierDialogOpen(true);
+    };
+
+    const handleAddSupplier = () => {
+        setSelectedSupplier(null);
+        setIsSupplierDialogOpen(true);
     };
 
     const handleDeleteSupplier = (supplier: Supplier) => {
@@ -198,12 +215,20 @@ export default function StockPage() {
                 description="Surveillez vos réceptions, gérez vos fournisseurs et suivez chaque mouvement."
             >
                 <div className="flex gap-2 w-full sm:w-auto">
-                    <Button variant="outline" onClick={() => setIsAdjustmentOpen(true)} className="flex-1 sm:flex-none rounded-xl font-bold border-primary/20 hover:bg-primary/5">
-                        <ArrowUpDown className="mr-2 h-4 w-4 text-primary" /> Correction
-                    </Button>
-                    <Button asChild className="flex-1 sm:flex-none rounded-xl font-bold shadow-lg shadow-primary/20">
-                        <Link href="/stock/intake"><Plus className="mr-2 h-4 w-4" /> Réception</Link>
-                    </Button>
+                    {activeTab === 'suppliers' ? (
+                        <Button onClick={handleAddSupplier} className="flex-1 sm:flex-none rounded-xl font-bold shadow-lg shadow-primary/20">
+                            <UserPlus className="mr-2 h-4 w-4" /> Nouveau Moteur
+                        </Button>
+                    ) : (
+                        <>
+                            <Button variant="outline" onClick={() => setIsAdjustmentOpen(true)} className="flex-1 sm:flex-none rounded-xl font-bold border-primary/20 hover:bg-primary/5">
+                                <ArrowUpDown className="mr-2 h-4 w-4 text-primary" /> Correction
+                            </Button>
+                            <Button asChild className="flex-1 sm:flex-none rounded-xl font-bold shadow-lg shadow-primary/20">
+                                <Link href="/stock/intake"><Plus className="mr-2 h-4 w-4" /> Réception</Link>
+                            </Button>
+                        </>
+                    )}
                 </div>
             </PageHeader>
 
@@ -334,7 +359,7 @@ export default function StockPage() {
                     <SupplierTable 
                         suppliers={suppliers || []} 
                         onPay={handlePaySupplier} 
-                        onEdit={() => {}} 
+                        onEdit={handleEditSupplier} 
                         onDelete={handleDeleteSupplier} 
                     />
                 )}
@@ -363,6 +388,13 @@ export default function StockPage() {
             <SupplierPaymentDialog
                 isOpen={isSupplierPayOpen}
                 onOpenChange={setIsSupplierPayOpen}
+                supplier={selectedSupplier}
+                onSuccess={fetchData}
+            />
+
+            <SupplierDialog 
+                isOpen={isSupplierDialogOpen}
+                onOpenChange={setIsSupplierDialogOpen}
                 supplier={selectedSupplier}
                 onSuccess={fetchData}
             />
