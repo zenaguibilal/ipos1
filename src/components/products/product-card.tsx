@@ -6,7 +6,7 @@ import type { Product } from '@/lib/types';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { MoreHorizontal, Edit, Trash2, CalendarClock, Package, AlertTriangle, Info, Tag } from 'lucide-react';
+import { MoreHorizontal, Edit, Trash2, CalendarClock, Package, AlertTriangle, Info, Tag, Copy, History } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { cn, formatCurrency } from '@/lib/utils';
 import { Checkbox } from '../ui/checkbox';
@@ -16,12 +16,14 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 interface ProductCardProps {
     product: Product;
     onEdit: (product: Product) => void;
+    onDuplicate: (product: Product) => void;
+    onHistory: (product: Product) => void;
     onDelete: (product: Product) => void;
     isSelected: boolean;
     onToggleSelection: () => void;
 }
 
-const ProductCardComponent = ({ product, onEdit, onDelete, isSelected, onToggleSelection }: ProductCardProps) => {
+const ProductCardComponent = ({ product, onEdit, onDuplicate, onHistory, onDelete, isSelected, onToggleSelection }: ProductCardProps) => {
 
     const expirationStatus = useMemo(() => {
         if (!product.dateExpiration) return null;
@@ -39,8 +41,7 @@ const ProductCardComponent = ({ product, onEdit, onDelete, isSelected, onToggleS
     }, [product.dateMajPrix]);
 
     const handleCardClick = (e: React.MouseEvent) => {
-        // Prevent editing if clicking the checkbox
-        if ((e.target as HTMLElement).closest('[role="checkbox"]')) return;
+        if ((e.target as HTMLElement).closest('[role="checkbox"]') || (e.target as HTMLElement).closest('button')) return;
         onEdit(product);
     };
 
@@ -52,13 +53,11 @@ const ProductCardComponent = ({ product, onEdit, onDelete, isSelected, onToggleS
                 isSelected && "ring-2 ring-primary shadow-lg"
             )}
         >
-            {/* Selection Overlay */}
             <div className={cn(
                 "absolute inset-0 bg-primary/5 transition-opacity duration-300 pointer-events-none",
                 isSelected ? "opacity-100" : "opacity-0"
             )} />
 
-            {/* Action Bar (Top Right) */}
             <div className="absolute top-3 right-3 z-10 flex gap-1 items-center">
                 <div onClick={(e) => e.stopPropagation()} className="p-1.5 bg-background/80 backdrop-blur-md rounded-xl shadow-sm border border-white/5">
                     <Checkbox
@@ -76,6 +75,12 @@ const ProductCardComponent = ({ product, onEdit, onDelete, isSelected, onToggleS
                     <DropdownMenuContent align="end" className="rounded-2xl border-none shadow-xl">
                         <DropdownMenuItem onClick={() => onEdit(product)} className="rounded-xl">
                             <Edit className="mr-2 h-4 w-4" /> Modifier
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => onDuplicate(product)} className="rounded-xl">
+                            <Copy className="mr-2 h-4 w-4" /> Dupliquer
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => onHistory(product)} className="rounded-xl">
+                            <History className="mr-2 h-4 w-4" /> Historique
                         </DropdownMenuItem>
                         <DropdownMenuItem onClick={() => onDelete(product)} className="text-destructive focus:text-destructive rounded-xl">
                             <Trash2 className="mr-2 h-4 w-4" /> Supprimer
@@ -133,7 +138,6 @@ const ProductCardComponent = ({ product, onEdit, onDelete, isSelected, onToggleS
                     <p className="text-2xl font-black text-primary tracking-tighter leading-none">{formatCurrency(product.price)}</p>
                     <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-tight opacity-60">Achat: {formatCurrency(product.purchasePrice)}</p>
                 </div>
-                
                 {product.quantity <= product.minStockLevel && product.quantity > 0 && (
                     <AlertTriangle className="h-6 w-6 text-amber-500 animate-pulse mb-1" />
                 )}

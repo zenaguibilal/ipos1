@@ -1,3 +1,4 @@
+
 'use client';
 import { v4 as uuidv4 } from 'uuid';
 import type { InventoryLog, InventoryLogReason, Product } from '@/lib/types';
@@ -42,8 +43,12 @@ class InventoryService {
         await db.inventory_logs.add(logEntry);
     }
 
-    async getLogs(filters: { query?: string, from?: Date, to?: Date }): Promise<(InventoryLog & { productName: string, reference?: string })[]> {
+    async getLogs(filters: { query?: string, from?: Date, to?: Date, productUuid?: string }): Promise<(InventoryLog & { productName: string, reference?: string })[]> {
         let collection = db.inventory_logs.toCollection();
+
+        if (filters.productUuid) {
+            collection = db.inventory_logs.where('productUuid').equals(filters.productUuid);
+        }
 
         if (filters.from) {
             collection = collection.filter(l => new Date(l.createdAt) >= filters.from!);
@@ -57,7 +62,6 @@ class InventoryService {
         const products = await db.products.where('uuid').anyOf(productUuids).toArray();
         const productMap = new Map(products.map(p => [p.uuid, p.name]));
 
-        // Fetch related entities for references
         const intakeUuids = logs.filter(l => l.reason === 'stock_intake' || l.reason === 'cancellation').map(l => l.relatedUuid).filter(Boolean) as string[];
         const saleUuids = logs.filter(l => l.reason === 'sale' || l.reason === 'cancellation').map(l => l.relatedUuid).filter(Boolean) as string[];
         

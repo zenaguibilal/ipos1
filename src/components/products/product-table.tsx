@@ -5,17 +5,20 @@ import type { Product, Supplier } from '@/lib/types';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { MoreHorizontal, Edit, Trash2, CalendarClock, Info, Package } from 'lucide-react';
+import { MoreHorizontal, Edit, Trash2, CalendarClock, Info, Package, Copy, History } from 'lucide-react';
 import { cn, formatCurrency } from '@/lib/utils';
 import { Checkbox } from '../ui/checkbox';
 import { useMemo } from 'react';
 import { differenceInDays, format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
+import { Badge } from '../ui/badge';
 
 interface ProductTableProps {
     products: Product[];
     onEdit: (product: Product) => void;
+    onDuplicate: (product: Product) => void;
+    onHistory: (product: Product) => void;
     onDelete: (product: Product) => void;
     selectedProducts: Set<string>;
     onToggleProductSelection: (productUuid: string) => void;
@@ -23,7 +26,7 @@ interface ProductTableProps {
     suppliers: Supplier[];
 }
 
-export function ProductTable({ products, onEdit, onDelete, selectedProducts, onToggleProductSelection, onToggleSelectAll, suppliers }: ProductTableProps) {
+export function ProductTable({ products, onEdit, onDuplicate, onHistory, onDelete, selectedProducts, onToggleProductSelection, onToggleSelectAll, suppliers }: ProductTableProps) {
     const supplierMap = useMemo(() => new Map(suppliers.map(s => [s.uuid, s.name])), [suppliers]);
 
     const handleRowClick = (product: Product) => {
@@ -45,7 +48,7 @@ export function ProductTable({ products, onEdit, onDelete, selectedProducts, onT
                         </TableHead>
                         <TableHead className="font-black text-[10px] uppercase tracking-widest text-muted-foreground">Désignation</TableHead>
                         <TableHead className="font-black text-[10px] uppercase tracking-widest text-muted-foreground">Catégorie</TableHead>
-                        <TableHead className="font-black text-[10px] uppercase tracking-widest text-muted-foreground">Fournisseur</TableHead>
+                        <TableHead className="font-black text-[10px] uppercase tracking-widest text-muted-foreground">État</TableHead>
                         <TableHead className="font-black text-[10px] uppercase tracking-widest text-muted-foreground">Stock</TableHead>
                         <TableHead className="text-right font-black text-[10px] uppercase tracking-widest text-muted-foreground">P.U Achat</TableHead>
                         <TableHead className="text-right font-black text-[10px] uppercase tracking-widest text-primary">P.U Vente</TableHead>
@@ -61,9 +64,9 @@ export function ProductTable({ products, onEdit, onDelete, selectedProducts, onT
                             const today = new Date();
                             const expirationDate = new Date(product.dateExpiration);
                             const daysUntilExpiration = differenceInDays(expirationDate, today);
-                            if (daysUntilExpiration < 0) return { color: 'text-destructive', text: `Expiré` };
-                            if (daysUntilExpiration <= 30) return { color: 'text-amber-500', text: `Expire dans ${daysUntilExpiration} j` };
-                            return { color: 'text-muted-foreground/60', text: format(expirationDate, 'dd/MM/yyyy') };
+                            if (daysUntilExpiration < 0) return { color: 'text-destructive', text: `Expiré`, bg: 'bg-destructive/10' };
+                            if (daysUntilExpiration <= 30) return { color: 'text-amber-500', text: `Expire dans ${daysUntilExpiration} j`, bg: 'bg-amber-500/10' };
+                            return { color: 'text-muted-foreground/60', text: format(expirationDate, 'dd/MM/yyyy'), bg: 'bg-muted/50' };
                         })();
                         
                         const isPriceOld = product.dateMajPrix && differenceInDays(new Date(), new Date(product.dateMajPrix)) > 30;
@@ -89,10 +92,8 @@ export function ProductTable({ products, onEdit, onDelete, selectedProducts, onT
                                     <div className="flex flex-col">
                                         <span className="font-bold text-sm tracking-tight">{product.name}</span>
                                         <div className="flex items-center gap-2 mt-0.5">
-                                            {expirationStatus && (
-                                                <span className={cn("text-[9px] font-black uppercase flex items-center gap-1", expirationStatus.color)}>
-                                                    <CalendarClock className="h-2.5 w-2.5" /> {expirationStatus.text}
-                                                </span>
+                                            {product.supplierUuid && (
+                                                <span className="text-[9px] font-medium text-muted-foreground/60 uppercase">{supplierMap.get(product.supplierUuid)}</span>
                                             )}
                                             {product.barcodes && product.barcodes.length > 0 && (
                                                 <span className="text-[9px] font-mono text-muted-foreground/40">#{product.barcodes[0]}</span>
@@ -106,9 +107,13 @@ export function ProductTable({ products, onEdit, onDelete, selectedProducts, onT
                                     </span>
                                 </TableCell>
                                 <TableCell>
-                                    <span className="text-xs font-medium text-muted-foreground/70">
-                                        {product.supplierUuid ? supplierMap.get(product.supplierUuid) : '-'}
-                                    </span>
+                                    {expirationStatus ? (
+                                        <Badge variant="outline" className={cn("text-[8px] font-black uppercase h-5", expirationStatus.color, expirationStatus.bg)}>
+                                            {expirationStatus.text}
+                                        </Badge>
+                                    ) : (
+                                        <Badge variant="outline" className="text-[8px] font-black uppercase h-5 text-muted-foreground opacity-30">RAS</Badge>
+                                    )}
                                 </TableCell>
                                 <TableCell>
                                     <div className="flex items-center gap-2">
@@ -155,6 +160,12 @@ export function ProductTable({ products, onEdit, onDelete, selectedProducts, onT
                                         <DropdownMenuContent align="end" className="rounded-xl border-none shadow-xl">
                                             <DropdownMenuItem onClick={() => onEdit(product)}>
                                                 <Edit className="mr-2 h-4 w-4" /> Modifier
+                                            </DropdownMenuItem>
+                                            <DropdownMenuItem onClick={() => onDuplicate(product)}>
+                                                <Copy className="mr-2 h-4 w-4" /> Dupliquer
+                                            </DropdownMenuItem>
+                                            <DropdownMenuItem onClick={() => onHistory(product)}>
+                                                <History className="mr-2 h-4 w-4" /> Historique
                                             </DropdownMenuItem>
                                             <DropdownMenuItem onClick={() => onDelete(product)} className="text-destructive focus:text-destructive">
                                                 <Trash2 className="mr-2 h-4 w-4" /> Supprimer

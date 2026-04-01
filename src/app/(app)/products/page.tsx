@@ -7,7 +7,7 @@ import { useDebounce } from '@/hooks/useDebounce';
 import type { Product, Supplier, ProductImportAnalysis } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Plus, Search, LayoutGrid, List, Printer, Trash2, PackageCheck, PackageX, AlertTriangle, Archive, SortAsc, FileDown, Building, Package, Loader2, CalendarClock, CalendarX, FileUp, FilterX, RefreshCw } from 'lucide-react';
+import { Plus, Search, LayoutGrid, List, Printer, Trash2, PackageCheck, PackageX, AlertTriangle, Archive, SortAsc, FileDown, Building, Package, Loader2, CalendarClock, CalendarX, FileUp, FilterX, RefreshCw, Copy, History } from 'lucide-react';
 import { ProductCard } from '@/components/products/product-card';
 import { ProductTable } from '@/components/products/product-table';
 import { ProductTableSkeleton } from '@/components/products/product-table-skeleton';
@@ -17,6 +17,7 @@ import { DeleteMultipleProductsDialog } from '@/components/products/DeleteMultip
 import { PrintLabelsDialog } from '@/components/products/PrintLabelsDialog';
 import { InventoryStats } from '@/components/products/InventoryStats';
 import { ProductImportPreviewDialog } from '@/components/products/ProductImportPreviewDialog';
+import { ProductHistoryDialog } from '@/components/products/ProductHistoryDialog';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -77,6 +78,7 @@ export default function ProductsPage() {
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
     const [isBulkDeleteDialogOpen, setIsBulkDeleteDialogOpen] = useState(false);
     const [isPrintDialogOpen, setIsPrintDialogOpen] = useState(false);
+    const [isHistoryDialogOpen, setIsHistoryDialogOpen] = useState(false);
 
     const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
     const [selectedProducts, setSelectedProducts] = useState<Set<string>>(new Set());
@@ -159,6 +161,21 @@ export default function ProductsPage() {
     const handleEditProduct = useCallback((product: Product) => {
         setSelectedProduct(product);
         setIsProductDialogOpen(true);
+    }, []);
+
+    const handleDuplicateProduct = useCallback(async (product: Product) => {
+        try {
+            await productService.duplicateProduct(product.uuid);
+            toast.success(`Produit "${product.name}" dupliqué.`);
+            fetchProducts();
+        } catch (error: any) {
+            toast.error("Échec de la duplication.");
+        }
+    }, [fetchProducts]);
+
+    const handleViewHistory = useCallback((product: Product) => {
+        setSelectedProduct(product);
+        setIsHistoryDialogOpen(true);
     }, []);
 
     const handleToggleSelection = useCallback((productUuid: string) => {
@@ -263,7 +280,7 @@ export default function ProductsPage() {
                 <EmptyState
                     icon={Package}
                     title="Aucun produit trouvé"
-                    description={isFiltered ? "Essayez d'ajuster vos filtres ou de réinitialiser la recherche." : "Commencez par ajouter votre premier produit."}
+                    description={isFiltered ? "Essayez d'ajuster vos filtres ou de réinitialiser la recherche." : "Commenceز par ajouter votre premier produit."}
                 >
                     <div className="flex gap-2 justify-center">
                         {isFiltered && <Button variant="outline" onClick={resetFilters} className="rounded-xl"><FilterX className="mr-2 h-4 w-4" /> Effacer</Button>}
@@ -281,6 +298,8 @@ export default function ProductsPage() {
                             key={p.uuid} 
                             product={p} 
                             onEdit={handleEditProduct} 
+                            onDuplicate={handleDuplicateProduct}
+                            onHistory={handleViewHistory}
                             onDelete={() => {
                                 setSelectedProduct(p);
                                 setIsDeleteDialogOpen(true);
@@ -297,6 +316,8 @@ export default function ProductsPage() {
             <ProductTable 
                 products={products}
                 onEdit={handleEditProduct}
+                onDuplicate={handleDuplicateProduct}
+                onHistory={handleViewHistory}
                 onDelete={(p) => {
                     setSelectedProduct(p);
                     setIsDeleteDialogOpen(true);
@@ -529,6 +550,11 @@ export default function ProductsPage() {
                     analysis={importAnalysis}
                     onConfirm={handleConfirmImport}
                     isImporting={isImporting}
+                />
+                <ProductHistoryDialog
+                    isOpen={isHistoryDialogOpen}
+                    onOpenChange={setIsHistoryDialogOpen}
+                    product={selectedProduct}
                 />
             </>
         </div>

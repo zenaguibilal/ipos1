@@ -40,7 +40,6 @@ class ProductService {
         const now = new Date();
         const thirtyDaysFromNow = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
 
-        // Optimization: Use Index for major filters if possible
         if (filters.stockStatus === 'expired') {
             collection = db.products.where('dateExpiration').below(now);
         } else if (filters.stockStatus === 'expiring_soon') {
@@ -57,7 +56,6 @@ class ProductService {
 
         let products = await collection.toArray();
         
-        // Manual cross-filtering for combined filters
         if (filters.category && filters.category !== 'all') {
             products = products.filter(p => p.category === filters.category);
         }
@@ -73,7 +71,6 @@ class ProductService {
             products = products.filter(p => p.dateExpiration ? (new Date(p.dateExpiration) >= now && new Date(p.dateExpiration) <= thirtyDaysFromNow) : false);
         }
 
-        // Search Query
         if (filters.query) {
             const lowerQuery = filters.query.toLowerCase().trim();
             products = products.filter(p => 
@@ -82,7 +79,6 @@ class ProductService {
             );
         }
 
-        // Advanced Sorting
         if (filters.sortBy) {
             const [field, order] = filters.sortBy.split('_');
             const isAsc = order === 'asc';
@@ -90,20 +86,14 @@ class ProductService {
             products.sort((a: any, b: any) => {
                 const valA = a[field];
                 const valB = b[field];
-
-                const aExists = valA !== undefined && valA !== null;
-                const bExists = valB !== undefined && valB !== null;
-
-                if (!aExists && !bExists) return 0;
-                if (!aExists) return 1; 
-                if (!bExists) return -1;
-
+                if (valA === undefined && valB === undefined) return 0;
+                if (valA === undefined) return 1; 
+                if (valB === undefined) return -1;
                 if (valA < valB) return isAsc ? -1 : 1;
                 if (valA > valB) return isAsc ? 1 : -1;
                 return 0;
             });
         } else {
-            // Default sort: newest first
             products.sort((a,b) => (b.createdAt?.getTime() || 0) - (a.createdAt?.getTime() || 0));
         }
 
@@ -112,10 +102,6 @@ class ProductService {
 
     async getProductByUuid(uuid: string): Promise<Product | undefined> {
         return db.products.where('uuid').equals(uuid).first();
-    }
-
-    async getProductByBarcode(barcode: string): Promise<Product | undefined> {
-        return db.products.where('barcodes').equals(barcode).first();
     }
 
     async getCategories(): Promise<string[]> {
@@ -141,7 +127,7 @@ class ProductService {
             supplierUuid: finalSupplierUuid,
             createdAt: now,
             updatedAt: now,
-            dateMajPrix: now, // Initial price update date
+            dateMajPrix: now,
             stockStatus: calculateStockStatus(productData.quantity, productData.minStockLevel),
         };
         const id = await db.products.add(newProduct);
@@ -170,7 +156,6 @@ class ProductService {
         dataToUpdate.supplierUuid = finalSupplierUuid;
         dataToUpdate.updatedAt = new Date();
 
-        // If price changed, update the last price update date
         if (productData.purchasePrice !== undefined && productData.purchasePrice !== existingProduct.purchasePrice) {
             dataToUpdate.dateMajPrix = new Date();
         }
@@ -185,10 +170,22 @@ class ProductService {
         return { ...existingProduct, ...dataToUpdate };
     }
 
+    async duplicateProduct(uuid: string): Promise<Product> {
+        const product = await this.getProductByUuid(uuid);
+        if (!product) throw new Error("Produit original introuvable.");
+
+        const { id, uuid: oldUuid, name, ...rest } = product;
+        return this.addProduct({
+            ...rest,
+            name: `${name} (Copie)`,
+            quantity: 0, // Stock resets for duplication
+        } as any);
+    }
+
     async deleteProduct(uuid: string): Promise<void> {
         const hasLogs = await inventoryService.hasLogs(uuid);
         if (hasLogs) {
-            throw new Error("Suppression impossible: ce produit a un historique de transactions (ventes, stocks...).");
+            throw new Error("Suppression impossible: ce produit a un historique de transactions.");
         }
         const product = await this.getProductByUuid(uuid);
         if (product?.id) {
@@ -201,7 +198,7 @@ class ProductService {
             const hasLogs = await inventoryService.hasLogs(uuid);
             if (hasLogs) {
                 const product = await db.products.where('uuid').equals(uuid).first();
-                throw new Error(`Suppression impossible: Le produit "${product?.name || 'inconnu'}" a un historique de transactions.`);
+                throw new Error(`Suppression impossible: "${product?.name || 'inconnu'}" a un historique.`);
             }
         }
         const productsToDelete = await db.products.where('uuid').anyOf(uuids).toArray();
@@ -246,7 +243,7 @@ class ProductService {
             const price = row.price || row.prix_vente || row.Prix;
             
             if (!name || !price) {
-                analysis.errorRows.push({ ...row, error: "Nom أو prix manquant" });
+                analysis.errorRows.push({ ...row, error: "Nom ou prix manquant" });
                 continue;
             }
             
@@ -256,15 +253,15 @@ class ProductService {
                 name,
                 category: row.category || row.categorie || row.Catégorie || 'Non classé',
                 price: parseFloat(price),
-                purchasePrice: row.purchasePrice || row.prix_achat || row.Achat ? parseFloat(row.purchasePrice || row.prix_achat || row.Achat) : 0,
-                quantity: row.quantity || row.stock || row.Quantité ? parseInt(row.quantity || row.stock || row.Quantité) : 0,
-                minStockLevel: row.minStockLevel || row.stock_minimum ? parseInt(row.minStockLevel || row.stock_minimum) : 10,
-                barcodes: row.barcodes || row.codes_barres ? String(row.barcodes || row.codes_barres).split(',').map((b:string) => b.trim()).filter(Boolean) : [],
+                purchasePrice: row.purchasePrice ? parseFloat(row.purchasePrice) : 0,
+                quantity: row.quantity ? parseInt(row.quantity) : 0,
+                minStockLevel: row.minStockLevel ? parseInt(row.minStockLevel) : 10,
+                barcodes: row.barcodes ? String(row.barcodes).split(',').map((b:string) => b.trim()).filter(Boolean) : [],
                 unite: row.unite || row.unité || 'Pièce',
             };
 
             if (isNaN(productData.price)) {
-                 analysis.errorRows.push({ ...row, error: "Prix de vente invalide" });
+                 analysis.errorRows.push({ ...row, error: "Prix invalide" });
                 continue;
             }
 
@@ -279,7 +276,6 @@ class ProductService {
 
     async executeImport(confirmedData: { toAdd: any[], toUpdate: any[] }): Promise<void> {
         const now = new Date();
-
         const toAdd = confirmedData.toAdd.map(p => ({
             ...p,
             uuid: uuidv4(),
@@ -288,14 +284,12 @@ class ProductService {
             dateMajPrix: now,
             stockStatus: calculateStockStatus(p.quantity, p.minStockLevel),
         }));
-
          const toUpdate = confirmedData.toUpdate.map(p => ({
             ...p,
             updatedAt: now,
             dateMajPrix: now,
             stockStatus: calculateStockStatus(p.quantity, p.minStockLevel),
         }));
-        
         await db.transaction('rw', db.products, async () => {
             if (toAdd.length > 0) await db.products.bulkAdd(toAdd);
             if (toUpdate.length > 0) await db.products.bulkPut(toUpdate);

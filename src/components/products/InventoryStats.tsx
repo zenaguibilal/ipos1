@@ -5,25 +5,27 @@ import { useMemo } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { Product } from '@/lib/types';
-import { Package, AlertTriangle, PackageX, CalendarClock } from 'lucide-react';
+import { Package, AlertTriangle, PackageX, CalendarClock, DollarSign } from 'lucide-react';
 import { differenceInDays } from 'date-fns';
+import { formatCurrency } from '@/lib/utils';
 
 export const InventoryStats = ({ products, isLoading }: { products: Product[] | undefined, isLoading: boolean }) => {
     const stats = useMemo(() => {
-        if (!products) return { total: 0, low: 0, out: 0, expiring: 0 };
+        if (!products) return { total: 0, low: 0, out: 0, expiring: 0, totalValue: 0 };
         const now = new Date();
         return {
             total: products.length,
             low: products.filter(p => p.quantity > 0 && p.quantity <= p.minStockLevel).length,
             out: products.filter(p => p.quantity <= 0).length,
             expiring: products.filter(p => p.dateExpiration && differenceInDays(new Date(p.dateExpiration), now) <= 30 && differenceInDays(new Date(p.dateExpiration), now) >= 0).length,
+            totalValue: products.reduce((acc, p) => acc + (p.quantity > 0 ? p.quantity * p.purchasePrice : 0), 0),
         };
     }, [products]);
 
     if (isLoading) {
         return (
-             <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
-                {[...Array(4)].map((_, i) => (
+             <div className="grid gap-4 grid-cols-2 lg:grid-cols-5">
+                {[...Array(5)].map((_, i) => (
                     <Card key={i} className="rounded-2xl border-none shadow-sm">
                         <CardHeader className="pb-2"><Skeleton className="h-4 w-24" /></CardHeader>
                         <CardContent><Skeleton className="h-8 w-12" /></CardContent>
@@ -34,7 +36,7 @@ export const InventoryStats = ({ products, isLoading }: { products: Product[] | 
     }
 
     return (
-        <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-4 grid-cols-2 lg:grid-cols-5">
             <Card className="rounded-2xl border-none shadow-sm bg-card">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Total Produits</CardTitle>
@@ -42,6 +44,15 @@ export const InventoryStats = ({ products, isLoading }: { products: Product[] | 
                 </CardHeader>
                 <CardContent>
                     <div className="text-2xl font-black">{stats.total}</div>
+                </CardContent>
+            </Card>
+            <Card className="rounded-2xl border-none shadow-sm bg-card">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Valeur Stock (Achat)</CardTitle>
+                    <DollarSign className="h-4 w-4 text-emerald-500 opacity-50" />
+                </CardHeader>
+                <CardContent>
+                    <div className="text-lg font-black text-emerald-500 truncate">{formatCurrency(stats.totalValue)}</div>
                 </CardContent>
             </Card>
             <Card className="rounded-2xl border-none shadow-sm bg-card">
