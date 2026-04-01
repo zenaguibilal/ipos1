@@ -1,13 +1,8 @@
-
 'use client';
 
-import { saleRepository } from '@/repositories/sale.repository';
-import { expenseRepository } from '@/repositories/expense.repository';
-import { returnRepository } from '@/repositories/return.repository';
-import { customerRepository } from '@/repositories/customer.repository';
-import { productRepository } from '@/repositories/product.repository';
-import type { DashboardData, TopCustomer } from '@/lib/types';
-import { eachDayOfInterval, format } from 'date-fns';
+import type { DashboardData, Sale, Product, Customer, Expense, ProductReturn, TopCustomer } from '@/lib/types';
+import { eachDayOfInterval, format, startOfDay } from 'date-fns';
+import { db } from '@/lib/db';
 
 class DashboardService {
     async getDashboardData(from: Date, to: Date): Promise<DashboardData> {
@@ -19,11 +14,11 @@ class DashboardService {
 
             // 2. Fetch all data needed in an extended range
             const [allSales, allExpenses, returns, customers, allProducts] = await Promise.all([
-                saleRepository.filter({ from: prevFrom, to }),
-                expenseRepository.filter({ from: prevFrom, to }),
-                returnRepository.filter({ from, to }), // Only need returns for current period's recent activity
-                customerRepository.getAll(),
-                productRepository.getAll(),
+                db.sales.where('createdAt').between(prevFrom, to, true, true).toArray(),
+                db.expenses.where('expenseDate').between(prevFrom, to, true, true).toArray(),
+                db.product_returns.where('createdAt').between(from, to, true, true).toArray(),
+                db.customers.toArray(),
+                db.products.toArray(),
             ]);
 
             // 3. Split data into current and previous periods
@@ -61,7 +56,6 @@ class DashboardService {
             const totalExpensesChange = calculateChange(totalExpenses, prevTotalExpenses);
             const saleCountChange = calculateChange(saleCount, prevSaleCount);
 
-            // Point-in-time stats (no comparison)
             const totalOutstandingDebt = customers.reduce((sum, c) => sum + c.outstandingBalance, 0);
             const totalInventoryValue = allProducts.reduce((sum, p) => sum + (p.quantity * p.purchasePrice), 0);
 
@@ -78,7 +72,7 @@ class DashboardService {
             });
 
             currentSales.forEach(sale => {
-                const day = format(sale.createdAt!, 'yyyy-MM-dd');
+                const day = format(startOfDay(sale.createdAt!), 'yyyy-MM-dd');
                 const saleCOGS = sale.items.reduce((acc, item) => acc + (item.purchasePrice * item.quantity), 0);
                 const saleGrossProfit = sale.total - saleCOGS;
 

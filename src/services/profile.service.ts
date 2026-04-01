@@ -1,46 +1,39 @@
-
 'use client';
 
 import { v4 as uuidv4 } from 'uuid';
-import { companyRepository } from '@/repositories/company.repository';
+import { db } from '@/lib/db';
 import type { CompanyProfile } from '@/lib/types';
 
 class CompanyProfileService {
     
     async getProfile(): Promise<CompanyProfile | null> {
-        try {
-            let profile = await companyRepository.get();
-            if (!profile) {
-                // If no profile exists, create a default one.
-                const newProfile: Omit<CompanyProfile, 'updatedAt'> = {
-                    uuid: uuidv4(),
-                    companyName: "Mon Magasin",
-                };
-                return await companyRepository.add(newProfile as CompanyProfile);
-            }
-            return profile;
-        } catch (error) {
-            throw error;
+        let profile = await db.company_profile.toCollection().first();
+        if (!profile) {
+            // If no profile exists, create a default one.
+            const newProfile: CompanyProfile = {
+                uuid: uuidv4(),
+                companyName: "Mon Magasin",
+            };
+            const id = await db.company_profile.add(newProfile);
+            newProfile.id = id;
+            return newProfile;
         }
+        return profile;
     }
 
     async updateProfile(profileData: Partial<CompanyProfile>): Promise<CompanyProfile> {
-        try {
-            const existing = await this.getProfile();
-            if (!existing) {
-                 throw new Error("Profil non trouvé, impossible de mettre à jour.");
-            }
-
-            const dataToUpdate: Partial<CompanyProfile> = {
-                ...profileData,
-                updatedAt: new Date(),
-            };
-
-            const updated = await companyRepository.update(dataToUpdate);
-            return { ...existing, ...updated };
-        } catch (error) {
-            throw error;
+        const existing = await this.getProfile();
+        if (!existing || !existing.id) {
+             throw new Error("Profil non trouvé, impossible de mettre à jour.");
         }
+
+        const dataToUpdate: Partial<CompanyProfile> = {
+            ...profileData,
+            updatedAt: new Date(),
+        };
+
+        await db.company_profile.update(existing.id, dataToUpdate);
+        return { ...existing, ...dataToUpdate };
     }
 }
 

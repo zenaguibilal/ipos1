@@ -1,52 +1,52 @@
 'use client';
 import { v4 as uuidv4 } from 'uuid';
 import type { StockIntake } from '@/lib/types';
-import { stockRepository } from '@/repositories/stock.repository';
-import { supplierRepository } from '@/repositories/supplier.repository';
-import { productService } from './product.service';
+import { db } from '@/lib/db';
 import { inventoryService } from './inventory.service';
 import { supplierService } from './supplier.service';
 
 class StockService {
     
     async getStockIntakes(filters: { query?: string; from?: Date; to?: Date }): Promise<StockIntake[]> {
-        try {
-            let supplierUuids: string[] | undefined = undefined;
+        let collection = db.stock_intakes.toCollection();
 
-            if (filters.query) {
-                const suppliers = await supplierRepository.filterByName(filters.query);
-                supplierUuids = suppliers.map(s => s.uuid);
-            }
-
-            return await stockRepository.filter({
-                invoiceNumberQuery: filters.query,
-                supplierUuids,
-                from: filters.from,
-                to: filters.to
-            });
-        } catch (error) {
-            throw error;
+        if (filters.from) {
+            collection = collection.filter(i => new Date(i.createdAt!) >= filters.from!);
         }
+        if (filters.to) {
+            collection = collection.filter(i => new Date(i.createdAt!) <= filters.to!);
+        }
+
+        let intakes = await collection.toArray();
+
+        if (filters.query) {
+            const lowerQuery = filters.query.toLowerCase();
+            const supplierUuids = (await db.suppliers.filter(s => s.name.toLowerCase().includes(lowerQuery)).toArray()).map(s => s.uuid);
+            intakes = intakes.filter(i => 
+                (i.invoiceNumber && i.invoiceNumber.toLowerCase().includes(lowerQuery)) ||
+                (i.supplierUuid && supplierUuids.includes(i.supplierUuid))
+            );
+        }
+
+        return intakes.sort((a,b) => new Date(b.createdAt!).getTime() - new Date(a.createdAt!).getTime());
     }
     
     async addStockIntake(intakeData: Omit<StockIntake, 'uuid' | 'createdAt' | 'updatedAt'>): Promise<StockIntake> {
-        try {
-            const now = new Date();
-            const newIntake: StockIntake = {
-                ...intakeData,
-                uuid: uuidv4(),
-                createdAt: now,
-                updatedAt: now,
-            };
-            return await stockRepository.add(newIntake);
-        } catch (error) {
-            throw error;
-        }
+        const now = new Date();
+        const newIntake: StockIntake = {
+            ...intakeData,
+            uuid: uuidv4(),
+            createdAt: now,
+            updatedAt: now,
+        };
+        const id = await db.stock_intakes.add(newIntake);
+        newIntake.id = id;
+        return newIntake;
     }
 
     async processStockIntakeCancellation(intakeUuid: string): Promise<void> {
-        const intake = await stockRepository.findByUuid(intakeUuid);
-        if (!intake) {
+        const intake = await db.stock_intakes.where('uuid').equals(intakeUuid).first();
+        if (!intake || !intake.id) {
             throw new Error("Réception de stock non trouvée.");
         }
 
@@ -64,7 +64,7 @@ class StockService {
         }
 
         // Delete the intake record
-        await stockRepository.delete(intake.uuid);
+        await db.stock_intakes.delete(intake.id);
     }
 }
 

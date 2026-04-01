@@ -1,58 +1,61 @@
 'use client';
 
 import type { Expense } from '@/lib/types';
-import { expenseRepository } from '@/repositories/expense.repository';
+import { db } from '@/lib/db';
 import { v4 as uuidv4 } from 'uuid';
 
 class ExpenseService {
 
     async filter(params: { category?: string; from?: Date; to?: Date }): Promise<Expense[]> {
-        try {
-            return await expenseRepository.filter(params);
-        } catch (error) {
-            throw error;
+        let collection = db.expenses.toCollection();
+        if (params.category && params.category !== 'all') {
+            collection = collection.filter(e => e.category === params.category);
         }
+        if (params.from) {
+            collection = collection.filter(e => new Date(e.expenseDate) >= params.from!);
+        }
+        if (params.to) {
+            collection = collection.filter(e => new Date(e.expenseDate) <= params.to!);
+        }
+        const expenses = await collection.toArray();
+        return expenses.sort((a,b) => new Date(b.expenseDate).getTime() - new Date(a.expenseDate).getTime());
     }
 
     async getCategories(): Promise<string[]> {
-        try {
-            return await expenseRepository.getUniqueCategories();
-        } catch (error) {
-            throw error;
-        }
+        const expenses = await db.expenses.toArray();
+        const categories = new Set(expenses.map(e => e.category));
+        return Array.from(categories);
     }
     
     async addExpense(expenseData: Omit<Expense, 'uuid' | 'createdAt' | 'updatedAt'>): Promise<Expense> {
-        try {
-            const newExpense: Expense = {
-                ...expenseData,
-                uuid: uuidv4(),
-                createdAt: new Date(),
-                updatedAt: new Date(),
-            };
-            return await expenseRepository.add(newExpense);
-        } catch (error) {
-            throw error;
-        }
+        const newExpense: Expense = {
+            ...expenseData,
+            uuid: uuidv4(),
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        };
+        const id = await db.expenses.add(newExpense);
+        newExpense.id = id;
+        return newExpense;
     }
 
     async updateExpense(uuid: string, expenseData: Partial<Expense>): Promise<Expense> {
-        try {
-            const dataToUpdate: Partial<Expense> = {
-                ...expenseData,
-                updatedAt: new Date(),
-            };
-            return await expenseRepository.update(uuid, dataToUpdate);
-        } catch (error) {
-            throw error;
+        const existing = await db.expenses.where('uuid').equals(uuid).first();
+        if (!existing?.id) {
+            throw new Error("Dépense non trouvée");
         }
+        const dataToUpdate: Partial<Expense> = {
+            ...expenseData,
+            updatedAt: new Date(),
+        };
+        await db.expenses.update(existing.id, dataToUpdate);
+        return { ...existing, ...dataToUpdate };
     }
 
     async deleteExpense(uuid: string): Promise<void> {
-        try {
-            await expenseRepository.delete(uuid);
-        } catch (error) {
-            throw error;
+        const existing = await db.expenses.where('uuid').equals(uuid).first();
+        if (existing?.id) {
+            await db.expenses.delete(existing.id);
         }
     }
 }

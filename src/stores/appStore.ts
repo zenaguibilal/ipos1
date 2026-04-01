@@ -1,9 +1,10 @@
-
 import { create } from 'zustand';
 import { produce } from 'immer';
-import type { CompanyProfile, ReturnItem, StockIntakeItem } from '@/lib/types';
+import type { CompanyProfile, ReturnItem, StockIntakeItem, Sale } from '@/lib/types';
 import { toast } from 'sonner';
 import { persist, createJSONStorage } from 'zustand/middleware';
+import { db } from '@/lib/db';
+import { v4 as uuidv4 } from 'uuid';
 
 import { companyProfileService } from '@/services/profile.service';
 import { returnService } from '@/services/return.service';
@@ -12,6 +13,7 @@ import { supplierService } from '@/services/supplier.service';
 import { productService } from '@/services/product.service';
 import { stockService } from '@/services/stock.service';
 import { customerService } from '@/services/customer.service';
+import { salesService } from '@/services/sales.service';
 
 // Main State Interface
 interface AppState {
@@ -62,9 +64,9 @@ export const useAppStore = create<AppState>()(
             ...initialState,
             actions: {
                 fetchCompanyProfile: async () => {
-                    if (get().companyProfile) return; // Fetch only once
+                    // Always fetch from DB on load as it's cheap
+                    set({ isCompanyProfileLoading: true });
                     try {
-                        set({ isCompanyProfileLoading: true });
                         const profile = await companyProfileService.getProfile();
                         set({ companyProfile: profile });
                     } catch (error: any) {
@@ -79,15 +81,17 @@ export const useAppStore = create<AppState>()(
                 },
                 processReturn: async (returnData) => {
                      try {
-                        const newReturn = await returnService.addReturn(returnData);
-                        for (const item of newReturn.items) {
-                            if (item.wasRestocked && item.productUuid) {
-                                await inventoryService.adjustStock(item.productUuid, item.quantity, 'return', newReturn.uuid);
+                        await db.transaction('rw', db.product_returns, db.products, db.customers, db.inventory_logs, async () => {
+                            const newReturn = await returnService.addReturn(returnData);
+                            for (const item of newReturn.items) {
+                                if (item.wasRestocked && item.productUuid) {
+                                    await inventoryService.adjustStock(item.productUuid, item.quantity, 'return', newReturn.uuid);
+                                }
                             }
-                        }
-                        if (newReturn.customerUuid) {
-                            await customerService.recalculateCustomerStatus(newReturn.customerUuid);
-                        }
+                            if (newReturn.customerUuid) {
+                                await customerService.recalculateCustomerStatus(newReturn.customerUuid);
+                            }
+                        });
                         toast.success("Retour de produit enregistré avec succès.");
                         return true;
                     } catch (error: any) {
@@ -97,55 +101,57 @@ export const useAppStore = create<AppState>()(
                 },
                 processStockIntake: async (intakeData) => {
                     try {
-                        const supplier = await supplierService.findOrCreateSupplier(intakeData.supplierName, intakeData.supplierUuid);
-        
-                        const finalItems = [];
-                        for (const item of intakeData.items) {
-                            let productUuid = item.productUuid;
-                            if (item.isNew) {
-                                const newProduct = await productService.addProduct({
-                                    name: item.name,
-                                    category: item.category,
-                                    price: item.price,
-                                    purchasePrice: item.purchasePrice,
-                                    quantity: 0, // Initial quantity is 0, will be adjusted by inventory service
-                                    minStockLevel: 10,
-                                    supplierUuid: supplier.uuid,
-                                    unite: item.unite,
-                                    barcodes: item.barcodes,
-                                });
-                                productUuid = newProduct.uuid;
-                            } else {
-                                const p = await inventoryService.getProductInfo(productUuid!);
-                                if (p && p.purchasePrice !== item.purchasePrice) {
-                                    await productService.updateProduct(p.uuid, { purchasePrice: item.purchasePrice, dateMajPrix: new Date() });
+                         await db.transaction('rw', db.stock_intakes, db.products, db.suppliers, db.inventory_logs, async () => {
+                            const supplier = await supplierService.findOrCreateSupplier(intakeData.supplierName, intakeData.supplierUuid);
+            
+                            const finalItems = [];
+                            for (const item of intakeData.items) {
+                                let productUuid = item.productUuid;
+                                if (item.isNew) {
+                                    const newProduct = await productService.addProduct({
+                                        name: item.name,
+                                        category: item.category,
+                                        price: item.price,
+                                        purchasePrice: item.purchasePrice,
+                                        quantity: 0, // Initial quantity is 0, will be adjusted by inventory service
+                                        minStockLevel: 10,
+                                        supplierUuid: supplier.uuid,
+                                        unite: item.unite,
+                                        barcodes: item.barcodes,
+                                    });
+                                    productUuid = newProduct.uuid;
+                                } else {
+                                    const p = await inventoryService.getProductInfo(productUuid!);
+                                    if (p && p.purchasePrice !== item.purchasePrice) {
+                                        await productService.updateProduct(p.uuid, { purchasePrice: item.purchasePrice, dateMajPrix: new Date() });
+                                    }
+                                }
+            
+                                if (productUuid) {
+                                    const quantityReceived = item.quantity - item.quantityDamaged;
+                                    if (quantityReceived > 0) {
+                                        await inventoryService.adjustStock(productUuid, quantityReceived, 'stock_intake');
+                                    }
+                                    finalItems.push({
+                                        productUuid: productUuid,
+                                        productName: item.name,
+                                        quantityReceived: item.quantity,
+                                        quantityDamaged: item.quantityDamaged,
+                                        purchasePrice: item.purchasePrice,
+                                    });
                                 }
                             }
-        
-                            if (productUuid) {
-                                const quantityReceived = item.quantity - item.quantityDamaged;
-                                if (quantityReceived > 0) {
-                                    await inventoryService.adjustStock(productUuid, quantityReceived, 'stock_intake');
-                                }
-                                finalItems.push({
-                                    productUuid: productUuid,
-                                    productName: item.name,
-                                    quantityReceived: item.quantity,
-                                    quantityDamaged: item.quantityDamaged,
-                                    purchasePrice: item.purchasePrice,
-                                });
-                            }
-                        }
-        
-                        await stockService.addStockIntake({
-                            supplierUuid: supplier.uuid,
-                            invoiceNumber: intakeData.invoiceNumber,
-                            invoiceDate: intakeData.invoiceDate,
-                            items: finalItems,
-                            totalValue: intakeData.totalValue,
+            
+                            await stockService.addStockIntake({
+                                supplierUuid: supplier.uuid,
+                                invoiceNumber: intakeData.invoiceNumber,
+                                invoiceDate: intakeData.invoiceDate,
+                                items: finalItems,
+                                totalValue: intakeData.totalValue,
+                            });
+                            
+                            await supplierService.updateSupplierBalance(supplier.uuid, intakeData.totalValue);
                         });
-                        
-                        await supplierService.updateSupplierBalance(supplier.uuid, intakeData.totalValue);
 
                         toast.success("Réception de stock enregistrée et solde fournisseur mis à jour.");
                         return true;

@@ -1,156 +1,62 @@
 'use client';
 
-import { createClient } from "@/utils/supabase/client";
-import { toast } from "sonner";
-import { productRepository } from '@/repositories/product.repository';
-import { customerRepository } from '@/repositories/customer.repository';
-import { saleRepository } from '@/repositories/sale.repository';
-import { expenseRepository } from '@/repositories/expense.repository';
-import { supplierRepository } from '@/repositories/supplier.repository';
-import { stockRepository } from '@/repositories/stock.repository';
-import { paymentRepository } from '@/repositories/payment.repository';
-import { returnRepository } from '@/repositories/return.repository';
-import { breadOrderRepository } from '@/repositories/breadOrder.repository';
-import { companyRepository } from "@/repositories/company.repository";
+import { db } from '@/lib/db';
+import { toast } from 'sonner';
 
 class BackupService {
-    private supabase = createClient();
-    private backupFolder = 'application-data'; // Use a generic folder for app data
 
     private async exportData(): Promise<Record<string, any[]>> {
-        try {
-            const [
-                products,
-                customers,
-                sales,
-                expenses,
-                suppliers,
-                stockIntakes,
-                payments,
-                returns,
-                breadOrders,
-                profile,
-            ] = await Promise.all([
-                productRepository.getAll(),
-                customerRepository.getAll(),
-                saleRepository.getAll(),
-                expenseRepository.getAll(),
-                supplierRepository.getAll(),
-                stockRepository.getAll(),
-                paymentRepository.getAll(),
-                returnRepository.getAll(),
-                breadOrderRepository.getAll(),
-                companyRepository.get().then(p => p ? [p] : []),
-            ]);
-            
-            return { 
-                suppliers, customers, products, expenses, 
-                stock_intakes: stockIntakes, 
-                sales,
-                product_returns: returns, 
-                payments,
-                bread_orders: breadOrders,
-                company_profile: profile,
-            };
-        } catch (error) {
-            throw error;
+        const data: Record<string, any[]> = {};
+        for (const table of db.tables) {
+            data[table.name] = await table.toArray();
         }
+        return data;
     }
-    
-    async createBackup(): Promise<string> {
+
+    async createBackup(): Promise<File> {
         try {
             const data = await this.exportData();
             const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-            const fileName = `backup-${timestamp}.json`;
-            const filePath = `${this.backupFolder}/${fileName}`;
-            
-            const { error } = await this.supabase.storage
-                .from('backups')
-                .upload(filePath, new Blob([JSON.stringify(data)], { type: 'application/json' }));
-                
-            if (error) {
-                throw new Error(`Supabase storage error: ${error.message}`);
-            }
-            
-            return filePath;
+            const fileName = `ipos-backup-${timestamp}.json`;
+            const file = new File([JSON.stringify(data)], fileName, { type: 'application/json' });
+            return file;
         } catch (error) {
-            throw error;
+            console.error("Backup creation failed:", error);
+            throw new Error("La création de la sauvegarde a échoué.");
         }
     }
 
-    async listBackups() {
+    async restoreBackup(backupFile: File): Promise<void> {
         try {
-            const { data, error } = await this.supabase.storage
-                .from('backups')
-                .list(this.backupFolder, {
-                    limit: 100,
-                    sortBy: { column: 'created_at', order: 'desc' },
-                });
-                
-            if (error) {
-                throw new Error(`Supabase storage error: ${error.message}`);
-            }
-            return data;
-        } catch (error) {
-            throw error;
-        }
-    }
-    
-    async deleteBackup(backupName: string) {
-        try {
-            const filePath = `${this.backupFolder}/${backupName}`;
-            const { error } = await this.supabase.storage
-                .from('backups')
-                .remove([filePath]);
-            
-            if (error) {
-                throw new Error(`Supabase storage error: ${error.message}`);
-            }
-        } catch (error) {
-            throw error;
-        }
-    }
+            const text = await backupFile.text();
+            const data = JSON.parse(text);
 
-    async restoreBackup(backupName: string) {
-        try {
-            const filePath = `${this.backupFolder}/${backupName}`;
+            toast.info("Restauration en cours... Effacement des données existantes.");
 
-            // 1. Download file
-            const { data: blob, error: downloadError } = await this.supabase.storage
-                .from('backups')
-                .download(filePath);
-            
-            if (downloadError) throw new Error(`Download error: ${downloadError.message}`);
-            
-            const data = JSON.parse(await blob.text());
+            await db.transaction('rw', db.tables, async () => {
+                // Clear all tables
+                for (const table of db.tables) {
+                    await table.clear();
+                }
 
-            // 2. Delete all existing data in order
-            toast.info("Clearing existing data...");
-            await saleRepository.deleteAll(); // Deletes sale_items via cascade
-            await returnRepository.deleteAll();
-            await paymentRepository.deleteAll();
-            await stockRepository.deleteAll();
-            await productRepository.deleteAll(); // Deletes inventory_logs via cascade
-            await breadOrderRepository.deleteAll();
-            await customerRepository.deleteAll();
-            await supplierRepository.deleteAll();
-            await expenseRepository.deleteAll();
-            await companyRepository.deleteAll();
-            
-            // 3. Insert new data in reverse order of deletion
-            toast.info("Restoring data...");
-            if (data.company_profile?.length) await companyRepository.bulkUpsert(data.company_profile);
-            if (data.suppliers?.length) await supplierRepository.bulkUpsert(data.suppliers);
-            if (data.customers?.length) await customerRepository.bulkUpsert(data.customers);
-            if (data.products?.length) await productRepository.bulkUpsert(data.products);
-            if (data.expenses?.length) await expenseRepository.bulkUpsert(data.expenses);
-            if (data.stock_intakes?.length) await stockRepository.bulkUpsert(data.stock_intakes);
-            if (data.sales?.length) await saleRepository.bulkUpsert(data.sales);
-            if (data.product_returns?.length) await returnRepository.bulkUpsert(data.product_returns);
-            if (data.payments?.length) await paymentRepository.bulkUpsert(data.payments);
-            if (data.bread_orders?.length) await breadOrderRepository.bulkUpsert(data.bread_orders);
+                toast.info("Restauration des données...");
+                // Restore data in order
+                if (data.company_profile?.length) await db.company_profile.bulkPut(data.company_profile);
+                if (data.suppliers?.length) await db.suppliers.bulkPut(data.suppliers);
+                if (data.customers?.length) await db.customers.bulkPut(data.customers);
+                if (data.products?.length) await db.products.bulkPut(data.products);
+                if (data.expenses?.length) await db.expenses.bulkPut(data.expenses);
+                if (data.stock_intakes?.length) await db.stock_intakes.bulkPut(data.stock_intakes);
+                if (data.sales?.length) await db.sales.bulkPut(data.sales);
+                if (data.product_returns?.length) await db.product_returns.bulkPut(data.product_returns);
+                if (data.payments?.length) await db.payments.bulkPut(data.payments);
+                if (data.bread_orders?.length) await db.bread_orders.bulkPut(data.bread_orders);
+                if (data.inventory_logs?.length) await db.inventory_logs.bulkPut(data.inventory_logs);
+            });
+
         } catch (error) {
-            throw error;
+            console.error("Restore failed:", error);
+            throw new Error("Le fichier de sauvegarde est corrompu ou invalide.");
         }
     }
 }

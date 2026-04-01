@@ -1,51 +1,53 @@
-
 'use client';
 import { v4 as uuidv4 } from 'uuid';
 import type { Sale, CartItem, SaleItem } from '@/lib/types';
-import { saleRepository } from '@/repositories/sale.repository';
-import { inventoryService } from './inventory.service';
-import { customerService } from './customer.service';
+import { db } from '@/lib/db';
 
 class SalesService {
 
     async getAllSales(): Promise<Sale[]> {
-        try {
-            return await saleRepository.getAll();
-        } catch (error: any) {
-            throw new Error(error.message || "Une erreur est survenue lors de la récupération des ventes.");
-        }
+        return db.sales.orderBy('createdAt').reverse().toArray();
     }
 
     async getSaleByUuid(uuid: string): Promise<Sale | undefined> {
-        try {
-            return await saleRepository.findByUuid(uuid);
-        } catch (error) {
-            throw error;
-        }
+        return db.sales.where('uuid').equals(uuid).first();
     }
     
     async getSaleByInvoiceNumber(invoiceNumber: string): Promise<Sale | undefined> {
-        try {
-            return await saleRepository.findByInvoiceNumber(invoiceNumber);
-        } catch (error) {
-            throw error;
-        }
+        return db.sales.where('invoiceNumber').equals(invoiceNumber).first();
     }
 
     async findSalesByCustomerUuid(customerUuid: string): Promise<Sale[]> {
-        try {
-            return await saleRepository.findByCustomerUuid(customerUuid);
-        } catch (error) {
-            throw error;
-        }
+        return db.sales.where('customerUuid').equals(customerUuid).sortBy('createdAt');
+    }
+    
+    async findUnpaidByCustomerUuid(customerUuid: string): Promise<Sale[]> {
+        return db.sales.where({ customerUuid }).and(s => s.paymentStatus !== 'paid').sortBy('createdAt');
     }
 
     async filterSales(filters: { query?: string, from?: Date, to?: Date }): Promise<Sale[]> {
-        try {
-            return await saleRepository.filter(filters);
-        } catch (error) {
-            throw error;
+        let collection = db.sales.toCollection();
+
+        if (filters.from) {
+            collection = collection.filter(s => new Date(s.createdAt!) >= filters.from!);
         }
+        if (filters.to) {
+            collection = collection.filter(s => new Date(s.createdAt!) <= filters.to!);
+        }
+
+        let sales = await collection.toArray();
+
+        if (filters.query) {
+            const lowerQuery = filters.query.toLowerCase();
+            const customerUuids = (await db.customers.filter(c => c.searchName!.toLowerCase().includes(lowerQuery)).toArray()).map(c => c.uuid);
+
+            sales = sales.filter(s => 
+                s.invoiceNumber.toLowerCase().includes(lowerQuery) ||
+                (s.customerUuid && customerUuids.includes(s.customerUuid))
+            );
+        }
+
+        return sales.sort((a,b) => new Date(b.createdAt!).getTime() - new Date(a.createdAt!).getTime());
     }
 
     async createSale(saleData: {
@@ -57,72 +59,54 @@ class SalesService {
         customerUuid?: string | null,
         dueDate?: Date,
     }): Promise<Sale> {
-        try {
-            const now = new Date();
-            const subtotal = saleData.items.reduce((acc, item) => acc + item.price * item.cartQuantity, 0);
-            const discountAmount = saleData.discountType === 'percentage'
-                ? (subtotal * saleData.discountValue) / 100
-                : saleData.discountValue;
-            const total = Math.max(0, subtotal - discountAmount);
+        const now = new Date();
+        const subtotal = saleData.items.reduce((acc, item) => acc + item.price * item.cartQuantity, 0);
+        const discountAmount = saleData.discountType === 'percentage'
+            ? (subtotal * saleData.discountValue) / 100
+            : saleData.discountValue;
+        const total = Math.max(0, subtotal - discountAmount);
 
-            const remainingBalance = total - saleData.amountPaid;
-            const paymentStatus = remainingBalance <= 0.01 ? 'paid' : (saleData.amountPaid > 0 ? 'partial' : 'unpaid');
-            
-            const saleItems: SaleItem[] = saleData.items.map(item => ({
-                productUuid: item.uuid.startsWith('custom-') ? null : item.uuid,
-                name: item.name,
-                price: item.price,
-                purchasePrice: item.purchasePrice,
-                quantity: item.cartQuantity
-            }));
-            
-            const datePrefix = now.toISOString().slice(2, 10).replace(/-/g, '');
-            const randomSuffix = Math.floor(100 + Math.random() * 900);
-            const invoiceNumber = `${datePrefix}-${randomSuffix}`;
+        const remainingBalance = total - saleData.amountPaid;
+        const paymentStatus = remainingBalance <= 0.01 ? 'paid' : (saleData.amountPaid > 0 ? 'partial' : 'unpaid');
+        
+        const saleItems: SaleItem[] = saleData.items.map(item => ({
+            productUuid: item.uuid.startsWith('custom-') ? null : item.uuid,
+            name: item.name,
+            price: item.price,
+            purchasePrice: item.purchasePrice,
+            quantity: item.cartQuantity
+        }));
+        
+        const datePrefix = now.toISOString().slice(2, 10).replace(/-/g, '');
+        const randomSuffix = Math.floor(100 + Math.random() * 900);
+        const invoiceNumber = `${datePrefix}-${randomSuffix}`;
 
-            const newSale: Sale = {
-                uuid: uuidv4(),
-                invoiceNumber,
-                items: saleItems,
-                subtotal,
-                discountType: saleData.discountType,
-                discountAmount: discountAmount,
-                total,
-                amountPaid: saleData.amountPaid,
-                remainingBalance,
-                paymentStatus,
-                payments: saleData.payments,
-                customerUuid: saleData.customerUuid || undefined,
-                createdAt: now,
-                updatedAt: now,
-                dueDate: saleData.dueDate,
-            };
-
-            return await saleRepository.add(newSale);
-        } catch (error) {
-            throw error;
-        }
+        const newSale: Sale = {
+            uuid: uuidv4(),
+            invoiceNumber,
+            items: saleItems,
+            subtotal,
+            discountType: saleData.discountType,
+            discountAmount: discountAmount,
+            total,
+            amountPaid: saleData.amountPaid,
+            remainingBalance,
+            paymentStatus,
+            payments: saleData.payments,
+            customerUuid: saleData.customerUuid || undefined,
+            createdAt: now,
+            updatedAt: now,
+            dueDate: saleData.dueDate,
+        };
+        
+        const id = await db.sales.add(newSale);
+        newSale.id = id;
+        return newSale;
     }
 
     async processSaleCancellation(uuid: string): Promise<void> {
-        try {
-            const sale = await saleRepository.findByUuid(uuid);
-            if (!sale) {
-                throw new Error("Vente non trouvée.");
-            }
-
-            await saleRepository.delete(uuid);
-            
-            for (const item of sale.items) {
-                 await inventoryService.adjustStock(item.productUuid, item.quantity, 'cancellation', sale.uuid);
-            }
-
-            if (sale.customerUuid) {
-                await customerService.recalculateCustomerStatus(sale.customerUuid);
-            }
-        } catch (error) {
-            throw error;
-        }
+        // This is now handled by the appStore action to ensure atomicity with other services
+        throw new Error("processSaleCancellation should be handled by a transactional action in appStore.");
     }
 }
 

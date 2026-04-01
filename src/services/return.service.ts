@@ -1,27 +1,36 @@
 'use client';
 import { v4 as uuidv4 } from 'uuid';
 import type { ProductReturn, ReturnItem } from '@/lib/types';
-import { returnRepository } from '@/repositories/return.repository';
-import { saleRepository } from '@/repositories/sale.repository';
+import { db } from '@/lib/db';
 import { inventoryService } from './inventory.service';
 import { customerService } from './customer.service';
 
 class ReturnService {
 
     async getReturnByUuid(uuid: string): Promise<ProductReturn | undefined> {
-        try {
-            return await returnRepository.findByUuid(uuid);
-        } catch (error) {
-            throw error;
-        }
+        return db.product_returns.where('uuid').equals(uuid).first();
     }
 
     async filterReturns(filters: { query?: string; from?: Date; to?: Date }): Promise<ProductReturn[]> {
-        try {
-            return await returnRepository.filter(filters);
-        } catch (error) {
-            throw error;
+        let collection = db.product_returns.toCollection();
+
+        if (filters.from) {
+             collection = collection.filter(r => new Date(r.createdAt!) >= filters.from!);
         }
+        if (filters.to) {
+            collection = collection.filter(r => new Date(r.createdAt!) <= filters.to!);
+        }
+
+        let returns = await collection.toArray();
+
+        if (filters.query) {
+            const lowerQuery = filters.query.toLowerCase();
+            // This requires fetching customer names if we want to filter by them.
+            // For now, only filter by invoice number.
+            returns = returns.filter(r => r.originalInvoiceNumber.toLowerCase().includes(lowerQuery));
+        }
+        
+        return returns.sort((a,b) => new Date(b.createdAt!).getTime() - new Date(a.createdAt!).getTime());
     }
     
     async addReturn(returnData: {
@@ -32,52 +41,46 @@ class ReturnService {
         customerUuid?: string,
         notes?: string
     }): Promise<ProductReturn> {
-        try {
-            const sale = await saleRepository.findByUuid(returnData.originalSaleUuid);
-            if (!sale) {
-                throw new Error("La vente originale est introuvable.");
-            }
-
-            const now = new Date();
-            const newReturn: ProductReturn = {
-                uuid: uuidv4(),
-                originalSaleUuid: returnData.originalSaleUuid,
-                originalInvoiceNumber: sale.invoiceNumber,
-                items: returnData.items,
-                totalReturnValue: returnData.totalReturnValue,
-                amountRefunded: returnData.amountRefunded,
-                customerUuid: returnData.customerUuid,
-                createdAt: now,
-                updatedAt: now,
-                notes: returnData.notes,
-            };
-
-            return await returnRepository.add(newReturn);
-        } catch (error) {
-            throw error;
+        const sale = await db.sales.where('uuid').equals(returnData.originalSaleUuid).first();
+        if (!sale) {
+            throw new Error("La vente originale est introuvable.");
         }
+
+        const now = new Date();
+        const newReturn: ProductReturn = {
+            uuid: uuidv4(),
+            originalSaleUuid: returnData.originalSaleUuid,
+            originalInvoiceNumber: sale.invoiceNumber,
+            items: returnData.items,
+            totalReturnValue: returnData.totalReturnValue,
+            amountRefunded: returnData.amountRefunded,
+            customerUuid: returnData.customerUuid,
+            createdAt: now,
+            updatedAt: now,
+            notes: returnData.notes,
+        };
+
+        const id = await db.product_returns.add(newReturn);
+        newReturn.id = id;
+        return newReturn;
     }
 
     async processReturnCancellation(uuid: string): Promise<void> {
-        try {
-            const productReturn = await returnRepository.findByUuid(uuid);
-            if (!productReturn) {
-                throw new Error("Retour non trouvé.");
-            }
+        const productReturn = await this.getReturnByUuid(uuid);
+        if (!productReturn || !productReturn.id) {
+            throw new Error("Retour non trouvé.");
+        }
 
-            await returnRepository.delete(uuid);
-            
-            for (const item of productReturn.items) {
-                if (item.wasRestocked && item.productUuid) {
-                    await inventoryService.adjustStock(item.productUuid, -item.quantity, 'cancellation', productReturn.uuid);
-                }
+        await db.product_returns.delete(productReturn.id);
+        
+        for (const item of productReturn.items) {
+            if (item.wasRestocked && item.productUuid) {
+                await inventoryService.adjustStock(item.productUuid, -item.quantity, 'cancellation', productReturn.uuid);
             }
-            
-            if (productReturn.customerUuid) {
-                await customerService.recalculateCustomerStatus(productReturn.customerUuid);
-            }
-        } catch (error) {
-            throw error;
+        }
+        
+        if (productReturn.customerUuid) {
+            await customerService.recalculateCustomerStatus(productReturn.customerUuid);
         }
     }
 }

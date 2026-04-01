@@ -1,6 +1,7 @@
 
 
 export interface Product {
+    id?: number;
     uuid: string;
     name: string;
     category?: string;
@@ -20,6 +21,7 @@ export interface Product {
 }
 
 export interface Customer {
+    id?: number;
     uuid: string;
     firstName: string;
     lastName: string;
@@ -45,6 +47,7 @@ export interface Customer {
 }
 
 export interface SaleItem {
+    id?: number;
     productUuid: string | null;
     name: string;
     price: number;
@@ -76,6 +79,7 @@ export interface SalePayment {
 }
 
 export interface Sale {
+    id?: number;
     uuid: string;
     invoiceNumber: string;
     items: SaleItem[];
@@ -94,6 +98,7 @@ export interface Sale {
 }
 
 export interface Payment {
+    id?: number;
     uuid: string;
     customerUuid: string;
     amount: number;
@@ -104,6 +109,7 @@ export interface Payment {
 }
 
 export interface CompanyProfile {
+    id?: number;
     uuid: string;
     companyName: string;
     address?: string;
@@ -135,6 +141,7 @@ export interface StockIntakeItem {
 }
 
 export interface StockIntake {
+    id?: number;
     uuid: string;
     supplierUuid?: string;
     invoiceNumber: string;
@@ -152,6 +159,7 @@ export interface StockIntake {
 }
 
 export interface ReturnItem {
+    id?: number;
     productUuid: string | null;
     productName: string;
     quantity: number;
@@ -161,6 +169,7 @@ export interface ReturnItem {
 }
 
 export interface ProductReturn {
+    id?: number;
     uuid: string;
     originalSaleUuid?: string;
     originalInvoiceNumber: string;
@@ -176,6 +185,7 @@ export interface ProductReturn {
 export type ExpenseCategory = 'Loyer' | 'Salaires' | 'Fournisseurs' | 'Services Publics' | 'Marketing' | 'Maintenance' | 'Autre' | string;
 
 export interface Expense {
+    id?: number;
     uuid: string;
     description: string;
     category: ExpenseCategory;
@@ -188,6 +198,7 @@ export interface Expense {
 export type InventoryLogReason = 'sale' | 'return' | 'stock_intake' | 'cancellation' | 'manual_adjustment';
 
 export interface InventoryLog {
+    id?: number;
     uuid: string;
     productUuid: string;
     change: number; // e.g., -2 for sale, +50 for stock intake
@@ -198,6 +209,7 @@ export interface InventoryLog {
 }
 
 export interface Supplier {
+    id?: number;
     uuid: string;
     name: string;
     contactPerson?: string;
@@ -212,6 +224,7 @@ export interface Supplier {
 // =================== Bread Types ===================
 
 export interface BreadOrder {
+    id?: number;
     uuid: string;
     customerUuid: string;
     date: string; // YYYY-MM-DD
