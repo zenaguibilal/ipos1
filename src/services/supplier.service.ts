@@ -1,13 +1,14 @@
+
 'use client';
 
 import { v4 as uuidv4 } from 'uuid';
-import type { Supplier } from '@/lib/types';
+import type { Supplier, SupplierPayment } from '@/lib/types';
 import { db } from '@/lib/db';
 
 class SupplierService {
 
     async getSuppliers(): Promise<Supplier[]> {
-        return db.suppliers.toArray();
+        return db.suppliers.orderBy('name').toArray();
     }
 
     async getSupplierByUuid(uuid: string): Promise<Supplier | undefined> {
@@ -41,6 +42,53 @@ class SupplierService {
         
         const newBalance = supplier.balance + amountChange;
         await db.suppliers.update(supplier.id, { balance: newBalance, updatedAt: new Date() });
+    }
+
+    async processSupplierPayment(paymentData: Omit<SupplierPayment, 'uuid' | 'createdAt'>): Promise<void> {
+        await db.transaction('rw', db.suppliers, db.supplier_payments, async () => {
+            const supplier = await this.getSupplierByUuid(paymentData.supplierUuid);
+            if (!supplier || !supplier.id) throw new Error("Fournisseur non trouvé.");
+
+            const newPayment: SupplierPayment = {
+                ...paymentData,
+                uuid: uuidv4(),
+                createdAt: new Date(),
+            };
+
+            await db.supplier_payments.add(newPayment);
+            await db.suppliers.update(supplier.id, { 
+                balance: supplier.balance - paymentData.amount,
+                updatedAt: new Date()
+            });
+        });
+    }
+
+    async getSupplierPayments(supplierUuid: string): Promise<SupplierPayment[]> {
+        return db.supplier_payments.where('supplierUuid').equals(supplierUuid).sortBy('paymentDate');
+    }
+
+    async updateSupplier(uuid: string, data: Partial<Supplier>): Promise<void> {
+        const supplier = await this.getSupplierByUuid(uuid);
+        if (supplier?.id) {
+            await db.suppliers.update(supplier.id, { ...data, updatedAt: new Date() });
+        }
+    }
+
+    async deleteSupplier(uuid: string): Promise<void> {
+        const supplier = await this.getSupplierByUuid(uuid);
+        if (!supplier?.id) return;
+
+        // Check if supplier has intakes
+        const intakesCount = await db.stock_intakes.where('supplierUuid').equals(uuid).count();
+        if (intakesCount > 0) {
+            throw new Error("Impossible de supprimer : ce fournisseur a des factures enregistrées.");
+        }
+
+        if (supplier.balance !== 0) {
+            throw new Error("Impossible de supprimer : le solde du fournisseur n'est pas nul.");
+        }
+
+        await db.suppliers.delete(supplier.id);
     }
 }
 

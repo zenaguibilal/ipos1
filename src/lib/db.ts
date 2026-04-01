@@ -1,5 +1,6 @@
+
 import Dexie, { type EntityTable } from 'dexie';
-import type { Product, Customer, Sale, SaleItem, Expense, Supplier, StockIntake, StockIntakeItem, ProductReturn, ReturnItem, Payment, BreadOrder, CompanyProfile, InventoryLog } from './types';
+import type { Product, Customer, Sale, SaleItem, Expense, Supplier, SupplierPayment, StockIntake, StockIntakeItem, ProductReturn, ReturnItem, Payment, BreadOrder, CompanyProfile, InventoryLog } from './types';
 
 // NOTE: We are adding an auto-incrementing 'id' as the primary key for Dexie,
 // while retaining the 'uuid' for business logic and relationships.
@@ -14,6 +15,7 @@ class iPOSDatabase extends Dexie {
     sales!: EntityTable<Sale, 'id'>;
     expenses!: EntityTable<Expense, 'id'>;
     suppliers!: EntityTable<Supplier, 'id'>;
+    supplier_payments!: EntityTable<SupplierPayment, 'id'>;
     stock_intakes!: EntityTable<StockIntake, 'id'>;
     product_returns!: EntityTable<ProductReturn, 'id'>;
     payments!: EntityTable<Payment, 'id'>;
@@ -29,6 +31,7 @@ class iPOSDatabase extends Dexie {
             sales: '++id, &uuid, invoiceNumber, customerUuid, createdAt, paymentStatus',
             expenses: '++id, &uuid, category, expenseDate',
             suppliers: '++id, &uuid, &name',
+            supplier_payments: '++id, &uuid, supplierUuid, paymentDate',
             stock_intakes: '++id, &uuid, supplierUuid, createdAt, invoiceNumber',
             product_returns: '++id, &uuid, originalSaleUuid, customerUuid, createdAt',
             payments: '++id, &uuid, customerUuid, paymentDate',

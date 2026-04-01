@@ -1,7 +1,4 @@
 
-
-
-
 export interface Product {
     id?: number;
     uuid: string;
@@ -214,6 +211,17 @@ export interface Supplier {
     balance: number; // Solde de la dette envers le fournisseur
     createdAt?: Date;
     updatedAt?: Date;
+}
+
+export interface SupplierPayment {
+    id?: number;
+    uuid: string;
+    supplierUuid: string;
+    amount: number;
+    paymentDate: Date;
+    method: 'cash' | 'check' | 'transfer';
+    notes?: string;
+    createdAt?: Date;
 }
 
 // =================== Bread Types ===================
