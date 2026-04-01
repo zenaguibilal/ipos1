@@ -8,10 +8,10 @@
 *   **Bibliothèque UI :** React
 *   **Composants :** ShadCN UI
 *   **Style :** Tailwind CSS
-*   **Base de Données :** IndexedDB (stockage local dans le navigateur via Dexie.js)
+*   **Base de Données :** IndexedDB (stockage local via Dexie.js)
 *   **Gestion d'état :** Zustand
 *   **Langage :** TypeScript
-*   **PWA :** Service Worker pour la mise en cache et le support hors ligne.
+*   **Architecture :** 100% Client-side (Offline-first)
 
 ## ✨ Fonctionnalités
 
