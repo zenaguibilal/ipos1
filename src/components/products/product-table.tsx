@@ -5,15 +5,13 @@ import type { Product, Supplier } from '@/lib/types';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { MoreHorizontal, Edit, Trash2, AlertCircle, PackageX, CalendarClock, ImageIcon, Info } from 'lucide-react';
+import { MoreHorizontal, Edit, Trash2, CalendarClock, Info, Package } from 'lucide-react';
 import { cn, formatCurrency } from '@/lib/utils';
 import { Checkbox } from '../ui/checkbox';
 import { useMemo } from 'react';
 import { differenceInDays, format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
-import Image from 'next/image';
-import placeholders from '@/app/lib/placeholder-images.json';
 
 interface ProductTableProps {
     products: Product[];
@@ -45,7 +43,6 @@ export function ProductTable({ products, onEdit, onDelete, selectedProducts, onT
                                 className="border-primary data-[state=checked]:bg-primary"
                             />
                         </TableHead>
-                        <TableHead className="w-[60px]"></TableHead>
                         <TableHead className="font-black text-[10px] uppercase tracking-widest text-muted-foreground">Désignation</TableHead>
                         <TableHead className="font-black text-[10px] uppercase tracking-widest text-muted-foreground">Catégorie</TableHead>
                         <TableHead className="font-black text-[10px] uppercase tracking-widest text-muted-foreground">Fournisseur</TableHead>
@@ -71,14 +68,6 @@ export function ProductTable({ products, onEdit, onDelete, selectedProducts, onT
                         
                         const isPriceOld = product.dateMajPrix && differenceInDays(new Date(), new Date(product.dateMajPrix)) > 30;
 
-                        // Determine the image
-                        const defaultPlaceholder = placeholders.products.find(p => p.id === 'divers')!;
-                        const categoryPlaceholder = placeholders.products.find(p => 
-                            p.id === product.category?.toLowerCase() || 
-                            product.category?.toLowerCase().includes(p.id)
-                        );
-                        const displayImage = product.imageUrl || categoryPlaceholder?.url || defaultPlaceholder.url;
-
                         return (
                             <TableRow 
                                 key={productUuid} 
@@ -95,16 +84,6 @@ export function ProductTable({ products, onEdit, onDelete, selectedProducts, onT
                                         onCheckedChange={() => onToggleProductSelection(productUuid)}
                                         className="border-primary data-[state=checked]:bg-primary"
                                     />
-                                </TableCell>
-                                <TableCell>
-                                    <div className="relative h-10 w-10 rounded-xl overflow-hidden bg-muted/30 border border-white/5 flex items-center justify-center">
-                                        <Image 
-                                            src={displayImage} 
-                                            alt="" 
-                                            fill 
-                                            className="object-cover"
-                                        />
-                                    </div>
                                 </TableCell>
                                 <TableCell>
                                     <div className="flex flex-col">

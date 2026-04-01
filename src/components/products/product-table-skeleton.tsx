@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Skeleton } from "@/components/ui/skeleton";
@@ -19,7 +20,6 @@ export function ProductTableSkeleton() {
                         <TableHead className="w-[50px] px-4">
                             <Skeleton className="h-5 w-5" />
                         </TableHead>
-                        <TableHead className="w-[80px]">Image</TableHead>
                         <TableHead>Nom du Produit</TableHead>
                         <TableHead>Catégorie</TableHead>
                         <TableHead className="text-center">Stock</TableHead>
@@ -33,9 +33,6 @@ export function ProductTableSkeleton() {
                         <TableRow key={i}>
                             <TableCell className="px-4">
                                <Skeleton className="h-5 w-5" />
-                            </TableCell>
-                            <TableCell>
-                                <Skeleton className="h-10 w-10 rounded-md" />
                             </TableCell>
                             <TableCell>
                                 <Skeleton className="h-4 w-48" />

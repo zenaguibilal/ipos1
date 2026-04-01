@@ -260,7 +260,6 @@ class ProductService {
                 quantity: row.quantity || row.stock || row.Quantité ? parseInt(row.quantity || row.stock || row.Quantité) : 0,
                 minStockLevel: row.minStockLevel || row.stock_minimum ? parseInt(row.minStockLevel || row.stock_minimum) : 10,
                 barcodes: row.barcodes || row.codes_barres ? String(row.barcodes || row.codes_barres).split(',').map((b:string) => b.trim()).filter(Boolean) : [],
-                imageUrl: row.imageUrl || row.image,
                 unite: row.unite || row.unité || 'Pièce',
             };
 
