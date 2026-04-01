@@ -66,22 +66,24 @@ class ReturnService {
     }
 
     async processReturnCancellation(uuid: string): Promise<void> {
-        const productReturn = await this.getReturnByUuid(uuid);
-        if (!productReturn || !productReturn.id) {
-            throw new Error("Retour non trouvé.");
-        }
-
-        await db.product_returns.delete(productReturn.id);
-        
-        for (const item of productReturn.items) {
-            if (item.wasRestocked && item.productUuid) {
-                await inventoryService.adjustStock(item.productUuid, -item.quantity, 'cancellation', productReturn.uuid);
+        await db.transaction('rw', db.product_returns, db.products, db.customers, db.inventory_logs, async () => {
+            const productReturn = await this.getReturnByUuid(uuid);
+            if (!productReturn || !productReturn.id) {
+                throw new Error("Retour non trouvé.");
             }
-        }
-        
-        if (productReturn.customerUuid) {
-            await customerService.recalculateCustomerStatus(productReturn.customerUuid);
-        }
+
+            await db.product_returns.delete(productReturn.id);
+            
+            for (const item of productReturn.items) {
+                if (item.wasRestocked && item.productUuid) {
+                    await inventoryService.adjustStock(item.productUuid, -item.quantity, 'cancellation', productReturn.uuid);
+                }
+            }
+            
+            if (productReturn.customerUuid) {
+                await customerService.recalculateCustomerStatus(productReturn.customerUuid);
+            }
+        });
     }
 }
 

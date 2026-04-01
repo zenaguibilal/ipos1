@@ -45,26 +45,28 @@ class StockService {
     }
 
     async processStockIntakeCancellation(intakeUuid: string): Promise<void> {
-        const intake = await db.stock_intakes.where('uuid').equals(intakeUuid).first();
-        if (!intake || !intake.id) {
-            throw new Error("Réception de stock non trouvée.");
-        }
-
-        // Revert product quantities
-        for (const item of intake.items) {
-            if (item.productUuid) {
-                const quantityToRevert = item.quantityReceived - item.quantityDamaged;
-                await inventoryService.adjustStock(item.productUuid, -quantityToRevert, 'cancellation', intake.uuid);
+        await db.transaction('rw', db.stock_intakes, db.products, db.suppliers, db.inventory_logs, async () => {
+            const intake = await db.stock_intakes.where('uuid').equals(intakeUuid).first();
+            if (!intake || !intake.id) {
+                throw new Error("Réception de stock non trouvée.");
             }
-        }
 
-        // Revert supplier balance
-        if (intake.supplierUuid && intake.totalValue > 0) {
-            await supplierService.updateSupplierBalance(intake.supplierUuid, -intake.totalValue);
-        }
+            // Revert product quantities
+            for (const item of intake.items) {
+                if (item.productUuid) {
+                    const quantityToRevert = item.quantityReceived - item.quantityDamaged;
+                    await inventoryService.adjustStock(item.productUuid, -quantityToRevert, 'cancellation', intake.uuid);
+                }
+            }
 
-        // Delete the intake record
-        await db.stock_intakes.delete(intake.id);
+            // Revert supplier balance
+            if (intake.supplierUuid && intake.totalValue > 0) {
+                await supplierService.updateSupplierBalance(intake.supplierUuid, -intake.totalValue);
+            }
+
+            // Delete the intake record
+            await db.stock_intakes.delete(intake.id);
+        });
     }
 }
 
