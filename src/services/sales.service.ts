@@ -99,8 +99,22 @@ class SalesService {
             dueDate: saleData.dueDate,
         };
         
-        const id = await db.sales.add(newSale);
-        newSale.id = id;
+        const saleId = await db.transaction('rw', db.sales, db.products, db.inventory_logs, db.customers, db.payments, db.product_returns, async () => {
+            const id = await db.sales.add(newSale);
+            newSale.id = id;
+
+            for (const item of saleData.items) {
+                await inventoryService.adjustStock(item.uuid, -item.cartQuantity, 'sale', newSale.uuid);
+            }
+
+            if (newSale.customerUuid) {
+                await customerService.recalculateCustomerStatus(newSale.customerUuid);
+            }
+            
+            return id;
+        });
+
+        newSale.id = saleId;
         return newSale;
     }
 

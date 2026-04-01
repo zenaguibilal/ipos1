@@ -102,38 +102,40 @@ class BreadService {
     }
 
     async convertBreadOrdersToSales(orderUuids: string[], breadPrice: number): Promise<void> {
-        const orders = await db.bread_orders.where('uuid').anyOf(orderUuids).toArray();
-        const customerUuids = [...new Set(orders.map(o => o.customerUuid))];
-        
-        for (const customerUuid of customerUuids) {
-            const customerOrders = orders.filter(o => o.customerUuid === customerUuid);
-            const totalQuantity = customerOrders.reduce((sum, o) => sum + o.quantite, 0);
-
-            if (totalQuantity <= 0) continue;
-
-            const breadCartItem: CartItem = {
-                uuid: 'BREAD_PRODUCT', // Special UUID for non-inventoried bread
-                name: 'Pain',
-                price: breadPrice,
-                purchasePrice: 0, 
-                quantity: Infinity,
-                cartQuantity: totalQuantity,
-                minStockLevel: 0,
-            };
-
-            const sale = await salesService.createSale({
-                items: [breadCartItem],
-                discountType: 'fixed',
-                discountValue: 0,
-                amountPaid: 0,
-                customerUuid: customerUuid,
-            });
-
-            const orderIds = customerOrders.map(o => o.id!);
-            await db.bread_orders.where('id').anyOf(orderIds).modify({ venteUuid: sale.uuid, est_paye: true });
+        await db.transaction('rw', db.bread_orders, db.sales, db.products, db.inventory_logs, db.customers, db.payments, db.product_returns, async () => {
+            const orders = await db.bread_orders.where('uuid').anyOf(orderUuids).toArray();
+            const customerUuids = [...new Set(orders.map(o => o.customerUuid))];
             
-            await customerService.recalculateCustomerStatus(customerUuid);
-        }
+            for (const customerUuid of customerUuids) {
+                const customerOrders = orders.filter(o => o.customerUuid === customerUuid);
+                const totalQuantity = customerOrders.reduce((sum, o) => sum + o.quantite, 0);
+
+                if (totalQuantity <= 0) continue;
+
+                const breadCartItem: CartItem = {
+                    uuid: 'BREAD_PRODUCT', // Special UUID for non-inventoried bread
+                    name: 'Pain',
+                    price: breadPrice,
+                    purchasePrice: 0, 
+                    quantity: Infinity,
+                    cartQuantity: totalQuantity,
+                    minStockLevel: 0,
+                };
+
+                // This will now use the new transactional createSale.
+                const sale = await salesService.createSale({
+                    items: [breadCartItem],
+                    discountType: 'fixed',
+                    discountValue: 0,
+                    amountPaid: 0,
+                    customerUuid: customerUuid,
+                });
+
+                // Update bread orders within the same transaction
+                const orderIds = customerOrders.map(o => o.id!);
+                await db.bread_orders.where('id').anyOf(orderIds).modify({ venteUuid: sale.uuid, est_paye: true });
+            }
+        });
     }
 }
 
