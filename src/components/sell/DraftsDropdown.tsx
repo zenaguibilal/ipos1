@@ -100,7 +100,7 @@ export function DraftsDropdown() {
                                             {isActive && <Check className="h-3 w-3 text-primary animate-in zoom-in" />}
                                         </div>
                                         <div className="flex items-center gap-3 text-[10px] text-muted-foreground font-bold uppercase tracking-widest opacity-70">
-                                            <span>{itemCount} Material{itemCount > 1 ? 's' : ''}</span>
+                                            <span>{itemCount} Article{itemCount > 1 ? 's' : ''}</span>
                                             <span className="text-primary font-black">{formatCurrency(total)}</span>
                                         </div>
                                     </div>
@@ -157,7 +157,7 @@ export function DraftsDropdown() {
                     <AlertDialogHeader>
                         <AlertDialogTitle className="text-xl font-black tracking-tighter">Identifier cette vente</AlertDialogTitle>
                         <AlertDialogDescription className="text-muted-foreground font-medium">
-                           Entrez ένα nom pour cette مسودة (مثلاً: رقم الطاولة، اسم العميل، إلخ)
+                           Entrez un nom pour cette مسودة (مثلاً: رقم الطاولة، اسم العميل، إلخ)
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <div className="py-6">
