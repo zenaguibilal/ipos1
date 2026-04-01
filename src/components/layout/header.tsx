@@ -13,6 +13,7 @@ import {
   Wallet,
   LayoutDashboard,
   Wheat,
+  ShoppingCart,
 } from 'lucide-react';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
@@ -26,6 +27,7 @@ import {
 
 const allNavLinks = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { href: '/sell', label: 'Vendre', icon: ShoppingCart },
   { href: '/stock', label: 'Stock', icon: Archive },
   { href: '/products', label: 'Produits', icon: Package },
   { href: '/customers', label: 'Clients', icon: Users2 },

@@ -1,0 +1,245 @@
+import { create } from 'zustand';
+import { produce } from 'immer';
+import { persist, createJSONStorage } from 'zustand/middleware';
+import type { Cart, CartItem, Product, Sale } from '@/lib/types';
+import { toast } from 'sonner';
+import { v4 as uuidv4 } from 'uuid';
+import { salesService } from '@/services/sales.service';
+import { customerService } from '@/services/customer.service';
+
+// State Interface
+interface CartState {
+    carts: Cart[];
+    activeCartId: string | null;
+    actions: CartActions;
+}
+
+// Actions Interface
+interface CartActions {
+    getActiveCart: () => Cart | null;
+    createCart: (name?: string) => string;
+    deleteCart: (cartId: string) => void;
+    selectCart: (cartId: string) => void;
+    renameCart: (cartId: string, newName: string) => void;
+    
+    addItemToCart: (product: Product, quantity?: number) => void;
+    removeItemFromCart: (productUuid: string) => void;
+    updateItemQuantity: (productUuid: string, newQuantity: number) => void;
+    
+    setCustomer: (customerUuid: string | null) => void;
+    setDiscount: (type: 'fixed' | 'percentage', value: number) => void;
+    
+    clearCart: () => void;
+    resetCart: () => void;
+    
+    processSale: (amountPaid: number, dueDate?: Date) => Promise<Sale | null>;
+}
+
+// Initial State
+const defaultCart: Omit<Cart, 'id' | 'name'> = {
+    items: [],
+    customerUuid: null,
+    discount: { type: 'fixed', value: 0 },
+};
+const initialCartId = uuidv4();
+const initialCart: Cart = {
+    id: initialCartId,
+    name: `Vente 1`,
+    ...defaultCart,
+};
+const initialState: Omit<CartState, 'actions'> = {
+    carts: [initialCart],
+    activeCartId: initialCart.id,
+};
+
+
+// Store Implementation
+export const useCartStore = create<CartState>()(
+    persist(
+        (set, get) => ({
+            ...initialState,
+            actions: {
+                getActiveCart: () => {
+                    const { carts, activeCartId } = get();
+                    return carts.find(c => c.id === activeCartId) || null;
+                },
+                createCart: (name) => {
+                    const newId = uuidv4();
+                    const newCart: Cart = {
+                        id: newId,
+                        name: name || `Vente ${get().carts.length + 1}`,
+                        ...defaultCart,
+                    };
+                    set(produce(state => {
+                        state.carts.push(newCart);
+                        state.activeCartId = newId;
+                    }));
+                    return newId;
+                },
+                deleteCart: (cartId) => {
+                    set(produce(state => {
+                        if (state.carts.length <= 1) {
+                            toast.error("Impossible de supprimer le dernier panier.");
+                            return;
+                        }
+                        state.carts = state.carts.filter(c => c.id !== cartId);
+                        if (state.activeCartId === cartId) {
+                            state.activeCartId = state.carts[0]?.id || null;
+                        }
+                    }));
+                },
+                selectCart: (cartId) => {
+                    if (get().carts.find(c => c.id === cartId)) {
+                        set({ activeCartId: cartId });
+                    }
+                },
+                renameCart: (cartId, newName) => {
+                    set(produce(state => {
+                        const cart = state.carts.find(c => c.id === cartId);
+                        if (cart) {
+                            cart.name = newName;
+                        }
+                    }));
+                },
+                addItemToCart: (product, quantity = 1) => {
+                    set(produce(state => {
+                        const cart = state.carts.find(c => c.id === state.activeCartId);
+                        if (!cart) return;
+
+                        const existingItem = cart.items.find(item => item.uuid === product.uuid);
+                        if (existingItem) {
+                            existingItem.cartQuantity += quantity;
+                            existingItem.flash = true; // For UI animation
+                        } else {
+                            cart.items.unshift({ ...product, cartQuantity: quantity, flash: true });
+                        }
+                    }));
+                     // Reset flash animation after a short delay
+                    setTimeout(() => {
+                        set(produce(state => {
+                            const cart = state.carts.find(c => c.id === state.activeCartId);
+                            if (cart) {
+                                const item = cart.items.find(i => i.uuid === product.uuid);
+                                if (item) item.flash = false;
+                            }
+                        }));
+                    }, 500);
+                },
+                removeItemFromCart: (productUuid) => {
+                    set(produce(state => {
+                         const cart = state.carts.find(c => c.id === state.activeCartId);
+                        if (cart) {
+                            cart.items = cart.items.filter(item => item.uuid !== productUuid);
+                        }
+                    }));
+                },
+                updateItemQuantity: (productUuid, newQuantity) => {
+                    set(produce(state => {
+                        const cart = state.carts.find(c => c.id === state.activeCartId);
+                        if (cart) {
+                            const item = cart.items.find(item => item.uuid === productUuid);
+                            if (item) {
+                                if (newQuantity > 0) {
+                                    item.cartQuantity = newQuantity;
+                                } else {
+                                    cart.items = cart.items.filter(i => i.uuid !== productUuid);
+                                }
+                            }
+                        }
+                    }));
+                },
+                setCustomer: (customerUuid) => {
+                    set(produce(state => {
+                        const cart = state.carts.find(c => c.id === state.activeCartId);
+                        if (cart) {
+                            cart.customerUuid = customerUuid;
+                        }
+                    }));
+                },
+                setDiscount: (type, value) => {
+                     set(produce(state => {
+                        const cart = state.carts.find(c => c.id === state.activeCartId);
+                        if (cart) {
+                            cart.discount = { type, value: Math.max(0, value) };
+                        }
+                    }));
+                },
+                clearCart: () => {
+                     set(produce(state => {
+                        const cart = state.carts.find(c => c.id === state.activeCartId);
+                        if (cart) {
+                            cart.items = [];
+                        }
+                    }));
+                },
+                resetCart: () => {
+                     set(produce(state => {
+                        const cart = state.carts.find(c => c.id === state.activeCartId);
+                        if (cart) {
+                            cart.items = [];
+                            cart.customerUuid = null;
+                            cart.discount = { type: 'fixed', value: 0 };
+                        }
+                    }));
+                },
+                processSale: async (amountPaid, dueDate) => {
+                    const { getActiveCart, resetCart } = get().actions;
+                    const activeCart = getActiveCart();
+                    
+                    if (!activeCart || activeCart.items.length === 0) {
+                        toast.error("Le panier est vide.");
+                        return null;
+                    }
+
+                    try {
+                        const sale = await salesService.createSale({
+                            items: activeCart.items,
+                            discountType: activeCart.discount.type,
+                            discountValue: activeCart.discount.value,
+                            amountPaid: amountPaid,
+                            customerUuid: activeCart.customerUuid,
+                            dueDate: dueDate,
+                        });
+                        
+                        toast.success(`Vente #${sale.invoiceNumber} enregistrée avec succès.`);
+                        resetCart();
+                        
+                        if (activeCart.customerUuid) {
+                            customerService.recalculateCustomerStatus(activeCart.customerUuid);
+                        }
+
+                        return sale;
+
+                    } catch (error: any) {
+                        toast.error("Échec de la création de la vente.", { description: error.message });
+                        return null;
+                    }
+                }
+            }
+        }),
+        {
+            name: 'ipos-cart-store',
+            storage: createJSONStorage(() => localStorage),
+            partialize: (state) => ({
+                carts: state.carts,
+                activeCartId: state.activeCartId,
+            }),
+            merge: (persistedState, currentState) => {
+                const state = persistedState as any;
+                return {
+                    ...currentState,
+                    ...state,
+                };
+            },
+        }
+    )
+);
+
+// Convenience hooks
+export const useCartActions = () => useCartStore((state) => state.actions);
+
+export const useActiveCart = () => {
+    const carts = useCartStore(state => state.carts);
+    const activeCartId = useCartStore(state => state.activeCartId);
+    return carts.find(c => c.id === activeCartId) || null;
+}
