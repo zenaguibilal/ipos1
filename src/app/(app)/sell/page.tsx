@@ -94,7 +94,7 @@ export default function SellPage() {
                     <span>Fermer</span>
                 </div>
                 <div className="flex items-center gap-2 group">
-                    <kbd className="bg-background px-2 py-1 rounded-md border-2 border-border shadow-sm text-foreground transition-all group-hover:border-primary group-hover:text-primary">Enter</kbd>
+                    <kbd className="bg-background px-2 py-1 rounded-md border-2 border-border shadow-sm text-foreground transition-all group-hover:border-primary group-hover:text-primary font-black px-1.5">Enter</kbd>
                     <span>Confirmer</span>
                 </div>
             </div>
