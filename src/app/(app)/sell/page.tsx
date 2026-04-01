@@ -37,6 +37,10 @@ export default function SellPage() {
                 combo?.focus();
                 combo?.click();
             }
+            if (e.key === 'F8') {
+                e.preventDefault();
+                document.getElementById('sell-drafts-button')?.click();
+            }
             if (e.key === 'F10') {
                 e.preventDefault();
                 document.getElementById('sell-custom-item-button')?.click();
@@ -84,6 +88,10 @@ export default function SellPage() {
                 <div className="flex items-center gap-2 group">
                     <kbd className="bg-background px-2 py-1 rounded-md border-2 border-border shadow-sm text-foreground transition-all group-hover:border-primary group-hover:text-primary">F4</kbd>
                     <span>Client</span>
+                </div>
+                <div className="flex items-center gap-2 group">
+                    <kbd className="bg-background px-2 py-1 rounded-md border-2 border-border shadow-sm text-foreground transition-all group-hover:border-primary group-hover:text-primary">F8</kbd>
+                    <span>Brouillons</span>
                 </div>
                 <div className="flex items-center gap-2 group">
                     <kbd className="bg-background px-2 py-1 rounded-md border-2 border-border shadow-sm text-foreground transition-all group-hover:border-primary group-hover:text-primary">F10</kbd>

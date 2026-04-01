@@ -55,7 +55,7 @@ export function DraftsDropdown() {
         <>
             <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                    <Button variant="outline" size="lg" className="h-14 text-base border-primary/20 hover:bg-primary/5 transition-all shadow-sm">
+                    <Button id="sell-drafts-button" variant="outline" size="lg" className="h-14 text-base border-primary/20 hover:bg-primary/5 transition-all shadow-sm">
                         <FileStack className="mr-2 h-5 w-5 text-primary" />
                         <span className="hidden sm:inline">Brouillons</span>
                         <span className="ml-2 px-2 py-0.5 bg-primary/10 text-primary rounded-full text-xs font-bold">{carts.length}</span>
