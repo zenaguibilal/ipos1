@@ -7,7 +7,7 @@ import { calculateStockStatus } from '@/lib/utils';
 class InventoryService {
 
     async adjustStock(productUuid: string | null | undefined, quantityChange: number, reason: InventoryLogReason, relatedUuid?: string): Promise<void> {
-        if (!productUuid || productUuid === 'BREAD_PRODUCT') {
+        if (!productUuid || productUuid === 'BREAD_PRODUCT' || productUuid.startsWith('custom-')) {
             return; // Do not track stock for special/custom products
         }
 

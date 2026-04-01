@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import type { Product } from '@/lib/types';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Search, PackagePlus } from 'lucide-react';
+import { Search, PackagePlus, Tag } from 'lucide-react';
 import { formatCurrency, getPlaceholder } from '@/lib/utils';
 import { useDebounce } from '@/hooks/useDebounce';
 import { productService } from '@/services/product.service';
@@ -12,6 +12,7 @@ import { useCartActions } from '@/stores/cartStore';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import Image from 'next/image';
 import { Skeleton } from '../ui/skeleton';
+import { CustomItemDialog } from './CustomItemDialog';
 
 const QuickAddItem = ({ product, onSelect }: { product: Product, onSelect: (product: Product) => void }) => {
     const placeholder = getPlaceholder(product.category);
@@ -92,14 +93,21 @@ export function ProductSelector() {
 
     return (
         <div className="flex flex-col h-full bg-card border rounded-xl shadow-lg">
-            <div className="p-4 border-b relative">
-                <Search className="absolute left-8 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                <Input
-                    placeholder="Rechercher un produit par nom ou code-barres..."
-                    className="pl-12 text-base h-14"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                />
+            <div className="p-4 border-b flex gap-2 items-center">
+                <div className="relative flex-grow">
+                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                    <Input
+                        placeholder="Rechercher par nom ou code-barres..."
+                        className="pl-12 text-base h-12"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                    />
+                </div>
+                <CustomItemDialog>
+                    <Button variant="outline" className="h-12 w-12 flex-shrink-0" aria-label="Ajouter un article personnalisé">
+                        <Tag className="h-5 w-5"/>
+                    </Button>
+                </CustomItemDialog>
             </div>
             <ScrollArea className="flex-grow">
                 {showSearchResults ? (
