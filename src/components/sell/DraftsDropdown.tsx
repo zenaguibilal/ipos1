@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useCartStore, useCartActions } from '@/stores/cartStore';
+import { useCartStore, useCartActions, useActiveCart } from '@/stores/cartStore';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -22,16 +22,17 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
-import { FileStack, Plus, Trash2, Edit, PauseCircle, Check } from 'lucide-react';
+import { FileStack, Plus, Trash2, Edit, PauseCircle, Check, ShoppingBag } from 'lucide-react';
 import { toast } from 'sonner';
 import { calculateCartTotals, formatCurrency } from '@/lib/utils';
 import { cn } from '@/lib/utils';
 
 export function DraftsDropdown() {
     const { carts, activeCartId } = useCartStore();
+    const activeCart = useActiveCart();
     const { createCart, selectCart, deleteCart, renameCart } = useCartActions();
 
-    const [dialogOpen, setDialogOpen] = useState(false);
+    const [renameDialogOpen, setRenameDialogOpen] = useState(false);
     const [cartToRename, setCartToRename] = useState<{ id: string, name: string } | null>(null);
     const [newName, setNewName] = useState('');
     
@@ -40,31 +41,36 @@ export function DraftsDropdown() {
             renameCart(cartToRename.id, newName.trim());
             toast.success("Panier renommé.");
         }
-        setDialogOpen(false);
+        setRenameDialogOpen(false);
         setCartToRename(null);
         setNewName('');
     }
+
+    const handleSuspendAndNew = () => {
+        const newId = createCart();
+        toast.success("Vente actuelle mise en attente. Nouveau panier créé.");
+    };
 
     return (
         <>
             <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                    <Button variant="outline" size="lg" className="h-14 text-base border-primary/20 hover:bg-primary/5 transition-all">
+                    <Button variant="outline" size="lg" className="h-14 text-base border-primary/20 hover:bg-primary/5 transition-all shadow-sm">
                         <FileStack className="mr-2 h-5 w-5 text-primary" />
                         <span className="hidden sm:inline">Brouillons</span>
-                        <span className="ml-2 px-1.5 py-0.5 bg-primary/10 text-primary rounded-md text-xs font-bold">{carts.length}</span>
+                        <span className="ml-2 px-2 py-0.5 bg-primary/10 text-primary rounded-full text-xs font-bold">{carts.length}</span>
                     </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-80 p-2">
-                    <DropdownMenuLabel className="flex items-center justify-between px-2 py-1.5">
-                        <span>Ventes en attente</span>
-                        <Button variant="ghost" size="sm" className="h-7 text-xs text-primary font-bold" onClick={() => createCart()}>
+                <DropdownMenuContent align="end" className="w-80 p-2 rounded-2xl shadow-xl border-primary/10">
+                    <DropdownMenuLabel className="flex items-center justify-between px-3 py-2">
+                        <span className="text-sm font-black uppercase tracking-tighter">Ventes en attente</span>
+                        <Button variant="ghost" size="sm" className="h-7 text-xs text-primary font-bold hover:bg-primary/10" onClick={() => createCart()}>
                             <Plus className="mr-1 h-3 w-3" /> Nouveau
                         </Button>
                     </DropdownMenuLabel>
-                    <DropdownMenuSeparator />
+                    <DropdownMenuSeparator className="opacity-50" />
                     
-                    <div className="max-h-[350px] overflow-y-auto space-y-1 my-1">
+                    <div className="max-h-[350px] overflow-y-auto space-y-1 my-1 pr-1 custom-scrollbar">
                         {carts.map(cart => {
                             const { total } = calculateCartTotals(cart);
                             const isActive = cart.id === activeCartId;
@@ -74,21 +80,28 @@ export function DraftsDropdown() {
                                 <div 
                                     key={cart.id}
                                     className={cn(
-                                        "group flex items-center gap-2 p-2 rounded-lg cursor-pointer transition-all",
-                                        isActive ? "bg-primary/10 border-l-4 border-l-primary" : "hover:bg-muted"
+                                        "group flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all duration-200",
+                                        isActive ? "bg-primary/15 border-l-4 border-l-primary shadow-inner" : "hover:bg-muted/50"
                                     )}
                                     onClick={() => selectCart(cart.id)}
                                 >
+                                    <div className={cn(
+                                        "flex-shrink-0 h-10 w-10 rounded-full flex items-center justify-center transition-colors",
+                                        isActive ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+                                    )}>
+                                        <ShoppingBag className="h-5 w-5" />
+                                    </div>
+
                                     <div className="flex-grow min-w-0">
                                         <div className="flex items-center gap-2">
-                                            <p className={cn("font-bold truncate text-sm", isActive ? "text-primary" : "")}>
+                                            <p className={cn("font-bold truncate text-sm tracking-tight", isActive ? "text-primary" : "")}>
                                                 {cart.name}
                                             </p>
-                                            {isActive && <Check className="h-3 w-3 text-primary" />}
+                                            {isActive && <Check className="h-3 w-3 text-primary animate-in zoom-in" />}
                                         </div>
-                                        <div className="flex items-center gap-3 text-[11px] text-muted-foreground font-medium uppercase tracking-wider">
-                                            <span>{itemCount} article{itemCount > 1 ? 's' : ''}</span>
-                                            <span className="text-primary/60 font-bold">{formatCurrency(total)}</span>
+                                        <div className="flex items-center gap-3 text-[10px] text-muted-foreground font-bold uppercase tracking-widest opacity-70">
+                                            <span>{itemCount} Material{itemCount > 1 ? 's' : ''}</span>
+                                            <span className="text-primary font-black">{formatCurrency(total)}</span>
                                         </div>
                                     </div>
                                     
@@ -96,12 +109,12 @@ export function DraftsDropdown() {
                                         <Button 
                                             variant="ghost" 
                                             size="icon" 
-                                            className="h-8 w-8 hover:bg-background shadow-sm" 
+                                            className="h-8 w-8 hover:bg-background rounded-lg shadow-sm" 
                                             onClick={(e) => { 
                                                 e.stopPropagation(); 
                                                 setNewName(cart.name); 
                                                 setCartToRename(cart); 
-                                                setDialogOpen(true); 
+                                                setRenameDialogOpen(true); 
                                             }}
                                         >
                                             <Edit className="h-3.5 w-3.5" />
@@ -109,7 +122,7 @@ export function DraftsDropdown() {
                                         <Button 
                                             variant="ghost" 
                                             size="icon" 
-                                            className="h-8 w-8 text-destructive hover:bg-destructive/10 hover:text-destructive shadow-sm" 
+                                            className="h-8 w-8 text-destructive hover:bg-destructive/10 hover:text-destructive rounded-lg shadow-sm" 
                                             onClick={(e) => { 
                                                 e.stopPropagation(); 
                                                 if (carts.length > 1) {
@@ -127,13 +140,10 @@ export function DraftsDropdown() {
                         })}
                     </div>
 
-                    <DropdownMenuSeparator />
+                    <DropdownMenuSeparator className="opacity-50" />
                     <DropdownMenuItem 
-                        onClick={() => {
-                            createCart();
-                            toast.success("Vente actuelle mise en attente. Nouveau panier créé.");
-                        }}
-                        className="flex items-center justify-center gap-2 p-2 font-bold text-primary focus:text-primary focus:bg-primary/5 cursor-pointer"
+                        onClick={handleSuspendAndNew}
+                        className="flex items-center justify-center gap-2 p-3 my-1 rounded-xl font-black text-xs uppercase tracking-widest text-primary focus:text-primary focus:bg-primary/10 cursor-pointer transition-all active:scale-95"
                     >
                         <PauseCircle className="h-4 w-4" />
                         Suspendre et Nouveau
@@ -142,26 +152,32 @@ export function DraftsDropdown() {
             </DropdownMenu>
             
             {/* Rename Dialog */}
-            <AlertDialog open={dialogOpen} onOpenChange={setDialogOpen}>
-                <AlertDialogContent className="rounded-3xl border-none shadow-2xl">
+            <AlertDialog open={renameDialogOpen} onOpenChange={setRenameDialogOpen}>
+                <AlertDialogContent className="rounded-3xl border-none shadow-2xl bg-card">
                     <AlertDialogHeader>
-                        <AlertDialogTitle className="text-xl font-bold">Renommer le panier</AlertDialogTitle>
-                        <AlertDialogDescription className="text-muted-foreground">
-                           Entrez un nom pour identifier cette vente (ex: Nom du client, Numéro de table...)
+                        <AlertDialogTitle className="text-xl font-black tracking-tighter">Identifier cette vente</AlertDialogTitle>
+                        <AlertDialogDescription className="text-muted-foreground font-medium">
+                           Entrez ένα nom pour cette مسودة (مثلاً: رقم الطاولة، اسم العميل، إلخ)
                         </AlertDialogDescription>
                     </AlertDialogHeader>
-                    <div className="py-4">
-                        <Input 
-                            value={newName}
-                            onChange={(e) => setNewName(e.target.value)}
-                            onKeyDown={(e) => e.key === 'Enter' && handleRename()}
-                            className="h-12 text-lg font-bold rounded-xl bg-muted/50"
-                            autoFocus
-                        />
+                    <div className="py-6">
+                        <div className="relative">
+                            <Input 
+                                value={newName}
+                                onChange={(e) => setNewName(e.target.value)}
+                                onKeyDown={(e) => e.key === 'Enter' && handleRename()}
+                                className="h-14 text-xl font-bold rounded-2xl bg-muted/50 border-none px-6 focus-visible:ring-primary shadow-inner"
+                                placeholder="Nom du panier..."
+                                autoFocus
+                            />
+                            <ShoppingBag className="absolute right-5 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground/30" />
+                        </div>
                     </div>
-                    <AlertDialogFooter className="gap-2">
-                        <AlertDialogCancel className="rounded-xl font-bold border-none">Annuler</AlertDialogCancel>
-                        <AlertDialogAction onClick={handleRename} className="rounded-xl font-bold px-8">Enregistrer</AlertDialogAction>
+                    <AlertDialogFooter className="gap-3">
+                        <AlertDialogCancel className="rounded-2xl font-bold border-none h-12 flex-1">Annuler</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleRename} className="rounded-2xl font-bold px-8 h-12 flex-1 shadow-lg shadow-primary/20">
+                            Enregistrer
+                        </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>

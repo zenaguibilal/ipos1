@@ -41,15 +41,16 @@ const defaultCart: Omit<Cart, 'id' | 'name'> = {
     customerUuid: null,
     discount: { type: 'fixed', value: 0 },
 };
-const initialCartId = uuidv4();
-const initialCart: Cart = {
-    id: initialCartId,
+
+const createInitialCart = (): Cart => ({
+    id: uuidv4(),
     name: `Vente 1`,
     ...defaultCart,
-};
+});
+
 const initialState: Omit<CartState, 'actions'> = {
-    carts: [initialCart],
-    activeCartId: initialCart.id,
+    carts: [createInitialCart()],
+    activeCartId: null, // Will be set on hydration or mount
 };
 
 
@@ -58,10 +59,11 @@ export const useCartStore = create<CartState>()(
     persist(
         (set, get) => ({
             ...initialState,
+            activeCartId: initialState.carts[0].id,
             actions: {
                 getActiveCart: () => {
                     const { carts, activeCartId } = get();
-                    return carts.find(c => c.id === activeCartId) || null;
+                    return carts.find(c => c.id === activeCartId) || carts[0] || null;
                 },
                 createCart: (name) => {
                     const newId = uuidv4();
@@ -79,7 +81,11 @@ export const useCartStore = create<CartState>()(
                 deleteCart: (cartId) => {
                     set(produce(state => {
                         if (state.carts.length <= 1) {
-                            toast.error("Impossible de supprimer le dernier panier.");
+                            // Don't delete last cart, just reset it
+                            const cart = state.carts.find(c => c.id === cartId);
+                            if (cart) {
+                                Object.assign(cart, { ...defaultCart, name: 'Vente 1' });
+                            }
                             return;
                         }
                         state.carts = state.carts.filter(c => c.id !== cartId);
@@ -102,7 +108,7 @@ export const useCartStore = create<CartState>()(
                     }));
                 },
                 addItemToCart: (product, quantity = 1) => {
-                    const { carts, activeCartId } = get();
+                    const { activeCartId, carts } = get();
                     const cart = carts.find(c => c.id === activeCartId);
                     if (!cart) return;
 
@@ -128,12 +134,12 @@ export const useCartStore = create<CartState>()(
                         const existingItem = cart.items.find(item => item.uuid === product.uuid);
                         if (existingItem) {
                             existingItem.cartQuantity += quantity;
-                            existingItem.flash = true; // For UI animation
+                            existingItem.flash = true;
                         } else {
                             cart.items.unshift({ ...product, cartQuantity: quantity, flash: true });
                         }
                     }));
-                     // Reset flash animation after a short delay
+
                     setTimeout(() => {
                         set(produce(state => {
                             const cart = state.carts.find(c => c.id === state.activeCartId);
@@ -164,7 +170,6 @@ export const useCartStore = create<CartState>()(
                                     toast.error(`Stock insuffisant pour "${item.name}"`, {
                                         description: `Demandé: ${newQuantity}, Disponible: ${item.quantity}.`,
                                     });
-                                    // Revert to max available quantity
                                     item.cartQuantity = item.quantity;
                                     return;
                                 }
@@ -206,14 +211,15 @@ export const useCartStore = create<CartState>()(
                      set(produce(state => {
                         const cart = state.carts.find(c => c.id === state.activeCartId);
                         if (cart) {
-                            cart.items = [];
-                            cart.customerUuid = null;
-                            cart.discount = { type: 'fixed', value: 0 };
+                            const oldId = cart.id;
+                            const oldName = cart.name;
+                            // Reset active cart data
+                            Object.assign(cart, { ...defaultCart, id: oldId, name: oldName });
                         }
                     }));
                 },
                 processSale: async (amountPaid, dueDate) => {
-                    const { getActiveCart, resetCart } = get().actions;
+                    const { getActiveCart, resetCart, deleteCart } = get().actions;
                     const activeCart = getActiveCart();
                     
                     if (!activeCart || activeCart.items.length === 0) {
@@ -231,7 +237,10 @@ export const useCartStore = create<CartState>()(
                             dueDate: dueDate,
                         });
                         
-                        toast.success(`Vente #${sale.invoiceNumber} enregistrée avec succès.`);
+                        toast.success(`Vente #${sale.invoiceNumber} enregistrée.`);
+                        
+                        // After success, if it was a draft, we might want to delete it or just clear it.
+                        // For MVP, we just clear the active cart.
                         resetCart();
                         
                         if (activeCart.customerUuid) {
@@ -241,7 +250,7 @@ export const useCartStore = create<CartState>()(
                         return sale;
 
                     } catch (error: any) {
-                        toast.error("Échec de la création de la vente.", { description: error.message });
+                        toast.error("Échec de la vente.", { description: error.message });
                         return null;
                     }
                 }
@@ -254,13 +263,6 @@ export const useCartStore = create<CartState>()(
                 carts: state.carts,
                 activeCartId: state.activeCartId,
             }),
-            merge: (persistedState, currentState) => {
-                const state = persistedState as any;
-                return {
-                    ...currentState,
-                    ...state,
-                };
-            },
         }
     )
 );
@@ -271,5 +273,5 @@ export const useCartActions = () => useCartStore((state) => state.actions);
 export const useActiveCart = () => {
     const carts = useCartStore(state => state.carts);
     const activeCartId = useCartStore(state => state.activeCartId);
-    return carts.find(c => c.id === activeCartId) || null;
+    return carts.find(c => c.id === activeCartId) || carts[0] || null;
 }
