@@ -1,11 +1,11 @@
 
 'use client';
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { salesService } from '@/services/sales.service';
 import { customerService } from '@/services/customer.service';
 import { useDebounce } from '@/hooks/useDebounce';
-import type { Sale, Customer } from '@/lib/types';
+import type { Sale, Customer, CompanyProfile } from '@/lib/types';
 import { Input } from '@/components/ui/input';
 import { 
     Search, 
@@ -27,7 +27,9 @@ import {
     BarChart3,
     CheckSquare,
     Trash2,
-    FileText
+    FileText,
+    ChevronRight,
+    X
 } from 'lucide-react';
 import { DateRangePicker } from '@/components/ui/date-range-picker';
 import { useDateRange } from '@/hooks/useDateRange';
@@ -46,9 +48,11 @@ import { toast } from 'sonner';
 import { cn, formatCurrency, safeToDate } from '@/lib/utils';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
-import { format, startOfDay } from 'date-fns';
+import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import Papa from 'papaparse';
+import { useAppStore } from '@/stores/appStore';
+import { ConfirmAlertDialog } from '@/components/ui/ConfirmAlertDialog';
 
 type SalesStatus = 'all' | 'paid' | 'partial' | 'unpaid';
 
@@ -58,12 +62,14 @@ export default function SalesHistoryPage() {
     const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
     const debouncedSearchQuery = useDebounce(searchQuery, 300);
     const { dateRange, setDate, isMounted } = useDateRange(29);
+    const profile = useAppStore(state => state.companyProfile);
     
     const [selectedSale, setSelectedSale] = useState<Sale | null>(null);
     const [selectedSales, setSelectedSales] = useState<Set<string>>(new Set());
     const [isDetailsOpen, setIsDetailsOpen] = useState(false);
     const [isCancelOpen, setIsCancelOpen] = useState(false);
     const [isPrintOpen, setIsPrintOpen] = useState(false);
+    const [isBulkCancelConfirmOpen, setIsBulkCancelConfirmOpen] = useState(false);
 
     const [sales, setSales] = useState<Sale[] | undefined>(undefined);
     const [customerMap, setCustomerMap] = useState<Map<string, Customer>>(new Map());
@@ -157,6 +163,27 @@ export default function SalesHistoryPage() {
         setIsPrintOpen(true);
     };
 
+    const handleBulkCancel = async () => {
+        const uuids = Array.from(selectedSales);
+        let successCount = 0;
+        let failCount = 0;
+
+        for (const uuid of uuids) {
+            try {
+                await salesService.processSaleCancellation(uuid);
+                successCount++;
+            } catch (e) {
+                failCount++;
+            }
+        }
+
+        if (successCount > 0) toast.success(`${successCount} vente(s) annulée(s).`);
+        if (failCount > 0) toast.error(`${failCount} échec(s) d'annulation.`);
+        
+        setSelectedSales(new Set());
+        fetchSalesAndCustomers();
+    };
+
     const handleExportCsv = () => {
         const salesToExport = selectedSales.size > 0 
             ? (sales?.filter(s => selectedSales.has(s.uuid)) || [])
@@ -194,6 +221,97 @@ export default function SalesHistoryPage() {
         toast.success(`${salesToExport.length} vente(s) exportée(s).`);
     };
 
+    const handlePrintSummary = () => {
+        if (!sales || sales.length === 0) {
+            toast.error("Aucune donnée à imprimer.");
+            return;
+        }
+
+        const printWindow = window.open('', '_blank');
+        if (!printWindow) return;
+
+        const dateStr = dateRange?.from ? `${format(dateRange.from, 'dd/MM/yyyy')} au ${format(dateRange.to!, 'dd/MM/yyyy')}` : 'Toutes les dates';
+
+        const html = `
+            <html>
+                <head>
+                    <title>Rapport de Ventes - iPOS</title>
+                    <style>
+                        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 40px; color: #333; }
+                        header { border-bottom: 2px solid #000; padding-bottom: 20px; margin-bottom: 30px; display: flex; justify-content: space-between; align-items: flex-end; }
+                        h1 { margin: 0; font-size: 24px; text-transform: uppercase; }
+                        .meta { text-align: right; font-size: 12px; color: #666; }
+                        .summary-grid { display: grid; grid-template-cols: repeat(4, 1fr); gap: 20px; margin-bottom: 40px; }
+                        .stat-card { border: 1px solid #ddd; padding: 15px; border-radius: 8px; text-align: center; }
+                        .stat-card h4 { margin: 0 0 5px 0; font-size: 10px; text-transform: uppercase; color: #888; }
+                        .stat-card p { margin: 0; font-size: 18px; font-weight: bold; }
+                        table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 11px; }
+                        th, td { border-bottom: 1px solid #eee; padding: 12px 8px; text-align: left; }
+                        th { background-color: #f9f9f9; font-weight: bold; text-transform: uppercase; }
+                        .amount { text-align: right; font-family: monospace; font-size: 12px; }
+                        .status-pill { padding: 3px 8px; border-radius: 10px; font-size: 9px; font-weight: bold; }
+                        @media print { .no-print { display: none; } }
+                    </style>
+                </head>
+                <body>
+                    <header>
+                        <div>
+                            <h1>${profile?.companyName || 'Mon Commerce'}</h1>
+                            <p>${profile?.address || ''} | ${profile?.phone || ''}</p>
+                        </div>
+                        <div class="meta">
+                            <p>RAPPORT DE VENTES</p>
+                            <p>Période: ${dateStr}</p>
+                            <p>Généré le: ${format(new Date(), 'dd/MM/yyyy HH:mm')}</p>
+                        </div>
+                    </header>
+
+                    <div class="summary-grid">
+                        <div class="stat-card"><h4>Chiffre d'Affaires</h4><p>${formatCurrency(stats.total)}</p></div>
+                        <div class="stat-card"><h4>Recettes Réelles</h4><p style="color: green">${formatCurrency(stats.received)}</p></div>
+                        <div class="stat-card"><h4>Créances</h4><p style="color: red">${formatCurrency(stats.debt)}</p></div>
+                        <div class="stat-card"><h4>Remises Totales</h4><p>${formatCurrency(stats.discount)}</p></div>
+                    </div>
+
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>N° Facture</th>
+                                <th>Client</th>
+                                <th>Statut</th>
+                                <th style="text-align: right;">Total</th>
+                                <th style="text-align: right;">Payé</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${sales.map(s => {
+                                const customer = s.customerUuid ? customerMap.get(s.customerUuid) : null;
+                                return `
+                                    <tr>
+                                        <td>${format(safeToDate(s.createdAt!), 'dd/MM/yyyy HH:mm')}</td>
+                                        <td><b>${s.invoiceNumber}</b></td>
+                                        <td>${customer ? `${customer.firstName} ${customer.lastName}` : 'Passage'}</td>
+                                        <td>${s.paymentStatus.toUpperCase()}</td>
+                                        <td class="amount">${s.total.toFixed(1)}</td>
+                                        <td class="amount">${s.amountPaid.toFixed(1)}</td>
+                                    </tr>
+                                `;
+                            }).join('')}
+                        </tbody>
+                    </table>
+                </body>
+            </html>
+        `;
+
+        printWindow.document.write(html);
+        printWindow.document.close();
+        setTimeout(() => {
+            printWindow.print();
+            printWindow.close();
+        }, 500);
+    };
+
     const resetFilters = () => {
         setSearchQuery('');
         setFilterStatus('all');
@@ -208,9 +326,13 @@ export default function SalesHistoryPage() {
                 description="Contrôlez vos revenus et suivez vos créances clients avec précision."
             >
                 <div className="flex gap-2 w-full sm:w-auto">
+                    <Button variant="outline" onClick={handlePrintSummary} className="rounded-xl font-bold border-primary/20 hover:bg-primary/5">
+                        <Printer className="mr-2 h-4 w-4 text-primary" /> 
+                        Rapport
+                    </Button>
                     <Button variant="outline" onClick={handleExportCsv} className="rounded-xl font-bold border-primary/20 hover:bg-primary/5">
                         <FileUp className="mr-2 h-4 w-4 text-primary" /> 
-                        {selectedSales.size > 0 ? `Exporter (${selectedSales.size})` : 'Exporter Tout'}
+                        Exporter
                     </Button>
                     <Button 
                         variant="outline" 
@@ -307,7 +429,7 @@ export default function SalesHistoryPage() {
                             <div>
                                 <CardTitle className="text-sm font-black uppercase tracking-tight flex items-center gap-2">
                                     <TrendingUp className="h-4 w-4 text-primary" />
-                                    Tendance des Ventes
+                                    Tendance des Ventes & Encaissements
                                 </CardTitle>
                             </div>
                             <div className="flex items-center gap-1 rounded-xl bg-muted/50 p-1">
@@ -338,15 +460,20 @@ export default function SalesHistoryPage() {
                                                 <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3}/>
                                                 <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
                                             </linearGradient>
+                                            <linearGradient id="colorReceived" x1="0" y1="0" x2="0" y2="1">
+                                                <stop offset="5%" stopColor="hsl(var(--chart-quaternary))" stopOpacity={0.3}/>
+                                                <stop offset="95%" stopColor="hsl(var(--chart-quaternary))" stopOpacity={0}/>
+                                            </linearGradient>
                                         </defs>
                                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--muted-foreground)/0.1)" />
                                         <XAxis dataKey="date" fontSize={10} tickLine={false} axisLine={false} />
                                         <YAxis fontSize={10} tickLine={false} axisLine={false} tickFormatter={(v) => `${v}`} />
                                         <Tooltip 
                                             contentStyle={{ backgroundColor: 'hsl(var(--card))', border: 'none', borderRadius: '12px', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
-                                            formatter={(v: number) => [formatCurrency(v), '']}
+                                            formatter={(v: number, name: string) => [formatCurrency(v), name === 'total' ? 'Ventes' : 'Encaissements']}
                                         />
-                                        <Area type="monotone" dataKey="total" stroke="hsl(var(--primary))" fillOpacity={1} fill="url(#colorTotal)" strokeWidth={3} />
+                                        <Area type="monotone" dataKey="total" name="total" stroke="hsl(var(--primary))" fillOpacity={1} fill="url(#colorTotal)" strokeWidth={3} />
+                                        <Area type="monotone" dataKey="received" name="received" stroke="hsl(var(--chart-quaternary))" fillOpacity={1} fill="url(#colorReceived)" strokeWidth={2} strokeDasharray="5 5" />
                                     </AreaChart>
                                 </ResponsiveContainer>
                             )}
@@ -369,7 +496,7 @@ export default function SalesHistoryPage() {
                                             className="border-primary data-[state=checked]:bg-primary"
                                         />
                                         <label htmlFor="select-all" className="text-[10px] font-black uppercase tracking-widest text-primary cursor-pointer">
-                                            Tout sélectionner ({selectedSales.size})
+                                            Tout sélectionner (${selectedSales.size})
                                         </label>
                                     </div>
                                     <SalesHistoryTable 
@@ -413,7 +540,7 @@ export default function SalesHistoryPage() {
                 </div>
             </div>
 
-            {/* Selection Action Bar */}
+            {/* Selection Action Bar - Enhanced */}
             {selectedSales.size > 0 && (
                 <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-50 animate-in slide-in-from-bottom-10 duration-300">
                     <div className="bg-card/80 backdrop-blur-xl border-2 border-primary/20 shadow-2xl rounded-full px-6 py-3 flex items-center gap-6">
@@ -427,11 +554,11 @@ export default function SalesHistoryPage() {
                             <Button variant="ghost" size="sm" onClick={handleExportCsv} className="rounded-full h-10 font-bold hover:bg-primary/10 hover:text-primary">
                                 <FileUp className="mr-2 h-4 w-4" /> Exporter
                             </Button>
-                            <Button variant="ghost" size="sm" className="rounded-full h-10 font-bold text-destructive hover:bg-destructive/10">
-                                <Trash2 className="mr-2 h-4 w-4" /> Annuler
+                            <Button variant="ghost" size="sm" onClick={() => setIsBulkCancelConfirmOpen(true)} className="rounded-full h-10 font-bold text-destructive hover:bg-destructive/10">
+                                <Trash2 className="mr-2 h-4 w-4" /> Annuler Tout
                             </Button>
-                            <Button variant="ghost" size="icon" onClick={() => setSelectedSales(new Set())} className="rounded-full h-10 w-10">
-                                <FilterX className="h-4 w-4" />
+                            <Button variant="ghost" size="icon" onClick={() => setSelectedSales(new Set())} className="rounded-full h-10 w-10 hover:bg-muted">
+                                <X className="h-4 w-4" />
                             </Button>
                         </div>
                     </div>
@@ -456,6 +583,15 @@ export default function SalesHistoryPage() {
                 isOpen={isPrintOpen}
                 onOpenChange={setIsPrintOpen}
                 sale={selectedSale}
+            />
+
+            <ConfirmAlertDialog
+                isOpen={isBulkCancelConfirmOpen}
+                onOpenChange={setIsBulkCancelConfirmOpen}
+                title={`Annuler ${selectedSales.size} vente(s) ?`}
+                description="Cette opération est irréversible. Toutes les quantités seront réintégrées au stock et les soldes clients seront recalculés."
+                onConfirm={handleBulkCancel}
+                confirmText="Oui, Annuler Tout"
             />
         </div>
     );
