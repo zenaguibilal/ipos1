@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useDebounce } from '@/hooks/useDebounce';
 import type { Product, Supplier, ProductImportAnalysis } from '@/lib/types';
@@ -31,8 +31,6 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { EmptyState } from '@/components/ui/EmptyState';
-import { Card } from '@/components/ui/card';
-import { Skeleton } from '@/components/ui/skeleton';
 import { productService } from '@/services/product.service';
 import { supplierService } from '@/services/supplier.service';
 import { useAppStore } from '@/stores/appStore';
@@ -255,24 +253,9 @@ export default function ProductsPage() {
 
     const isFiltered = searchQuery !== '' || selectedCategory !== 'all' || selectedSupplier !== 'all' || stockStatus !== 'all' || sortBy !== 'createdAt_desc';
     
-    const renderSkeletons = () => (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {[...Array(8)].map((_, i) => (
-                <div key={i} className="h-48 rounded-2xl bg-card border-none animate-pulse p-4 space-y-4">
-                    <Skeleton className="h-6 w-3/4" />
-                    <Skeleton className="h-4 w-1/2" />
-                    <div className="flex justify-between mt-auto">
-                        <Skeleton className="h-8 w-24" />
-                        <Skeleton className="h-8 w-8" />
-                    </div>
-                </div>
-            ))}
-        </div>
-    );
-
     const renderContent = () => {
         if (isLoading) {
-            return viewMode === 'grid' ? renderSkeletons() : <ProductTableSkeleton />;
+            return viewMode === 'grid' ? <ProductGridSkeleton /> : <ProductTableSkeleton />;
         }
 
         if (!products || products.length === 0) {
@@ -280,11 +263,11 @@ export default function ProductsPage() {
                 <EmptyState
                     icon={Package}
                     title="Aucun produit trouvé"
-                    description={isFiltered ? "Essayez d'ajuster vos filtres ou de réinitialiser la recherche." : "Commenceز par ajouter votre premier produit."}
+                    description={isFiltered ? "Essayez d'ajuster vos filtres ou de réinitialiser la recherche." : "Commencez par ajouter votre premier produit."}
                 >
                     <div className="flex gap-2 justify-center">
-                        {isFiltered && <Button variant="outline" onClick={resetFilters}><FilterX className="mr-2 h-4 w-4" /> Effacer</Button>}
-                        <Button onClick={() => { setSelectedProduct(null); setIsProductDialogOpen(true); }}><Plus className="mr-2 h-4 w-4" /> Ajouter un produit</Button>
+                        {isFiltered && <Button variant="outline" onClick={resetFilters} className="rounded-xl"><FilterX className="mr-2 h-4 w-4" /> Effacer</Button>}
+                        <Button onClick={() => { setSelectedProduct(null); setIsProductDialogOpen(true); }} className="rounded-xl shadow-lg shadow-primary/20"><Plus className="mr-2 h-4 w-4" /> Ajouter un produit</Button>
                     </div>
                 </EmptyState>
             );
@@ -357,7 +340,7 @@ export default function ProductsPage() {
                 <div className="relative flex-grow">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/50" />
                     <Input 
-                        placeholder="Rechercher par nom أو code-barres..."
+                        placeholder="Rechercher par nom ou code-barres..."
                         className="pl-10 h-11 rounded-xl bg-card border-none shadow-sm focus-visible:ring-primary/20"
                         value={searchQuery}
                         onChange={e => setSearchQuery(e.target.value)}
@@ -373,7 +356,7 @@ export default function ProductsPage() {
                             </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent className="rounded-xl border-none shadow-xl min-w-[200px] max-h-80 overflow-y-auto custom-scrollbar">
-                            <DropdownMenuLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Filtrer par Catégorie</DropdownMenuLabel>
+                            <DropdownMenuLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Rayon / Catégorie</DropdownMenuLabel>
                             <DropdownMenuSeparator />
                             <DropdownMenuCheckboxItem checked={selectedCategory === 'all'} onCheckedChange={() => setSelectedCategory('all')}>Toutes les catégories</DropdownMenuCheckboxItem>
                             {categories?.map(cat => (
@@ -459,6 +442,18 @@ export default function ProductsPage() {
                         </Button>
                     </div>
                     
+                    {isFiltered && (
+                        <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-11 w-11 rounded-xl text-destructive hover:bg-destructive/10"
+                            onClick={resetFilters}
+                            title="Réinitialiser les filtres"
+                        >
+                            <FilterX className="h-4 w-4" />
+                        </Button>
+                    )}
+
                     <Button 
                         variant="outline" 
                         size="icon" 
@@ -495,7 +490,7 @@ export default function ProductsPage() {
                 </div>
             )}
             
-            <div className="min-h-[450px]">
+            <div className="min-h-[450px] animate-in fade-in duration-500">
                {renderContent()}
             </div>
 
@@ -536,6 +531,23 @@ export default function ProductsPage() {
                     isImporting={isImporting}
                 />
             </>
+        </div>
+    );
+}
+
+function ProductGridSkeleton() {
+    return (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6">
+            {[...Array(10)].map((_, i) => (
+                <div key={i} className="h-[180px] rounded-3xl bg-card border-none animate-pulse p-5 space-y-4">
+                    <div className="flex gap-2">
+                        <div className="h-4 w-16 bg-muted rounded-md" />
+                        <div className="h-4 w-12 bg-muted rounded-md" />
+                    </div>
+                    <div className="h-6 w-3/4 bg-muted rounded-md" />
+                    <div className="h-10 w-full bg-muted rounded-xl mt-auto" />
+                </div>
+            ))}
         </div>
     );
 }

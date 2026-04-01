@@ -10,8 +10,7 @@ import { MoreHorizontal, Edit, Trash2, CalendarClock, Package, AlertTriangle, In
 import { Badge } from '@/components/ui/badge';
 import { cn, formatCurrency } from '@/lib/utils';
 import { Checkbox } from '../ui/checkbox';
-import { differenceInDays, format } from 'date-fns';
-import { fr } from 'date-fns/locale';
+import { differenceInDays } from 'date-fns';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface ProductCardProps {
@@ -39,7 +38,9 @@ const ProductCardComponent = ({ product, onEdit, onDelete, isSelected, onToggleS
         return differenceInDays(new Date(), new Date(product.dateMajPrix)) > 30;
     }, [product.dateMajPrix]);
 
-    const handleCardClick = () => {
+    const handleCardClick = (e: React.MouseEvent) => {
+        // Prevent editing if clicking the checkbox
+        if ((e.target as HTMLElement).closest('[role="checkbox"]')) return;
         onEdit(product);
     };
 
@@ -47,7 +48,7 @@ const ProductCardComponent = ({ product, onEdit, onDelete, isSelected, onToggleS
         <Card
             onClick={handleCardClick}
             className={cn(
-                "group flex flex-col justify-between transition-all duration-300 hover:shadow-2xl hover:-translate-y-1 bg-card border-none relative overflow-hidden cursor-pointer min-h-[180px]",
+                "group flex flex-col justify-between transition-all duration-300 hover:shadow-2xl hover:-translate-y-1 bg-card border-none relative overflow-hidden cursor-pointer min-h-[180px] rounded-3xl",
                 isSelected && "ring-2 ring-primary shadow-lg"
             )}
         >
@@ -57,9 +58,9 @@ const ProductCardComponent = ({ product, onEdit, onDelete, isSelected, onToggleS
                 isSelected ? "opacity-100" : "opacity-0"
             )} />
 
-            {/* Action Bar (Hover only) */}
-            <div className="absolute top-3 right-3 z-10 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                <div onClick={(e) => e.stopPropagation()} className="p-1.5 bg-background/80 backdrop-blur-md rounded-lg shadow-sm border border-white/5">
+            {/* Action Bar (Top Right) */}
+            <div className="absolute top-3 right-3 z-10 flex gap-1 items-center">
+                <div onClick={(e) => e.stopPropagation()} className="p-1.5 bg-background/80 backdrop-blur-md rounded-xl shadow-sm border border-white/5">
                     <Checkbox
                         checked={isSelected}
                         onCheckedChange={onToggleSelection}
@@ -68,15 +69,15 @@ const ProductCardComponent = ({ product, onEdit, onDelete, isSelected, onToggleS
                 </div>
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                        <Button variant="secondary" size="icon" className="h-8 w-8 bg-background/80 backdrop-blur-md border-none shadow-sm">
+                        <Button variant="secondary" size="icon" className="h-8 w-8 bg-background/80 backdrop-blur-md border-none shadow-sm rounded-xl">
                             <MoreHorizontal className="h-4 w-4" />
                         </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="rounded-xl border-none shadow-xl">
-                        <DropdownMenuItem onClick={() => onEdit(product)}>
+                    <DropdownMenuContent align="end" className="rounded-2xl border-none shadow-xl">
+                        <DropdownMenuItem onClick={() => onEdit(product)} className="rounded-xl">
                             <Edit className="mr-2 h-4 w-4" /> Modifier
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => onDelete(product)} className="text-destructive focus:text-destructive">
+                        <DropdownMenuItem onClick={() => onDelete(product)} className="text-destructive focus:text-destructive rounded-xl">
                             <Trash2 className="mr-2 h-4 w-4" /> Supprimer
                         </DropdownMenuItem>
                     </DropdownMenuContent>
@@ -84,7 +85,7 @@ const ProductCardComponent = ({ product, onEdit, onDelete, isSelected, onToggleS
             </div>
 
             <CardHeader className="p-5 pb-2 space-y-2">
-                <div className="flex flex-wrap gap-1.5">
+                <div className="flex flex-wrap gap-1.5 pr-12">
                     {product.quantity <= 0 ? (
                         <Badge variant="destructive" className="rounded-md font-black uppercase text-[8px] tracking-widest px-2 py-0">En Rupture</Badge>
                     ) : product.quantity <= product.minStockLevel ? (
@@ -113,7 +114,7 @@ const ProductCardComponent = ({ product, onEdit, onDelete, isSelected, onToggleS
                                         <Info className="h-3 w-3 text-amber-500" />
                                     </div>
                                 </TooltipTrigger>
-                                <TooltipContent className="rounded-xl font-bold text-[10px]">Prix ancien (30j+)</TooltipContent>
+                                <TooltipContent className="rounded-xl font-bold text-[10px]">Prix ancien (+30j)</TooltipContent>
                             </Tooltip>
                         </TooltipProvider>
                     )}
