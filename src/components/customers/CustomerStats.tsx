@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -7,11 +8,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { customerService } from '@/services/customer.service';
 import { toast } from 'sonner';
 
-interface CustomerStatsProps {
-    onRefresh: () => void;
-}
-
-export function CustomerStats({ onRefresh }: CustomerStatsProps) {
+export function CustomerStats() {
   const [stats, setStats] = useState<{ total: number; overdue: number; overLimit: number; } | undefined>(undefined);
 
   const fetchStats = useCallback(async () => {
@@ -25,10 +22,7 @@ export function CustomerStats({ onRefresh }: CustomerStatsProps) {
 
   useEffect(() => {
     fetchStats();
-    // This is a simple way to keep stats somewhat in sync. A more robust solution might involve a pub/sub system.
-    const interval = setInterval(fetchStats, 30000); // Refresh stats every 30 seconds
-    return () => clearInterval(interval);
-  }, [fetchStats, onRefresh]);
+  }, [fetchStats]);
 
   const isLoading = stats === undefined;
 
