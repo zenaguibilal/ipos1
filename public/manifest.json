@@ -1,21 +1,16 @@
 {
-    "name": "iPOS - Point de Vente",
-    "short_name": "iPOS",
-    "description": "Application de point de vente intelligente pour le commerce de détail",
-    "start_url": "/",
-    "display": "standalone",
-    "theme_color": "#1a120c",
-    "background_color": "#1a120c",
-    "icons": [
-        {
-            "src": "/icon.svg",
-            "sizes": "192x192",
-            "type": "image/svg+xml"
-        },
-        {
-            "src": "/icon.svg",
-            "sizes": "512x512",
-            "type": "image/svg+xml"
-        }
-    ]
+  "name": "iPOS - Point de Vente Intelligent",
+  "short_name": "iPOS",
+  "description": "Application de point de vente (POS) complète, simplifiée pour une utilisation en mode mono-poste.",
+  "start_url": "/dashboard",
+  "display": "standalone",
+  "background_color": "#1a120c",
+  "theme_color": "#ffb74d",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
 }
