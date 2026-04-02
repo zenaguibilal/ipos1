@@ -1,58 +1,110 @@
+
 'use client';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { DollarSign, Hourglass, ShieldCheck } from 'lucide-react';
+import { DollarSign, Hourglass, ShieldCheck, TrendingUp, Landmark, Star } from 'lucide-react';
 import type { Customer } from '@/lib/types';
-import { formatCurrency } from '@/lib/utils';
-
+import { formatCurrency, cn } from '@/lib/utils';
 
 interface CustomerMetricsProps {
     customer: Customer;
 }
 
 export function CustomerMetrics({ customer }: CustomerMetricsProps) {
+    const balance = customer.outstandingBalance || 0;
+    const limit = customer.creditLimit || 0;
+    const creditUsage = limit > 0 ? (balance / limit) * 100 : 0;
+
     return (
-        <Card>
-            <CardHeader>
-                <CardTitle>Statistiques du Client</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-                <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
-                    <div className="flex items-center gap-4">
-                        <div className="p-3 rounded-full bg-primary/10">
-                            <DollarSign className="h-6 w-6 text-primary" />
-                        </div>
-                        <div>
-                            <p className="text-sm text-muted-foreground">Total Dépensé</p>
-                            <p className="text-2xl font-bold">{formatCurrency(customer.totalSpent)}</p>
-                        </div>
-                    </div>
+        <div className="space-y-6">
+            {/* Main Debt Card - High Impact */}
+            <Card className={cn(
+                "rounded-[2.5rem] border-none shadow-2xl overflow-hidden relative group transition-all duration-700",
+                balance > 0 ? "bg-destructive/10 border-destructive/20" : "bg-emerald-500/10 border-emerald-500/20"
+            )}>
+                <div className="absolute -right-6 -bottom-6 opacity-[0.03] group-hover:opacity-10 transition-opacity duration-1000">
+                    <Landmark className="h-48 w-48 rotate-12" />
                 </div>
-                 <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
-                    <div className="flex items-center gap-4">
-                        <div className="p-3 rounded-full bg-primary/10">
-                            <ShieldCheck className="h-6 w-6 text-primary" />
+                <CardContent className="p-8 relative z-10">
+                    <div className="flex justify-between items-start mb-6">
+                        <div className={cn(
+                            "p-4 rounded-2xl shadow-inner",
+                            balance > 0 ? "bg-destructive/20 text-destructive" : "bg-emerald-500/20 text-emerald-500"
+                        )}>
+                            <Landmark className="h-8 w-8" />
                         </div>
-                        <div>
-                            <p className="text-sm text-muted-foreground">Limite de Crédit</p>
-                            <p className="text-2xl font-bold">
-                                {typeof customer.creditLimit === 'number' ? formatCurrency(customer.creditLimit) : 'Aucune'}
+                        <div className="text-right">
+                            <span className="text-[10px] font-black uppercase tracking-[0.2em] opacity-40">Statut Financier</span>
+                            <p className={cn(
+                                "text-[10px] font-black uppercase tracking-widest mt-1",
+                                balance > 0 ? "text-destructive" : "text-emerald-500"
+                            )}>
+                                {balance > 0 ? 'Dette Active' : 'Solde Équilibré'}
                             </p>
                         </div>
                     </div>
-                </div>
-                 <div className="flex items-center justify-between p-4 bg-destructive/10 rounded-lg">
-                    <div className="flex items-center gap-4">
-                        <div className="p-3 rounded-full bg-destructive/20">
-                            <Hourglass className="h-6 w-6 text-destructive" />
-                        </div>
-                        <div>
-                            <p className="text-sm text-destructive/80">Solde Impayé</p>
-                            <p className="text-2xl font-bold text-destructive">{formatCurrency(customer.outstandingBalance)}</p>
+                    
+                    <div className="space-y-1">
+                        <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground opacity-50">Solde Débiteur</span>
+                        <div className="flex items-baseline gap-2">
+                            <p className={cn(
+                                "text-5xl font-black tracking-tighter",
+                                balance > 0 ? "text-destructive" : "text-foreground"
+                            )}>
+                                {formatCurrency(balance)}
+                            </p>
                         </div>
                     </div>
-                </div>
-            </CardContent>
-        </Card>
-    )
+
+                    {limit > 0 && (
+                        <div className="mt-8 space-y-3">
+                            <div className="flex justify-between text-[9px] font-black uppercase tracking-widest">
+                                <span className="text-muted-foreground/60">Utilisation du Crédit</span>
+                                <span className={cn(creditUsage > 90 ? "text-destructive" : "text-primary")}>{creditUsage.toFixed(1)}%</span>
+                            </div>
+                            <div className="h-2 bg-black/20 rounded-full overflow-hidden shadow-inner">
+                                <div 
+                                    className={cn("h-full transition-all duration-1000", creditUsage > 90 ? "bg-destructive" : "bg-primary")} 
+                                    style={{ width: `${Math.min(100, creditUsage)}%` }} 
+                                />
+                            </div>
+                        </div>
+                    )}
+                </CardContent>
+            </Card>
+
+            {/* Secondary Metrics Grid */}
+            <div className="grid grid-cols-2 gap-6">
+                <Card className="rounded-[2rem] border-none shadow-xl bg-card/40 backdrop-blur-md overflow-hidden group">
+                    <CardContent className="p-6">
+                        <div className="flex justify-between items-start mb-4">
+                            <div className="p-3 rounded-xl bg-primary/10 text-primary shadow-inner">
+                                <TrendingUp className="h-5 w-5" />
+                            </div>
+                        </div>
+                        <div className="space-y-0.5">
+                            <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground/40">Volume Achats</p>
+                            <p className="text-xl font-black tracking-tight">{formatCurrency(customer.totalSpent)}</p>
+                        </div>
+                    </CardContent>
+                </Card>
+
+                <Card className="rounded-[2rem] border-none shadow-xl bg-card/40 backdrop-blur-md overflow-hidden group">
+                    <CardContent className="p-6">
+                        <div className="flex justify-between items-start mb-4">
+                            <div className="p-3 rounded-xl bg-amber-500/10 text-amber-500 shadow-inner">
+                                <ShieldCheck className="h-5 w-5" />
+                            </div>
+                        </div>
+                        <div className="space-y-0.5">
+                            <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground/40">Limite Autorisée</p>
+                            <p className="text-xl font-black tracking-tight">
+                                {limit > 0 ? formatCurrency(limit) : '∞'}
+                            </p>
+                        </div>
+                    </CardContent>
+                </Card>
+            </div>
+        </div>
+    );
 }

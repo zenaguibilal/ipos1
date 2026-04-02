@@ -15,7 +15,11 @@ import {
     MessageCircle, 
     PhoneCall, 
     MapPin, 
-    Phone 
+    Phone,
+    User,
+    ShieldCheck,
+    Calendar,
+    Sparkles
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -77,7 +81,7 @@ export default function CustomerDetailPage() {
                 toast.error("Client non trouvé.");
             }
         } catch (error: any) {
-            toast.error("Impossible de charger les informations du client.", { description: error.message });
+            toast.error("Échec du chargement des données.");
             setCustomer(null);
         } finally {
             setIsRefreshing(false);
@@ -89,7 +93,7 @@ export default function CustomerDetailPage() {
     },[fetchCustomerData]);
 
     const handleSuccessfulPayment = useCallback(async () => {
-        toast.success("Paiement enregistré. Mise à jour du statut du client...");
+        toast.success("Paiement enregistré.");
         await fetchCustomerData();
         refreshActivity();
     }, [fetchCustomerData]);
@@ -115,7 +119,7 @@ export default function CustomerDetailPage() {
                     }
                 }
             })
-            .catch((error) => toast.error("Impossible de charger l'activité du client.", { description: error.message }))
+            .catch(() => toast.error("Erreur de chargement de l'activité."))
             .finally(() => {
                 if (!isCancelled) {
                     setIsLoadingActivity(false);
@@ -135,13 +139,13 @@ export default function CustomerDetailPage() {
         try {
             const saleWithItems = await salesService.getSaleByUuid(sale.uuid);
             if (!saleWithItems) {
-                toast.error("Détails de la vente introuvables.");
+                toast.error("Détails introuvables.");
                 return;
             }
             setSelectedSale(saleWithItems);
             setIsSaleDetailsOpen(true);
         } catch (error: any) {
-            toast.error("Impossible de charger les détails de la vente.", { description: error.message });
+            toast.error("Erreur lors de la lecture.");
         }
     }, []);
 
@@ -149,33 +153,40 @@ export default function CustomerDetailPage() {
         try {
             const returnWithItems = await returnService.getReturnByUuid(pr.uuid);
              if (!returnWithItems) {
-                toast.error("Détails du retour introuvables.");
+                toast.error("Détails introuvables.");
                 return;
             }
             setSelectedReturn(returnWithItems);
             setIsReturnDetailsOpen(true);
         } catch (error: any) {
-            toast.error("Impossible de charger les détails du retour.", { description: error.message });
+            toast.error("Erreur lors de la lecture.");
         }
     }, []);
 
     const handleWhatsApp = () => {
         if (!customer?.phone) return;
-        const message = encodeURIComponent(`Bonjour ${customer.firstName}, je vous contacte concernant votre compte chez nous. Votre solde actuel est de ${formatCurrency(customer.outstandingBalance)}. Merci.`);
+        const message = encodeURIComponent(`Bonjour ${customer.firstName}, votre solde actuel est de ${formatCurrency(customer.outstandingBalance)}. Cordialement.`);
         window.open(`https://wa.me/${customer.phone}?text=${message}`, '_blank');
     };
 
     if (customer === undefined) {
         return (
-             <div className="p-4 sm:p-6 space-y-6 max-w-7xl mx-auto">
-                <Skeleton className="h-8 w-48 rounded-xl" />
-                <div className="grid md:grid-cols-3 gap-6">
-                    <div className="md:col-span-2 space-y-6">
-                        <Skeleton className="h-[500px] w-full rounded-3xl" />
+             <div className="p-10 space-y-10 max-w-[1600px] mx-auto animate-pulse">
+                <div className="flex gap-4 items-center">
+                    <Skeleton className="h-14 w-14 rounded-2xl bg-card/40" />
+                    <div className="space-y-2">
+                        <Skeleton className="h-8 w-64 rounded-xl bg-card/40" />
+                        <Skeleton className="h-4 w-40 rounded-xl bg-card/40" />
                     </div>
-                    <div className="space-y-6">
-                        <Skeleton className="h-60 w-full rounded-3xl" />
-                         <Skeleton className="h-10 w-full rounded-2xl" />
+                </div>
+                <div className="grid lg:grid-cols-12 gap-10">
+                    <div className="lg:col-span-8 space-y-10">
+                        <Skeleton className="h-96 w-full rounded-[2.5rem] bg-card/40" />
+                        <Skeleton className="h-[500px] w-full rounded-[2.5rem] bg-card/40" />
+                    </div>
+                    <div className="lg:col-span-4 space-y-10">
+                        <Skeleton className="h-64 w-full rounded-[2.5rem] bg-card/40" />
+                        <Skeleton className="h-16 w-full rounded-2xl bg-card/40" />
                     </div>
                 </div>
             </div>
@@ -184,45 +195,69 @@ export default function CustomerDetailPage() {
     
     if (!customer) {
         return (
-            <div className="p-4 sm:p-6 text-center">
-                <h1 className="text-xl font-bold">Client non trouvé</h1>
-                <Button asChild variant="link" className="mt-4">
-                    <Link href="/customers">Retour à la liste des clients</Link>
+            <div className="p-20 text-center flex flex-col items-center gap-6">
+                <div className="p-8 rounded-[2.5rem] bg-destructive/10 text-destructive">
+                    <User className="h-16 w-16" />
+                </div>
+                <div className="space-y-2">
+                    <h1 className="text-3xl font-black tracking-tighter">Client non identifié</h1>
+                    <p className="text-muted-foreground font-medium">Ce dossier n'existe pas ou a été révoqué.</p>
+                </div>
+                <Button asChild variant="outline" className="rounded-2xl h-14 px-10 font-bold border-white/5 bg-card/40">
+                    <Link href="/customers"><ArrowLeft className="mr-2 h-4 w-4" /> Retour au fichier</Link>
                 </Button>
             </div>
         );
     }
 
     return (
-        <div className="p-4 sm:p-6 space-y-6 max-w-7xl mx-auto">
-             <div className="flex items-center gap-4">
-                 <Button variant="outline" size="icon" className="rounded-xl border-none shadow-sm bg-card h-10 w-10" asChild>
-                    <Link href="/customers"><ArrowLeft className="h-4 w-4" /></Link>
+        <div className="p-6 sm:p-10 space-y-10 max-w-[1800px] mx-auto animate-in fade-in duration-1000">
+             <div className="flex items-center gap-6">
+                 <Button variant="outline" size="icon" className="h-14 w-14 rounded-2xl border-white/5 bg-card/40 backdrop-blur-md transition-all active:scale-90" asChild>
+                    <Link href="/customers"><ArrowLeft className="h-6 w-6" /></Link>
                  </Button>
-                 <PageHeader 
-                    title={`${customer.firstName} ${customer.lastName}`}
-                    description={`Identifiant Client: ${customer.uuid.substring(0,8)}...`}
-                 />
-                 <Button variant="outline" size="icon" onClick={fetchCustomerData} className="ml-auto rounded-xl border-none shadow-sm bg-card h-10 w-10">
-                    <RefreshCw className={cn("h-4 w-4 text-primary", isRefreshing && "animate-spin")} />
+                 <div className="flex-grow">
+                    <PageHeader 
+                        title={`${customer.firstName} ${customer.lastName}`}
+                        description={`Membre Elite • ID: ${customer.uuid.substring(0,8)}`}
+                        className="mb-0"
+                    />
+                 </div>
+                 <Button 
+                    variant="outline" 
+                    size="icon" 
+                    onClick={fetchCustomerData} 
+                    className="h-14 w-14 rounded-2xl border-white/5 bg-card/40 backdrop-blur-md group"
+                    disabled={isRefreshing}
+                 >
+                    <RefreshCw className={cn("h-6 w-6 text-primary transition-all duration-1000", isRefreshing && "animate-spin")} />
                  </Button>
             </div>
 
-            <div className="grid md:grid-cols-3 gap-6 items-start">
-                <div className="md:col-span-2 space-y-6">
-                     <CustomerSpendingChart data={spendingData} />
+            <div className="grid lg:grid-cols-12 gap-10 items-start">
+                {/* Main Content: Chart & History */}
+                <div className="lg:col-span-8 space-y-10">
+                     <div className="animate-in slide-in-from-left-4 duration-700">
+                        <CustomerSpendingChart data={spendingData} />
+                     </div>
 
-                     <Card className="rounded-3xl border-none shadow-sm bg-card overflow-hidden">
-                        <CardHeader className="bg-muted/30 border-b border-border/50">
-                            <CardTitle className="text-xl font-black tracking-tight">Historique d'activité</CardTitle>
-                            <CardDescription className="font-medium">
-                                Liste chronologique des transactions. Cliquez sur une opération pour plus de détails.
-                            </CardDescription>
+                     <Card className="luxury-card bg-card/40 backdrop-blur-3xl border-white/5 overflow-hidden rounded-[2.5rem] animate-in slide-in-from-bottom-4 duration-700 delay-200">
+                        <CardHeader className="bg-muted/20 border-b border-white/5 p-8">
+                            <div className="flex items-center gap-4">
+                                <div className="p-3.5 rounded-2xl bg-primary text-primary-foreground shadow-2xl shadow-primary/20">
+                                    <Sparkles className="h-6 w-6" />
+                                </div>
+                                <div>
+                                    <CardTitle className="text-2xl font-black tracking-tighter">Historique de Flux</CardTitle>
+                                    <CardDescription className="text-[10px] font-black uppercase tracking-[0.3em] text-primary/50">Ventes, Retours & Encaissements</CardDescription>
+                                </div>
+                            </div>
                         </CardHeader>
-                        <CardContent className="p-6">
+                        <CardContent className="p-8">
                            {isLoadingActivity && activity.length === 0 ? (
-                                <div className="flex justify-center items-center h-60">
-                                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                                <div className="flex flex-col justify-center items-center h-60 opacity-20">
+                                    <Loader2 className="h-10 w-10 animate-spin text-primary mb-4" />
+                                    <p className="text-[10px] font-black uppercase tracking-widest">Récupération des données...</p>
                                 </div>
                             ) : (
                                 <CustomerActivity 
@@ -233,8 +268,8 @@ export default function CustomerDetailPage() {
                             )}
                         </CardContent>
                         {hasMoreActivity && (
-                            <CardFooter className="bg-muted/10 border-t">
-                                <Button onClick={handleLoadMore} variant="ghost" className="w-full h-12 font-bold" disabled={isLoadingActivity}>
+                            <CardFooter className="bg-muted/10 border-t border-white/5 p-4">
+                                <Button onClick={handleLoadMore} variant="ghost" className="w-full h-14 font-black uppercase text-[10px] tracking-[0.2em] text-primary hover:bg-primary/5" disabled={isLoadingActivity}>
                                     {isLoadingActivity ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                                     Charger plus de transactions
                                 </Button>
@@ -243,106 +278,121 @@ export default function CustomerDetailPage() {
                     </Card>
                 </div>
 
-                <div className="space-y-6 sticky top-20">
-                    <CustomerMetrics customer={customer} />
+                {/* Sidebar: Metrics & Actions */}
+                <div className="lg:col-span-4 space-y-8 sticky top-24">
+                    <div className="animate-in slide-in-from-right-4 duration-700">
+                        <CustomerMetrics customer={customer} />
+                    </div>
                     
-                    {/* Contact Quick Actions */}
-                    <Card className="rounded-3xl border-none shadow-sm bg-card overflow-hidden">
-                        <CardHeader className="pb-3">
-                            <CardTitle className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Actions de Contact</CardTitle>
-                        </CardHeader>
-                        <CardContent className="grid grid-cols-2 gap-2 pb-4">
-                            <Button 
-                                variant="outline" 
-                                className="rounded-xl h-12 gap-2 border-green-500/20 bg-green-500/5 text-green-600 hover:bg-green-500 hover:text-white"
-                                onClick={handleWhatsApp}
-                                disabled={!customer.phone}
-                            >
-                                <MessageCircle className="h-4 w-4" /> WhatsApp
-                            </Button>
-                            <Button 
-                                variant="outline" 
-                                className="rounded-xl h-12 gap-2 border-blue-500/20 bg-blue-500/5 text-blue-600 hover:bg-blue-500 hover:text-white"
-                                asChild
-                                disabled={!customer.phone}
-                            >
-                                <a href={`tel:${customer.phone}`}>
-                                    <PhoneCall className="h-4 w-4" /> Appeler
-                                </a>
-                            </Button>
-                        </CardContent>
-                    </Card>
-
-                    {/* Bread Service Card */}
-                    <Card className={cn(
-                        "rounded-3xl border-none shadow-sm overflow-hidden",
-                        customer.isBreadClient ? "bg-primary/5 border border-primary/10" : "bg-card"
-                    )}>
-                        <CardHeader className="pb-3">
-                            <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-2">
-                                    <Wheat className={cn("h-5 w-5", customer.isBreadClient ? "text-primary" : "text-muted-foreground/30")} />
-                                    <CardTitle className="text-sm font-black uppercase tracking-widest">Service de Pain</CardTitle>
-                                </div>
-                                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setIsBreadDialogOpen(true)}>
-                                    <Settings className="h-4 w-4" />
-                                </Button>
-                            </div>
-                        </CardHeader>
-                        <CardContent className="pb-4">
-                            {customer.isBreadClient ? (
-                                <div className="space-y-2">
-                                    <p className="text-xs font-medium text-muted-foreground">
-                                        Type: <span className="text-foreground font-bold">{customer.bread_type_recurrence === 'quotidien' ? 'Quotidien' : 'Jours spécifiques'}</span>
-                                    </p>
-                                    <p className="text-xs font-medium text-muted-foreground">
-                                        Quantité: <span className="text-foreground font-bold">{customer.bread_type_recurrence === 'quotidien' ? customer.bread_quantite_defaut : 'Variable'} pcs</span>
-                                    </p>
-                                </div>
-                            ) : (
-                                <p className="text-xs text-muted-foreground italic">Aucun abonnement actif.</p>
-                            )}
-                        </CardContent>
-                    </Card>
-
-                    <div className="grid grid-cols-2 gap-3">
+                    {/* Premium Quick Actions */}
+                    <div className="grid grid-cols-2 gap-4">
                         <Button 
-                            variant="outline"
-                            size="lg" 
-                            className="w-full rounded-2xl h-14 font-black border-none bg-card shadow-sm gap-2"
-                            onClick={() => setIsStatementDialogOpen(true)}
+                            variant="outline" 
+                            className="rounded-2xl h-16 gap-3 border-emerald-500/20 bg-emerald-500/5 text-emerald-500 hover:bg-emerald-500 hover:text-white transition-all font-black text-[10px] uppercase tracking-widest shadow-xl"
+                            onClick={handleWhatsApp}
+                            disabled={!customer.phone}
                         >
-                            <Printer className="h-5 w-5" /> Relevé
+                            <MessageCircle className="h-5 w-5" /> WhatsApp
                         </Button>
                         <Button 
-                            size="lg" 
-                            className="w-full rounded-2xl h-14 font-black shadow-lg shadow-primary/20 text-lg gap-2"
-                            onClick={() => setIsPaymentDialogOpen(true)}
-                            disabled={customer.outstandingBalance <= 0}
+                            variant="outline" 
+                            className="rounded-2xl h-16 gap-3 border-blue-500/20 bg-blue-500/5 text-blue-500 hover:bg-blue-500 hover:text-white transition-all font-black text-[10px] uppercase tracking-widest shadow-xl"
+                            asChild
+                            disabled={!customer.phone}
                         >
-                            <HandCoins className="h-5 w-5" /> Payer
+                            <a href={`tel:${customer.phone}`}>
+                                <PhoneCall className="h-5 w-5" /> Appeler
+                            </a>
                         </Button>
                     </div>
 
-                    <div className="p-6 bg-muted/20 rounded-3xl border border-border/50 space-y-3">
-                        <h4 className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Informations Contact</h4>
-                        <div className="space-y-3 text-sm">
-                            <div className="flex items-start gap-3">
-                                <Phone className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
-                                <div className="flex flex-col">
-                                    <span className="text-[10px] uppercase font-bold text-muted-foreground">Téléphone</span>
-                                    <span className="font-bold">{customer.phone || '-'}</span>
+                    <div className="grid grid-cols-2 gap-4">
+                        <Button 
+                            variant="outline"
+                            size="lg" 
+                            className="w-full rounded-[1.5rem] h-20 font-black border-white/5 bg-card/40 backdrop-blur-md shadow-2xl gap-3 text-[10px] uppercase tracking-widest group"
+                            onClick={() => setIsStatementDialogOpen(true)}
+                        >
+                            <Printer className="h-6 w-6 text-primary opacity-40 group-hover:opacity-100 transition-opacity" /> 
+                            <span>Générer<br/>Relevé</span>
+                        </Button>
+                        <Button 
+                            size="lg" 
+                            className="w-full rounded-[1.5rem] h-20 font-black shadow-2xl shadow-primary/20 gap-3 text-[10px] uppercase tracking-widest transition-all active:scale-95"
+                            onClick={() => setIsPaymentDialogOpen(true)}
+                            disabled={customer.outstandingBalance <= 0}
+                        >
+                            <HandCoins className="h-6 w-6" /> 
+                            <span>Effectuer<br/>Paiement</span>
+                        </Button>
+                    </div>
+
+                    {/* Contact Identity Card */}
+                    <div className="p-8 bg-muted/20 rounded-[2.5rem] border border-white/5 space-y-6 shadow-inner relative overflow-hidden group">
+                        <div className="absolute -right-10 -bottom-10 opacity-[0.02] group-hover:opacity-10 transition-opacity duration-1000">
+                            <MapPin className="h-40 w-40" />
+                        </div>
+                        <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/60 border-b border-white/5 pb-4">Coordonnées de Contact</h4>
+                        <div className="space-y-6 text-sm relative z-10">
+                            <div className="flex items-start gap-4">
+                                <div className="p-2.5 rounded-xl bg-background/50 shadow-inner">
+                                    <Phone className="h-4 w-4 text-primary/60" />
+                                </div>
+                                <div className="flex flex-col -space-y-0.5">
+                                    <span className="text-[9px] uppercase font-black text-muted-foreground/40 tracking-widest">Mobile</span>
+                                    <span className="font-black text-base">{customer.phone || '-'}</span>
                                 </div>
                             </div>
-                            <div className="flex items-start gap-3">
-                                <MapPin className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
-                                <div className="flex flex-col">
-                                    <span className="text-[10px] uppercase font-bold text-muted-foreground">Adresse</span>
-                                    <span className="font-bold">{customer.address || '-'}</span>
+                            <div className="flex items-start gap-4">
+                                <div className="p-2.5 rounded-xl bg-background/50 shadow-inner">
+                                    <MapPin className="h-4 w-4 text-primary/60" />
+                                </div>
+                                <div className="flex flex-col -space-y-0.5">
+                                    <span className="text-[9px] uppercase font-black text-muted-foreground/40 tracking-widest">Adresse Physique</span>
+                                    <span className="font-black text-base leading-tight">{customer.address || '-'}</span>
                                 </div>
                             </div>
                         </div>
                     </div>
+
+                    {/* Bread Subscription Widget */}
+                    <Card className={cn(
+                        "rounded-[2.5rem] border-none shadow-xl overflow-hidden group transition-all duration-500",
+                        customer.isBreadClient ? "bg-primary/10 border border-primary/20" : "bg-card/20 opacity-40 hover:opacity-100"
+                    )}>
+                        <CardHeader className="pb-4 p-8 border-b border-white/5">
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                    <div className={cn(
+                                        "p-2.5 rounded-xl transition-colors",
+                                        customer.isBreadClient ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+                                    )}>
+                                        <Wheat className="h-5 w-5" />
+                                    </div>
+                                    <CardTitle className="text-sm font-black uppercase tracking-[0.2em]">Service de Pain</CardTitle>
+                                </div>
+                                <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl hover:bg-white/10" onClick={() => setIsBreadDialogOpen(true)}>
+                                    <Settings className="h-5 w-5 opacity-40" />
+                                </Button>
+                            </div>
+                        </CardHeader>
+                        <CardContent className="p-8">
+                            {customer.isBreadClient ? (
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="space-y-1">
+                                        <p className="text-[9px] font-black uppercase text-primary/60 tracking-widest">Récurrence</p>
+                                        <p className="font-black text-sm">{customer.bread_type_recurrence === 'quotidien' ? 'QUOTIDIEN' : 'PROGRAMMÉ'}</p>
+                                    </div>
+                                    <div className="space-y-1">
+                                        <p className="text-[9px] font-black uppercase text-primary/60 tracking-widest">Quantité</p>
+                                        <p className="font-black text-sm">{customer.bread_type_recurrence === 'quotidien' ? `${customer.bread_quantite_defaut} PCS` : 'VARIABLE'}</p>
+                                    </div>
+                                </div>
+                            ) : (
+                                <p className="text-[10px] font-black uppercase tracking-widest text-center opacity-40">Aucun abonnement actif</p>
+                            )}
+                        </CardContent>
+                    </Card>
                 </div>
             </div>
             

@@ -6,7 +6,7 @@ import type { Customer } from '@/lib/types';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { MoreHorizontal, Edit, Trash2, FileText, Phone, BellRing, ShieldCheck, Calendar, Hourglass, User, ChevronRight, Wheat, MessageCircle } from 'lucide-react';
+import { MoreHorizontal, Edit, Trash2, FileText, Phone, BellRing, ShieldCheck, Calendar, Hourglass, User, ChevronRight, Wheat, MessageCircle, Landmark } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import Link from 'next/link';
 import { formatCurrency, cn } from '@/lib/utils';
@@ -27,29 +27,15 @@ const DebtStatusIcon = ({ status }: { status: Customer['debtStatus']}) => {
     switch (status) {
         case 'overdue':
             return (
-                <TooltipProvider>
-                    <Tooltip>
-                        <TooltipTrigger asChild>
-                            <div className="p-1.5 bg-destructive/20 rounded-xl">
-                                <BellRing className="h-4 w-4 text-destructive animate-pulse" />
-                            </div>
-                        </TooltipTrigger>
-                        <TooltipContent className="rounded-xl font-bold text-xs bg-destructive text-destructive-foreground">Retard de paiement</TooltipContent>
-                    </Tooltip>
-                </TooltipProvider>
+                <div className="p-1.5 bg-destructive/20 rounded-xl">
+                    <BellRing className="h-4 w-4 text-destructive animate-pulse" />
+                </div>
             );
         case 'due_soon':
              return (
-                <TooltipProvider>
-                    <Tooltip>
-                        <TooltipTrigger asChild>
-                            <div className="p-1.5 bg-amber-500/20 rounded-xl">
-                                <Hourglass className="h-4 w-4 text-amber-500" />
-                            </div>
-                        </TooltipTrigger>
-                        <TooltipContent className="rounded-xl font-bold text-xs">Échéance proche</TooltipContent>
-                    </Tooltip>
-                </TooltipProvider>
+                <div className="p-1.5 bg-amber-500/20 rounded-xl">
+                    <Hourglass className="h-4 w-4 text-amber-500" />
+                </div>
             );
         default:
             return null;
@@ -59,7 +45,6 @@ const DebtStatusIcon = ({ status }: { status: Customer['debtStatus']}) => {
 export const CustomerCard = React.memo(({ customer, onEdit, onDelete, isSelected, onToggleSelection }: CustomerCardProps) => {
     const [isMounted, setIsMounted] = useState(false);
     
-    // Safety check for math
     const balance = customer.outstandingBalance || 0;
     const limit = customer.creditLimit || 0;
     const creditUsage = limit > 0 ? (balance / limit) * 100 : 0;
@@ -77,11 +62,16 @@ export const CustomerCard = React.memo(({ customer, onEdit, onDelete, isSelected
 
     return (
         <Card className={cn(
-            "group flex flex-col transition-all duration-300 hover:shadow-2xl hover:-translate-y-1 bg-card border-none relative overflow-hidden rounded-3xl",
-            isSelected ? "ring-2 ring-primary shadow-lg" : balance > 0 ? "ring-1 ring-white/5" : ""
+            "luxury-card group flex flex-col transition-all duration-500 bg-card/40 backdrop-blur-xl border-white/5 relative overflow-hidden rounded-[2.5rem] cursor-pointer",
+            isSelected ? "ring-2 ring-primary border-primary/30 shadow-2xl scale-[1.02]" : "hover:bg-primary/5"
         )}>
-            <div className="absolute top-3 right-3 z-10 flex gap-1 items-center">
-                <div onClick={(e) => e.stopPropagation()} className="p-1.5 bg-background/80 backdrop-blur-md rounded-xl shadow-sm border border-white/5">
+            {/* Background Texture Effect */}
+            <div className="absolute -right-4 -top-4 opacity-[0.02] group-hover:opacity-10 transition-opacity duration-700 pointer-events-none">
+                <User className="h-32 w-32 rotate-12" />
+            </div>
+
+            <div className="absolute top-4 right-4 z-10 flex gap-2 items-center">
+                <div onClick={(e) => e.stopPropagation()} className="p-1.5 bg-background/80 backdrop-blur-md rounded-xl border border-white/5 shadow-sm">
                     <Checkbox
                         checked={isSelected}
                         onCheckedChange={onToggleSelection}
@@ -89,100 +79,97 @@ export const CustomerCard = React.memo(({ customer, onEdit, onDelete, isSelected
                     />
                 </div>
                 {customer.phone && (
-                    <TooltipProvider>
-                        <Tooltip>
-                            <TooltipTrigger asChild>
-                                <Button variant="secondary" size="icon" onClick={handleWhatsApp} className="h-8 w-8 bg-green-500/10 text-green-500 hover:bg-green-500 hover:text-white border-none shadow-sm rounded-xl">
-                                    <MessageCircle className="h-4 w-4" />
-                                </Button>
-                            </TooltipTrigger>
-                            <TooltipContent className="rounded-xl font-bold text-xs">Contacter via WhatsApp</TooltipContent>
-                        </Tooltip>
-                    </TooltipProvider>
+                    <Button variant="secondary" size="icon" onClick={handleWhatsApp} className="h-9 w-9 bg-green-500/10 text-green-500 hover:bg-green-500 hover:text-white border-white/5 shadow-xl rounded-xl transition-all">
+                        <MessageCircle className="h-5 w-5" />
+                    </Button>
                 )}
                 <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                        <Button variant="secondary" size="icon" className="h-8 w-8 bg-background/80 backdrop-blur-md border-none shadow-sm rounded-xl">
-                            <MoreHorizontal className="h-4 w-4" />
+                    <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                        <Button variant="secondary" size="icon" className="h-9 w-9 bg-background/80 backdrop-blur-md border-white/5 shadow-xl rounded-xl transition-all">
+                            <MoreHorizontal className="h-5 w-5" />
                         </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="rounded-2xl border-none shadow-xl">
-                        <DropdownMenuItem asChild className="rounded-xl">
+                    <DropdownMenuContent align="end" className="rounded-2xl border-none shadow-2xl bg-card">
+                        <DropdownMenuItem asChild className="rounded-xl p-3">
                             <Link href={`/customers/${customer.uuid}`}>
-                                <FileText className="mr-2 h-4 w-4" /> Voir l'historique
+                                <FileText className="mr-2 h-4 w-4" /> Voir le dossier
                             </Link>
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => onEdit(customer)} className="rounded-xl">
+                        <DropdownMenuItem onClick={() => onEdit(customer)} className="rounded-xl p-3">
                             <Edit className="mr-2 h-4 w-4" /> Modifier
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => onDelete(customer)} className="text-destructive focus:text-destructive rounded-xl">
+                        <DropdownMenuItem onClick={() => onDelete(customer)} className="text-destructive focus:text-destructive rounded-xl p-3">
                             <Trash2 className="mr-2 h-4 w-4" /> Supprimer
                         </DropdownMenuItem>
                     </DropdownMenuContent>
                 </DropdownMenu>
             </div>
 
-            <CardHeader className="p-5 pb-2">
-                <div className="flex items-center gap-3 mb-2">
+            <CardHeader className="p-6 pb-2 space-y-3 relative z-10">
+                <div className="flex items-center gap-4">
                     <div className={cn(
-                        "p-2.5 rounded-2xl bg-muted/50 text-muted-foreground transition-colors group-hover:bg-primary/10 group-hover:text-primary",
+                        "p-3 rounded-2xl bg-muted text-muted-foreground transition-all group-hover:bg-primary/10 group-hover:text-primary shadow-inner",
                         balance > 0 && "bg-primary/5 text-primary"
                     )}>
-                        <User className="h-5 w-5" />
+                        <User className="h-6 w-6" />
                     </div>
-                    <div className="min-w-0">
+                    <div className="min-w-0 pr-12">
                         <div className="flex items-center gap-2">
-                            <CardTitle className="text-lg font-black leading-none tracking-tight truncate group-hover:text-primary transition-colors">
+                            <CardTitle className="text-xl font-black leading-tight tracking-tighter group-hover:text-primary transition-colors truncate">
                                 {customer.firstName} {customer.lastName}
                             </CardTitle>
                             {customer.isBreadClient && <Wheat className="h-3 w-3 text-primary opacity-50" />}
                         </div>
-                        {customer.phone && (
-                            <p className="text-[10px] font-bold text-muted-foreground mt-1.5 flex items-center gap-1.5 uppercase opacity-60">
+                        {customer.phone ? (
+                            <p className="text-[10px] font-black text-muted-foreground/40 mt-1 flex items-center gap-1.5 uppercase tracking-widest">
                                 <Phone className="h-2.5 w-2.5" /> {customer.phone}
                             </p>
+                        ) : (
+                            <p className="text-[10px] font-black text-muted-foreground/20 mt-1 uppercase tracking-widest italic">Aucun contact</p>
                         )}
                     </div>
                 </div>
             </CardHeader>
 
-            <CardContent className="p-5 py-2 space-y-4 flex-grow">
+            <CardContent className="p-6 py-4 space-y-5 relative z-10">
                  <div className="space-y-2">
-                    <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-widest text-muted-foreground">
-                        <span className="flex items-center gap-1.5"><ShieldCheck className="h-3 w-3 opacity-50"/> État Crédit</span>
-                        <span className="text-foreground">{limit > 0 ? formatCurrency(limit) : 'Illimité'}</span>
+                    <div className="flex items-center justify-between text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground/60">
+                        <span className="flex items-center gap-1.5"><ShieldCheck className="h-3 w-3 opacity-50"/> Ligne de Crédit</span>
+                        <span className="text-foreground">{limit > 0 ? formatCurrency(limit) : 'ILLIMITÉ'}</span>
                     </div>
                     {limit > 0 && (
-                        <Progress value={Math.min(100, creditUsage)} className={cn("h-1.5 bg-muted/30", creditUsage > 100 ? "[&>div]:bg-destructive" : creditUsage > 90 ? "[&>div]:bg-amber-500" : "")} />
+                        <div className="relative">
+                            <Progress value={Math.min(100, creditUsage)} className={cn("h-1.5 bg-black/20 shadow-inner", creditUsage > 100 ? "[&>div]:bg-destructive" : creditUsage > 90 ? "[&>div]:bg-amber-500" : "[&>div]:bg-primary")} />
+                        </div>
                     )}
                  </div>
 
-                 <div className="grid grid-cols-2 gap-3">
-                    <div className="p-3 rounded-2xl bg-muted/30 border border-border/50">
-                        <p className="text-[9px] font-black uppercase tracking-tighter text-muted-foreground opacity-60 mb-1">Total Dépensé</p>
-                        <p className="font-black text-sm">{formatCurrency(customer.totalSpent)}</p>
+                 <div className="grid grid-cols-2 gap-4">
+                    <div className="p-4 rounded-3xl bg-black/20 border border-white/5 shadow-inner">
+                        <p className="text-[8px] font-black uppercase tracking-[0.2em] text-muted-foreground/40 mb-1.5">Consommation</p>
+                        <p className="font-black text-sm tracking-tight">{formatCurrency(customer.totalSpent)}</p>
                     </div>
                     <div className={cn(
-                        "p-3 rounded-2xl border transition-all",
-                        balance > 0 ? "bg-destructive/5 border-destructive/20" : "bg-muted/30 border-border/50"
+                        "p-4 rounded-3xl border transition-all duration-500 shadow-inner",
+                        balance > 0 ? "bg-destructive/5 border-destructive/20" : "bg-black/20 border-white/5"
                     )}>
-                        <p className={cn("text-[9px] font-black uppercase tracking-tighter opacity-60 mb-1", balance > 0 ? "text-destructive" : "text-muted-foreground")}>Dette Actuelle</p>
+                        <p className={cn("text-[8px] font-black uppercase tracking-[0.2em] mb-1.5", balance > 0 ? "text-destructive/70" : "text-muted-foreground/40")}>Dette Active</p>
                         <div className="flex items-center justify-between">
-                            <p className={cn("font-black text-sm", balance > 0 ? "text-destructive" : "")}>{formatCurrency(balance)}</p>
+                            <p className={cn("font-black text-sm tracking-tight", balance > 0 ? "text-destructive" : "")}>{formatCurrency(balance)}</p>
                             <DebtStatusIcon status={customer.debtStatus} />
                         </div>
                     </div>
                  </div>
             </CardContent>
 
-            <CardFooter className="p-5 pt-3 border-t border-white/5 bg-muted/5 flex items-center justify-between">
-                <div className="flex items-center gap-2 text-[9px] font-bold text-muted-foreground uppercase opacity-50">
-                    <Calendar className="h-3 w-3" />
-                    <span>{isMounted && customer.lastActivityDate ? formatDistanceToNow(new Date(customer.lastActivityDate), { addSuffix: true, locale: fr }) : 'Aucun achat'}</span>
+            <CardFooter className="p-6 pt-4 border-t border-white/5 bg-muted/5 flex items-center justify-between relative z-10">
+                <div className="flex items-center gap-2 text-[9px] font-black text-muted-foreground/30 uppercase tracking-[0.15em]">
+                    <Calendar className="h-3 w-3 opacity-50" />
+                    <span>{isMounted && customer.lastActivityDate ? formatDistanceToNow(new Date(customer.lastActivityDate), { addSuffix: true, locale: fr }) : 'Aucun flux'}</span>
                 </div>
-                <Button variant="ghost" size="sm" asChild className="h-8 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-primary/10 hover:text-primary transition-all">
+                <Button variant="ghost" size="sm" asChild className="h-9 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-primary/10 hover:text-primary transition-all px-4">
                     <Link href={`/customers/${customer.uuid}`}>
-                        Détails <ChevronRight className="ml-1 h-3 w-3" />
+                        Dossier <ChevronRight className="ml-1 h-3 w-3 opacity-50" />
                     </Link>
                 </Button>
             </CardFooter>
