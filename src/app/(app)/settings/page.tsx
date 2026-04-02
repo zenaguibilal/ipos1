@@ -18,20 +18,20 @@ import {
     Database, 
     HardDrive, 
     Trash2, 
-    Cpu,
-    Activity,
-    Server,
-    Smartphone,
-    Monitor,
-    Globe,
-    ShieldCheck,
-    Zap,
-    Shield,
-    Package,
-    Users2,
-    ShoppingCart,
-    X,
-    Info
+    Cpu, 
+    Activity, 
+    Server, 
+    Smartphone, 
+    Monitor, 
+    Globe, 
+    ShieldCheck, 
+    Zap, 
+    Shield, 
+    Package, 
+    Users2, 
+    ShoppingCart, 
+    X, 
+    Info 
 } from "lucide-react";
 import { db } from "@/lib/db";
 import { toast } from "sonner";
@@ -114,7 +114,7 @@ export default function SettingsPage() {
         <div className="p-6 sm:p-10 space-y-12 max-w-[1800px] mx-auto pb-32 animate-in fade-in duration-1000">
             <PageHeader 
                 title="Configuration Souveraine"
-                description="Maintenance technique, diagnostic de base de données et gestion de la confidentialité locale."
+                description="Maintenance technique, diagnostic système et gestion de la confidentialité locale."
             />
 
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
@@ -167,7 +167,7 @@ export default function SettingsPage() {
                                     <div className="space-y-3 relative z-10">
                                         <Progress value={storage.percent} className="h-2.5 bg-muted/20 [&>div]:bg-primary shadow-inner rounded-full" />
                                         <div className="flex justify-between text-[9px] font-black uppercase tracking-[0.25em] text-muted-foreground/30">
-                                            <span>Usage: {storage.percent}%</span>
+                                            <span>Utilisation: {storage.percent}%</span>
                                             <span>Capacité Maximale</span>
                                         </div>
                                     </div>
@@ -204,7 +204,7 @@ export default function SettingsPage() {
                             {[
                                 { icon: Monitor, label: 'Système', value: envInfo?.os },
                                 { icon: Globe, label: 'Navigateur', value: envInfo?.browser },
-                                { icon: Smartphone, label: 'Mode PWA', value: 'Activé', status: 'ACTIF' }
+                                { icon: Smartphone, label: 'Mode PWA', value: 'ACTIF', status: 'ACTIF' }
                             ].map((env, idx) => (
                                 <div key={idx} className="flex items-center justify-between p-4 bg-black/20 rounded-2xl border border-white/5 group hover:border-primary/20 transition-all">
                                     <div className="flex items-center gap-3">
@@ -239,8 +239,8 @@ export default function SettingsPage() {
                             </div>
                             
                             <div className="space-y-5 text-[11px] font-medium text-muted-foreground/60 leading-relaxed italic px-2">
-                                <p>iPOS est une application "Client-Side Only" de nouvelle génération. Vos données commerciales ne transitent par aucun serveur externe.</p>
-                                <p>L'utilisation de la technologie IndexedDB garantit une confidentialité souveraine et une rapidité d'exécution maximale, بدون dépendance au réseau.</p>
+                                <p>iPOS est une application "Client-Side Only" de nouvelle génération. Vos بيانات commerciales ne transitent par aucun serveur externe.</p>
+                                <p>L'utilisation de la technologie IndexedDB garantit une confidentialité souveraine et une rapidité d'exécution maximale.</p>
                             </div>
                         </CardContent>
                         <CardFooter className="pt-0 pb-10 px-10">
@@ -289,7 +289,7 @@ export default function SettingsPage() {
                             {[
                                 'Catalogue Produits', 'Fichiers Clients', 
                                 'Registre des Ventes', 'Journal d\'Audit', 
-                                'Profil Étabلissement', 'Historique Stock'
+                                'Profil Établissement', 'Historique Stock'
                             ].map((item, i) => (
                                 <div key={i} className="flex items-center gap-2 p-2 rounded-xl bg-muted/20 border border-white/5">
                                     <X className="h-3 w-3 text-destructive opacity-40" />

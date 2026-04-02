@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import type { CompanyProfile } from '@/lib/types';
 import { Skeleton } from '../ui/skeleton';
-import { Loader2, Building, MapPin, Phone, Mail, Globe, Wheat, Coins, FileText, CheckCircle2, RotateCcw, Hash } from 'lucide-react';
+import { Loader2, Building, MapPin, Phone, Mail, Wheat, Coins, FileText, CheckCircle2, RotateCcw, Hash } from 'lucide-react';
 import { useAppStore } from '@/stores/appStore';
 
 export function CompanyProfileForm() {
@@ -158,13 +158,6 @@ export function CompanyProfileForm() {
                             <div className="relative">
                                 <Mail className="absolute left-6 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground opacity-20" />
                                 <Input id="email" type="email" value={formState.email || ''} onChange={handleInputChange} className="pl-16 h-16 rounded-[1.5rem] bg-black/20 border-none shadow-inner font-bold" placeholder="contact@etablissement.com" disabled={isSaving} />
-                            </div>
-                        </div>
-                        <div className="sm:col-span-2 space-y-4 group">
-                            <Label htmlFor="website" className="text-[10px] font-black uppercase tracking-[0.2em] ml-1 opacity-40">Site Web</Label>
-                            <div className="relative">
-                                <Globe className="absolute left-6 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground opacity-20" />
-                                <Input id="website" value={formState.website || ''} onChange={handleInputChange} className="pl-16 h-16 rounded-[1.5rem] bg-black/20 border-none shadow-inner" disabled={isSaving} placeholder="www.votrecommerce.com" />
                             </div>
                         </div>
                     </div>

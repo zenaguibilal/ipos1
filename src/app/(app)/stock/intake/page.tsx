@@ -15,7 +15,6 @@ import {
     Loader2,
     Building,
     Hash,
-    Calendar,
     Landmark
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -276,7 +275,7 @@ export default function NewStockIntakePage() {
                             </div>
                             <div className="space-y-2">
                                 <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1 flex items-center gap-2">
-                                    <Calendar className="h-3 w-3" /> Date
+                                    Date
                                 </Label>
                                 <DatePicker date={invoiceDate} setDate={setInvoiceDate} />
                             </div>

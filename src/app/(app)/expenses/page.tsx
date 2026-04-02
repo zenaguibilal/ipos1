@@ -23,8 +23,7 @@ import {
     Printer,
     BarChart,
     SortAsc,
-    Sparkles,
-    ArrowRight
+    Sparkles
 } from 'lucide-react';
 import { ExpenseCard } from '@/components/expenses/ExpenseCard';
 import ExpenseDialog from '@/components/expenses/ExpenseDialog';
@@ -49,8 +48,6 @@ import { PageHeader } from '@/components/layout/PageHeader';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { toast } from 'sonner';
 import { ResponsiveContainer, BarChart as RechartsBarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, Cell } from 'recharts';
-import { Checkbox } from '@/components/ui/checkbox';
-import Papa from 'papaparse';
 import { useAppStore } from '@/stores/appStore';
 import { format, differenceInDays } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -174,15 +171,6 @@ export default function ExpensesPage() {
         });
     };
 
-    const handleSelectAll = () => {
-        if (!expenses) return;
-        if (selectedExpenses.size === expenses.length) {
-            setSelectedExpenses(new Set());
-        } else {
-            setSelectedExpenses(new Set(expenses.map(e => e.uuid)));
-        }
-    };
-
     const stats = useMemo(() => {
         if (!expenses) return { total: 0, count: 0, topCategory: '-', chartData: [], dailyAverage: 0 };
         
@@ -292,7 +280,7 @@ export default function ExpensesPage() {
                         <div class="stat-card"><h4>Total Dépensé</h4><p>${formatCurrency(stats.total)}</p></div>
                         <div class="stat-card"><h4>Moyenne / Jour</h4><p>${formatCurrency(stats.dailyAverage)}</p></div>
                         <div class="stat-card"><h4>Transactions</h4><p>${stats.count}</p></div>
-                        <div class="stat-card"><h4>Poste Principal</h4><p>${stats.topCategory}</p></div>
+                        <div class="stat-card"><h4>Postه Principal</h4><p>${stats.topCategory}</p></div>
                     </div>
 
                     <table>
@@ -568,7 +556,7 @@ export default function ExpensesPage() {
                     <EmptyState
                         icon={TrendingDown}
                         title="Silence de Caisse"
-                        description={isFiltered ? "Ajustez vos filtres pour localiser les charges." : "Enregistrez votre première opération Elite."}
+                        description={isFiltered ? "Ajustez vos filtres pour localiser les charges." : "Enregistrer votre première opération Elite."}
                     >
                         {isFiltered ? (
                             <Button variant="outline" onClick={resetFilters} className="rounded-2xl h-12 font-bold px-8 border-primary/20 hover:bg-primary/5">Réinitialiser</Button>

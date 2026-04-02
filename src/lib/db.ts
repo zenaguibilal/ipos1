@@ -1,13 +1,5 @@
-
 import Dexie, { type EntityTable } from 'dexie';
-import type { Product, Customer, Sale, SaleItem, Expense, Supplier, SupplierPayment, StockIntake, StockIntakeItem, ProductReturn, ReturnItem, Payment, BreadOrder, CompanyProfile, InventoryLog } from './types';
-
-// NOTE: We are adding an auto-incrementing 'id' as the primary key for Dexie,
-// while retaining the 'uuid' for business logic and relationships.
-// The schema string defines the properties to be indexed.
-// '++id' for auto-incrementing primary key.
-// '&uuid' for unique index on the uuid property.
-// '*barcodes' for multi-entry index on the barcodes array.
+import type { Product, Customer, Sale, Expense, Supplier, SupplierPayment, StockIntake, ProductReturn, Payment, BreadOrder, CompanyProfile, InventoryLog } from './types';
 
 class iPOSDatabase extends Dexie {
     products!: EntityTable<Product, 'id'>;
