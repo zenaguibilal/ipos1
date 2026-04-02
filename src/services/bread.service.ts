@@ -102,7 +102,7 @@ class BreadService {
         await db.bread_orders.update(order.id!, updateData);
     }
     
-     async updateBreadOrderDeliveryStatus(uuid: string, delivered: boolean): Promise<void> {
+    async updateBreadOrderDeliveryStatus(uuid: string, delivered: boolean): Promise<void> {
         const order = await db.bread_orders.where('uuid').equals(uuid).first();
         if (!order) return;
         await db.bread_orders.update(order.id!, { est_livre: delivered, updatedAt: new Date() });
