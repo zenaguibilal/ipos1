@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useRef, useState } from 'react';
@@ -47,19 +48,26 @@ const PrintableList = React.forwardRef<HTMLDivElement, { orders: BreadOrderWithC
                     </tr>
                 </thead>
                 <tbody>
-                    {orders.sort((a,b) => a.customer.firstName.localeCompare(b.customer.firstName)).map(order => (
-                        <tr key={order.uuid} className="border-b border-gray-300">
-                            <td className="py-5 px-4">
-                                <p className="font-bold text-xl">{order.customer.firstName} {order.customer.lastName}</p>
-                            </td>
-                            <td className="py-5 px-4 text-center">
-                                <span className="text-3xl font-black">{order.quantite}</span>
-                            </td>
-                            <td className="py-5 px-4">
-                                <div className="w-12 h-12 border border-gray-300 mx-auto rounded-md"></div>
-                            </td>
-                        </tr>
-                    ))}
+                    {orders.sort((a,b) => {
+                        const nameA = a.customer ? `${a.customer.firstName}` : (a.customName || '');
+                        const nameB = b.customer ? `${b.customer.firstName}` : (b.customName || '');
+                        return nameA.localeCompare(nameB);
+                    }).map(order => {
+                        const displayName = order.customer ? `${order.customer.firstName} ${order.customer.lastName}` : (order.customName || 'Inconnu');
+                        return (
+                            <tr key={order.uuid} className="border-b border-gray-300">
+                                <td className="py-5 px-4">
+                                    <p className="font-bold text-xl">{displayName}</p>
+                                </td>
+                                <td className="py-5 px-4 text-center">
+                                    <span className="text-3xl font-black">{order.quantite}</span>
+                                </td>
+                                <td className="py-5 px-4">
+                                    <div className="w-12 h-12 border border-gray-300 mx-auto rounded-md"></div>
+                                </td>
+                            </tr>
+                        );
+                    })}
                 </tbody>
                 <tfoot>
                     <tr className="bg-gray-50 font-black border-t-2 border-black">

@@ -231,7 +231,8 @@ export interface SupplierPayment {
 export interface BreadOrder {
     id?: number;
     uuid: string;
-    customerUuid: string;
+    customerUuid: string | null; // Nullable for external names
+    customName?: string; // Name for non-registered customers
     date: string; // YYYY-MM-DD
     quantite: number;
     quantite_origine?: number;
@@ -243,7 +244,7 @@ export interface BreadOrder {
 }
 
 export interface BreadOrderWithCustomer extends BreadOrder {
-    customer: Pick<Customer, 'uuid' | 'firstName' | 'lastName'>;
+    customer: Pick<Customer, 'uuid' | 'firstName' | 'lastName'> | null;
 }
 
 export interface ImportAnalysis {

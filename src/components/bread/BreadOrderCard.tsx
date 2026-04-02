@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -9,7 +10,7 @@ import { toast } from 'sonner';
 import { breadService } from '@/services/bread.service';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useDebounce } from '@/hooks/useDebounce';
-import { CheckCircle2 } from 'lucide-react';
+import { CheckCircle2, UserCircle2 } from 'lucide-react';
 
 interface BreadOrderCardProps {
     order: BreadOrderWithCustomer;
@@ -23,6 +24,8 @@ export function BreadOrderCard({ order, isSelected, onToggleSelection, onUpdate 
     const debouncedQuantity = useDebounce(quantity, 500);
 
     const isPaid = !!order.venteUuid;
+    const isExternal = !order.customerUuid;
+    const displayName = order.customer ? `${order.customer.firstName} ${order.customer.lastName}` : order.customName;
 
     const handleQuantityChange = useCallback(async (newQuantity: number) => {
         if (newQuantity < 0) return;
@@ -48,7 +51,8 @@ export function BreadOrderCard({ order, isSelected, onToggleSelection, onUpdate 
         <Card className={cn(
             "group transition-all duration-300 rounded-3xl border-none shadow-sm relative overflow-hidden", 
             isSelected ? "ring-2 ring-primary shadow-lg scale-[1.02] z-10" : "hover:shadow-md",
-            isPaid ? "bg-emerald-500/5 opacity-60 grayscale-[0.5]" : "bg-card"
+            isPaid ? "bg-emerald-500/5 opacity-60 grayscale-[0.5]" : "bg-card",
+            isExternal && !isPaid && "border-l-4 border-l-amber-500/30"
         )}>
             <div className="absolute top-4 right-4 z-10">
                 {!isPaid ? (
@@ -63,8 +67,14 @@ export function BreadOrderCard({ order, isSelected, onToggleSelection, onUpdate 
             </div>
 
             <CardHeader className="p-6 pb-2">
+                <div className="flex items-center gap-2 mb-1">
+                    {isExternal && <UserCircle2 className="h-3 w-3 text-amber-500 opacity-50" />}
+                    <span className="text-[8px] font-black uppercase tracking-widest text-muted-foreground opacity-40">
+                        {isExternal ? 'اسم خارجي' : 'زبون دائم'}
+                    </span>
+                </div>
                 <CardTitle className="text-lg font-black tracking-tight pr-8 leading-tight">
-                    {order.customer.firstName} {order.customer.lastName}
+                    {displayName}
                 </CardTitle>
             </CardHeader>
 
