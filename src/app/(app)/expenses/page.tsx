@@ -18,7 +18,8 @@ import {
     TrendingDown,
     PieChart,
     CalendarDays,
-    BarChart3
+    BarChart3,
+    ArrowRight
 } from 'lucide-react';
 import { ExpenseCard } from '@/components/expenses/ExpenseCard';
 import ExpenseDialog from '@/components/expenses/ExpenseDialog';
@@ -42,7 +43,13 @@ import { toast } from 'sonner';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, Cell } from 'recharts';
 import Papa from 'papaparse';
 
-const COLORS = ['hsl(var(--primary))', 'hsl(var(--chart-secondary))', 'hsl(var(--chart-tertiary))', 'hsl(var(--chart-quaternary))', 'hsl(var(--chart-quinary))'];
+const COLORS = [
+    'hsl(var(--primary))', 
+    'hsl(var(--chart-secondary))', 
+    'hsl(var(--chart-tertiary))', 
+    'hsl(var(--chart-quaternary))', 
+    'hsl(var(--chart-quinary))'
+];
 
 export default function ExpensesPage() {
     const [selectedCategory, setSelectedCategory] = useState<string>('all');
