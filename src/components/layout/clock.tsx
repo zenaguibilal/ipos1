@@ -7,10 +7,11 @@ import { Skeleton } from '@/components/ui/skeleton';
 
 export function Clock() {
   const [isMounted, setIsMounted] = useState(false);
-  const [time, setTime] = useState(new Date());
+  const [time, setTime] = useState<Date | null>(null);
 
   useEffect(() => {
     setIsMounted(true);
+    setTime(new Date());
     const timer = setInterval(() => {
       setTime(new Date());
     }, 1000);
@@ -22,7 +23,7 @@ export function Clock() {
 
   return (
     <div className="hidden sm:flex items-center text-base font-medium text-foreground h-6 w-[240px]">
-      {isMounted ? (
+      {isMounted && time ? (
         <span>{format(time, 'd MMMM yyyy, HH:mm:ss', { locale: fr })}</span>
       ) : (
         <Skeleton className="h-full w-full" />

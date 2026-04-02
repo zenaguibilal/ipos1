@@ -16,15 +16,15 @@ import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
 export default function BreadPage() {
-    const [currentDate, setCurrentDate] = useState(new Date());
+    const [currentDate, setCurrentDate] = useState<Date | null>(null);
     const [isMounted, setIsMounted] = useState(false);
-    const formattedDate = formatDateToYYYYMMDD(currentDate);
 
     const [orders, setOrders] = useState<BreadOrderWithCustomer[] | undefined>(undefined);
     const [isGenerating, setIsGenerating] = useState(false);
 
     useEffect(() => {
         setIsMounted(true);
+        setCurrentDate(new Date());
     }, []);
 
     const fetchAndGenerateOrders = useCallback(async (date: string) => {
@@ -40,24 +40,25 @@ export default function BreadPage() {
     }, []);
 
     useEffect(() => {
-        if (isMounted) {
-            fetchAndGenerateOrders(formattedDate);
+        if (isMounted && currentDate) {
+            fetchAndGenerateOrders(formatDateToYYYYMMDD(currentDate));
         }
-    }, [formattedDate, fetchAndGenerateOrders, isMounted]);
+    }, [currentDate, fetchAndGenerateOrders, isMounted]);
 
 
     const handleDateChange = useCallback((days: number) => {
-        setCurrentDate(prev => addDays(prev, days));
+        setCurrentDate(prev => prev ? addDays(prev, days) : null);
     }, []);
 
-    const isToday = isMounted && formatDateToYYYYMMDD(new Date()) === formattedDate;
-    const isLoading = orders === undefined || isGenerating || !isMounted;
+    const formattedDate = currentDate ? formatDateToYYYYMMDD(currentDate) : '';
+    const isToday = isMounted && currentDate && formatDateToYYYYMMDD(new Date()) === formattedDate;
+    const isLoading = orders === undefined || isGenerating || !isMounted || !currentDate;
 
     return (
         <div className="p-4 sm:p-6 space-y-6 flex flex-col h-full max-w-[1600px] mx-auto">
             <PageHeader 
                 title="Gestion des Commandes de Pain"
-                description={isMounted ? format(currentDate, 'EEEE d MMMM yyyy', { locale: fr }) : 'Chargement...'}
+                description={isMounted && currentDate ? format(currentDate, 'EEEE d MMMM yyyy', { locale: fr }) : 'Chargement...'}
             >
                 <div className="flex gap-2 bg-muted/30 p-1.5 rounded-2xl border border-border/50">
                     <Button 
@@ -71,7 +72,7 @@ export default function BreadPage() {
                     <Button 
                         variant={isToday ? "secondary" : "ghost"} 
                         onClick={() => setCurrentDate(new Date())} 
-                        disabled={isToday}
+                        disabled={isToday || !isMounted}
                         className="rounded-xl h-9 px-4 font-bold text-xs uppercase tracking-widest"
                     >
                         Aujourd'hui
@@ -89,7 +90,7 @@ export default function BreadPage() {
                 <Button 
                     variant="outline" 
                     size="icon" 
-                    onClick={() => fetchAndGenerateOrders(formattedDate)}
+                    onClick={() => formattedDate && fetchAndGenerateOrders(formattedDate)}
                     disabled={isLoading}
                     className="rounded-xl h-12 w-12 border-none shadow-sm bg-card"
                 >
@@ -116,7 +117,7 @@ export default function BreadPage() {
                 </div>
 
                 <div className="lg:col-span-1 flex flex-col">
-                    <BreadClientList onListChange={() => fetchAndGenerateOrders(formattedDate)} />
+                    <BreadClientList onListChange={() => formattedDate && fetchAndGenerateOrders(formattedDate)} />
                 </div>
             </div>
         </div>

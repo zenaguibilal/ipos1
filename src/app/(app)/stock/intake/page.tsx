@@ -34,6 +34,7 @@ export default function NewStockIntakePage() {
     const router = useRouter();
     const { processStockIntake } = useAppActions();
     
+    const [isMounted, setIsMounted] = useState(false);
     const [supplierUuid, setSupplierUuid] = useState<string>('');
     const [supplierName, setSupplierName] = useState('');
     const [supplierSearch, setSupplierSearch] = useState('');
@@ -41,13 +42,16 @@ export default function NewStockIntakePage() {
     
     const [invoiceNumber, setInvoiceNumber] = useState('');
     const [shippingCost, setShippingCost] = useState<number>(0);
-    const [invoiceDate, setInvoiceDate] = useState<Date | undefined>(new Date());
+    const [invoiceDate, setInvoiceDate] = useState<Date | undefined>(undefined);
     const [items, setItems] = useState<StockIntakeItem[]>([]);
     const [isSaving, setIsSaving] = useState(false);
     
     const [suppliers, setSuppliers] = useState<Supplier[] | undefined>(undefined);
 
     useEffect(() => {
+        setIsMounted(true);
+        setInvoiceDate(new Date());
+        
         const fetchSuppliers = async () => {
             try {
                 const data = await supplierService.getSuppliers();
@@ -190,6 +194,8 @@ export default function NewStockIntakePage() {
         setSupplierPopoverOpen(false);
     };
     
+    if (!isMounted) return null;
+
     return (
         <div className="p-4 sm:p-6 space-y-6">
             <PageHeader
