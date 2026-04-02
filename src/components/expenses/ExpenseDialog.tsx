@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import type { Expense, ExpenseCategory } from '@/lib/types';
-import { Loader2, Banknote, Calendar, Tag, FileText, Coins, CheckCircle2 } from 'lucide-react';
+import { Loader2, Banknote, Tag, FileText, Coins, CheckCircle2 } from 'lucide-react';
 import { expenseService } from '@/services/expense.service';
 import { DatePicker } from '../ui/date-picker';
 import { Combobox } from '../ui/combobox';

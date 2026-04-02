@@ -307,7 +307,7 @@ export default function NewStockIntakePage() {
                     <Card className="rounded-[2.5rem] bg-card/40 backdrop-blur-3xl border-white/5 overflow-hidden shadow-2xl">
                         <CardHeader className="bg-muted/20 p-8 border-b border-white/5 flex flex-row items-center justify-between">
                             <div>
-                                <CardTitle className="text-xl font-black tracking-tighter">Manifestه des Marchandises</CardTitle>
+                                <CardTitle className="text-xl font-black tracking-tighter">Manifeste des Marchandises</CardTitle>
                                 <CardDescription className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">{items.length} positions identifiées</CardDescription>
                             </div>
                             <div className="w-full max-w-xs">
@@ -351,7 +351,7 @@ export default function NewStockIntakePage() {
                                                         </div>
                                                     </td>
                                                     <td className="p-6">
-                                                        <Input type="number" step="0.1" className="h-10 w-24 text-right font-bold rounded-xl bg-background/50 border-none shadow-inner ml-auto" value={item.purchasePrice || ''} onChange={e => handleItemChange(item.id, 'purchasePrice', parseFloat(e.target.value) || 0)} />
+                                                        <Input type="number" step="0.1" className="h-10 w-24 text-right font-bold rounded-xl bg-background/50 border-none shadow-inner ml-auto" value={item.purchasePrice || ''} onChange={handleItemChange.bind(null, item.id, 'purchasePrice')} />
                                                     </td>
                                                     <td className="p-6 text-right">
                                                         <div className="flex flex-col items-end">
