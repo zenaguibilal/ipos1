@@ -21,7 +21,7 @@ import {
     Trash2,
     X,
     Printer,
-    CheckSquare
+    BarChart
 } from 'lucide-react';
 import { ExpenseCard } from '@/components/expenses/ExpenseCard';
 import ExpenseDialog from '@/components/expenses/ExpenseDialog';
@@ -43,11 +43,11 @@ import { formatCurrency, cn } from '@/lib/utils';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { toast } from 'sonner';
-import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, Cell } from 'recharts';
+import { ResponsiveContainer, BarChart as RechartsBarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, Cell } from 'recharts';
 import { Checkbox } from '@/components/ui/checkbox';
 import Papa from 'papaparse';
 import { useAppStore } from '@/stores/appStore';
-import { format } from 'date-fns';
+import { format, differenceInDays } from 'date-fns';
 
 const COLORS = [
     'hsl(var(--primary))', 
@@ -171,7 +171,7 @@ export default function ExpensesPage() {
     };
 
     const stats = useMemo(() => {
-        if (!expenses) return { total: 0, count: 0, topCategory: '-', chartData: [] };
+        if (!expenses) return { total: 0, count: 0, topCategory: '-', chartData: [], dailyAverage: 0 };
         
         const total = expenses.reduce((acc, e) => acc + Number(e.amount), 0);
         
@@ -193,8 +193,15 @@ export default function ExpensesPage() {
             .map(([name, value]) => ({ name, value }))
             .sort((a, b) => b.value - a.value);
 
-        return { total, count: expenses.length, topCategory: topCat, chartData };
-    }, [expenses]);
+        // Calculate days in period for average
+        const days = dateRange?.from && dateRange?.to 
+            ? Math.max(1, differenceInDays(dateRange.to, dateRange.from) + 1)
+            : 1;
+        
+        const dailyAverage = total / days;
+
+        return { total, count: expenses.length, topCategory: topCat, chartData, dailyAverage };
+    }, [expenses, dateRange]);
 
     const handlePrintSummary = () => {
         if (!expenses || expenses.length === 0) {
@@ -216,7 +223,7 @@ export default function ExpensesPage() {
                         header { border-bottom: 2px solid #000; padding-bottom: 20px; margin-bottom: 30px; display: flex; justify-content: space-between; align-items: flex-end; }
                         h1 { margin: 0; font-size: 24px; text-transform: uppercase; }
                         .meta { text-align: right; font-size: 12px; color: #666; }
-                        .summary-grid { display: grid; grid-template-cols: repeat(3, 1fr); gap: 20px; margin-bottom: 40px; }
+                        .summary-grid { display: grid; grid-template-cols: repeat(4, 1fr); gap: 20px; margin-bottom: 40px; }
                         .stat-card { border: 1px solid #ddd; padding: 15px; border-radius: 8px; text-align: center; }
                         .stat-card h4 { margin: 0 0 5px 0; font-size: 10px; text-transform: uppercase; color: #888; }
                         .stat-card p { margin: 0; font-size: 18px; font-weight: bold; }
@@ -242,6 +249,7 @@ export default function ExpensesPage() {
 
                     <div class="summary-grid">
                         <div class="stat-card"><h4>Total Dépensé</h4><p>${formatCurrency(stats.total)}</p></div>
+                        <div class="stat-card"><h4>Moyenne / Jour</h4><p>${formatCurrency(stats.dailyAverage)}</p></div>
                         <div class="stat-card"><h4>Transactions</h4><p>${stats.count}</p></div>
                         <div class="stat-card"><h4>Poste Principal</h4><p>${stats.topCategory}</p></div>
                     </div>
@@ -329,79 +337,100 @@ export default function ExpensesPage() {
                 </div>
             </PageHeader>
 
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+                <Card className="rounded-3xl border-none shadow-sm bg-card overflow-hidden group relative">
+                    <div className="absolute -right-4 -bottom-4 opacity-[0.03] group-hover:opacity-10 transition-opacity duration-500">
+                        <TrendingDown className="h-32 w-32 rotate-12" />
+                    </div>
+                    <CardContent className="p-6 relative z-10">
+                        <div className="flex justify-between items-start mb-4">
+                            <div className="p-3 rounded-2xl bg-destructive/10 text-destructive shadow-inner">
+                                <Wallet className="h-6 w-6" />
+                            </div>
+                            <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground opacity-50">Total Période</span>
+                        </div>
+                        <div className="flex items-baseline gap-2">
+                            <span className="text-3xl font-black tracking-tighter leading-none text-destructive">
+                                {isLoading ? '...' : formatCurrency(stats.total)}
+                            </span>
+                        </div>
+                        <p className="mt-3 text-[10px] font-bold text-muted-foreground/70 uppercase tracking-tight">
+                            Basé sur {stats.count} transaction(s)
+                        </p>
+                    </CardContent>
+                </Card>
+
+                <Card className="rounded-3xl border-none shadow-sm bg-card overflow-hidden group relative">
+                    <div className="absolute -right-4 -bottom-4 opacity-[0.03] group-hover:opacity-10 transition-opacity duration-500">
+                        <BarChart className="h-32 w-32 rotate-6" />
+                    </div>
+                    <CardContent className="p-6 relative z-10">
+                        <div className="flex justify-between items-start mb-4">
+                            <div className="p-3 rounded-2xl bg-primary/10 text-primary shadow-inner">
+                                <BarChart className="h-6 w-6" />
+                            </div>
+                            <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground opacity-50">Moyenne / Jour</span>
+                        </div>
+                        <div className="flex items-baseline gap-2">
+                            <span className="text-3xl font-black tracking-tighter leading-none text-primary">
+                                {isLoading ? '...' : formatCurrency(stats.dailyAverage)}
+                            </span>
+                        </div>
+                        <p className="mt-3 text-[10px] font-bold text-muted-foreground/70 uppercase tracking-tight">
+                            Charge journalière moyenne
+                        </p>
+                    </CardContent>
+                </Card>
+
+                <Card className="rounded-3xl border-none shadow-sm bg-card overflow-hidden group relative">
+                    <div className="absolute -right-4 -bottom-4 opacity-[0.03] group-hover:opacity-10 transition-opacity duration-500">
+                        <PieChart className="h-32 w-32 -rotate-12" />
+                    </div>
+                    <CardContent className="p-6 relative z-10">
+                        <div className="flex justify-between items-start mb-4">
+                            <div className="p-3 rounded-2xl bg-amber-500/10 text-amber-500 shadow-inner">
+                                <PieChart className="h-6 w-6" />
+                            </div>
+                            <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground opacity-50">Poste Principal</span>
+                        </div>
+                        <div className="flex items-baseline gap-2">
+                            <span className="text-2xl font-black tracking-tighter leading-none truncate max-w-full">
+                                {isLoading ? '...' : stats.topCategory}
+                            </span>
+                        </div>
+                        <p className="mt-3 text-[10px] font-bold text-muted-foreground/70 uppercase tracking-tight">
+                            Catégorie la plus dépensière
+                        </p>
+                    </CardContent>
+                </Card>
+
+                <Card className="rounded-3xl border-none shadow-sm bg-card overflow-hidden group relative">
+                    <div className="absolute -right-4 -bottom-4 opacity-[0.03] group-hover:opacity-10 transition-opacity duration-500">
+                        <CalendarDays className="h-32 w-32 rotate-6" />
+                    </div>
+                    <CardContent className="p-6 relative z-10">
+                        <div className="flex justify-between items-start mb-4">
+                            <div className="p-3 rounded-2xl bg-emerald-500/10 text-emerald-500 shadow-inner">
+                                <CalendarDays className="h-6 w-6" />
+                            </div>
+                            <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground opacity-50">Fréquence</span>
+                        </div>
+                        <div className="flex items-baseline gap-2">
+                            <span className="text-3xl font-black tracking-tighter leading-none">
+                                {isLoading ? '...' : (stats.count / (dateRange?.to && dateRange?.from ? Math.max(1, differenceInDays(dateRange.to, dateRange.from) + 1) : 1)).toFixed(1)}
+                            </span>
+                            <span className="text-xs font-black text-muted-foreground uppercase tracking-widest">Op/Jour</span>
+                        </div>
+                        <p className="mt-3 text-[10px] font-bold text-muted-foreground/70 uppercase tracking-tight">
+                            Moyenne des opérations
+                        </p>
+                    </CardContent>
+                </Card>
+            </div>
+
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* Stats Section */}
-                <div className="lg:col-span-1 space-y-4">
-                    <Card className="rounded-3xl border-none shadow-sm bg-card overflow-hidden group relative">
-                        <div className="absolute -right-4 -bottom-4 opacity-[0.03] group-hover:opacity-10 transition-opacity duration-500">
-                            <TrendingDown className="h-32 w-32 rotate-12" />
-                        </div>
-                        <CardContent className="p-6 relative z-10">
-                            <div className="flex justify-between items-start mb-4">
-                                <div className="p-3 rounded-2xl bg-destructive/10 text-destructive shadow-inner">
-                                    <Wallet className="h-6 w-6" />
-                                </div>
-                                <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground opacity-50">Total Période</span>
-                            </div>
-                            <div className="flex items-baseline gap-2">
-                                <span className="text-3xl font-black tracking-tighter leading-none text-destructive">
-                                    {isLoading ? '...' : formatCurrency(stats.total)}
-                                </span>
-                            </div>
-                            <p className="mt-3 text-[10px] font-bold text-muted-foreground/70 uppercase tracking-tight">
-                                Basé sur {stats.count} transaction(s)
-                            </p>
-                        </CardContent>
-                    </Card>
-
-                    <Card className="rounded-3xl border-none shadow-sm bg-card overflow-hidden group relative">
-                        <div className="absolute -right-4 -bottom-4 opacity-[0.03] group-hover:opacity-10 transition-opacity duration-500">
-                            <PieChart className="h-32 w-32 -rotate-12" />
-                        </div>
-                        <CardContent className="p-6 relative z-10">
-                            <div className="flex justify-between items-start mb-4">
-                                <div className="p-3 rounded-2xl bg-primary/10 text-primary shadow-inner">
-                                    <PieChart className="h-6 w-6" />
-                                </div>
-                                <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground opacity-50">Poste Principal</span>
-                            </div>
-                            <div className="flex items-baseline gap-2">
-                                <span className="text-2xl font-black tracking-tighter leading-none truncate max-w-full">
-                                    {isLoading ? '...' : stats.topCategory}
-                                </span>
-                            </div>
-                            <p className="mt-3 text-[10px] font-bold text-muted-foreground/70 uppercase tracking-tight">
-                                Catégorie la plus dépensière
-                            </p>
-                        </CardContent>
-                    </Card>
-
-                    <Card className="rounded-3xl border-none shadow-sm bg-card overflow-hidden group relative">
-                        <div className="absolute -right-4 -bottom-4 opacity-[0.03] group-hover:opacity-10 transition-opacity duration-500">
-                            <CalendarDays className="h-32 w-32 rotate-6" />
-                        </div>
-                        <CardContent className="p-6 relative z-10">
-                            <div className="flex justify-between items-start mb-4">
-                                <div className="p-3 rounded-2xl bg-emerald-500/10 text-emerald-500 shadow-inner">
-                                    <CalendarDays className="h-6 w-6" />
-                                </div>
-                                <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground opacity-50">Fréquence</span>
-                            </div>
-                            <div className="flex items-baseline gap-2">
-                                <span className="text-3xl font-black tracking-tighter leading-none">
-                                    {isLoading ? '...' : (stats.count / (dateRange?.to && dateRange?.from ? Math.max(1, Math.round((dateRange.to.getTime() - dateRange.from.getTime()) / (1000 * 3600 * 24))) : 1)).toFixed(1)}
-                                </span>
-                                <span className="text-xs font-black text-muted-foreground uppercase tracking-widest">Op/Jour</span>
-                            </div>
-                            <p className="mt-3 text-[10px] font-bold text-muted-foreground/70 uppercase tracking-tight">
-                                Moyenne sur la plage sélectionnée
-                            </p>
-                        </CardContent>
-                    </Card>
-                </div>
-
                 {/* Visual Analysis Chart */}
-                <Card className="lg:col-span-2 rounded-3xl border-none shadow-sm bg-card overflow-hidden">
+                <Card className="lg:col-span-3 rounded-3xl border-none shadow-sm bg-card overflow-hidden">
                     <CardHeader className="bg-primary/5 border-b border-primary/10">
                         <div className="flex items-center gap-3">
                             <div className="p-2 rounded-xl bg-primary text-primary-foreground">
@@ -418,7 +447,7 @@ export default function ExpensesPage() {
                             <Skeleton className="h-full w-full rounded-2xl" />
                         ) : stats.chartData.length > 0 ? (
                             <ResponsiveContainer width="100%" height="100%">
-                                <BarChart data={stats.chartData} layout="vertical" margin={{ left: 40, right: 40, top: 10, bottom: 10 }}>
+                                <RechartsBarChart data={stats.chartData} layout="vertical" margin={{ left: 40, right: 40, top: 10, bottom: 10 }}>
                                     <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="hsl(var(--muted-foreground)/0.1)" />
                                     <XAxis type="number" hide />
                                     <YAxis 
@@ -439,7 +468,7 @@ export default function ExpensesPage() {
                                             <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                                         ))}
                                     </Bar>
-                                </BarChart>
+                                </RechartsBarChart>
                             </ResponsiveContainer>
                         ) : (
                             <div className="h-full flex items-center justify-center text-muted-foreground/30 italic text-xs">
@@ -506,7 +535,7 @@ export default function ExpensesPage() {
                 </div>
             </div>
             
-            {/* Selection Action Bar - Enhanced Fixed Version */}
+            {/* Selection Action Bar */}
             {selectedExpenses.size > 0 && (
                 <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-50 animate-in slide-in-from-bottom-10 duration-300">
                     <div className="bg-card/80 backdrop-blur-xl border-2 border-primary/20 shadow-2xl rounded-full px-6 py-3 flex items-center gap-6">
