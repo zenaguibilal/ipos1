@@ -14,6 +14,7 @@ import {
   Wheat,
   ShoppingCart,
   Building,
+  Download,
 } from 'lucide-react';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
@@ -87,6 +88,18 @@ export function AppHeader() {
                 <Clock />
                 <div className="flex items-center gap-1 bg-muted/30 p-1 rounded-full border border-border/50">
                     <TooltipProvider>
+                        <Tooltip delayDuration={0}>
+                            <TooltipTrigger asChild>
+                                <Button asChild variant={pathname === '/install' ? "default" : "ghost"} size="icon" className="rounded-full h-9 w-9">
+                                    <Link href="/install">
+                                        <Download className="h-4 w-4" />
+                                        <span className="sr-only">Installer</span>
+                                    </Link>
+                                </Button>
+                            </TooltipTrigger>
+                            <TooltipContent><p>Installer l'App</p></TooltipContent>
+                        </Tooltip>
+
                         <Tooltip delayDuration={0}>
                             <TooltipTrigger asChild>
                                 <Button asChild variant={pathname === '/profile' ? "default" : "ghost"} size="icon" className="rounded-full h-9 w-9">
