@@ -9,7 +9,7 @@ import { PageHeader } from '@/components/layout/PageHeader';
 import { BreadClientList } from '@/components/bread/BreadClientList';
 import { BreadDayView } from '@/components/bread/BreadDayView';
 import { BreadStats } from '@/components/bread/BreadStats';
-import { Loader2, RefreshCw, ChevronLeft, ChevronRight, CalendarDays, Sparkles } from 'lucide-react';
+import { Loader2, RefreshCw, ChevronLeft, ChevronRight, CalendarDays } from 'lucide-react';
 import type { BreadOrderWithCustomer } from '@/lib/types';
 import { breadService } from '@/services/bread.service';
 import { toast } from 'sonner';

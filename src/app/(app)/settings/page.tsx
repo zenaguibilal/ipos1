@@ -26,7 +26,6 @@ import {
     Globe,
     ShieldCheck,
     Zap,
-    Sparkles,
     Shield,
     Package,
     Users2,
@@ -205,7 +204,7 @@ export default function SettingsPage() {
                             {[
                                 { icon: Monitor, label: 'Système', value: envInfo?.os },
                                 { icon: Globe, label: 'Navigateur', value: envInfo?.browser },
-                                { icon: Smartphone, label: 'Mode PWA', value: 'Activé', status: 'ACTIVE' }
+                                { icon: Smartphone, label: 'Mode PWA', value: 'Activé', status: 'ACTIF' }
                             ].map((env, idx) => (
                                 <div key={idx} className="flex items-center justify-between p-4 bg-black/20 rounded-2xl border border-white/5 group hover:border-primary/20 transition-all">
                                     <div className="flex items-center gap-3">
@@ -290,7 +289,7 @@ export default function SettingsPage() {
                             {[
                                 'Catalogue Produits', 'Fichiers Clients', 
                                 'Registre des Ventes', 'Journal d\'Audit', 
-                                'Profil Établissement', 'Historique Stock'
+                                'Profil Étabلissement', 'Historique Stock'
                             ].map((item, i) => (
                                 <div key={i} className="flex items-center gap-2 p-2 rounded-xl bg-muted/20 border border-white/5">
                                     <X className="h-3 w-3 text-destructive opacity-40" />

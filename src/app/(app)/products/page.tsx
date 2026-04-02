@@ -16,11 +16,9 @@ import {
     Archive, 
     SortAsc, 
     FileDown, 
-    Building, 
     Package, 
     Loader2, 
     FileUp, 
-    FilterX, 
     RefreshCw
 } from 'lucide-react';
 import { ProductCard } from '@/components/products/product-card';
