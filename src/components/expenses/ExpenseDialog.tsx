@@ -191,7 +191,7 @@ export default function ExpenseDialog({ isOpen, onOpenChange, expense, onSuccess
                                     <span className="absolute right-8 top-1/2 -translate-y-1/2 font-black text-xs text-destructive opacity-40 uppercase tracking-widest">DA</span>
                                 </div>
                                 <p className="text-[9px] text-muted-foreground/50 text-center italic">
-                                    Déduit immédiatement de la trésorerية globale.
+                                    Déduit immédiatement de la trésorerie globale.
                                 </p>
                             </div>
                         </div>

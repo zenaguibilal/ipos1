@@ -240,7 +240,7 @@ export default function SettingsPage() {
                             
                             <div className="space-y-5 text-[11px] font-medium text-muted-foreground/60 leading-relaxed italic px-2">
                                 <p>iPOS est une application "Client-Side Only" de nouvelle génération. Vos données commerciales ne transitent par aucun serveur externe.</p>
-                                <p>L'utilisation de la technologie IndexedDB garantit une confidentialité souveraine et une rapidité d'exécution maximale.</p>
+                                <p>L'utilisation de la technologie IndexedDB garantit une rapidité d'exécution maximale et une confidentialité souveraine.</p>
                             </div>
                         </CardContent>
                         <CardFooter className="pt-0 pb-10 px-10">
