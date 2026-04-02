@@ -320,7 +320,7 @@ export default function SalesHistoryPage() {
         <div className="p-6 sm:p-10 space-y-10 max-w-[1800px] mx-auto animate-in fade-in duration-1000">
             <PageHeader
                 title="Registre des Ventes"
-                description="Suivi souverain des flux de trésorerie و تسيير الديون"
+                description="Suivi souverain des flux de trésorerie et gestion des créances"
             >
                 <div className="flex gap-3 w-full sm:w-auto">
                     <Button variant="outline" onClick={handlePrintSummary} className="flex-1 sm:flex-none h-12 rounded-2xl font-black text-xs uppercase tracking-widest border-primary/20 hover:bg-primary/5 transition-all">
@@ -571,7 +571,7 @@ export default function SalesHistoryPage() {
                             <EmptyState
                                 icon={History}
                                 title="Le Grand Livre est vide"
-                                description={isFiltered ? "Ajustez vos filtres pour dénicher les transactions." : "Lancez votre première vente Premium dès maintenant."}
+                                description={isFiltered ? "Ajustez vos filtres pour déنicher les transactions." : "Lancez votre première vente Premium dès maintenant."}
                             >
                                 {isFiltered && <Button variant="outline" onClick={resetFilters} className="rounded-2xl h-12 font-bold px-8 border-primary/20 hover:bg-primary/5">Effacer les filtres</Button>}
                             </EmptyState>

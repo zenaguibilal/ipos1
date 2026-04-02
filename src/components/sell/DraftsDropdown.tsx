@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -53,7 +52,7 @@ export function DraftsDropdown() {
 
     const handleSuspendAndNew = () => {
         const newId = createCart();
-        toast.success("Vente actuelle mise en اتجاه الانتظار. Nouveau panier créé.");
+        toast.success("Vente actuelle mise en attente. Nouveau panier créé.");
     };
 
     if (!isMounted) {

@@ -11,7 +11,7 @@ import {
     Database, 
     Info, 
     HardDrive, 
-    RefreshCcw, 
+    RefreshCw, 
     Trash2, 
     CheckCircle2,
     Cpu,
@@ -243,8 +243,8 @@ export default function SettingsPage() {
                             </div>
                             
                             <div className="space-y-5 text-[11px] font-medium text-muted-foreground/60 leading-relaxed italic px-2">
-                                <p>iPOS est une application "Client-Side Only" de nouvelle génération. Vos بيانات تجارية لا تمر عبر أي خادم خارجي.</p>
-                                <p>استخدام تقنية IndexedDB يضمن لك سيادة تامة على البيانات واستجابة قصوى، دون الاعتماد على جودة الاتصال بالإنترنت.</p>
+                                <p>iPOS est une application "Client-Side Only" de nouvelle génération. Vos données commerciales ne transitent par aucun serveur externe.</p>
+                                <p>L'utilisation de la technologie IndexedDB vous garantit une souveraineté totale sur les données et une réactivité maximale, sans dépendre de la qualité de la connexion internet.</p>
                             </div>
                         </CardContent>
                         <CardFooter className="pt-0 pb-10 px-10">

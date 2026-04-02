@@ -139,7 +139,7 @@ export function ProductSelector() {
                         <div className="space-y-2">
                             <p className="text-[10px] font-black uppercase tracking-[0.4em] text-primary/40">Mode Attente</p>
                             <p className="text-base font-medium text-muted-foreground/30 italic max-w-[200px] mx-auto leading-relaxed">
-                                Tapeز اسم المنتج للبدء بالبحث.
+                                Tapez le nom du produit pour commencer la recherche.
                             </p>
                         </div>
                     </div>

@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -80,7 +79,7 @@ export function DataManagementCard() {
                         </div>
                         <div>
                             <CardTitle className="text-2xl font-black tracking-tighter">Archives & Flux Souverains</CardTitle>
-                            <CardDescription className="text-[10px] font-black uppercase tracking-[0.3em] text-primary/50">Exportation و استعادة البيانات المحلية</CardDescription>
+                            <CardDescription className="text-[10px] font-black uppercase tracking-[0.3em] text-primary/50">Exportation et Restauration des Données Locales</CardDescription>
                         </div>
                     </div>
                 </CardHeader>

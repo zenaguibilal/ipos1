@@ -18,7 +18,7 @@ export default function ProfilePage() {
         <div className="p-6 sm:p-10 space-y-12 max-w-6xl mx-auto pb-32 animate-in fade-in duration-1000">
             <PageHeader 
                 title="Identité Institutionnelle"
-                description="Configuration souveraine de l'établissement pour documents officiels و إدارة العروض"
+                description="Configuration souveraine de l'établissement pour documents officiels et gestion des offres"
             />
 
             {/* Elite Business Card Preview */}
@@ -99,7 +99,7 @@ export default function ProfilePage() {
                             <div>
                                 <CardTitle className="text-3xl font-black tracking-tighter">Configuration des Registres</CardTitle>
                                 <CardDescription className="text-sm font-medium text-muted-foreground/60 mt-1">
-                                    Définissez les paramètres légaux و الأسعار المرجعية لمتجرك الفاخر.
+                                    Définissez les paramètres légaux et les prix de référence de votre boutique de luxe.
                                 </CardDescription>
                             </div>
                         </div>

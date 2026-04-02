@@ -100,7 +100,7 @@ export default function NewReturnPage() {
 
     const handleSaveReturn = async () => {
         if (!foundSale || !hasItemsToReturn) {
-            toast.error("Veuillez sélectionner au moins ένα item à retourner.");
+            toast.error("Veuillez sélectionner au moins un article à retourner.");
             return;
         }
 

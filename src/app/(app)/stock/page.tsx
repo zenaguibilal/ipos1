@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useCallback, useEffect, useMemo } from 'react';
@@ -96,7 +95,7 @@ export default function StockPage() {
                 }
             }
         } catch (error: any) {
-            toast.error("Erreur lors du chargement των بيانات.");
+            toast.error("Erreur lors du chargement des données.");
             if (activeTab === 'intakes') setStockIntakes([]);
             else if (activeTab === 'logs') setInventoryLogs([]);
             else setSuppliers([]);

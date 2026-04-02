@@ -148,7 +148,7 @@ export function CompanyProfileForm() {
                     <SectionTitle title="Connectivité & Réseaux" icon={Phone} />
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-10">
                         <div className="space-y-4 group">
-                            <Label htmlFor="phone" className="text-[10px] font-black uppercase tracking-[0.2em] ml-1 opacity-40 group-focus-within:text-primary transition-colors">Ligne Directe</Label>
+                            <Label htmlFor="phone" className="text-[10px] font-black uppercase tracking-[0.2em] ml-1 opacity-40 group-focus-within:text-primary transition-colors">Ligne Directه</Label>
                             <div className="relative">
                                 <Phone className="absolute left-6 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground opacity-20 group-focus-within:text-primary group-focus-within:opacity-100 transition-all" />
                                 <Input id="phone" type="tel" value={formState.phone || ''} onChange={handleInputChange} className="pl-16 h-16 rounded-[1.5rem] bg-black/20 border-none shadow-inner font-mono font-black text-lg focus-visible:ring-primary/20" placeholder="+213..." disabled={isSaving} />

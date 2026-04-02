@@ -37,7 +37,7 @@ export function ConfirmAlertDialog({
             await onConfirm();
             onOpenChange(false);
         } catch (error: any) {
-            toast.error(error.message || "L'opération a échوé.", {
+            toast.error(error.message || "L'opération a échoué.", {
                 description: "Veuillez réessayer ou contacter le support si le problème persiste."
             });
         } finally {
