@@ -15,7 +15,6 @@ import {
   ShoppingCart,
   Building,
   Download,
-  Menu,
 } from 'lucide-react';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
