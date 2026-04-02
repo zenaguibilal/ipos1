@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation';
 
 export default function RootPage() {
-  // توجيه مباشر إلى لوحة التحكم كون التطبيق محلي بالكامل ولا يتطلب تسجيل دخول
+  // Redirection directe vers le tableau de bord car l'application est entièrement locale et ne nécessite pas de connexion.
   redirect('/dashboard');
 }

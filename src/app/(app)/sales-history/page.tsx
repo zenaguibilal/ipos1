@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
@@ -384,7 +383,7 @@ export default function SalesHistoryPage() {
 
                     <Card className="rounded-3xl border-none shadow-sm bg-card overflow-hidden">
                         <CardHeader className="pb-3">
-                            <CardTitle className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Fلتير de recherche</CardTitle>
+                            <CardTitle className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Filtre de recherche</CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-4">
                             <div className="relative">

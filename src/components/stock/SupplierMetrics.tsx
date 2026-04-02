@@ -42,7 +42,7 @@ export function SupplierMetrics({ supplier, totalPurchases }: SupplierMetricsPro
                 </div>
 
                 <div className="p-4 rounded-2xl bg-muted/10 border border-dashed border-border/50 text-[10px] text-muted-foreground italic">
-                    * يتم تحديث الديون تلقائياً عند استلام فواتير شراء جديدة أو تسجيل دفعات مالية.
+                    * Les dettes sont mises à jour automatiquement lors de la réception de nouvelles factures d'achat ou de l'enregistrement de paiements.
                 </div>
             </CardContent>
         </Card>

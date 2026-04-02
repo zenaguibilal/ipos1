@@ -140,7 +140,7 @@ export function ProductDialog({ isOpen, onOpenChange, product, categories, suppl
             onSuccess();
             onOpenChange(false);
         } catch (err: any) {
-            setError(err.message || "Une erreur است survenue.");
+            setError(err.message || "Une erreur est survenue.");
             toast.error("Échec de l'opération.");
         } finally {
             setIsLoading(false);

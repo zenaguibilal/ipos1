@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useRef, useState } from 'react';
@@ -42,9 +41,9 @@ const PrintableList = React.forwardRef<HTMLDivElement, { orders: BreadOrderWithC
             <table className="w-full border-collapse mb-10">
                 <thead>
                     <tr className="bg-gray-100 border-b-2 border-black">
-                        <th className="py-3 text-left px-4">Nom du Client (اسم الطلب)</th>
-                        <th className="py-3 text-center px-4 w-40">Quantité (الكمية)</th>
-                        <th className="py-3 text-center px-4 w-32">Visa (التأشير)</th>
+                        <th className="py-3 text-left px-4">Nom du Client</th>
+                        <th className="py-3 text-center px-4 w-40">Quantité</th>
+                        <th className="py-3 text-center px-4 w-32">Visa</th>
                     </tr>
                 </thead>
                 <tbody>

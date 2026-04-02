@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useCallback, useEffect } from 'react';
@@ -366,7 +365,7 @@ export default function NewStockIntakePage() {
                                 <span className="font-bold text-primary">{(shippingFactor * 100).toFixed(2)}%</span>
                             </div>
                             <p className="text-[10px] text-muted-foreground">
-                                * يتم توزيع مصاريف النقل على سعر الشراء لكل منتج آلياً لاستخراج سعر التكلفة الحقيقي.
+                                * Les frais de transport sont répartis automatiquement sur le prix d'achat de chaque produit pour calculer le coût de revient réel.
                             </p>
                         </div>
 
