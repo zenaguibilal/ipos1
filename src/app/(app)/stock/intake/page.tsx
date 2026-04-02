@@ -16,7 +16,8 @@ import {
     Building,
     Hash,
     Calendar,
-    Landmark
+    Landmark,
+    Package
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -382,7 +383,7 @@ export default function NewStockIntakePage() {
                                         })}
                                         {items.length === 0 && (
                                             <tr>
-                                                <td colSpan={6} className="p-20 text-center">
+                                                <td colSpan={6} className="p-24 text-center">
                                                     <div className="flex flex-col items-center gap-4 opacity-20">
                                                         <Landmark className="h-16 w-16" />
                                                         <p className="text-[10px] font-black uppercase tracking-[0.4em]">Le manifeste est vide</p>
