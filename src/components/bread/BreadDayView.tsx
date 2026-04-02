@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -12,10 +11,10 @@ import { ManualAddDialog } from './ManualAddDialog';
 import { PrintBreadListDialog } from './PrintBreadListDialog';
 import { toast } from 'sonner';
 import { breadService } from '@/services/bread.service';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Wheat, ShoppingBag, CheckSquare } from 'lucide-react';
 import { EmptyState } from '@/components/ui/EmptyState';
-import { Wheat } from 'lucide-react';
 import { useAppStore } from '@/stores/appStore';
+import { cn } from '@/lib/utils';
 
 interface BreadDayViewProps {
     orders: BreadOrderWithCustomer[];
@@ -56,7 +55,7 @@ export function BreadDayView({ orders, currentDate, onOrdersChange }: BreadDayVi
         }
         if (breadPrice <= 0) {
             toast.error("Le prix du pain n'est pas défini.", {
-                description: "Veuillez le configurer dans la page de profil avant de continuer."
+                description: "Veuillez le configurer dans la page de profil قبل المتابعة."
             });
             return;
         }
@@ -81,15 +80,15 @@ export function BreadDayView({ orders, currentDate, onOrdersChange }: BreadDayVi
 
     if (orders.length === 0) {
         return (
-             <Card>
-                <CardHeader>
-                    <CardTitle>Commandes du Jour</CardTitle>
+             <Card className="rounded-3xl border-none shadow-sm bg-card overflow-hidden h-full">
+                <CardHeader className="bg-primary/5 border-b border-primary/10">
+                    <CardTitle className="text-xl font-black tracking-tight">Commandes du Jour</CardTitle>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="flex flex-col items-center justify-center h-full min-h-[400px]">
                     <EmptyState
                         icon={Wheat}
                         title="Aucune commande pour aujourd'hui"
-                        description="Aucun client n'a de commande récurrente pour ce jour. Vous pouvez en ajouter une manuellement."
+                        description="Aucun client n'a de commande récurrente programmée pour cette date."
                     >
                         <ManualAddDialog currentDate={currentDate} onSuccess={onOrdersChange} />
                     </EmptyState>
@@ -103,29 +102,48 @@ export function BreadDayView({ orders, currentDate, onOrdersChange }: BreadDayVi
     };
     
     return (
-        <Card className="flex flex-col h-full">
-            <CardHeader className="flex-shrink-0">
-                <CardTitle>Commandes du Jour</CardTitle>
-                <div className="flex flex-col sm:flex-row gap-2 mt-4">
-                    <div className="flex items-center space-x-2">
-                        <Checkbox id="select-all-bread" checked={isAllSelected} onCheckedChange={handleSelectAll} />
-                        <label htmlFor="select-all-bread" className="text-sm font-medium">
-                            Tout sélectionner ({selectedOrders.size})
-                        </label>
+        <Card className="flex flex-col h-full rounded-3xl border-none shadow-sm bg-card overflow-hidden">
+            <CardHeader className="flex-shrink-0 bg-muted/30 border-b border-border/50 pb-6">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                    <div>
+                        <CardTitle className="text-xl font-black tracking-tight">Commandes du Jour</CardTitle>
+                        <p className="text-xs text-muted-foreground font-medium mt-1 uppercase tracking-widest">{orders.length} commandes générées</p>
                     </div>
-                    <div className="flex gap-2 flex-wrap">
-                        <Button onClick={handleConvertToSales} disabled={isConverting || selectedOrders.size === 0}>
-                            {isConverting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                            Convertir en Vente
-                        </Button>
+                    <div className="flex gap-2 flex-wrap w-full sm:w-auto">
                         <ManualAddDialog currentDate={currentDate} onSuccess={onOrdersChange} />
                         <PrintBreadListDialog orders={orders} currentDate={currentDate}/>
                     </div>
                 </div>
+
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-6 bg-background/50 p-3 rounded-2xl border border-border/50">
+                    <div className="flex items-center space-x-3 px-2">
+                        <Checkbox 
+                            id="select-all-bread" 
+                            checked={isAllSelected} 
+                            onCheckedChange={handleSelectAll} 
+                            className="h-5 w-5 border-primary data-[state=checked]:bg-primary"
+                        />
+                        <label htmlFor="select-all-bread" className="text-xs font-black uppercase tracking-widest text-primary cursor-pointer">
+                            Tout sélectionner ({selectedOrders.size})
+                        </label>
+                    </div>
+                    
+                    <Button 
+                        onClick={handleConvertToSales} 
+                        disabled={isConverting || selectedOrders.size === 0}
+                        className={cn(
+                            "rounded-xl font-bold h-10 px-6 transition-all",
+                            selectedOrders.size > 0 ? "shadow-lg shadow-primary/20" : "opacity-50"
+                        )}
+                    >
+                        {isConverting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ShoppingBag className="mr-2 h-4 w-4" />}
+                        Encaisser Sélection
+                    </Button>
+                </div>
             </CardHeader>
-            <CardContent className="flex-grow min-h-0">
-                <ScrollArea className="h-full">
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <CardContent className="flex-grow min-h-0 p-6">
+                <ScrollArea className="h-full pr-4 -mr-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                         {orders.map(order => (
                             <BreadOrderCard 
                                 key={order.uuid} 

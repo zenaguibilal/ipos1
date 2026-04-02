@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useRef, useState } from 'react';
@@ -11,7 +10,7 @@ import {
     DialogTitle,
     DialogFooter,
 } from '@/components/ui/dialog';
-import { Printer } from 'lucide-react';
+import { Printer, X } from 'lucide-react';
 import type { BreadOrder, BreadOrderWithCustomer, CompanyProfile } from '@/lib/types';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -24,8 +23,8 @@ interface PrintBreadListDialogProps {
 
 const getStatusLabel = (order: BreadOrder) => {
     if (order.est_paye && order.est_livre) return 'Payé & Livré';
-    if (order.est_paye) return 'Payé (non livré)';
-    if (order.est_livre) return 'Livré (non payé)';
+    if (order.est_paye) return 'Payé (Attente)';
+    if (order.est_livre) return 'Livré (Crédit)';
     return 'En attente';
 };
 
@@ -34,36 +33,68 @@ const PrintableList = React.forwardRef<HTMLDivElement, { orders: BreadOrderWithC
     const formattedDate = format(new Date(currentDate.replace(/-/g, '/')), 'EEEE d MMMM yyyy', { locale: fr });
     
     return (
-        <div ref={ref} className="p-4 bg-white text-black font-sans">
-            <header className="text-center mb-4">
-                <h1 className="text-xl font-bold">{profile?.companyName || 'Liste de Commandes'}</h1>
-                <h2 className="text-lg">Commandes de Pain du {formattedDate}</h2>
+        <div ref={ref} className="p-10 bg-white text-black font-sans w-[210mm] min-h-[297mm]">
+            <header className="flex justify-between items-start border-b-2 border-black pb-6 mb-8">
+                <div>
+                    <h1 className="text-3xl font-black uppercase">{profile?.companyName || 'iPOS Manager'}</h1>
+                    <p className="text-sm font-bold mt-1 text-gray-600">Distribution Quotidienne de Pain</p>
+                </div>
+                <div className="text-right">
+                    <h2 className="text-xl font-bold bg-black text-white px-4 py-1 inline-block">LISTE DE DISTRIBUTION</h2>
+                    <p className="mt-2 font-bold text-lg">{formattedDate}</p>
+                </div>
             </header>
-            <table className="w-full text-sm border-collapse border border-gray-400">
+
+            <table className="w-full border-collapse mb-10">
                 <thead>
-                    <tr className="bg-gray-200">
-                        <th className="border border-gray-300 p-2 text-left">Client</th>
-                        <th className="border border-gray-300 p-2 text-center w-24">Quantité</th>
-                        <th className="border border-gray-300 p-2 text-left w-32">Statut</th>
+                    <tr className="bg-gray-100 border-b-2 border-black">
+                        <th className="py-3 text-left px-4">Client</th>
+                        <th className="py-3 text-center px-4 w-32">Quantité</th>
+                        <th className="py-3 text-left px-4 w-48">Statut / Notes</th>
+                        <th className="py-3 text-center px-4 w-20">Visa</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {orders.map(order => (
-                        <tr key={order.uuid} className="[&>td]:border [&>td]:border-gray-300 [&>td]:p-2">
-                            <td>{order.customer.firstName} {order.customer.lastName}</td>
-                            <td className="text-center font-bold">{order.quantite}</td>
-                            <td>{getStatusLabel(order)}</td>
+                    {orders.sort((a,b) => a.customer.firstName.localeCompare(b.customer.firstName)).map(order => (
+                        <tr key={order.uuid} className="border-b border-gray-300">
+                            <td className="py-4 px-4">
+                                <p className="font-bold text-lg">{order.customer.firstName} {order.customer.lastName}</p>
+                            </td>
+                            <td className="py-4 px-4 text-center">
+                                <span className="text-2xl font-black">{order.quantite}</span>
+                            </td>
+                            <td className="py-4 px-4 text-sm font-medium text-gray-500">
+                                {getStatusLabel(order)}
+                            </td>
+                            <td className="py-4 px-4">
+                                <div className="w-12 h-12 border border-gray-200 rounded-md"></div>
+                            </td>
                         </tr>
                     ))}
                 </tbody>
                 <tfoot>
-                    <tr className="bg-gray-200 font-bold">
-                        <td className="border border-gray-300 p-2 text-right">Total</td>
-                        <td className="border border-gray-300 p-2 text-center">{totalQuantity}</td>
-                        <td className="border border-gray-300 p-2"></td>
+                    <tr className="bg-gray-50 font-black border-t-2 border-black">
+                        <td className="py-4 px-4 text-right text-lg uppercase">Total Global</td>
+                        <td className="py-4 px-4 text-center text-3xl">{totalQuantity}</td>
+                        <td colSpan={2}></td>
                     </tr>
                 </tfoot>
             </table>
+
+            <div className="mt-20 grid grid-cols-2 gap-10">
+                <div className="text-center p-6 border border-dashed border-gray-300 rounded-2xl">
+                    <p className="text-xs font-bold uppercase text-gray-400 mb-10">Responsable Boulangerie</p>
+                    <div className="h-px bg-gray-200 w-1/2 mx-auto"></div>
+                </div>
+                <div className="text-center p-6 border border-dashed border-gray-300 rounded-2xl">
+                    <p className="text-xs font-bold uppercase text-gray-400 mb-10">Livreur / Vendeur</p>
+                    <div className="h-px bg-gray-200 w-1/2 mx-auto"></div>
+                </div>
+            </div>
+            
+            <footer className="mt-auto pt-10 text-center text-[10px] text-gray-400 font-bold uppercase tracking-widest">
+                Généré par iPOS Point de Vente Intelligent - {format(new Date(), 'HH:mm:ss')}
+            </footer>
         </div>
     );
 });
@@ -91,23 +122,36 @@ export function PrintBreadListDialog({ orders, currentDate }: PrintBreadListDial
 
     return (
         <>
-            <Button variant="outline" onClick={() => setIsOpen(true)}>
-                <Printer className="mr-2 h-4 w-4" /> Imprimer la liste
+            <Button variant="outline" onClick={() => setIsOpen(true)} className="rounded-xl h-10 border-primary/20 hover:bg-primary/5 font-bold">
+                <Printer className="mr-2 h-4 w-4 text-primary" /> Imprimer Liste
             </Button>
             <Dialog open={isOpen} onOpenChange={setIsOpen}>
-                <DialogContent className="max-w-4xl h-[90vh] flex flex-col print-dialog-content">
-                    <DialogHeader className="print-hide">
-                        <DialogTitle>Aperçu de la liste des commandes</DialogTitle>
-                        <DialogDescription>Aperçu de la liste pour l'impression.</DialogDescription>
+                <DialogContent className="max-w-4xl h-[90vh] flex flex-col p-0 overflow-hidden border-none shadow-2xl rounded-3xl">
+                    <DialogHeader className="p-6 bg-primary/5 border-b border-primary/10">
+                        <div className="flex items-center gap-3">
+                            <div className="p-2.5 rounded-2xl bg-primary text-primary-foreground">
+                                <Printer className="h-5 w-5" />
+                            </div>
+                            <div>
+                                <DialogTitle className="text-xl font-black tracking-tight">Aperçu Impression Liste</DialogTitle>
+                                <DialogDescription className="font-medium">Vérifiez les quantités avant d'imprimer pour le livreur.</DialogDescription>
+                            </div>
+                        </div>
                     </DialogHeader>
-                    <div id="label-print-area-wrapper" className="flex-grow overflow-y-auto bg-muted/50 p-4 rounded-md">
-                        <div id="label-print-area" className="bg-white mx-auto" style={{ width: '210mm', minHeight: '297mm', padding: '1cm' }}>
+                    
+                    <div id="label-print-area-wrapper" className="flex-grow overflow-y-auto bg-muted/50 p-8 custom-scrollbar">
+                        <div id="label-print-area" className="bg-white mx-auto shadow-2xl" style={{ width: '210mm', minHeight: '297mm' }}>
                             <PrintableList ref={printRef} orders={orders} currentDate={currentDate} profile={profile || null} />
                         </div>
                     </div>
-                    <DialogFooter className="print-hide pt-4">
-                        <Button variant="outline" onClick={() => setIsOpen(false)}>Fermer</Button>
-                        <Button onClick={handlePrint}><Printer className="mr-2 h-4 w-4" /> Imprimer</Button>
+
+                    <DialogFooter className="p-6 bg-card border-t flex gap-3">
+                        <Button variant="ghost" onClick={() => setIsOpen(false)} className="rounded-xl h-12 font-bold flex-1">
+                            <X className="mr-2 h-4 w-4" /> Fermer
+                        </Button>
+                        <Button onClick={handlePrint} className="rounded-xl h-12 font-bold flex-1 shadow-lg shadow-primary/20">
+                            <Printer className="mr-2 h-4 w-4" /> Lancer l'Impression
+                        </Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
