@@ -7,7 +7,24 @@ import { useDebounce } from '@/hooks/useDebounce';
 import type { Product, Supplier, ProductImportAnalysis } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Plus, Search, LayoutGrid, List, Printer, Trash2, PackageCheck, PackageX, AlertTriangle, Archive, SortAsc, FileDown, Building, Package, Loader2, CalendarClock, CalendarX, FileUp, FilterX, RefreshCw, Copy, History } from 'lucide-react';
+import { 
+    Plus, 
+    Search, 
+    LayoutGrid, 
+    List, 
+    Printer, 
+    Trash2, 
+    Archive, 
+    SortAsc, 
+    FileDown, 
+    Building, 
+    Package, 
+    Loader2, 
+    FileUp, 
+    FilterX, 
+    RefreshCw, 
+    Sparkles
+} from 'lucide-react';
 import { ProductCard } from '@/components/products/product-card';
 import { ProductTable } from '@/components/products/product-table';
 import { ProductTableSkeleton } from '@/components/products/product-table-skeleton';
@@ -40,25 +57,13 @@ import Papa from 'papaparse';
 
 type StockStatus = 'all' | 'in_stock' | 'low_stock' | 'out_of_stock' | 'expiring_soon' | 'expired';
 
-const stockStatusOptions: { value: StockStatus, label: string, icon: React.ElementType }[] = [
-    { value: 'all', label: 'Tous les statuts', icon: Archive },
-    { value: 'in_stock', label: 'En Stock', icon: PackageCheck },
-    { value: 'low_stock', label: 'Stock Faible', icon: AlertTriangle },
-    { value: 'out_of_stock', label: 'En Rupture', icon: PackageX },
-    { value: 'expiring_soon', label: 'Expire Bientôt', icon: CalendarClock },
-    { value: 'expired', label: 'Expiré', icon: CalendarX },
-];
-
 const sortOptions: { [key: string]: string } = {
     'name_asc': 'Nom (A-Z)',
-    'name_desc': 'Nom (Z-A)',
-    'price_desc': 'Prix (décroissant)',
-    'price_asc': 'Prix (croissant)',
-    'quantity_desc': 'Stock (décroissant)',
-    'quantity_asc': 'Stock (croissant)',
+    'price_desc': 'Prix (Max)',
+    'price_asc': 'Prix (Min)',
+    'quantity_desc': 'Stock (Max)',
     'createdAt_desc': 'Plus récents',
-    'createdAt_asc': 'Plus anciens',
-    'dateExpiration_asc': 'Date d\'expiration (proche)',
+    'dateExpiration_asc': 'Expiration proche',
 };
 
 export default function ProductsPage() {
@@ -98,14 +103,10 @@ export default function ProductsPage() {
     const [isImporting, setIsImporting] = useState(false);
 
     useEffect(() => {
-        const stockStatusFromQuery = searchParams.get('stockStatus') as StockStatus;
-        if (stockStatusFromQuery && ['all', 'in_stock', 'low_stock', 'out_of_stock', 'expiring_soon', 'expired'].includes(stockStatusFromQuery)) {
-            setStockStatus(stockStatusFromQuery);
-        }
+        const statusFromQuery = searchParams.get('stockStatus') as StockStatus;
+        if (statusFromQuery) setStockStatus(statusFromQuery);
         const queryFromUrl = searchParams.get('query');
-        if (queryFromUrl) {
-            setSearchQuery(queryFromUrl);
-        }
+        if (queryFromUrl) setSearchQuery(queryFromUrl);
     }, [searchParams]);
 
     const fetchProducts = useCallback(async () => {
@@ -181,35 +182,28 @@ export default function ProductsPage() {
     const handleToggleSelection = useCallback((productUuid: string) => {
         setSelectedProducts(prev => {
             const newSet = new Set(prev);
-            if (newSet.has(productUuid)) {
-                newSet.delete(productUuid);
-            } else {
-                newSet.add(productUuid);
-            }
+            if (newSet.has(productUuid)) newSet.delete(productUuid);
+            else newSet.add(productUuid);
             return newSet;
         });
     }, []);
     
     const handleToggleSelectAll = useCallback(() => {
         if (!products) return;
-        if (selectedProducts.size === products.length) {
-            setSelectedProducts(new Set());
-        } else {
-            setSelectedProducts(new Set(products.map(p => p.uuid)));
-        }
+        if (selectedProducts.size === products.length) setSelectedProducts(new Set());
+        else setSelectedProducts(new Set(products.map(p => p.uuid)));
     }, [products, selectedProducts.size]);
 
     const handleFileSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
-
         setIsAnalyzing(true);
         try {
             const analysis = await productService.analyzeImport(file);
             setImportAnalysis(analysis);
             setIsImportPreviewOpen(true);
         } catch (error: any) {
-            toast.error("Erreur d'analyse CSV", { description: error.message });
+            toast.error("Erreur d'analyse CSV");
         } finally {
             setIsAnalyzing(false);
             e.target.value = ''; 
@@ -222,7 +216,6 @@ export default function ProductsPage() {
             await productService.executeImport(confirmedData);
             toast.success("Importation réussie.");
             setIsImportPreviewOpen(false);
-            setImportAnalysis(null);
             onDialogSuccess();
         } catch (error: any) {
             toast.error("Échec de l'importation.");
@@ -232,11 +225,7 @@ export default function ProductsPage() {
     };
 
     const handleExportCsv = () => {
-        if (!products || products.length === 0) {
-            toast.error("Aucun produit à exporter.");
-            return;
-        }
-
+        if (!products || products.length === 0) return;
         const csv = Papa.unparse(products.map(p => ({
             Désignation: p.name,
             Catégorie: p.category,
@@ -244,141 +233,65 @@ export default function ProductsPage() {
             Prix_Achat: p.purchasePrice,
             Stock: p.quantity,
             Unité: p.unite,
-            Codes_Barres: p.barcodes?.join('|'),
-            Stock_Minimum: p.minStockLevel,
-            Date_Expiration: p.dateExpiration ? new Date(p.dateExpiration).toLocaleDateString() : '',
         })));
-
         const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
-        link.setAttribute('download', `ipos-produits-${new Date().toISOString().split('T')[0]}.csv`);
-        document.body.appendChild(link);
+        link.download = `ipos-produits-${new Date().toISOString().split('T')[0]}.csv`;
         link.click();
-        document.body.removeChild(link);
         toast.success("Exportation terminée.");
-    };
-
-    const resetFilters = () => {
-        setSearchQuery('');
-        setSelectedCategory('all');
-        setSelectedSupplier('all');
-        setStockStatus('all');
-        setSortBy('createdAt_desc');
     };
 
     const isFiltered = searchQuery !== '' || selectedCategory !== 'all' || selectedSupplier !== 'all' || stockStatus !== 'all' || sortBy !== 'createdAt_desc';
     
-    const renderContent = () => {
-        if (isLoading) {
-            return viewMode === 'grid' ? <ProductGridSkeleton /> : <ProductTableSkeleton />;
-        }
-
-        if (!products || products.length === 0) {
-            return (
-                <EmptyState
-                    icon={Package}
-                    title="Aucun produit trouvé"
-                    description={isFiltered ? "Essayez d'ajuster vos filtres ou de réinitialiser la recherche." : "Commencez par ajouter votre premier produit."}
-                >
-                    <div className="flex gap-2 justify-center">
-                        {isFiltered && <Button variant="outline" onClick={resetFilters} className="rounded-xl"><FilterX className="mr-2 h-4 w-4" /> Effacer</Button>}
-                        <Button onClick={() => { setSelectedProduct(null); setIsProductDialogOpen(true); }} className="rounded-xl shadow-lg shadow-primary/20"><Plus className="mr-2 h-4 w-4" /> Ajouter un produit</Button>
-                    </div>
-                </EmptyState>
-            );
-        }
-        
-        if (viewMode === 'grid') {
-            return (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6">
-                    {products.map(p => (
-                        <ProductCard 
-                            key={p.uuid} 
-                            product={p} 
-                            onEdit={handleEditProduct} 
-                            onDuplicate={handleDuplicateProduct}
-                            onHistory={handleViewHistory}
-                            onDelete={() => {
-                                setSelectedProduct(p);
-                                setIsDeleteDialogOpen(true);
-                            }}
-                            isSelected={selectedProducts.has(p.uuid)}
-                            onToggleSelection={() => handleToggleSelection(p.uuid)}
-                        />
-                    ))}
-                </div>
-            );
-        }
-
-        return (
-            <ProductTable 
-                products={products}
-                onEdit={handleEditProduct}
-                onDuplicate={handleDuplicateProduct}
-                onHistory={handleViewHistory}
-                onDelete={(p) => {
-                    setSelectedProduct(p);
-                    setIsDeleteDialogOpen(true);
-                }}
-                selectedProducts={selectedProducts}
-                onToggleProductSelection={handleToggleSelection}
-                onToggleSelectAll={handleToggleSelectAll}
-                suppliers={suppliers || []}
-            />
-        );
-    }
-
-    const currentStockStatusOption = stockStatusOptions.find(o => o.value === stockStatus)!;
-
     return (
-        <div className="p-4 sm:p-6 space-y-6 max-w-[1600px] mx-auto">
+        <div className="p-6 sm:p-10 space-y-10 max-w-[1800px] mx-auto animate-in fade-in duration-1000">
             <PageHeader
-                title="Gestion de l'Inventaire"
-                description="Contrôlez vos produits et vos stocks avec précision."
+                title="Catalogue Elite"
+                description="Maîtrise absolue du catalogue et des flux de marchandises"
             >
-                <div className="flex gap-2 w-full sm:w-auto">
-                    <Button variant="outline" onClick={handleExportCsv} className="rounded-xl font-bold border-primary/20 hover:bg-primary/5">
+                <div className="flex gap-3 w-full sm:w-auto">
+                    <Button variant="outline" onClick={handleExportCsv} className="flex-1 sm:flex-none h-12 rounded-2xl font-black text-xs uppercase tracking-widest border-primary/20 hover:bg-primary/5">
                         <FileUp className="mr-2 h-4 w-4 text-primary" /> Exporter
                     </Button>
-                    <Button asChild variant="outline" disabled={isAnalyzing} className="rounded-xl font-bold border-primary/20 hover:bg-primary/5">
-                        <label htmlFor="csv-product-importer" className="cursor-pointer">
+                    <Button asChild variant="outline" disabled={isAnalyzing} className="flex-1 sm:flex-none h-12 rounded-2xl font-black text-xs uppercase tracking-widest border-primary/20 hover:bg-primary/5">
+                        <label htmlFor="csv-product-importer" className="cursor-pointer flex items-center">
                             {isAnalyzing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileDown className="mr-2 h-4 w-4 text-primary" />}
-                            {isAnalyzing ? 'Analyse...' : 'Importer'}
+                            Importer
                             <input type="file" id="csv-product-importer" accept=".csv" className="sr-only" onChange={handleFileSelected} />
                         </label>
                     </Button>
-                    <Button onClick={() => { setSelectedProduct(null); setIsProductDialogOpen(true); }} className="rounded-xl font-bold shadow-lg shadow-primary/20">
-                        <Plus className="mr-2 h-4 w-4" /> Nouveau
+                    <Button onClick={() => { setSelectedProduct(null); setIsProductDialogOpen(true); }} className="flex-1 sm:flex-none h-12 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-primary/20 transition-all active:scale-95">
+                        <Plus className="mr-2 h-4 w-4" /> Nouveau Produit
                     </Button>
                 </div>
             </PageHeader>
 
             <InventoryStats products={products} isLoading={isLoading} />
 
-            <div className="flex flex-col lg:flex-row gap-3">
-                <div className="relative flex-grow">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/50" />
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 bg-card/20 p-2 rounded-[2.5rem] border border-white/5 backdrop-blur-xl">
+                <div className="relative group flex-grow max-w-xl px-4">
+                    <Search className="absolute left-8 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground group-focus-within:text-primary transition-colors duration-500" />
                     <Input 
                         placeholder="Rechercher par nom ou code-barres..."
-                        className="pl-10 h-11 rounded-xl bg-card border-none shadow-sm focus-visible:ring-primary/20"
+                        className="pl-14 h-14 rounded-2xl bg-black/20 border-none shadow-inner focus-visible:ring-primary/20 font-bold text-lg"
                         value={searchQuery}
                         onChange={e => setSearchQuery(e.target.value)}
                     />
                 </div>
                 
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap items-center gap-3 px-4">
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                            <Button variant="outline" className="rounded-xl h-11 border-none shadow-sm bg-card hover:bg-primary/5 min-w-[140px] font-medium">
+                            <Button variant="outline" className="h-12 rounded-xl border-white/5 bg-black/20 hover:bg-white/5 font-bold px-6">
                                 <Archive className="mr-2 h-4 w-4 opacity-50" />
                                 {selectedCategory === 'all' ? 'Tous les Rayons' : selectedCategory}
                             </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent className="rounded-xl border-none shadow-xl min-w-[200px] max-h-80 overflow-y-auto custom-scrollbar">
+                        <DropdownMenuContent className="rounded-2xl border-white/5 shadow-2xl min-w-[200px] max-h-80 overflow-y-auto">
                             <DropdownMenuLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Rayon / Catégorie</DropdownMenuLabel>
-                            <DropdownMenuSeparator />
+                            <DropdownMenuSeparator className="opacity-10" />
                             <DropdownMenuCheckboxItem checked={selectedCategory === 'all'} onCheckedChange={() => setSelectedCategory('all')}>Toutes les catégories</DropdownMenuCheckboxItem>
                             {categories?.map(cat => (
                                 <DropdownMenuCheckboxItem key={cat} checked={selectedCategory === cat} onCheckedChange={() => setSelectedCategory(cat)}>{cat}</DropdownMenuCheckboxItem>
@@ -388,191 +301,87 @@ export default function ProductsPage() {
 
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                            <Button variant="outline" className="rounded-xl h-11 border-none shadow-sm bg-card hover:bg-primary/5 min-w-[140px] font-medium">
-                                <Building className="mr-2 h-4 w-4 opacity-50" />
-                                {selectedSupplier === 'all' ? 'Tous les Fournisseurs' : suppliers?.find(s => s.uuid === selectedSupplier)?.name}
-                            </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent className="rounded-xl border-none shadow-xl min-w-[200px] max-h-80 overflow-y-auto custom-scrollbar">
-                            <DropdownMenuLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Filtrer par Fournisseur</DropdownMenuLabel>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuCheckboxItem checked={selectedSupplier === 'all'} onCheckedChange={() => setSelectedSupplier('all')}>Tous les fournisseurs</DropdownMenuCheckboxItem>
-                            {suppliers?.map(sup => (
-                                <DropdownMenuCheckboxItem key={sup.uuid} checked={selectedSupplier === sup.uuid} onCheckedChange={() => setSelectedSupplier(sup.uuid)}>{sup.name}</DropdownMenuCheckboxItem>
-                            ))}
-                        </DropdownMenuContent>
-                    </DropdownMenu>
-
-                    <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                            <Button variant="outline" className="rounded-xl h-11 border-none shadow-sm bg-card hover:bg-primary/5 min-w-[140px] font-medium">
-                                <currentStockStatusOption.icon className="mr-2 h-4 w-4 opacity-50" />
-                                {currentStockStatusOption.label}
-                            </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent className="rounded-xl border-none shadow-xl min-w-[200px]">
-                            <DropdownMenuLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">État du Stock</DropdownMenuLabel>
-                            <DropdownMenuSeparator />
-                            {stockStatusOptions.map(option => (
-                                <DropdownMenuCheckboxItem
-                                    key={option.value}
-                                    checked={stockStatus === option.value}
-                                    onCheckedChange={() => setStockStatus(option.value)}
-                                >
-                                    <option.icon className="mr-2 h-4 w-4 opacity-50" />
-                                    {option.label}
-                                </DropdownMenuCheckboxItem>
-                            ))}
-                        </DropdownMenuContent>
-                    </DropdownMenu>
-                    
-                    <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                            <Button variant="outline" className="rounded-xl h-11 border-none shadow-sm bg-card hover:bg-primary/5 font-medium">
+                            <Button variant="outline" className="h-12 rounded-xl border-white/5 bg-black/20 hover:bg-white/5 font-bold px-6">
                                 <SortAsc className="mr-2 h-4 w-4 opacity-50" />
-                                {sortOptions[sortBy]}
+                                {sortOptions[sortBy] || 'Trier par'}
                             </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent className="rounded-xl border-none shadow-xl min-w-[200px]">
+                        <DropdownMenuContent className="rounded-2xl border-white/5 shadow-2xl min-w-[200px]">
                             <DropdownMenuLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Trier par</DropdownMenuLabel>
-                            <DropdownMenuSeparator />
+                            <DropdownMenuSeparator className="opacity-10" />
                             <DropdownMenuRadioGroup value={sortBy} onValueChange={setSortBy}>
                                 {Object.entries(sortOptions).map(([key, value]) => (
-                                    <DropdownMenuRadioItem key={key} value={key} className="text-xs">{value}</DropdownMenuRadioItem>
+                                    <DropdownMenuRadioItem key={key} value={key} className="text-xs font-bold">{value}</DropdownMenuRadioItem>
                                 ))}
                             </DropdownMenuRadioGroup>
                         </DropdownMenuContent>
                     </DropdownMenu>
 
-                    <div className="flex items-center gap-1 rounded-xl bg-card border-none shadow-sm p-1 h-11">
-                        <Button 
-                            variant={viewMode === 'grid' ? 'secondary': 'ghost'} 
-                            size="icon" 
-                            className="rounded-lg h-9 w-9"
-                            onClick={() => setViewMode('grid')}
-                        >
-                            <LayoutGrid className="h-4 w-4"/>
-                        </Button>
-                        <Button 
-                            variant={viewMode === 'list' ? 'secondary': 'ghost'} 
-                            size="icon" 
-                            className="rounded-lg h-9 w-9"
-                            onClick={() => setViewMode('list')}
-                        >
-                            <List className="h-4 w-4"/>
-                        </Button>
+                    <div className="flex items-center gap-1 p-1 bg-black/20 rounded-2xl border border-white/5 shadow-inner">
+                        <Button variant={viewMode === 'grid' ? 'secondary': 'ghost'} size="icon" className="rounded-xl h-10 w-10" onClick={() => setViewMode('grid')}><LayoutGrid className="h-5 w-5"/></Button>
+                        <Button variant={viewMode === 'list' ? 'secondary': 'ghost'} size="icon" className="rounded-xl h-10 w-10" onClick={() => setViewMode('list')}><List className="h-5 w-5"/></Button>
                     </div>
-                    
-                    {isFiltered && (
-                        <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            className="h-11 w-11 rounded-xl text-destructive hover:bg-destructive/10"
-                            onClick={resetFilters}
-                            title="Réinitialiser les filtres"
-                        >
-                            <FilterX className="h-4 w-4" />
-                        </Button>
-                    )}
 
-                    <Button 
-                        variant="outline" 
-                        size="icon" 
-                        className="h-11 w-11 rounded-xl border-none shadow-sm bg-card"
-                        onClick={fetchProducts}
-                        disabled={isRefreshing}
-                    >
-                        <RefreshCw className={cn("h-4 w-4 text-primary", isRefreshing && "animate-spin")} />
+                    <Button variant="outline" size="icon" className="h-12 w-12 rounded-2xl border-white/5 bg-card/40" onClick={fetchProducts} disabled={isRefreshing}>
+                        <RefreshCw className={cn("h-5 w-5 text-primary", isRefreshing && "animate-spin")} />
                     </Button>
                 </div>
             </div>
 
             {selectedProducts.size > 0 && (
-                <div className="flex flex-col sm:flex-row gap-3 justify-between items-center bg-primary/10 border border-primary/20 rounded-2xl p-4 animate-in slide-in-from-top-2 shadow-inner">
-                    <div className="flex items-center gap-3">
-                        <Checkbox
-                            id="select-all"
-                            checked={!isLoading && products && products.length > 0 && selectedProducts.size === products.length}
-                            onCheckedChange={handleToggleSelectAll}
-                            className="h-5 w-5 border-primary data-[state=checked]:bg-primary"
-                        />
-                        <label htmlFor="select-all" className="text-xs font-black text-primary uppercase tracking-widest">
-                            {selectedProducts.size} sélectionné(s)
-                        </label>
-                    </div>
-                    <div className="flex gap-2">
-                        <Button variant="outline" onClick={() => setIsPrintDialogOpen(true)} className="rounded-xl bg-background border-none shadow-sm font-bold">
-                            <Printer className="mr-2 h-4 w-4 text-primary" /> Étiquettes
-                        </Button>
-                        <Button variant="destructive" onClick={() => setIsBulkDeleteDialogOpen(true)} className="rounded-xl shadow-lg shadow-destructive/20 font-bold">
-                            <Trash2 className="mr-2 h-4 w-4" /> Supprimer
-                        </Button>
+                <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 animate-in slide-in-from-bottom-10 duration-500">
+                    <div className="bg-card/80 backdrop-blur-3xl border-2 border-primary/20 shadow-2xl rounded-full px-8 py-4 flex items-center gap-10">
+                        <div className="flex items-center gap-4 pr-8 border-r border-white/10">
+                            <div className="h-10 w-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-black shadow-lg shadow-primary/20">
+                                {selectedProducts.size}
+                            </div>
+                            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Sélection Elite</span>
+                        </div>
+                        <div className="flex items-center gap-4">
+                            <Button variant="ghost" onClick={() => setIsPrintDialogOpen(true)} className="rounded-full h-12 px-6 font-black text-[10px] uppercase tracking-widest hover:bg-primary/10 hover:text-primary">
+                                <Printer className="mr-2 h-4 w-4" /> Étiquettes
+                            </Button>
+                            <Button variant="ghost" onClick={() => setIsBulkDeleteDialogOpen(true)} className="rounded-full h-12 px-6 font-black text-[10px] uppercase tracking-widest text-destructive hover:bg-destructive/10">
+                                <Trash2 className="mr-2 h-4 w-4" /> Supprimer
+                            </Button>
+                        </div>
                     </div>
                 </div>
             )}
             
-            <div className="min-h-[450px] animate-in fade-in duration-500">
-               {renderContent()}
+            <div className="min-h-[600px] animate-in fade-in slide-in-from-bottom-4 duration-1000">
+               {isLoading ? (
+                    viewMode === 'grid' ? <ProductGridSkeleton /> : <ProductTableSkeleton />
+               ) : products.length === 0 ? (
+                    <EmptyState icon={Package} title="Silence dans le Rayon" description={isFiltered ? "Ajustez vos filtres pour trouver ce que vous cherchez." : "Commencez à bâtir votre catalogue de luxe."} />
+               ) : (
+                    viewMode === 'grid' ? (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-8">
+                            {products.map(p => (
+                                <ProductCard key={p.uuid} product={p} onEdit={handleEditProduct} onDuplicate={handleDuplicateProduct} onHistory={handleViewHistory} onDelete={() => { setSelectedProduct(p); setIsDeleteDialogOpen(true); }} isSelected={selectedProducts.has(p.uuid)} onToggleSelection={() => handleToggleSelection(p.uuid)} />
+                            ))}
+                        </div>
+                    ) : (
+                        <ProductTable products={products} onEdit={handleEditProduct} onDuplicate={handleDuplicateProduct} onHistory={handleViewHistory} onDelete={(p) => { setSelectedProduct(p); setIsDeleteDialogOpen(true); }} selectedProducts={selectedProducts} onToggleProductSelection={handleToggleSelection} onToggleSelectAll={handleToggleSelectAll} suppliers={suppliers || []} />
+                    )
+               )}
             </div>
 
-            <>
-                <ProductDialog 
-                    isOpen={isProductDialogOpen}
-                    onOpenChange={setIsProductDialogOpen}
-                    product={selectedProduct}
-                    categories={categories || []}
-                    suppliers={suppliers || []}
-                    onSuccess={onDialogSuccess}
-                />
-                <DeleteProductDialog 
-                    isOpen={isDeleteDialogOpen}
-                    onOpenChange={setIsDeleteDialogOpen}
-                    product={selectedProduct}
-                    onSuccess={fetchProducts}
-                />
-                <PrintLabelsDialog
-                    isOpen={isPrintDialogOpen}
-                    onOpenChange={setIsPrintDialogOpen}
-                    productUuids={Array.from(selectedProducts)}
-                />
-                 <DeleteMultipleProductsDialog
-                    isOpen={isBulkDeleteDialogOpen}
-                    onOpenChange={setIsBulkDeleteDialogOpen}
-                    productUuids={Array.from(selectedProducts)}
-                    onSuccess={() => {
-                        setSelectedProducts(new Set());
-                        fetchProducts();
-                    }}
-                />
-                 <ProductImportPreviewDialog
-                    isOpen={isImportPreviewOpen}
-                    onOpenChange={setIsImportPreviewOpen}
-                    analysis={importAnalysis}
-                    onConfirm={handleConfirmImport}
-                    isImporting={isImporting}
-                />
-                <ProductHistoryDialog
-                    isOpen={isHistoryDialogOpen}
-                    onOpenChange={setIsHistoryDialogOpen}
-                    product={selectedProduct}
-                />
-            </>
+            <ProductDialog isOpen={isProductDialogOpen} onOpenChange={setIsProductDialogOpen} product={selectedProduct} categories={categories || []} suppliers={suppliers || []} onSuccess={onDialogSuccess} />
+            <DeleteProductDialog isOpen={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen} product={selectedProduct} onSuccess={fetchProducts} />
+            <PrintLabelsDialog isOpen={isPrintDialogOpen} onOpenChange={setIsPrintDialogOpen} productUuids={Array.from(selectedProducts)} />
+            <DeleteMultipleProductsDialog isOpen={isBulkDeleteDialogOpen} onOpenChange={setIsBulkDeleteDialogOpen} productUuids={Array.from(selectedProducts)} onSuccess={() => { setSelectedProducts(new Set()); fetchProducts(); }} />
+            <ProductImportPreviewDialog isOpen={isImportPreviewOpen} onOpenChange={setIsImportPreviewOpen} analysis={importAnalysis} onConfirm={handleConfirmImport} isImporting={isImporting} />
+            <ProductHistoryDialog isOpen={isHistoryDialogOpen} onOpenChange={setIsHistoryDialogOpen} product={selectedProduct} />
         </div>
     );
 }
 
 function ProductGridSkeleton() {
     return (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-8">
             {[...Array(10)].map((_, i) => (
-                <div key={i} className="h-[180px] rounded-3xl bg-card border-none animate-pulse p-5 space-y-4">
-                    <div className="flex gap-2">
-                        <div className="h-4 w-16 bg-muted rounded-md" />
-                        <div className="h-4 w-12 bg-muted rounded-md" />
-                    </div>
-                    <div className="h-6 w-3/4 bg-muted rounded-md" />
-                    <div className="h-10 w-full bg-muted rounded-xl mt-auto" />
-                </div>
+                <div key={i} className="h-[220px] rounded-[2.5rem] bg-card/40 border-white/5 animate-pulse" />
             ))}
         </div>
     );

@@ -2,12 +2,27 @@
 'use client';
 
 import { useMemo } from 'react';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { Product } from '@/lib/types';
-import { Package, AlertTriangle, PackageX, CalendarClock, DollarSign } from 'lucide-react';
+import { Package, AlertTriangle, PackageX, CalendarClock, TrendingUp, Sparkles } from 'lucide-react';
 import { differenceInDays } from 'date-fns';
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrency, cn } from '@/lib/utils';
+
+const StatCard = ({ title, value, icon: Icon, colorClass, subtitle }: { title: string, value: string, icon: any, colorClass: string, subtitle?: string }) => (
+    <Card className="luxury-card h-full bg-card/40 backdrop-blur-2xl border-white/5 rounded-[2rem] group overflow-hidden">
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3 p-6">
+            <CardTitle className="text-[10px] font-black uppercase tracking-[0.25em] text-muted-foreground group-hover:text-primary transition-all duration-500">{title}</CardTitle>
+            <div className={cn("p-3 rounded-2xl shadow-inner transition-all duration-500 group-hover:scale-110", colorClass)}>
+                <Icon className="h-5 w-5" />
+            </div>
+        </CardHeader>
+        <CardContent className="px-6 pb-6">
+            <div className="text-3xl font-black tracking-tighter text-foreground group-hover:scale-105 transition-transform duration-500 origin-left mb-1">{value}</div>
+            {subtitle && <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground/40">{subtitle}</p>}
+        </CardContent>
+    </Card>
+);
 
 export const InventoryStats = ({ products, isLoading }: { products: Product[] | undefined, isLoading: boolean }) => {
     const stats = useMemo(() => {
@@ -24,64 +39,21 @@ export const InventoryStats = ({ products, isLoading }: { products: Product[] | 
 
     if (isLoading) {
         return (
-             <div className="grid gap-4 grid-cols-2 lg:grid-cols-5">
+             <div className="grid gap-6 grid-cols-2 lg:grid-cols-5">
                 {[...Array(5)].map((_, i) => (
-                    <Card key={i} className="rounded-2xl border-none shadow-sm">
-                        <CardHeader className="pb-2"><Skeleton className="h-4 w-24" /></CardHeader>
-                        <CardContent><Skeleton className="h-8 w-12" /></CardContent>
-                    </Card>
+                    <Skeleton key={i} className="h-32 w-full rounded-[2rem] bg-card/40" />
                 ))}
             </div>
         )
     }
 
     return (
-        <div className="grid gap-4 grid-cols-2 lg:grid-cols-5">
-            <Card className="rounded-2xl border-none shadow-sm bg-card">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Total Produits</CardTitle>
-                    <Package className="h-4 w-4 text-primary opacity-50" />
-                </CardHeader>
-                <CardContent>
-                    <div className="text-2xl font-black">{stats.total}</div>
-                </CardContent>
-            </Card>
-            <Card className="rounded-2xl border-none shadow-sm bg-card">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Valeur Stock (Achat)</CardTitle>
-                    <DollarSign className="h-4 w-4 text-emerald-500 opacity-50" />
-                </CardHeader>
-                <CardContent>
-                    <div className="text-lg font-black text-emerald-500 truncate">{formatCurrency(stats.totalValue)}</div>
-                </CardContent>
-            </Card>
-            <Card className="rounded-2xl border-none shadow-sm bg-card">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Stock Faible</CardTitle>
-                    <AlertTriangle className="h-4 w-4 text-amber-500 opacity-50" />
-                </CardHeader>
-                <CardContent>
-                    <div className="text-2xl font-black text-amber-500">{stats.low}</div>
-                </CardContent>
-            </Card>
-            <Card className="rounded-2xl border-none shadow-sm bg-card">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">En Rupture</CardTitle>
-                    <PackageX className="h-4 w-4 text-destructive opacity-50" />
-                </CardHeader>
-                <CardContent>
-                    <div className="text-2xl font-black text-destructive">{stats.out}</div>
-                </CardContent>
-            </Card>
-            <Card className="rounded-2xl border-none shadow-sm bg-card">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Péremption Proche</CardTitle>
-                    <CalendarClock className="h-4 w-4 text-chart-tertiary opacity-50" />
-                </CardHeader>
-                <CardContent>
-                    <div className="text-2xl font-black text-chart-tertiary">{stats.expiring}</div>
-                </CardContent>
-            </Card>
+        <div className="grid gap-6 grid-cols-2 lg:grid-cols-5">
+            <StatCard title="Catalogue" value={String(stats.total)} icon={Package} colorClass="bg-primary/10 text-primary" subtitle="Produits référencés" />
+            <StatCard title="Valeur Stock" value={formatCurrency(stats.totalValue)} icon={TrendingUp} colorClass="bg-emerald-500/10 text-emerald-500" subtitle="Investissement total" />
+            <StatCard title="Stock Faible" value={String(stats.low)} icon={AlertTriangle} colorClass="bg-amber-500/10 text-amber-500" subtitle="Réapprovisionnement requis" />
+            <StatCard title="Ruptures" value={String(stats.out)} icon={PackageX} colorClass="bg-destructive/10 text-destructive" subtitle="Ventes perdues potentielles" />
+            <StatCard title="Péremptions" value={String(stats.expiring)} icon={CalendarClock} colorClass="bg-purple-500/10 text-purple-500" subtitle="Échéances < 30 jours" />
         </div>
     );
 };
