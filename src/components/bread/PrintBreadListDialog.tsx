@@ -11,7 +11,7 @@ import {
     DialogFooter,
 } from '@/components/ui/dialog';
 import { Printer, X } from 'lucide-react';
-import type { BreadOrder, BreadOrderWithCustomer, CompanyProfile } from '@/lib/types';
+import type { BreadOrderWithCustomer, CompanyProfile } from '@/lib/types';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { useAppStore } from '@/stores/appStore';
@@ -20,13 +20,6 @@ interface PrintBreadListDialogProps {
     orders: BreadOrderWithCustomer[];
     currentDate: string;
 }
-
-const getStatusLabel = (order: BreadOrder) => {
-    if (order.est_paye && order.est_livre) return 'Payé & Livré';
-    if (order.est_paye) return 'Payé (Attente)';
-    if (order.est_livre) return 'Livré (Crédit)';
-    return 'En attente';
-};
 
 const PrintableList = React.forwardRef<HTMLDivElement, { orders: BreadOrderWithCustomer[], currentDate: string, profile: CompanyProfile | null }>(({ orders, currentDate, profile }, ref) => {
     const totalQuantity = orders.reduce((acc, order) => acc + order.quantite, 0);
@@ -37,7 +30,7 @@ const PrintableList = React.forwardRef<HTMLDivElement, { orders: BreadOrderWithC
             <header className="flex justify-between items-start border-b-2 border-black pb-6 mb-8">
                 <div>
                     <h1 className="text-3xl font-black uppercase">{profile?.companyName || 'iPOS Manager'}</h1>
-                    <p className="text-sm font-bold mt-1 text-gray-600">Distribution Quotidienne de Pain</p>
+                    <p className="text-sm font-bold mt-1 text-gray-600">Distribution de Pain</p>
                 </div>
                 <div className="text-right">
                     <h2 className="text-xl font-bold bg-black text-white px-4 py-1 inline-block">LISTE DE DISTRIBUTION</h2>
@@ -48,26 +41,22 @@ const PrintableList = React.forwardRef<HTMLDivElement, { orders: BreadOrderWithC
             <table className="w-full border-collapse mb-10">
                 <thead>
                     <tr className="bg-gray-100 border-b-2 border-black">
-                        <th className="py-3 text-left px-4">Client</th>
-                        <th className="py-3 text-center px-4 w-32">Quantité</th>
-                        <th className="py-3 text-left px-4 w-48">Statut / Notes</th>
-                        <th className="py-3 text-center px-4 w-20">Visa</th>
+                        <th className="py-3 text-left px-4">Nom du Client (اسم الطلب)</th>
+                        <th className="py-3 text-center px-4 w-40">Quantité (الكمية)</th>
+                        <th className="py-3 text-center px-4 w-32">Visa (التأشير)</th>
                     </tr>
                 </thead>
                 <tbody>
                     {orders.sort((a,b) => a.customer.firstName.localeCompare(b.customer.firstName)).map(order => (
                         <tr key={order.uuid} className="border-b border-gray-300">
-                            <td className="py-4 px-4">
-                                <p className="font-bold text-lg">{order.customer.firstName} {order.customer.lastName}</p>
+                            <td className="py-5 px-4">
+                                <p className="font-bold text-xl">{order.customer.firstName} {order.customer.lastName}</p>
                             </td>
-                            <td className="py-4 px-4 text-center">
-                                <span className="text-2xl font-black">{order.quantite}</span>
+                            <td className="py-5 px-4 text-center">
+                                <span className="text-3xl font-black">{order.quantite}</span>
                             </td>
-                            <td className="py-4 px-4 text-sm font-medium text-gray-500">
-                                {getStatusLabel(order)}
-                            </td>
-                            <td className="py-4 px-4">
-                                <div className="w-12 h-12 border border-gray-200 rounded-md"></div>
+                            <td className="py-5 px-4">
+                                <div className="w-12 h-12 border border-gray-300 mx-auto rounded-md"></div>
                             </td>
                         </tr>
                     ))}
@@ -75,25 +64,14 @@ const PrintableList = React.forwardRef<HTMLDivElement, { orders: BreadOrderWithC
                 <tfoot>
                     <tr className="bg-gray-50 font-black border-t-2 border-black">
                         <td className="py-4 px-4 text-right text-lg uppercase">Total Global</td>
-                        <td className="py-4 px-4 text-center text-3xl">{totalQuantity}</td>
-                        <td colSpan={2}></td>
+                        <td className="py-4 px-4 text-center text-4xl">{totalQuantity}</td>
+                        <td></td>
                     </tr>
                 </tfoot>
             </table>
 
-            <div className="mt-20 grid grid-cols-2 gap-10">
-                <div className="text-center p-6 border border-dashed border-gray-300 rounded-2xl">
-                    <p className="text-xs font-bold uppercase text-gray-400 mb-10">Responsable Boulangerie</p>
-                    <div className="h-px bg-gray-200 w-1/2 mx-auto"></div>
-                </div>
-                <div className="text-center p-6 border border-dashed border-gray-300 rounded-2xl">
-                    <p className="text-xs font-bold uppercase text-gray-400 mb-10">Livreur / Vendeur</p>
-                    <div className="h-px bg-gray-200 w-1/2 mx-auto"></div>
-                </div>
-            </div>
-            
             <footer className="mt-auto pt-10 text-center text-[10px] text-gray-400 font-bold uppercase tracking-widest">
-                Généré par iPOS Point de Vente Intelligent - {format(new Date(), 'HH:mm:ss')}
+                Généré par iPOS Point de Vente - {format(new Date(), 'dd/MM/yyyy HH:mm')}
             </footer>
         </div>
     );
@@ -133,8 +111,8 @@ export function PrintBreadListDialog({ orders, currentDate }: PrintBreadListDial
                                 <Printer className="h-5 w-5" />
                             </div>
                             <div>
-                                <DialogTitle className="text-xl font-black tracking-tight">Aperçu Impression Liste</DialogTitle>
-                                <DialogDescription className="font-medium">Vérifiez les quantités avant d'imprimer pour le livreur.</DialogDescription>
+                                <DialogTitle className="text-xl font-black tracking-tight">Aperçu Liste de Distribution</DialogTitle>
+                                <DialogDescription className="font-medium">Liste simplifiée contenant uniquement les noms et les quantités.</DialogDescription>
                             </div>
                         </div>
                     </DialogHeader>
@@ -150,7 +128,7 @@ export function PrintBreadListDialog({ orders, currentDate }: PrintBreadListDial
                             <X className="mr-2 h-4 w-4" /> Fermer
                         </Button>
                         <Button onClick={handlePrint} className="rounded-xl h-12 font-bold flex-1 shadow-lg shadow-primary/20">
-                            <Printer className="mr-2 h-4 w-4" /> Lancer l'Impression
+                            <Printer className="mr-2 h-4 w-4" /> Imprimer [A4]
                         </Button>
                     </DialogFooter>
                 </DialogContent>
