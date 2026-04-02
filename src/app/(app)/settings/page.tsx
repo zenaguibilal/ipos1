@@ -226,7 +226,7 @@ export default function SettingsPage() {
                         </CardHeader>
                         <CardContent className="p-8 pt-0 space-y-8">
                             <div className="flex items-center gap-5 p-6 bg-primary/5 rounded-[2rem] border border-primary/10 group">
-                                <div className="h-14 w-14 rounded-2xl bg-background flex items-center justify-center shadow-inner transition-transform group-hover:rotate-3 duration-500">
+                                <div className="h-14 w-14 rounded-2xl bg-background flex items-center justify-center shadow-inner group-hover:scale-110 group-hover:rotate-3 transition-transform duration-500">
                                     <Cpu className="h-7 w-7 text-primary" />
                                 </div>
                                 <div>
