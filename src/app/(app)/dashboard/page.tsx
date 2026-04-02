@@ -256,7 +256,7 @@ export default function DashboardPage() {
                     <CardContent className="p-6">
                         {isLoading ? (
                             <div className="space-y-4">
-                                {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-14 w-full rounded-2xl bg-muted/20" />)}
+                                {[...Array(5)].map((_, i) => <Skeleton className="h-14 w-full rounded-2xl bg-muted/20" />)}
                             </div>
                         ) : (
                             <div className="space-y-4">
@@ -290,7 +290,7 @@ export default function DashboardPage() {
                     <CardContent className="p-6">
                         {isLoading ? (
                             <div className="space-y-4">
-                                {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-14 w-full rounded-2xl bg-muted/20" />)}
+                                {[...Array(5)].map((_, i) => <Skeleton className="h-14 w-full rounded-2xl bg-muted/20" />)}
                             </div>
                         ) : (
                             <div className="space-y-4">
@@ -322,7 +322,7 @@ export default function DashboardPage() {
                     <CardContent className="p-6">
                         {isLoading ? (
                             <div className="space-y-4">
-                                {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-14 w-full rounded-2xl bg-muted/20" />)}
+                                {[...Array(5)].map((_, i) => <Skeleton className="h-14 w-full rounded-2xl bg-muted/20" />)}
                             </div>
                         ) : (
                             <div className="space-y-5">
