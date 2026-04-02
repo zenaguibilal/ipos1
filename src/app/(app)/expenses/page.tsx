@@ -17,7 +17,8 @@ import {
     FilterX, 
     TrendingDown,
     PieChart,
-    CalendarDays
+    CalendarDays,
+    BarChart3
 } from 'lucide-react';
 import { ExpenseCard } from '@/components/expenses/ExpenseCard';
 import ExpenseDialog from '@/components/expenses/ExpenseDialog';
@@ -32,13 +33,16 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { DateRangePicker } from '@/components/ui/date-range-picker';
 import { useDateRange } from '@/hooks/useDateRange';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { formatCurrency, cn } from '@/lib/utils';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { toast } from 'sonner';
+import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, Cell } from 'recharts';
 import Papa from 'papaparse';
+
+const COLORS = ['hsl(var(--primary))', 'hsl(var(--chart-secondary))', 'hsl(var(--chart-tertiary))', 'hsl(var(--chart-quaternary))', 'hsl(var(--chart-quinary))'];
 
 export default function ExpensesPage() {
     const [selectedCategory, setSelectedCategory] = useState<string>('all');
@@ -66,7 +70,7 @@ export default function ExpensesPage() {
                 to: dateRange.to
             });
             
-            // Client-side search filtering
+            // Filtrage par recherche côté client
             let filteredData = data;
             if (debouncedSearch) {
                 const q = debouncedSearch.toLowerCase();
@@ -139,7 +143,7 @@ export default function ExpensesPage() {
     };
 
     const stats = useMemo(() => {
-        if (!expenses) return { total: 0, count: 0, topCategory: '-' };
+        if (!expenses) return { total: 0, count: 0, topCategory: '-', chartData: [] };
         
         const total = expenses.reduce((acc, e) => acc + e.amount, 0);
         
@@ -157,7 +161,11 @@ export default function ExpensesPage() {
             }
         });
 
-        return { total, count: expenses.length, topCategory: topCat };
+        const chartData = Array.from(catMap.entries())
+            .map(([name, value]) => ({ name, value }))
+            .sort((a, b) => b.value - a.value);
+
+        return { total, count: expenses.length, topCategory: topCat, chartData };
     }, [expenses]);
 
     const resetFilters = () => {
@@ -171,87 +179,138 @@ export default function ExpensesPage() {
         <div className="p-4 sm:p-6 space-y-6 max-w-[1600px] mx-auto pb-24">
             <PageHeader
                 title="Gestion des Dépenses"
-                description="Suivez et gérez toutes les charges de votre commerce."
+                description="Suivez et analysez toutes les charges de votre établissement."
             >
                 <div className="flex gap-2 w-full sm:w-auto">
                     <Button variant="outline" onClick={handleExportCsv} className="rounded-xl font-bold border-primary/20 hover:bg-primary/5">
-                        <FileUp className="mr-2 h-4 w-4 text-primary" /> Exporter
+                        <FileUp className="mr-2 h-4 w-4 text-primary" /> Exporter CSV
                     </Button>
                     <Button 
                         onClick={() => { setSelectedExpense(null); setIsExpenseDialogOpen(true); }}
                         className="rounded-xl font-bold shadow-lg shadow-primary/20"
                     >
-                        <Plus className="mr-2 h-4 w-4" /> Nouveau
+                        <Plus className="mr-2 h-4 w-4" /> Nouvelle Dépense
                     </Button>
                 </div>
             </PageHeader>
 
-            {/* Enhanced Stats Cards */}
-            <div className="grid gap-4 grid-cols-1 md:grid-cols-3">
-                <Card className="rounded-[2rem] border-none shadow-sm bg-card overflow-hidden group relative">
-                    <div className="absolute -right-4 -bottom-4 opacity-[0.03] group-hover:opacity-10 transition-opacity duration-500">
-                        <TrendingDown className="h-32 w-32 rotate-12" />
-                    </div>
-                    <CardContent className="p-6 relative z-10">
-                        <div className="flex justify-between items-start mb-4">
-                            <div className="p-3 rounded-2xl bg-destructive/10 text-destructive shadow-inner">
-                                <Wallet className="h-6 w-6" />
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {/* Stats Section */}
+                <div className="lg:col-span-1 space-y-4">
+                    <Card className="rounded-3xl border-none shadow-sm bg-card overflow-hidden group relative">
+                        <div className="absolute -right-4 -bottom-4 opacity-[0.03] group-hover:opacity-10 transition-opacity duration-500">
+                            <TrendingDown className="h-32 w-32 rotate-12" />
+                        </div>
+                        <CardContent className="p-6 relative z-10">
+                            <div className="flex justify-between items-start mb-4">
+                                <div className="p-3 rounded-2xl bg-destructive/10 text-destructive shadow-inner">
+                                    <Wallet className="h-6 w-6" />
+                                </div>
+                                <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground opacity-50">Total Période</span>
                             </div>
-                            <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground opacity-50">Total Période</span>
-                        </div>
-                        <div className="flex items-baseline gap-2">
-                            <span className="text-3xl font-black tracking-tighter leading-none text-destructive">
-                                {isLoading ? '...' : formatCurrency(stats.total)}
-                            </span>
-                        </div>
-                        <p className="mt-3 text-[10px] font-bold text-muted-foreground/70 uppercase tracking-tight">
-                            Basé sur {stats.count} transaction(s)
-                        </p>
-                    </CardContent>
-                </Card>
+                            <div className="flex items-baseline gap-2">
+                                <span className="text-3xl font-black tracking-tighter leading-none text-destructive">
+                                    {isLoading ? '...' : formatCurrency(stats.total)}
+                                </span>
+                            </div>
+                            <p className="mt-3 text-[10px] font-bold text-muted-foreground/70 uppercase tracking-tight">
+                                Basé sur {stats.count} transaction(s)
+                            </p>
+                        </CardContent>
+                    </Card>
 
-                <Card className="rounded-[2rem] border-none shadow-sm bg-card overflow-hidden group relative">
-                    <div className="absolute -right-4 -bottom-4 opacity-[0.03] group-hover:opacity-10 transition-opacity duration-500">
-                        <PieChart className="h-32 w-32 -rotate-12" />
-                    </div>
-                    <CardContent className="p-6 relative z-10">
-                        <div className="flex justify-between items-start mb-4">
-                            <div className="p-3 rounded-2xl bg-primary/10 text-primary shadow-inner">
-                                <PieChart className="h-6 w-6" />
+                    <Card className="rounded-3xl border-none shadow-sm bg-card overflow-hidden group relative">
+                        <div className="absolute -right-4 -bottom-4 opacity-[0.03] group-hover:opacity-10 transition-opacity duration-500">
+                            <PieChart className="h-32 w-32 -rotate-12" />
+                        </div>
+                        <CardContent className="p-6 relative z-10">
+                            <div className="flex justify-between items-start mb-4">
+                                <div className="p-3 rounded-2xl bg-primary/10 text-primary shadow-inner">
+                                    <PieChart className="h-6 w-6" />
+                                </div>
+                                <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground opacity-50">Poste Principal</span>
                             </div>
-                            <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground opacity-50">Poste Principal</span>
-                        </div>
-                        <div className="flex items-baseline gap-2">
-                            <span className="text-2xl font-black tracking-tighter leading-none truncate max-w-full">
-                                {isLoading ? '...' : stats.topCategory}
-                            </span>
-                        </div>
-                        <p className="mt-3 text-[10px] font-bold text-muted-foreground/70 uppercase tracking-tight">
-                            Catégorie la plus dépensière
-                        </p>
-                    </CardContent>
-                </Card>
+                            <div className="flex items-baseline gap-2">
+                                <span className="text-2xl font-black tracking-tighter leading-none truncate max-w-full">
+                                    {isLoading ? '...' : stats.topCategory}
+                                </span>
+                            </div>
+                            <p className="mt-3 text-[10px] font-bold text-muted-foreground/70 uppercase tracking-tight">
+                                Catégorie la plus dépensière
+                            </p>
+                        </CardContent>
+                    </Card>
 
-                <Card className="rounded-[2rem] border-none shadow-sm bg-card overflow-hidden group relative">
-                    <div className="absolute -right-4 -bottom-4 opacity-[0.03] group-hover:opacity-10 transition-opacity duration-500">
-                        <CalendarDays className="h-32 w-32 rotate-6" />
-                    </div>
-                    <CardContent className="p-6 relative z-10">
-                        <div className="flex justify-between items-start mb-4">
-                            <div className="p-3 rounded-2xl bg-emerald-500/10 text-emerald-500 shadow-inner">
-                                <CalendarDays className="h-6 w-6" />
+                    <Card className="rounded-3xl border-none shadow-sm bg-card overflow-hidden group relative">
+                        <div className="absolute -right-4 -bottom-4 opacity-[0.03] group-hover:opacity-10 transition-opacity duration-500">
+                            <CalendarDays className="h-32 w-32 rotate-6" />
+                        </div>
+                        <CardContent className="p-6 relative z-10">
+                            <div className="flex justify-between items-start mb-4">
+                                <div className="p-3 rounded-2xl bg-emerald-500/10 text-emerald-500 shadow-inner">
+                                    <CalendarDays className="h-6 w-6" />
+                                </div>
+                                <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground opacity-50">Fréquence</span>
                             </div>
-                            <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground opacity-50">Fréquence</span>
+                            <div className="flex items-baseline gap-2">
+                                <span className="text-3xl font-black tracking-tighter leading-none">
+                                    {isLoading ? '...' : (stats.count / (dateRange?.to && dateRange?.from ? Math.max(1, Math.round((dateRange.to.getTime() - dateRange.from.getTime()) / (1000 * 3600 * 24))) : 1)).toFixed(1)}
+                                </span>
+                                <span className="text-xs font-black text-muted-foreground uppercase tracking-widest">Op/Jour</span>
+                            </div>
+                            <p className="mt-3 text-[10px] font-bold text-muted-foreground/70 uppercase tracking-tight">
+                                Moyenne sur la plage sélectionnée
+                            </p>
+                        </CardContent>
+                    </Card>
+                </div>
+
+                {/* Visual Analysis Chart */}
+                <Card className="lg:col-span-2 rounded-3xl border-none shadow-sm bg-card overflow-hidden">
+                    <CardHeader className="bg-primary/5 border-b border-primary/10">
+                        <div className="flex items-center gap-3">
+                            <div className="p-2 rounded-xl bg-primary text-primary-foreground">
+                                <BarChart3 className="h-4 w-4" />
+                            </div>
+                            <div>
+                                <CardTitle className="text-sm font-black uppercase tracking-tight">Répartition par Catégorie</CardTitle>
+                                <CardDescription className="text-[10px] font-medium">Comparaison visuelle des charges financières.</CardDescription>
+                            </div>
                         </div>
-                        <div className="flex items-baseline gap-2">
-                            <span className="text-3xl font-black tracking-tighter leading-none">
-                                {isLoading ? '...' : (stats.count / (dateRange?.to && dateRange?.from ? Math.max(1, Math.round((dateRange.to.getTime() - dateRange.from.getTime()) / (1000 * 3600 * 24))) : 1)).toFixed(1)}
-                            </span>
-                            <span className="text-xs font-black text-muted-foreground uppercase tracking-widest">Op/Jour</span>
-                        </div>
-                        <p className="mt-3 text-[10px] font-bold text-muted-foreground/70 uppercase tracking-tight">
-                            Moyenne sur la plage sélectionnée
-                        </p>
+                    </CardHeader>
+                    <CardContent className="p-6 h-[320px]">
+                        {isLoading ? (
+                            <Skeleton className="h-full w-full rounded-2xl" />
+                        ) : stats.chartData.length > 0 ? (
+                            <ResponsiveContainer width="100%" height="100%">
+                                <BarChart data={stats.chartData} layout="vertical" margin={{ left: 40, right: 40, top: 10, bottom: 10 }}>
+                                    <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="hsl(var(--muted-foreground)/0.1)" />
+                                    <XAxis type="number" hide />
+                                    <YAxis 
+                                        dataKey="name" 
+                                        type="category" 
+                                        tick={{ fontSize: 10, fontWeight: 'bold', fill: 'hsl(var(--muted-foreground))' }}
+                                        width={100}
+                                        axisLine={false}
+                                        tickLine={false}
+                                    />
+                                    <Tooltip 
+                                        cursor={{ fill: 'hsl(var(--muted)/0.2)', radius: 8 }}
+                                        contentStyle={{ backgroundColor: 'hsl(var(--card))', border: 'none', borderRadius: '12px', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
+                                        formatter={(val: number) => [formatCurrency(val), 'Montant']}
+                                    />
+                                    <Bar dataKey="value" radius={[0, 8, 8, 0]} barSize={24}>
+                                        {stats.chartData.map((entry, index) => (
+                                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                        ))}
+                                    </Bar>
+                                </BarChart>
+                            </ResponsiveContainer>
+                        ) : (
+                            <div className="h-full flex items-center justify-center text-muted-foreground/30 italic text-xs">
+                                Aucune donnée visuelle à afficher.
+                            </div>
+                        )}
                     </CardContent>
                 </Card>
             </div>
@@ -312,6 +371,7 @@ export default function ExpensesPage() {
                 </div>
             </div>
             
+            {/* Grid of Expenses */}
             <div className="min-h-[450px] animate-in fade-in duration-500">
                {isLoading ? (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -323,7 +383,7 @@ export default function ExpensesPage() {
                     <EmptyState
                         icon={TrendingDown}
                         title="Aucune dépense trouvée"
-                        description={isFiltered ? "Essayez d'ajuster vos filtres de recherche." : "Commencez par enregistrer votre première charge."}
+                        description={isFiltered ? "Ajustez vos filtres de recherche ou réinitialisez-les." : "Commencez par enregistrer votre première charge financière."}
                     >
                         {isFiltered ? (
                             <Button variant="outline" onClick={resetFilters} className="rounded-xl">Effacer les filtres</Button>

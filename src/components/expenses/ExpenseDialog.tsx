@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -7,12 +8,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import type { Expense, ExpenseCategory } from '@/lib/types';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Banknote, Calendar, Tag, FileText } from 'lucide-react';
 import { expenseService } from '@/services/expense.service';
 import { DatePicker } from '../ui/date-picker';
 import { Combobox } from '../ui/combobox';
 
-const defaultCategories: ExpenseCategory[] = ['Loyer', 'Salaires', 'Fournisseurs', 'Services Publics', 'Marketing', 'Maintenance', 'Autre'];
+const defaultCategories: ExpenseCategory[] = ['Loyer', 'Salaires', 'Fournisseurs', 'Services Publics', 'Marketing', 'Maintenance', 'Assurance', 'Transport', 'Autre'];
 
 interface ExpenseDialogProps {
     isOpen: boolean;
@@ -22,7 +23,7 @@ interface ExpenseDialogProps {
     existingCategories: string[];
 }
 
-const initialFormState: Omit<Expense, 'uuid' | 'user_id' | 'createdAt' | 'updatedAt'> = {
+const initialFormState: Omit<Expense, 'uuid' | 'createdAt' | 'updatedAt'> = {
     description: '',
     category: 'Autre',
     amount: 0,
@@ -67,86 +68,123 @@ export default function ExpenseDialog({ isOpen, onOpenChange, expense, onSuccess
         setError(null);
         setIsLoading(true);
 
-        const { description, amount, category, expenseDate } = formState;
+        const { description, amount } = formState;
 
-        if (!description || !amount) {
-            setError("La description et le montant sont requis.");
+        if (!description.trim() || amount <= 0) {
+            setError("Veuillez remplir la description et un montant valide.");
             setIsLoading(false);
             return;
         }
-
-        const amountNum = parseFloat(String(amount));
-        if (isNaN(amountNum) || amountNum <= 0) {
-            setError("Veuillez entrer un montant valide.");
-            setIsLoading(false);
-            return;
-        }
-        
-        const expenseData = { ...formState, amount: amountNum };
 
         try {
-            if (expense && expense.uuid) { // Editing
-                await expenseService.updateExpense(expense.uuid, expenseData);
-                toast.success(`Dépense modifiée.`);
-            } else { // Adding
-                await expenseService.addExpense(expenseData);
-                toast.success(`Dépense ajoutée.`);
+            if (expense && expense.uuid) {
+                await expenseService.updateExpense(expense.uuid, formState);
+                toast.success(`Dépense mise à jour.`);
+            } else {
+                await expenseService.addExpense(formState);
+                toast.success(`Dépense enregistrée avec succès.`);
             }
             onSuccess();
             onOpenChange(false);
         } catch (err: any) {
-            setError(err.message || "Une erreur est survenue.");
-            toast.error("Échec de l'opération.", { description: err.message });
+            setError(err.message || "Une erreur est survenue lors de l'enregistrement.");
+            toast.error("Opération échouée.");
         } finally {
             setIsLoading(false);
         }
     };
     
-    const categoryOptions = Array.from(new Set([...defaultCategories, ...existingCategories])).map(c => ({ value: c, label: c }));
+    const categoryOptions = Array.from(new Set([...defaultCategories, ...existingCategories]))
+        .sort()
+        .map(c => ({ value: c, label: c }));
 
     return (
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-md">
+            <DialogContent className="sm:max-w-md rounded-3xl border-none shadow-2xl p-0 overflow-hidden">
                 <form onSubmit={handleSubmit}>
-                    <DialogHeader>
-                        <DialogTitle>{expense ? 'Modifier la dépense' : 'Ajouter une dépense'}</DialogTitle>
-                        <DialogDescription>
-                           Remplissez les détails de la charge.
-                        </DialogDescription>
+                    <DialogHeader className="bg-primary/5 p-6 border-b border-primary/10">
+                        <div className="flex items-center gap-3">
+                            <div className="p-2.5 rounded-2xl bg-primary text-primary-foreground shadow-lg shadow-primary/20">
+                                <Banknote className="h-5 w-5" />
+                            </div>
+                            <div>
+                                <DialogTitle className="text-xl font-black tracking-tight">
+                                    {expense ? 'Modifier la Dépense' : 'Enregistrer une Charge'}
+                                </DialogTitle>
+                                <DialogDescription className="font-medium text-[10px] uppercase tracking-widest text-muted-foreground/60">
+                                   Gestion des flux sortants de la caisse.
+                                </DialogDescription>
+                            </div>
+                        </div>
                     </DialogHeader>
-                    <div className="grid gap-4 py-4">
-                        {error && <p className="text-sm text-red-500 text-center">{error}</p>}
-                        <div className="space-y-2">
-                            <Label htmlFor="description">Description</Label>
-                            <Input id="description" value={formState.description} onChange={handleInputChange} required autoFocus />
-                        </div>
-                         <div className="space-y-2">
-                            <Label htmlFor="amount">Montant (DA)</Label>
-                            <Input id="amount" type="number" step="0.1" value={formState.amount} onChange={handleInputChange} required />
-                        </div>
-                         <div className="grid grid-cols-2 gap-4">
+
+                    <div className="p-6 space-y-6">
+                        {error && <div className="p-3 bg-destructive/10 text-destructive rounded-xl text-xs font-bold border border-destructive/20 text-center">{error}</div>}
+                        
+                        <div className="space-y-4">
                             <div className="space-y-2">
-                                <Label htmlFor="category">Catégorie</Label>
-                                <Combobox 
-                                    options={categoryOptions}
-                                    value={formState.category}
-                                    onSelect={handleCategoryChange}
-                                    placeholder="Sélectionner..."
-                                    searchPlaceholder="Rechercher..."
-                                    notFoundMessage="Aucune catégorie trouvée."
+                                <Label htmlFor="description" className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1 flex items-center gap-1">
+                                    <FileText className="h-3 w-3" /> Description
+                                </Label>
+                                <Input 
+                                    id="description" 
+                                    value={formState.description} 
+                                    onChange={handleInputChange} 
+                                    className="h-12 rounded-xl bg-muted/30 border-none shadow-inner text-base font-bold" 
+                                    placeholder="Ex: Facture d'électricité Janvier"
+                                    required 
+                                    autoFocus 
                                 />
                             </div>
-                            <div className="space-y-2">
-                                <Label>Date</Label>
-                                <DatePicker date={formState.expenseDate} setDate={handleDateChange} />
+
+                            <div className="p-5 bg-muted/30 rounded-2xl border border-border/50 space-y-2">
+                                <Label htmlFor="amount" className="text-[10px] font-black uppercase tracking-widest text-destructive/70 ml-1">Montant décaissé (DA)</Label>
+                                <div className="relative">
+                                    <Input 
+                                        id="amount" 
+                                        type="number" 
+                                        step="0.1" 
+                                        value={formState.amount || ''} 
+                                        onChange={handleInputChange} 
+                                        className="h-14 rounded-xl bg-background border-none shadow-inner font-mono font-black text-2xl text-destructive text-center" 
+                                        placeholder="0.0"
+                                        required 
+                                    />
+                                    <div className="absolute right-5 top-1/2 -translate-y-1/2 font-black text-xs text-muted-foreground opacity-30 uppercase">DA</div>
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="category" className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1 flex items-center gap-1">
+                                        <Tag className="h-3 w-3" /> Catégorie
+                                    </Label>
+                                    <Combobox 
+                                        options={categoryOptions}
+                                        value={formState.category}
+                                        onSelect={handleCategoryChange}
+                                        placeholder="Choisir..."
+                                        searchPlaceholder="Chercher..."
+                                        notFoundMessage="Nouvelle catégorie..."
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1 flex items-center gap-1">
+                                        <Calendar className="h-3 w-3" /> Date
+                                    </Label>
+                                    <DatePicker date={formState.expenseDate} setDate={handleDateChange} />
+                                </div>
                             </div>
                         </div>
                     </div>
-                    <DialogFooter>
-                        <Button type="button" variant="secondary" onClick={() => onOpenChange(false)} disabled={isLoading}>Annuler</Button>
-                        <Button type="submit" disabled={isLoading}>
+
+                    <DialogFooter className="p-6 bg-card border-t flex gap-3">
+                        <Button type="button" variant="ghost" onClick={() => onOpenChange(false)} className="rounded-xl h-12 font-bold flex-1" disabled={isLoading}>
+                            Annuler
+                        </Button>
+                        <Button type="submit" disabled={isLoading} className="rounded-xl h-12 font-black text-xs uppercase tracking-widest flex-1 shadow-lg shadow-primary/20">
                              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                            {isLoading ? 'Enregistrement...' : 'Enregistrer'}
+                            {expense ? 'Mettre à jour' : 'Valider la Charge'}
                         </Button>
                     </DialogFooter>
                 </form>
