@@ -23,7 +23,8 @@ import {
     Printer,
     BarChart,
     SortAsc,
-    CheckSquare
+    Sparkles,
+    ArrowRight
 } from 'lucide-react';
 import { ExpenseCard } from '@/components/expenses/ExpenseCard';
 import ExpenseDialog from '@/components/expenses/ExpenseDialog';
@@ -68,6 +69,21 @@ const sortOptions = {
     'amount_desc': 'Montant (Max)',
     'amount_asc': 'Montant (Min)',
 };
+
+const StatCard = ({ title, value, icon: Icon, colorClass, subtitle }: { title: string, value: string, icon: any, colorClass: string, subtitle?: string }) => (
+    <Card className="luxury-card h-full bg-card/40 backdrop-blur-2xl border-white/5 rounded-[2rem] group overflow-hidden">
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3 p-6">
+            <CardTitle className="text-[10px] font-black uppercase tracking-[0.25em] text-muted-foreground group-hover:text-primary transition-all duration-500">{title}</CardTitle>
+            <div className={cn("p-3 rounded-2xl shadow-inner transition-all duration-500 group-hover:scale-110", colorClass)}>
+                <Icon className="h-5 w-5" />
+            </div>
+        </CardHeader>
+        <CardContent className="px-6 pb-6">
+            <div className="text-3xl font-black tracking-tighter text-foreground group-hover:scale-105 transition-transform duration-500 origin-left mb-1">{value}</div>
+            {subtitle && <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground/40">{subtitle}</p>}
+        </CardContent>
+    </Card>
+);
 
 export default function ExpensesPage() {
     const [selectedCategory, setSelectedCategory] = useState<string>('all');
@@ -242,31 +258,31 @@ export default function ExpensesPage() {
         const html = `
             <html>
                 <head>
-                    <title>Rapport de Dépenses - iPOS</title>
+                    <title>Rapport de Dépenses - iPOS Luxury</title>
                     <style>
-                        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 40px; color: #333; }
+                        body { font-family: 'Segoe UI', sans-serif; padding: 40px; color: #333; }
                         header { border-bottom: 2px solid #000; padding-bottom: 20px; margin-bottom: 30px; display: flex; justify-content: space-between; align-items: flex-end; }
-                        h1 { margin: 0; font-size: 24px; text-transform: uppercase; }
+                        h1 { margin: 0; font-size: 24px; text-transform: uppercase; letter-spacing: -0.05em; }
                         .meta { text-align: right; font-size: 12px; color: #666; }
                         .summary-grid { display: grid; grid-template-cols: repeat(4, 1fr); gap: 20px; margin-bottom: 40px; }
-                        .stat-card { border: 1px solid #ddd; padding: 15px; border-radius: 8px; text-align: center; }
-                        .stat-card h4 { margin: 0 0 5px 0; font-size: 10px; text-transform: uppercase; color: #888; }
-                        .stat-card p { margin: 0; font-size: 18px; font-weight: bold; }
+                        .stat-card { border: 1px solid #eee; padding: 15px; border-radius: 12px; text-align: center; }
+                        .stat-card h4 { margin: 0 0 5px 0; font-size: 10px; text-transform: uppercase; color: #888; letter-spacing: 0.1em; }
+                        .stat-card p { margin: 0; font-size: 18px; font-weight: 900; }
                         table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 11px; }
                         th, td { border-bottom: 1px solid #eee; padding: 12px 8px; text-align: left; }
-                        th { background-color: #f9f9f9; font-weight: bold; text-transform: uppercase; }
-                        .amount { text-align: right; font-family: monospace; font-size: 12px; font-weight: bold; }
+                        th { background-color: #f9f9f9; font-weight: 900; text-transform: uppercase; color: #666; }
+                        .amount { text-align: right; font-family: monospace; font-size: 12px; font-weight: 700; }
                         @media print { .no-print { display: none; } }
                     </style>
                 </head>
                 <body>
                     <header>
                         <div>
-                            <h1>${profile?.companyName || 'Mon Commerce'}</h1>
+                            <h1>${profile?.companyName || 'Mon Commerce Luxury'}</h1>
                             <p>${profile?.address || ''} | ${profile?.phone || ''}</p>
                         </div>
                         <div class="meta">
-                            <p>RAPPORT DE DÉPENSES</p>
+                            <p>RAPPORT DE DÉPENSES ELITE</p>
                             <p>Période: ${dateStr}</p>
                             <p>Généré le: ${format(new Date(), 'dd/MM/yyyy HH:mm')}</p>
                         </div>
@@ -342,134 +358,74 @@ export default function ExpensesPage() {
     const isFiltered = searchQuery !== '' || selectedCategory !== 'all' || sortBy !== 'date_desc';
     
     return (
-        <div className="p-4 sm:p-6 space-y-6 max-w-[1600px] mx-auto pb-24">
+        <div className="p-6 sm:p-10 space-y-10 max-w-[1800px] mx-auto animate-in fade-in duration-1000">
             <PageHeader
-                title="Gestion des Dépenses"
-                description="Suivez et analysez toutes les charges de votre établissement."
+                title="Registre des Charges"
+                description="Pilotage souverain des flux sortants et de la trésorerie"
             >
-                <div className="flex gap-2 w-full sm:w-auto">
-                    <Button variant="outline" onClick={handlePrintSummary} className="rounded-xl font-bold border-primary/20 hover:bg-primary/5">
+                <div className="flex gap-3 w-full sm:w-auto">
+                    <Button variant="outline" onClick={handlePrintSummary} className="flex-1 sm:flex-none h-12 rounded-2xl font-black text-xs uppercase tracking-widest border-primary/20 hover:bg-primary/5 transition-all">
                         <Printer className="mr-2 h-4 w-4 text-primary" /> Rapport
                     </Button>
-                    <Button variant="outline" onClick={handleExportCsv} className="rounded-xl font-bold border-primary/20 hover:bg-primary/5">
+                    <Button variant="outline" onClick={handleExportCsv} className="flex-1 sm:flex-none h-12 rounded-2xl font-black text-xs uppercase tracking-widest border-primary/20 hover:bg-primary/5 transition-all">
                         <FileUp className="mr-2 h-4 w-4 text-primary" /> Exporter
                     </Button>
                     <Button 
                         onClick={() => { setSelectedExpense(null); setIsExpenseDialogOpen(true); }}
-                        className="rounded-xl font-bold shadow-lg shadow-primary/20"
+                        className="flex-1 sm:flex-none h-12 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-primary/20 transition-all active:scale-95 gap-3"
                     >
                         <Plus className="mr-2 h-4 w-4" /> Nouvelle Dépense
                     </Button>
                 </div>
             </PageHeader>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <Card className="rounded-3xl border-none shadow-sm bg-card overflow-hidden group relative">
-                    <div className="absolute -right-4 -bottom-4 opacity-[0.03] group-hover:opacity-10 transition-opacity duration-500">
-                        <Wallet className="h-32 w-32 rotate-12" />
-                    </div>
-                    <CardContent className="p-6 relative z-10">
-                        <div className="flex justify-between items-start mb-4">
-                            <div className="p-3 rounded-2xl bg-destructive/10 text-destructive shadow-inner">
-                                <Wallet className="h-6 w-6" />
-                            </div>
-                            <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground opacity-50">Total Période</span>
-                        </div>
-                        <div className="flex items-baseline gap-2">
-                            <span className="text-3xl font-black tracking-tighter leading-none text-destructive">
-                                {isLoading ? '...' : formatCurrency(stats.total)}
-                            </span>
-                        </div>
-                        <p className="mt-3 text-[10px] font-bold text-muted-foreground/70 uppercase tracking-tight">
-                            Basé sur {stats.count} transaction(s)
-                        </p>
-                    </CardContent>
-                </Card>
-
-                <Card className="rounded-3xl border-none shadow-sm bg-card overflow-hidden group relative">
-                    <div className="absolute -right-4 -bottom-4 opacity-[0.03] group-hover:opacity-10 transition-opacity duration-500">
-                        <BarChart className="h-32 w-32 rotate-6" />
-                    </div>
-                    <CardContent className="p-6 relative z-10">
-                        <div className="flex justify-between items-start mb-4">
-                            <div className="p-3 rounded-2xl bg-primary/10 text-primary shadow-inner">
-                                <BarChart className="h-6 w-6" />
-                            </div>
-                            <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground opacity-50">Moyenne / Jour</span>
-                        </div>
-                        <div className="flex items-baseline gap-2">
-                            <span className="text-3xl font-black tracking-tighter leading-none text-primary">
-                                {isLoading ? '...' : formatCurrency(stats.dailyAverage)}
-                            </span>
-                        </div>
-                        <p className="mt-3 text-[10px] font-bold text-muted-foreground/70 uppercase tracking-tight">
-                            Charge journalière moyenne
-                        </p>
-                    </CardContent>
-                </Card>
-
-                <Card className="rounded-3xl border-none shadow-sm bg-card overflow-hidden group relative">
-                    <div className="absolute -right-4 -bottom-4 opacity-[0.03] group-hover:opacity-10 transition-opacity duration-500">
-                        <PieChart className="h-32 w-32 -rotate-12" />
-                    </div>
-                    <CardContent className="p-6 relative z-10">
-                        <div className="flex justify-between items-start mb-4">
-                            <div className="p-3 rounded-2xl bg-amber-500/10 text-amber-500 shadow-inner">
-                                <PieChart className="h-6 w-6" />
-                            </div>
-                            <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground opacity-50">Poste Principal</span>
-                        </div>
-                        <div className="flex items-baseline gap-2">
-                            <span className="text-2xl font-black tracking-tighter leading-none truncate max-w-full">
-                                {isLoading ? '...' : stats.topCategory}
-                            </span>
-                        </div>
-                        <p className="mt-3 text-[10px] font-bold text-muted-foreground/70 uppercase tracking-tight">
-                            Catégorie la plus dépensière
-                        </p>
-                    </CardContent>
-                </Card>
-
-                <Card className="rounded-3xl border-none shadow-sm bg-card overflow-hidden group relative">
-                    <div className="absolute -right-4 -bottom-4 opacity-[0.03] group-hover:opacity-10 transition-opacity duration-500">
-                        <CalendarDays className="h-32 w-32 rotate-6" />
-                    </div>
-                    <CardContent className="p-6 relative z-10">
-                        <div className="flex justify-between items-start mb-4">
-                            <div className="p-3 rounded-2xl bg-emerald-500/10 text-emerald-500 shadow-inner">
-                                <CalendarDays className="h-6 w-6" />
-                            </div>
-                            <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground opacity-50">Fréquence</span>
-                        </div>
-                        <div className="flex items-baseline gap-2">
-                            <span className="text-3xl font-black tracking-tighter leading-none">
-                                {isLoading ? '...' : (stats.count / (dateRange?.to && dateRange?.from ? Math.max(1, differenceInDays(dateRange.to, dateRange.from) + 1) : 1)).toFixed(1)}
-                            </span>
-                            <span className="text-xs font-black text-muted-foreground uppercase tracking-widest">Op/Jour</span>
-                        </div>
-                        <p className="mt-3 text-[10px] font-bold text-muted-foreground/70 uppercase tracking-tight">
-                            Moyenne des opérations
-                        </p>
-                    </CardContent>
-                </Card>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                <StatCard 
+                    title="Total Décaissements" 
+                    value={formatCurrency(stats.total)} 
+                    icon={Wallet} 
+                    colorClass="bg-destructive/10 text-destructive"
+                    subtitle={`${stats.count} opérations validées`}
+                />
+                <StatCard 
+                    title="Charge Journalière" 
+                    value={formatCurrency(stats.dailyAverage)} 
+                    icon={BarChart} 
+                    colorClass="bg-primary/10 text-primary"
+                    subtitle="Moyenne sur la période"
+                />
+                <StatCard 
+                    title="Poste Dominant" 
+                    value={stats.topCategory} 
+                    icon={PieChart} 
+                    colorClass="bg-amber-500/10 text-amber-500"
+                    subtitle="Plus gros centre de coût"
+                />
+                <StatCard 
+                    title="Fréquence Flux" 
+                    value={(stats.count / (dateRange?.to && dateRange?.from ? Math.max(1, differenceInDays(dateRange.to, dateRange.from) + 1) : 1)).toFixed(1)} 
+                    icon={CalendarDays} 
+                    colorClass="bg-emerald-500/10 text-emerald-500"
+                    subtitle="Opérations par jour"
+                />
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <Card className="lg:col-span-3 rounded-3xl border-none shadow-sm bg-card overflow-hidden">
-                    <CardHeader className="bg-primary/5 border-b border-primary/10">
-                        <div className="flex items-center gap-3">
-                            <div className="p-2 rounded-xl bg-primary text-primary-foreground">
-                                <BarChart3 className="h-4 w-4" />
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
+                <Card className="lg:col-span-3 luxury-card bg-card/40 backdrop-blur-3xl border-white/5 overflow-hidden rounded-[2.5rem]">
+                    <CardHeader className="bg-muted/20 border-b border-white/5 p-8">
+                        <div className="flex items-center gap-4">
+                            <div className="p-3.5 rounded-2xl bg-primary text-primary-foreground shadow-2xl shadow-primary/20">
+                                <BarChart3 className="h-6 w-6" />
                             </div>
                             <div>
-                                <CardTitle className="text-sm font-black uppercase tracking-tight">Répartition par Catégorie</CardTitle>
-                                <CardDescription className="text-[10px] font-medium">Analyse visuelle du poids financier par poste.</CardDescription>
+                                <CardTitle className="text-2xl font-black tracking-tighter">Analyse par Pôle</CardTitle>
+                                <CardDescription className="text-[10px] font-black uppercase tracking-[0.3em] text-primary/50">Répartition budgétaire par catégorie</CardDescription>
                             </div>
                         </div>
                     </CardHeader>
-                    <CardContent className="p-6 h-[320px]">
+                    <CardContent className="p-8 h-[350px]">
                         {isLoading ? (
-                            <Skeleton className="h-full w-full rounded-2xl" />
+                            <Skeleton className="h-full w-full rounded-[2rem]" />
                         ) : stats.chartData.length > 0 ? (
                             <ResponsiveContainer width="100%" height="100%">
                                 <RechartsBarChart data={stats.chartData} layout="vertical" margin={{ left: 40, right: 40, top: 10, bottom: 10 }}>
@@ -478,17 +434,17 @@ export default function ExpensesPage() {
                                     <YAxis 
                                         dataKey="name" 
                                         type="category" 
-                                        tick={{ fontSize: 10, fontWeight: 'bold', fill: 'hsl(var(--muted-foreground))' }}
+                                        tick={{ fontSize: 10, fontWeight: '900', fill: 'hsl(var(--muted-foreground))' }}
                                         width={100}
                                         axisLine={false}
                                         tickLine={false}
                                     />
                                     <Tooltip 
-                                        cursor={{ fill: 'hsl(var(--muted)/0.2)', radius: 8 }}
-                                        contentStyle={{ backgroundColor: 'hsl(var(--card))', border: 'none', borderRadius: '12px', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
+                                        cursor={{ fill: 'hsl(var(--muted)/0.2)', radius: 12 }}
+                                        contentStyle={{ backgroundColor: 'hsl(var(--card))', border: 'none', borderRadius: '1.5rem', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)' }}
                                         formatter={(val: number) => [formatCurrency(val), 'Montant']}
                                     />
-                                    <Bar dataKey="value" radius={[0, 8, 8, 0]} barSize={24}>
+                                    <Bar dataKey="value" radius={[0, 12, 12, 0]} barSize={28}>
                                         {stats.chartData.map((entry, index) => (
                                             <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                                         ))}
@@ -496,36 +452,36 @@ export default function ExpensesPage() {
                                 </RechartsBarChart>
                             </ResponsiveContainer>
                         ) : (
-                            <div className="h-full flex items-center justify-center text-muted-foreground/30 italic text-xs">
-                                Aucune donnée visuelle à afficher.
+                            <div className="h-full flex items-center justify-center text-muted-foreground/30 font-black uppercase tracking-widest text-[10px]">
+                                <Sparkles className="mr-2 h-4 w-4" /> Aucun flux détecté
                             </div>
                         )}
                     </CardContent>
                 </Card>
             </div>
 
-            <div className="flex flex-col lg:flex-row gap-3">
-                <div className="relative flex-grow">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/50" />
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 bg-card/20 p-2 rounded-[2.5rem] border border-white/5 backdrop-blur-xl">
+                <div className="relative group flex-grow max-w-xl px-4">
+                    <Search className="absolute left-8 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground group-focus-within:text-primary transition-colors duration-500" />
                     <Input 
                         placeholder="Rechercher par description..."
-                        className="pl-10 h-11 rounded-xl bg-card border-none shadow-sm focus-visible:ring-primary/20"
+                        className="pl-14 h-14 rounded-2xl bg-black/20 border-none shadow-inner focus-visible:ring-primary/20 font-bold text-lg"
                         value={searchQuery}
                         onChange={e => setSearchQuery(e.target.value)}
                     />
                 </div>
                 
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap items-center gap-3 px-4">
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                            <Button variant="outline" className="rounded-xl h-11 border-none shadow-sm bg-card hover:bg-primary/5 min-w-[140px] font-medium">
+                            <Button variant="outline" className="h-12 rounded-xl border-white/5 bg-black/20 hover:bg-white/5 font-bold px-6">
                                 <Filter className="mr-2 h-4 w-4 opacity-50" />
-                                {selectedCategory === 'all' ? 'Toutes les catégories' : selectedCategory}
+                                {selectedCategory === 'all' ? 'Toutes Catégories' : selectedCategory}
                             </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent className="rounded-xl border-none shadow-xl min-w-[200px] max-h-80 overflow-y-auto custom-scrollbar">
-                            <DropdownMenuLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Filtrer par type</DropdownMenuLabel>
-                            <DropdownMenuSeparator />
+                        <DropdownMenuContent className="rounded-2xl border-white/5 shadow-2xl min-w-[200px] max-h-80 overflow-y-auto">
+                            <DropdownMenuLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Filtrer par Pôle</DropdownMenuLabel>
+                            <DropdownMenuSeparator className="opacity-10" />
                             <DropdownMenuCheckboxItem checked={selectedCategory === 'all'} onCheckedChange={() => setSelectedCategory('all')}>Toutes les catégories</DropdownMenuCheckboxItem>
                             {categories?.map(cat => (
                                 <DropdownMenuCheckboxItem key={cat} checked={selectedCategory === cat} onCheckedChange={() => setSelectedCategory(cat)}>{cat}</DropdownMenuCheckboxItem>
@@ -535,14 +491,14 @@ export default function ExpensesPage() {
 
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                            <Button variant="outline" className="rounded-xl h-11 border-none shadow-sm bg-card hover:bg-primary/5 min-w-[140px] font-medium">
+                            <Button variant="outline" className="h-12 rounded-xl border-white/5 bg-black/20 hover:bg-white/5 font-bold px-6">
                                 <SortAsc className="mr-2 h-4 w-4 opacity-50" />
                                 {sortOptions[sortBy as keyof typeof sortOptions]}
                             </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent className="rounded-xl border-none shadow-xl min-w-[200px]">
+                        <DropdownMenuContent className="rounded-2xl border-white/5 shadow-2xl min-w-[200px]">
                             <DropdownMenuLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Trier par</DropdownMenuLabel>
-                            <DropdownMenuSeparator />
+                            <DropdownMenuSeparator className="opacity-10" />
                             <DropdownMenuRadioGroup value={sortBy} onValueChange={setSortBy}>
                                 {Object.entries(sortOptions).map(([key, value]) => (
                                     <DropdownMenuRadioItem key={key} value={key} className="text-xs font-bold">{value}</DropdownMenuRadioItem>
@@ -557,46 +513,45 @@ export default function ExpensesPage() {
                         <Button 
                             variant="ghost" 
                             size="icon" 
-                            className="h-11 w-11 rounded-xl text-destructive hover:bg-destructive/10"
+                            className="h-12 w-12 rounded-2xl text-destructive hover:bg-destructive/10"
                             onClick={resetFilters}
-                            title="Réinitialiser"
                         >
-                            <FilterX className="h-4 w-4" />
+                            <FilterX className="h-5 w-5" />
                         </Button>
                     )}
 
                     <Button 
                         variant="outline" 
                         size="icon" 
-                        className="h-11 w-11 rounded-xl border-none shadow-sm bg-card"
+                        className="h-12 w-12 rounded-2xl border-white/5 bg-card/40 hover:bg-primary/10 transition-all group"
                         onClick={fetchExpenses}
                         disabled={isRefreshing}
                     >
-                        <RefreshCw className={cn("h-4 w-4 text-primary", isRefreshing && "animate-spin")} />
+                        <RefreshCw className={cn("h-5 w-5 text-primary transition-all duration-1000", isRefreshing && "animate-spin")} />
                     </Button>
                 </div>
             </div>
             
             {selectedExpenses.size > 0 && (
-                <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-50 animate-in slide-in-from-bottom-10 duration-300">
-                    <div className="bg-card/80 backdrop-blur-xl border-2 border-primary/20 shadow-2xl rounded-full px-6 py-3 flex items-center gap-6">
-                        <div className="flex items-center gap-2 pr-6 border-r border-border/50">
-                            <div className="h-8 w-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-black">
+                <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 animate-in slide-in-from-bottom-10 duration-500">
+                    <div className="bg-card/80 backdrop-blur-3xl border-2 border-primary/20 shadow-2xl rounded-full px-8 py-4 flex items-center gap-10">
+                        <div className="flex items-center gap-4 pr-8 border-r border-white/10">
+                            <div className="h-10 w-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-black shadow-lg shadow-primary/20">
                                 {selectedExpenses.size}
                             </div>
                             <div className="flex flex-col">
-                                <span className="text-[8px] font-black uppercase tracking-widest text-muted-foreground">Sélection</span>
+                                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Sélection Elite</span>
                                 <span className="text-xs font-black text-primary">{formatCurrency(selectedTotal)}</span>
                             </div>
                         </div>
-                        <div className="flex items-center gap-3">
-                            <Button variant="ghost" size="sm" onClick={handleExportCsv} className="rounded-full h-10 font-bold hover:bg-primary/10 hover:text-primary">
-                                <FileUp className="mr-2 h-4 w-4" /> Exporter
+                        <div className="flex items-center gap-4">
+                            <Button variant="ghost" onClick={handleExportCsv} className="rounded-full h-12 px-6 font-black text-[10px] uppercase tracking-widest hover:bg-primary/10 hover:text-primary transition-all">
+                                <FileUp className="mr-2 h-4 w-4" /> Exporter (.csv)
                             </Button>
-                            <Button variant="ghost" size="sm" onClick={() => setIsBulkDeleteDialogOpen(true)} className="rounded-full h-10 font-bold text-destructive hover:bg-destructive/10">
-                                <Trash2 className="mr-2 h-4 w-4" /> Supprimer Tout
+                            <Button variant="ghost" onClick={() => setIsBulkDeleteDialogOpen(true)} className="rounded-full h-12 px-6 font-black text-[10px] uppercase tracking-widest text-destructive hover:bg-destructive/10 transition-all">
+                                <Trash2 className="mr-2 h-4 w-4" /> Supprimer Flux
                             </Button>
-                            <Button variant="ghost" size="icon" onClick={() => setSelectedExpenses(new Set())} className="rounded-full h-10 w-10 hover:bg-muted">
+                            <Button variant="ghost" size="icon" onClick={() => setSelectedExpenses(new Set())} className="rounded-full h-12 w-12 hover:bg-white/5 transition-all">
                                 <X className="h-4 w-4" />
                             </Button>
                         </div>
@@ -604,29 +559,27 @@ export default function ExpensesPage() {
                 </div>
             )}
 
-            <div className="min-h-[450px] animate-in fade-in duration-500">
+            <div className="min-h-[600px] animate-in fade-in slide-in-from-bottom-4 duration-1000">
                {isLoading ? (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {[...Array(6)].map((_, i) => (
-                            <Card key={i} className="h-44 rounded-3xl animate-pulse bg-card border-none" />
-                        ))}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+                        {[...Array(6)].map((_, i) => <Skeleton key={i} className="h-56 w-full rounded-[2.5rem] bg-card/40 animate-pulse" />)}
                     </div>
                ) : expenses.length === 0 ? (
                     <EmptyState
                         icon={TrendingDown}
-                        title="Aucune dépense trouvée"
-                        description={isFiltered ? "Ajustez vos filtres de recherche ou réinitialisez-les." : "Commencez par enregistrer votre première charge financière."}
+                        title="Silence de Caisse"
+                        description={isFiltered ? "Ajustez vos filtres pour localiser les charges." : "Enregistrez votre première opération Elite."}
                     >
                         {isFiltered ? (
-                            <Button variant="outline" onClick={resetFilters} className="rounded-xl">Effacer les filtres</Button>
+                            <Button variant="outline" onClick={resetFilters} className="rounded-2xl h-12 font-bold px-8 border-primary/20 hover:bg-primary/5">Réinitialiser</Button>
                         ) : (
-                            <Button onClick={() => { setSelectedExpense(null); setIsExpenseDialogOpen(true); }} className="rounded-xl shadow-lg shadow-primary/20">
-                                <Plus className="mr-2 h-4 w-4" /> Ajouter une dépense
+                            <Button onClick={() => { setSelectedExpense(null); setIsExpenseDialogOpen(true); }} className="rounded-[1.5rem] h-14 px-10 font-black text-xs uppercase tracking-widest shadow-xl shadow-primary/20 transition-all active:scale-95 gap-3">
+                                <Plus className="h-5 w-5" /> Enregistrer un Flux
                             </Button>
                         )}
                     </EmptyState>
                ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
                         {expenses.map(e => (
                             <ExpenseCard 
                                 key={e.uuid} 

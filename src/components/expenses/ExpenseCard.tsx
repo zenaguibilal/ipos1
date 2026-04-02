@@ -24,18 +24,18 @@ const ExpenseCardComponent = ({ expense, onEdit, onDelete, isSelected, onToggleS
         <Card 
             onClick={onToggleSelection}
             className={cn(
-                "group flex flex-col transition-all duration-300 hover:shadow-2xl hover:-translate-y-1 bg-card border-none relative overflow-hidden rounded-3xl cursor-pointer",
-                isSelected ? "ring-2 ring-primary shadow-lg" : "hover:bg-muted/5"
+                "luxury-card group flex flex-col transition-all duration-500 bg-card/40 backdrop-blur-xl border-white/5 relative overflow-hidden rounded-[2.5rem] cursor-pointer",
+                isSelected ? "ring-2 ring-primary border-primary/30 shadow-2xl scale-[1.02]" : "hover:bg-primary/5"
             )}
         >
-            {/* Background Decorative Element */}
-            <div className="absolute top-0 right-0 p-8 opacity-[0.02] group-hover:opacity-[0.05] transition-opacity pointer-events-none">
-                <Banknote className="h-24 w-24 rotate-12" />
+            {/* Background Decor */}
+            <div className="absolute -right-4 -top-4 opacity-[0.02] group-hover:opacity-10 transition-opacity duration-700 pointer-events-none">
+                <Banknote className="h-32 w-32 rotate-12" />
             </div>
 
             {/* Action Menu & Checkbox */}
-            <div className="absolute top-3 right-3 z-10 flex gap-2 items-center">
-                <div onClick={(e) => e.stopPropagation()} className="p-1.5 bg-background/80 backdrop-blur-md rounded-xl shadow-sm border border-white/5">
+            <div className="absolute top-4 right-4 z-10 flex gap-2 items-center">
+                <div onClick={(e) => e.stopPropagation()} className="p-1.5 bg-background/80 backdrop-blur-md rounded-xl border border-white/5 shadow-sm">
                     <Checkbox
                         checked={isSelected}
                         onCheckedChange={onToggleSelection}
@@ -44,57 +44,56 @@ const ExpenseCardComponent = ({ expense, onEdit, onDelete, isSelected, onToggleS
                 </div>
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                        <Button variant="secondary" size="icon" className="h-8 w-8 bg-background/80 backdrop-blur-md border-none shadow-sm rounded-xl">
-                            <MoreHorizontal className="h-4 w-4" />
+                        <Button variant="secondary" size="icon" className="h-9 w-9 bg-background/80 backdrop-blur-md border-white/5 shadow-xl rounded-xl transition-all">
+                            <MoreHorizontal className="h-5 w-5" />
                         </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="rounded-2xl border-none shadow-xl">
-                        <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onEdit(expense); }} className="rounded-xl">
+                    <DropdownMenuContent align="end" className="rounded-2xl border-none shadow-2xl bg-card">
+                        <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onEdit(expense); }} className="rounded-xl p-3">
                             <Edit className="mr-2 h-4 w-4" /> Modifier
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onDelete(expense); }} className="text-destructive focus:text-destructive rounded-xl">
+                        <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onDelete(expense); }} className="text-destructive focus:text-destructive rounded-xl p-3">
                             <Trash2 className="mr-2 h-4 w-4" /> Supprimer
                         </DropdownMenuItem>
                     </DropdownMenuContent>
                 </DropdownMenu>
             </div>
 
-            <CardHeader className="p-5 pb-2">
-                <div className="flex items-center gap-3 mb-2">
-                    <div className="p-2.5 rounded-2xl bg-destructive/10 text-destructive transition-colors group-hover:bg-destructive/20 shadow-inner">
-                        <Banknote className="h-5 w-5" />
+            <CardHeader className="p-6 pb-2 space-y-3 relative z-10">
+                <div className="flex items-center gap-4">
+                    <div className="p-3 rounded-2xl bg-destructive/5 text-destructive transition-all group-hover:bg-destructive/10 shadow-inner">
+                        <Banknote className="h-6 w-6" />
                     </div>
                     <div className="min-w-0 pr-12">
-                        <CardTitle className="text-base font-black leading-tight tracking-tight truncate group-hover:text-primary transition-colors">
+                        <CardTitle className="text-xl font-black leading-tight tracking-tighter group-hover:text-primary transition-colors truncate">
                             {expense.description}
                         </CardTitle>
                         <div className="flex items-center gap-2 mt-1">
-                            <div className="px-2 py-0.5 rounded-lg bg-muted/50 text-[9px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-1 border border-border/50">
-                                <Tag className="h-2.5 w-2.5 opacity-50" />
-                                {expense.category}
+                            <div className="px-3 py-1 rounded-xl bg-primary/5 text-primary text-[9px] font-black uppercase tracking-[0.2em] flex items-center gap-1.5 border border-primary/10">
+                                <Tag className="h-2.5 w-2.5 opacity-50" /> {expense.category}
                             </div>
                         </div>
                     </div>
                 </div>
             </CardHeader>
 
-            <CardContent className="p-5 py-2 flex-grow">
-                <div className="flex items-center gap-2 text-[10px] font-bold text-muted-foreground bg-muted/20 px-3 py-1.5 rounded-xl w-fit border border-border/50">
+            <CardContent className="p-6 py-4 relative z-10">
+                <div className="flex items-center gap-2 text-[10px] font-black text-muted-foreground/40 uppercase tracking-widest bg-black/20 px-4 py-2 rounded-2xl w-fit border border-white/5 shadow-inner">
                     <Calendar className="h-3 w-3 opacity-50" />
                     <span>{format(safeToDate(expense.expenseDate), 'dd MMMM yyyy', { locale: fr })}</span>
                 </div>
             </CardContent>
 
-            <CardFooter className="p-5 pt-3 border-t border-white/5 bg-muted/5 flex items-center justify-between">
+            <CardFooter className="p-6 pt-4 border-t border-white/5 bg-muted/5 flex items-center justify-between relative z-10">
                 <div className="space-y-0.5">
-                    <p className="text-xl font-black text-destructive tracking-tighter leading-none">{formatCurrency(expense.amount)}</p>
-                    <p className="text-[9px] text-muted-foreground font-black uppercase tracking-tight opacity-40">Décaissement</p>
+                    <p className="text-[9px] font-black text-muted-foreground/40 uppercase tracking-widest">Décaissement Flux</p>
+                    <p className="text-3xl font-black text-destructive tracking-tighter leading-none">{formatCurrency(expense.amount)}</p>
                 </div>
                 <Button 
                     variant="ghost" 
                     size="sm" 
                     onClick={(e) => { e.stopPropagation(); onEdit(expense); }}
-                    className="h-8 rounded-xl font-black text-[9px] uppercase tracking-widest hover:bg-primary/10 hover:text-primary transition-all px-3"
+                    className="h-9 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-primary/10 hover:text-primary transition-all px-4"
                 >
                     Détails <ChevronRight className="ml-1 h-3 w-3 opacity-50" />
                 </Button>
