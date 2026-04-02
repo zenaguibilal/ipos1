@@ -133,7 +133,6 @@ export default function ExpenseDialog({ isOpen, onOpenChange, expense, onSuccess
                     <div className="p-8 space-y-10 max-h-[60vh] overflow-y-auto custom-scrollbar">
                         {error && <div className="p-4 bg-destructive/10 text-destructive rounded-2xl text-xs font-bold border border-destructive/20 text-center">{error}</div>}
                         
-                        {/* Section: Désignation */}
                         <div>
                             <SectionTitle title="Description du Flux" icon={FileText} />
                             <div className="space-y-4">
@@ -169,7 +168,6 @@ export default function ExpenseDialog({ isOpen, onOpenChange, expense, onSuccess
                             </div>
                         </div>
 
-                        {/* Section: Montant */}
                         <div>
                             <SectionTitle title="Audit Financier" icon={Coins} />
                             <div className="p-8 bg-destructive/5 rounded-[2.5rem] border border-destructive/10 space-y-4 group hover:bg-destructive/10 transition-all duration-500 shadow-inner">
