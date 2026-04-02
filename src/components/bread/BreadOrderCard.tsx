@@ -10,7 +10,7 @@ import { toast } from 'sonner';
 import { breadService } from '@/services/bread.service';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useDebounce } from '@/hooks/useDebounce';
-import { CheckCircle2, UserCircle2, Package, Landmark, Loader2, Trash2 } from 'lucide-react';
+import { CheckCircle2, UserCircle2, Package, Landmark, Loader2, Trash2, User } from 'lucide-react';
 import { useAppStore } from '@/stores/appStore';
 
 interface BreadOrderCardProps {
@@ -65,7 +65,7 @@ export function BreadOrderCard({ order, isSelected, onToggleSelection, onUpdate 
 
     const handleQuickPay = async () => {
         if (breadPrice <= 0) {
-            toast.error("Prix du pain non configuré.");
+            toast.error("Prix du pain non configuré", { description: "Allez dans Profil > Paramètres pour le définir." });
             return;
         }
         setIsUpdatingStatus(true);
@@ -98,6 +98,7 @@ export function BreadOrderCard({ order, isSelected, onToggleSelection, onUpdate 
             isPaid ? "bg-emerald-500/5 opacity-90" : "bg-card",
             isExternal && !isPaid && "border-l-4 border-l-amber-500/30"
         )}>
+            {/* Actions & Selection */}
             <div className="absolute top-4 right-4 z-10 flex gap-2">
                 {!isPaid && (
                     <Button 
@@ -122,9 +123,13 @@ export function BreadOrderCard({ order, isSelected, onToggleSelection, onUpdate 
 
             <CardHeader className="p-6 pb-2">
                 <div className="flex items-center gap-2 mb-1">
-                    {isExternal && <UserCircle2 className="h-3 w-3 text-amber-500 opacity-50" />}
+                    {isExternal ? (
+                        <UserCircle2 className="h-3 w-3 text-amber-500 opacity-50" />
+                    ) : (
+                        <User className="h-3 w-3 text-primary opacity-50" />
+                    )}
                     <span className="text-[8px] font-black uppercase tracking-widest text-muted-foreground opacity-40">
-                        {isExternal ? 'اسم خارجي' : 'زبون دائم'}
+                        {isExternal ? 'اسم خارجي' : 'زبون مسجل'}
                     </span>
                 </div>
                 <CardTitle className="text-lg font-black tracking-tight pr-12 leading-tight truncate">
@@ -133,6 +138,7 @@ export function BreadOrderCard({ order, isSelected, onToggleSelection, onUpdate 
             </CardHeader>
 
             <CardContent className="p-6 pt-2 space-y-4">
+                {/* Quantity Input Area */}
                 <div className="flex items-center gap-3 bg-muted/20 rounded-2xl p-2 border border-border/50 group-hover:border-primary/20 transition-colors">
                     <Input 
                         type="number"
@@ -145,6 +151,7 @@ export function BreadOrderCard({ order, isSelected, onToggleSelection, onUpdate 
                     <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mr-3">PCS</span>
                 </div>
 
+                {/* Status Toggle Buttons */}
                 <div className="flex gap-2">
                     <Button 
                         variant={isDelivered ? "secondary" : "outline"} 
@@ -157,7 +164,7 @@ export function BreadOrderCard({ order, isSelected, onToggleSelection, onUpdate 
                         )}
                     >
                         {isUpdatingStatus ? <Loader2 className="h-3 w-3 animate-spin" /> : <Package className="h-3 w-3" />}
-                        {isDelivered ? 'مستلم' : 'استلام'}
+                        {isDelivered ? 'تم الاستلام' : 'الاستلام'}
                     </Button>
                     <Button 
                         variant={isPaid ? "secondary" : "outline"} 

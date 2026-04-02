@@ -11,7 +11,7 @@ import { ManualAddDialog } from './ManualAddDialog';
 import { PrintBreadListDialog } from './PrintBreadListDialog';
 import { toast } from 'sonner';
 import { breadService } from '@/services/bread.service';
-import { Loader2, Wheat, ShoppingBag, Landmark } from 'lucide-react';
+import { Loader2, Wheat, ShoppingBag, Landmark, Power } from 'lucide-react';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { useAppStore } from '@/stores/appStore';
 import { cn } from '@/lib/utils';
@@ -57,7 +57,7 @@ export function BreadDayView({ orders, currentDate, onOrdersChange }: BreadDayVi
         }
         if (breadPrice <= 0) {
             toast.error("Prix du pain non défini", {
-                description: "Veuillez le configurer dans les paramètres قبل المتابعة."
+                description: "Veuillez le configurer dans Profil > Paramètres قبل المتابعة."
             });
             return;
         }
@@ -76,7 +76,10 @@ export function BreadDayView({ orders, currentDate, onOrdersChange }: BreadDayVi
     };
 
     const handleFinalizeDay = async () => {
-        if (unbilledOrdersCount === 0) return;
+        if (unbilledOrdersCount === 0) {
+            toast.info("Tous les ordres sont déjà facturés.");
+            return;
+        }
         if (breadPrice <= 0) {
             toast.error("Prix du pain non configuré.");
             return;
@@ -100,13 +103,13 @@ export function BreadDayView({ orders, currentDate, onOrdersChange }: BreadDayVi
         return (
              <Card className="rounded-3xl border-none shadow-sm bg-card overflow-hidden h-full flex flex-col">
                 <CardHeader className="bg-primary/5 border-b border-primary/10">
-                    <CardTitle className="text-xl font-black tracking-tight">Distribution</CardTitle>
+                    <CardTitle className="text-xl font-black tracking-tight">التوزيع</CardTitle>
                 </CardHeader>
                 <CardContent className="flex-grow flex items-center justify-center min-h-[400px]">
                     <EmptyState
                         icon={Wheat}
-                        title="Rien à distribuer"
-                        description="Aucune commande récurrente n'est programmée pour cette date."
+                        title="لا توجد طلبات لهذا اليوم"
+                        description="لم يتم برمجة أي طلبات مسبقة لهذا التاريخ."
                     >
                         <ManualAddDialog currentDate={currentDate} onSuccess={onOrdersChange} />
                     </EmptyState>
@@ -120,28 +123,29 @@ export function BreadDayView({ orders, currentDate, onOrdersChange }: BreadDayVi
             <CardHeader className="flex-shrink-0 bg-muted/30 border-b border-border/50 pb-6">
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                     <div>
-                        <CardTitle className="text-xl font-black tracking-tight">Distribution du Jour</CardTitle>
+                        <CardTitle className="text-xl font-black tracking-tight">توزيع اليوم</CardTitle>
                         <p className="text-[10px] text-muted-foreground font-black uppercase tracking-widest mt-1 opacity-60">
-                            {orders.length} طلبات إجمالية اليوم
+                            إجمالي الطلبات المبرمجة: {orders.length}
                         </p>
                     </div>
-                    <div className="flex gap-2 w-full sm:w-auto">
+                    <div className="flex flex-wrap gap-2 w-full sm:w-auto">
                         <ManualAddDialog currentDate={currentDate} onSuccess={onOrdersChange} />
                         <PrintBreadListDialog orders={orders} currentDate={currentDate}/>
                         {unbilledOrdersCount > 0 && (
                             <Button 
                                 variant="destructive" 
-                                className="rounded-xl h-10 font-black text-[10px] uppercase tracking-widest shadow-lg shadow-destructive/20 gap-2"
+                                className="rounded-xl h-10 font-black text-[10px] uppercase tracking-widest shadow-lg shadow-destructive/20 gap-2 px-4"
                                 onClick={handleFinalizeDay}
                                 disabled={isConverting}
                             >
-                                <Landmark className="h-3.5 w-3.5" />
-                                إغلاق اليوم (تحويل للديون)
+                                <Power className="h-3.5 w-3.5" />
+                                إغلاق اليوم (توريد الديون)
                             </Button>
                         )}
                     </div>
                 </div>
 
+                {/* Selection Bar */}
                 <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-6 bg-background/50 p-2.5 rounded-2xl border border-border/50 shadow-inner">
                     <div className="flex items-center gap-3 px-3">
                         <Checkbox 
@@ -151,7 +155,7 @@ export function BreadDayView({ orders, currentDate, onOrdersChange }: BreadDayVi
                             className="h-5 w-5 border-primary data-[state=checked]:bg-primary rounded-md"
                         />
                         <label htmlFor="select-all-bread" className="text-[10px] font-black uppercase tracking-widest text-primary cursor-pointer select-none">
-                            Sélectionner Tout ({selectedOrders.size})
+                            تحديد الكل للفوترة ({selectedOrders.size})
                         </label>
                     </div>
                     
@@ -164,7 +168,7 @@ export function BreadDayView({ orders, currentDate, onOrdersChange }: BreadDayVi
                         )}
                     >
                         {isConverting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ShoppingBag className="mr-2 h-4 w-4" />}
-                        Valider Sélection (Compte)
+                        تأكيد المبيعات المختارة
                     </Button>
                 </div>
             </CardHeader>

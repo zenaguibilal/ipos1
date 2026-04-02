@@ -27,8 +27,10 @@ class BreadService {
     }
     
     private async createDayOrders(date: string): Promise<void> {
-        // Get day of week from date string
-        const dayOfWeek = BREAD_WEEK_DAYS[new Date(date.replace(/-/g, '/')).getDay()];
+        // Get day of week from date string (JS getDay: 0=Sunday, 1=Monday, etc)
+        const dayIndex = new Date(date.replace(/-/g, '/')).getDay();
+        const dayOfWeek = BREAD_WEEK_DAYS[dayIndex];
+        
         const activeBreadClients = await db.customers.where('isBreadClient').equals(1).toArray();
         
         const ordersToCreate: BreadOrder[] = [];
@@ -121,7 +123,7 @@ class BreadService {
             const filteredOrders = orders.filter(o => !o.venteUuid);
             if (filteredOrders.length === 0) return;
 
-            // Group orders by customer to create one sale per customer
+            // Group orders by customer or unique identity to create efficient sales
             const groupedOrders = new Map<string, BreadOrder[]>();
             
             filteredOrders.forEach(order => {
@@ -151,7 +153,7 @@ class BreadService {
                     items: [breadCartItem],
                     discountType: 'fixed',
                     discountValue: 0,
-                    amountPaid: 0, // Recorded as debt for registered customers
+                    amountPaid: 0, // Converting to debt: paid 0
                     customerUuid: firstOrder.customerUuid,
                 });
 
