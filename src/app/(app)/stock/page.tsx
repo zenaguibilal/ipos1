@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useCallback, useEffect, useMemo } from 'react';
@@ -5,7 +6,7 @@ import { useDebounce } from '@/hooks/useDebounce';
 import type { StockIntake, Supplier, InventoryLog } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Search, Plus, Archive, LayoutGrid, List, History, ArrowUpDown, RefreshCw, Building, Wallet, Trash2, UserPlus } from 'lucide-react';
+import { Search, Plus, Archive, LayoutGrid, List, History, ArrowUpDown, RefreshCw, Building, Wallet, Trash2, UserPlus, Sparkles } from 'lucide-react';
 import { DateRangePicker } from '@/components/ui/date-range-picker';
 import { useDateRange } from '@/hooks/useDateRange';
 import { StockIntakeCard } from '@/components/stock/stock-intake-card';
@@ -87,7 +88,6 @@ export default function StockPage() {
                 setInventoryLogs(logsData);
             } else {
                 const suppliersData = await supplierService.getSuppliers();
-                // Client-side search for suppliers since getSuppliers is basic
                 if (debouncedSearchQuery) {
                     const q = debouncedSearchQuery.toLowerCase();
                     setSuppliers(suppliersData.filter(s => s.name.toLowerCase().includes(q)));
@@ -96,7 +96,7 @@ export default function StockPage() {
                 }
             }
         } catch (error: any) {
-            toast.error("Erreur lors du chargement des données.", { description: error.message });
+            toast.error("Erreur lors du chargement των بيانات.");
             if (activeTab === 'intakes') setStockIntakes([]);
             else if (activeTab === 'logs') setInventoryLogs([]);
             else setSuppliers([]);
@@ -153,125 +153,75 @@ export default function StockPage() {
         return suppliers.reduce((sum, s) => sum + s.balance, 0);
     }, [suppliers]);
 
-    const renderSkeletons = () => {
-        if (activeTab === 'intakes' && viewMode === 'list') {
-            return <StockIntakeTableSkeleton />;
-        }
-        return (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {[...Array(6)].map((_, i) => <Skeleton key={i} className="h-44 w-full rounded-3xl" />)}
-            </div>
-        );
-    }
-
-    const renderIntakesContent = () => {
-        if (!stockIntakes || stockIntakes.length === 0) {
-            return (
-                <EmptyState
-                    icon={Archive}
-                    title="Aucune réception de stock trouvée"
-                    description="Commencez par enregistrer une nouvelle réception de stock ou modifier les dates."
-                >
-                     <Button asChild className="rounded-2xl h-12 px-8 font-bold shadow-lg shadow-primary/20">
-                        <Link href="/stock/intake"><Plus className="mr-2 h-5 w-5" /> Nouvelle Réception</Link>
-                    </Button>
-                </EmptyState>
-            );
-        }
-        
-        if (viewMode === 'list') {
-            return (
-                <StockIntakeTable
-                    intakes={stockIntakes}
-                    supplierMap={supplierMap}
-                    onViewDetails={handleViewDetails}
-                    onCancelIntake={handleCancelIntake}
-                />
-            );
-        }
-
-        return (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {stockIntakes.map(s => {
-                    const supplier = s.supplierUuid ? supplierMap.get(s.supplierUuid) : undefined;
-                    return (
-                        <StockIntakeCard 
-                            key={s.uuid} 
-                            intake={s}
-                            supplierName={supplier?.name}
-                            onViewDetails={handleViewDetails}
-                            onCancelIntake={handleCancelIntake}
-                        />
-                    );
-                })}
-            </div>
-        );
-    }
-
     return (
-        <div className="p-4 sm:p-6 space-y-6 max-w-7xl mx-auto">
+        <div className="p-6 sm:p-10 space-y-10 max-w-[1600px] mx-auto animate-in fade-in duration-1000">
             <PageHeader
-                title="Gestion du Stock & Fournisseurs"
-                description="Surveillez vos réceptions, gérez vos fournisseurs et suivez chaque mouvement."
+                title="Elite Inventory"
+                description="Contrôle absolu des flux de marchandises & Partenaires"
             >
-                <div className="flex gap-2 w-full sm:w-auto">
+                <div className="flex gap-3 w-full sm:w-auto">
                     {activeTab === 'suppliers' ? (
-                        <Button onClick={handleAddSupplier} className="flex-1 sm:flex-none rounded-xl font-bold shadow-lg shadow-primary/20">
+                        <Button onClick={handleAddSupplier} className="flex-1 sm:flex-none h-12 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-primary/20 transition-all active:scale-95">
                             <UserPlus className="mr-2 h-4 w-4" /> Nouveau Fournisseur
                         </Button>
                     ) : (
                         <>
-                            <Button variant="outline" onClick={() => setIsAdjustmentOpen(true)} className="flex-1 sm:flex-none rounded-xl font-bold border-primary/20 hover:bg-primary/5">
+                            <Button variant="outline" onClick={() => setIsAdjustmentOpen(true)} className="flex-1 sm:flex-none h-12 rounded-2xl font-black text-xs uppercase tracking-widest border-primary/20 hover:bg-primary/5 transition-all">
                                 <ArrowUpDown className="mr-2 h-4 w-4 text-primary" /> Correction
                             </Button>
-                            <Button asChild className="flex-1 sm:flex-none rounded-xl font-bold shadow-lg shadow-primary/20">
-                                <Link href="/stock/intake"><Plus className="mr-2 h-4 w-4" /> Réception</Link>
+                            <Button asChild className="flex-1 sm:flex-none h-12 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-primary/20 transition-all active:scale-95">
+                                <Link href="/stock/intake">
+                                    <Plus className="mr-2 h-4 w-4" /> Réception
+                                </Link>
                             </Button>
                         </>
                     )}
                 </div>
             </PageHeader>
 
-            {activeTab === 'suppliers' ? (
-                <div className="grid gap-4 md:grid-cols-3">
-                    <Skeleton className={cn("h-24 w-full rounded-2xl", !isLoading && "hidden")} />
-                    {!isLoading && (
-                        <>
-                            <div className="p-6 rounded-2xl bg-card border shadow-sm flex items-center justify-between">
-                                <div>
-                                    <p className="text-xs font-black uppercase text-muted-foreground tracking-widest mb-1">Total Fournisseurs</p>
-                                    <p className="text-3xl font-black">{suppliers?.length}</p>
+            <div className="animate-in slide-in-from-top-4 duration-700">
+                {activeTab === 'suppliers' ? (
+                    <div className="grid gap-6 md:grid-cols-3">
+                        {isLoading ? (
+                            [...Array(3)].map((_, i) => <Skeleton key={i} className="h-32 w-full rounded-[2rem] bg-card/40" />)
+                        ) : (
+                            <>
+                                <div className="luxury-card p-8 rounded-[2rem] bg-card/40 backdrop-blur-xl border-white/5 flex items-center justify-between">
+                                    <div>
+                                        <p className="text-[10px] font-black uppercase text-muted-foreground tracking-[0.2em] mb-2">Total Partenaires</p>
+                                        <p className="text-4xl font-black tracking-tighter">{suppliers?.length}</p>
+                                    </div>
+                                    <div className="p-4 rounded-2xl bg-primary/10 text-primary shadow-inner">
+                                        <Building className="h-8 w-8" />
+                                    </div>
                                 </div>
-                                <div className="p-4 rounded-2xl bg-primary/10 text-primary">
-                                    <Building className="h-6 w-6" />
+                                <div className="luxury-card p-8 rounded-[2rem] bg-card/40 backdrop-blur-xl border-white/5 flex items-center justify-between col-span-2">
+                                    <div>
+                                        <p className="text-[10px] font-black uppercase text-destructive tracking-[0.2em] mb-2">Dette Globale Fournisseurs</p>
+                                        <p className="text-4xl font-black tracking-tighter text-destructive">{formatCurrency(totalSuppliersDebt)}</p>
+                                    </div>
+                                    <div className="p-4 rounded-2xl bg-destructive/10 text-destructive shadow-inner">
+                                        <Wallet className="h-8 w-8" />
+                                    </div>
                                 </div>
-                            </div>
-                            <div className="p-6 rounded-2xl bg-card border shadow-sm flex items-center justify-between col-span-2">
-                                <div>
-                                    <p className="text-xs font-black uppercase text-muted-foreground tracking-widest mb-1">Dette Totale Fournisseurs</p>
-                                    <p className="text-3xl font-black text-destructive">{formatCurrency(totalSuppliersDebt)}</p>
-                                </div>
-                                <div className="p-4 rounded-2xl bg-destructive/10 text-destructive">
-                                    <Wallet className="h-6 w-6" />
-                                </div>
-                            </div>
-                        </>
-                    )}
-                </div>
-            ) : (
-                <StockIntakeStats intakes={stockIntakes} isLoading={isLoading && activeTab === 'intakes'} />
-            )}
+                            </>
+                        )}
+                    </div>
+                ) : (
+                    <StockIntakeStats intakes={stockIntakes} isLoading={isLoading && activeTab === 'intakes'} />
+                )}
+            </div>
 
-            {/* Navigation Tabs - Glassmorphism style */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div className="flex items-center gap-2 bg-muted/30 p-1.5 rounded-2xl border border-border/50 w-fit">
+            {/* Navigation Glass-Tabs */}
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 bg-card/20 p-2 rounded-[2.5rem] border border-white/5 backdrop-blur-xl">
+                <div className="flex items-center gap-2 p-1.5 bg-black/20 rounded-[2rem] border border-white/5 shadow-inner">
                     <button 
                         onClick={() => setActiveTab('intakes')}
                         className={cn(
-                            "flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-black transition-all",
+                            "flex items-center gap-3 px-8 py-3 rounded-[1.5rem] text-[10px] font-black uppercase tracking-[0.2em] transition-all duration-500",
                             activeTab === 'intakes' 
-                                ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20" 
-                                : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+                                ? "bg-primary text-primary-foreground shadow-2xl shadow-primary/20 scale-105" 
+                                : "text-muted-foreground/60 hover:text-foreground hover:bg-white/5"
                         )}
                     >
                         <Archive className="h-4 w-4" />
@@ -280,10 +230,10 @@ export default function StockPage() {
                     <button 
                         onClick={() => setActiveTab('suppliers')}
                         className={cn(
-                            "flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-black transition-all",
+                            "flex items-center gap-3 px-8 py-3 rounded-[1.5rem] text-[10px] font-black uppercase tracking-[0.2em] transition-all duration-500",
                             activeTab === 'suppliers' 
-                                ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20" 
-                                : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+                                ? "bg-primary text-primary-foreground shadow-2xl shadow-primary/20 scale-105" 
+                                : "text-muted-foreground/60 hover:text-foreground hover:bg-white/5"
                         )}
                     >
                         <Building className="h-4 w-4" />
@@ -292,121 +242,88 @@ export default function StockPage() {
                     <button 
                         onClick={() => setActiveTab('logs')}
                         className={cn(
-                            "flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-black transition-all",
+                            "flex items-center gap-3 px-8 py-3 rounded-[1.5rem] text-[10px] font-black uppercase tracking-[0.2em] transition-all duration-500",
                             activeTab === 'logs' 
-                                ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20" 
-                                : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+                                ? "bg-primary text-primary-foreground shadow-2xl shadow-primary/20 scale-105" 
+                                : "text-muted-foreground/60 hover:text-foreground hover:bg-white/5"
                         )}
                     >
                         <History className="h-4 w-4" />
-                        Audit
+                        Audit Flux
                     </button>
                 </div>
 
-                <div className="flex items-center gap-2">
-                    <div className="relative flex-grow sm:w-64">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/50" />
+                <div className="flex items-center gap-4 px-4">
+                    <div className="relative group flex-grow max-w-xs">
+                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
                         <Input 
-                            placeholder={activeTab === 'intakes' ? "N° Facture, Fournisseur..." : activeTab === 'suppliers' ? "Nom du fournisseur..." : "Nom du produit..."}
-                            className="pl-9 h-10 rounded-xl bg-card border-none shadow-sm focus-visible:ring-primary/20"
+                            placeholder="Rechercher..."
+                            className="pl-11 h-12 rounded-2xl bg-black/20 border-none shadow-inner focus-visible:ring-primary/20 font-bold"
                             value={searchQuery}
                             onChange={e => setSearchQuery(e.target.value)}
                         />
                     </div>
+                    <DateRangePicker date={dateRange} setDate={setDate} />
                     <Button 
                         variant="outline" 
                         size="icon" 
-                        className="h-10 w-10 rounded-xl border-none bg-card shadow-sm"
+                        className="h-12 w-12 rounded-2xl border-white/5 bg-card/40 hover:bg-primary/10 transition-all group"
                         onClick={fetchData}
                         disabled={isRefreshing}
                     >
-                        <RefreshCw className={cn("h-4 w-4 text-primary", isRefreshing && "animate-spin")} />
+                        <RefreshCw className={cn("h-5 w-5 text-primary transition-all duration-1000", isRefreshing && "animate-spin")} />
                     </Button>
                 </div>
             </div>
 
-            <div className="flex flex-col sm:flex-row gap-3 items-end sm:items-center justify-between">
-                <div className="flex gap-2">
-                    <DateRangePicker date={dateRange} setDate={setDate} />
-                </div>
-                
-                {activeTab === 'intakes' && (
-                    <div className="flex items-center gap-1 rounded-2xl bg-muted/50 p-1">
-                        <Button 
-                            variant={viewMode === 'grid' ? 'secondary': 'ghost'} 
-                            size="icon" 
-                            className="rounded-xl h-9 w-9"
-                            onClick={() => setViewMode('grid')}
-                        >
-                            <LayoutGrid className="h-4 w-4"/>
-                        </Button>
-                        <Button 
-                            variant={viewMode === 'list' ? 'secondary': 'ghost'} 
-                            size="icon" 
-                            className="rounded-xl h-9 w-9"
-                            onClick={() => setViewMode('list')}
-                        >
-                            <List className="h-4 w-4"/>
-                        </Button>
+            <div className="min-h-[500px] animate-in fade-in slide-in-from-bottom-4 duration-1000">
+                {isLoading ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+                        {[...Array(6)].map((_, i) => <Skeleton key={i} className="h-48 w-full rounded-[2.5rem] bg-card/40" />)}
                     </div>
+                ) : (
+                    <>
+                        {activeTab === 'intakes' && (
+                            <div className="space-y-8">
+                                <div className="flex justify-end px-4">
+                                    <div className="flex items-center gap-1 p-1 bg-black/20 rounded-2xl border border-white/5 shadow-inner">
+                                        <Button variant={viewMode === 'grid' ? 'secondary': 'ghost'} size="icon" className="rounded-xl h-9 w-9" onClick={() => setViewMode('grid')}><LayoutGrid className="h-4 w-4"/></Button>
+                                        <Button variant={viewMode === 'list' ? 'secondary': 'ghost'} size="icon" className="rounded-xl h-9 w-9" onClick={() => setViewMode('list')}><List className="h-4 w-4"/></Button>
+                                    </div>
+                                </div>
+                                {stockIntakes?.length === 0 ? (
+                                    <EmptyState icon={Archive} title="Silence Radio" description="Aucune réception enregistrée pour cette période." />
+                                ) : viewMode === 'list' ? (
+                                    <StockIntakeTable intakes={stockIntakes!} supplierMap={supplierMap} onViewDetails={handleViewDetails} onCancelIntake={handleCancelIntake} />
+                                ) : (
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+                                        {stockIntakes!.map(s => (
+                                            <StockIntakeCard key={s.uuid} intake={s} supplierName={s.supplierUuid ? supplierMap.get(s.supplierUuid)?.name : undefined} onViewDetails={handleViewDetails} onCancelIntake={handleCancelIntake} />
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                        {activeTab === 'logs' && (
+                            inventoryLogs?.length === 0 ? (
+                                <EmptyState icon={History} title="Historique Vierge" description="Aucun mouvement de stock détecté sur cette période." />
+                            ) : <InventoryLogTable logs={inventoryLogs!} />
+                        )}
+                        {activeTab === 'suppliers' && (
+                            suppliers?.length === 0 ? (
+                                <EmptyState icon={Building} title="Aucun Partenaire" description="Commencez par ajouter votre premier fournisseur." />
+                            ) : <SupplierTable suppliers={suppliers!} onPay={handlePaySupplier} onEdit={handleEditSupplier} onDelete={handleDeleteSupplier} />
+                        )}
+                    </>
                 )}
             </div>
-            
-            <div className="min-h-[450px] animate-in fade-in duration-500">
-                {isLoading ? renderSkeletons() : (
-                    activeTab === 'intakes' ? renderIntakesContent() : 
-                    activeTab === 'logs' ? <InventoryLogTable logs={inventoryLogs || []} /> :
-                    <SupplierTable 
-                        suppliers={suppliers || []} 
-                        onPay={handlePaySupplier} 
-                        onEdit={handleEditSupplier} 
-                        onDelete={handleDeleteSupplier} 
-                    />
-                )}
-            </div>
 
-            <StockIntakeDetailsDialog 
-                isOpen={isDetailsOpen}
-                onOpenChange={setIsDetailsOpen}
-                intake={selectedIntake}
-                supplierName={selectedIntake?.supplierUuid ? supplierMap.get(selectedIntake.supplierUuid)?.name : 'Fournisseur Inconnu'}
-            />
-
-            <CancelIntakeDialog
-                isOpen={isCancelOpen}
-                onOpenChange={setIsCancelOpen}
-                intake={selectedIntake}
-                onSuccess={fetchData}
-            />
-
-            <StockAdjustmentDialog
-                isOpen={isAdjustmentOpen}
-                onOpenChange={setIsAdjustmentOpen}
-                onSuccess={fetchData}
-            />
-
-            <SupplierPaymentDialog
-                isOpen={isSupplierPayOpen}
-                onOpenChange={setIsSupplierPayOpen}
-                supplier={selectedSupplier}
-                onSuccess={fetchData}
-            />
-
-            <SupplierDialog 
-                isOpen={isSupplierDialogOpen}
-                onOpenChange={setIsSupplierDialogOpen}
-                supplier={selectedSupplier}
-                onSuccess={fetchData}
-            />
-
-            <ConfirmAlertDialog
-                isOpen={isDeleteSupplierOpen}
-                onOpenChange={setIsDeleteSupplierOpen}
-                title={`Supprimer le fournisseur ${selectedSupplier?.name} ?`}
-                description="Cette action est possible uniquement si le solde est nul et qu'il n'y a pas de factures associées."
-                onConfirm={performDeleteSupplier}
-                confirmText="Supprimer"
-            />
+            <StockIntakeDetailsDialog isOpen={isDetailsOpen} onOpenChange={setIsDetailsOpen} intake={selectedIntake} supplierName={selectedIntake?.supplierUuid ? supplierMap.get(selectedIntake.supplierUuid)?.name : 'Partenaire Inconnu'} />
+            <CancelIntakeDialog isOpen={isCancelOpen} onOpenChange={setIsCancelOpen} intake={selectedIntake} onSuccess={fetchData} />
+            <StockAdjustmentDialog isOpen={isAdjustmentOpen} onOpenChange={setIsAdjustmentOpen} onSuccess={fetchData} />
+            <SupplierPaymentDialog isOpen={isSupplierPayOpen} onOpenChange={setIsSupplierPayOpen} supplier={selectedSupplier} onSuccess={fetchData} />
+            <SupplierDialog isOpen={isSupplierDialogOpen} onOpenChange={setIsSupplierDialogOpen} supplier={selectedSupplier} onSuccess={fetchData} />
+            <ConfirmAlertDialog isOpen={isDeleteSupplierOpen} onOpenChange={setIsDeleteSupplierOpen} title={`Révoquer le partenaire ${selectedSupplier?.name} ?`} description="Cette action est irréversible. Seuls les comptes sans factures actives et avec un solde nul peuvent être supprimés." onConfirm={performDeleteSupplier} confirmText="Confirmer Révocation" />
         </div>
     );
 }

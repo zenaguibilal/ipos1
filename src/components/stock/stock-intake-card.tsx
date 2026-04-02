@@ -3,13 +3,13 @@
 
 import React from 'react';
 import type { StockIntake } from '@/lib/types';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { MoreHorizontal, FileText, Trash2 } from 'lucide-react';
+import { MoreHorizontal, FileText, Trash2, Calendar, Hash, Building, ShoppingBag } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { safeToDate, formatCurrency } from '@/lib/utils';
+import { safeToDate, formatCurrency, cn } from '@/lib/utils';
 
 interface StockIntakeCardProps {
     intake: StockIntake;
@@ -19,48 +19,79 @@ interface StockIntakeCardProps {
 }
 
 export const StockIntakeCard = React.memo<StockIntakeCardProps>(({ intake, supplierName, onViewDetails, onCancelIntake }) => {
-    const name = supplierName || 'Fournisseur inconnu';
+    const name = supplierName || 'Partenaire Inconnu';
 
     return (
-        <Card className="transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
-            <CardHeader>
-                <div className="flex justify-between items-start">
-                    <div>
-                        <CardTitle className="text-lg">{name}</CardTitle>
-                        <CardDescription className="font-mono text-xs">{intake.invoiceNumber}</CardDescription>
+        <Card className="luxury-card group flex flex-col justify-between transition-all duration-500 bg-card/40 backdrop-blur-xl border-white/5 relative overflow-hidden rounded-[2.5rem]">
+            {/* Background Accent */}
+            <div className="absolute -right-4 -top-4 opacity-[0.02] group-hover:opacity-10 transition-opacity duration-700 pointer-events-none">
+                <Archive className="h-32 w-32 rotate-12" />
+            </div>
+
+            <div className="absolute top-4 right-4 z-10">
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <Button variant="secondary" size="icon" className="h-9 w-9 bg-background/80 backdrop-blur-md border-white/5 shadow-xl rounded-xl transition-transform active:scale-95">
+                            <MoreHorizontal className="h-5 w-5" />
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="rounded-2xl border-none shadow-2xl bg-card">
+                        <DropdownMenuItem onClick={() => onViewDetails(intake)} className="rounded-xl">
+                            <FileText className="mr-2 h-4 w-4" /> Détails du bon
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => onCancelIntake(intake)} className="text-destructive focus:text-destructive rounded-xl">
+                            <Trash2 className="mr-2 h-4 w-4" /> Annuler l'entrée
+                        </DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
+            </div>
+
+            <CardHeader className="p-6 pb-2">
+                <div className="flex items-center gap-3 mb-2">
+                    <div className="p-2.5 rounded-2xl bg-primary/10 text-primary shadow-inner">
+                        <Building className="h-5 w-5" />
                     </div>
-                     <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0">
-                                <MoreHorizontal className="h-5 w-5" />
-                            </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => onViewDetails(intake)}>
-                                <FileText className="mr-2 h-4 w-4" /> Voir les détails
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => onCancelIntake(intake)} className="text-destructive focus:text-destructive">
-                                <Trash2 className="mr-2 h-4 w-4" /> Annuler la réception
-                            </DropdownMenuItem>
-                        </DropdownMenuContent>
-                    </DropdownMenu>
+                    <div className="min-w-0 pr-10">
+                        <CardTitle className="text-lg font-black tracking-tight group-hover:text-primary transition-colors truncate">
+                            {name}
+                        </CardTitle>
+                        <p className="text-[10px] font-mono font-black uppercase text-muted-foreground/40 mt-1 flex items-center gap-1 tracking-widest">
+                            <Hash className="h-2.5 w-2.5" /> {intake.invoiceNumber || 'No ID'}
+                        </p>
+                    </div>
                 </div>
             </CardHeader>
-            <CardContent className="space-y-2">
-                 <div className="flex justify-between items-center text-sm">
-                    <span className="text-muted-foreground">Date Réception</span>
-                    <span className="font-semibold">{format(safeToDate(intake.createdAt!), 'd MMM yyyy', { locale: fr })}</span>
-                </div>
-                <div className="flex justify-between items-center text-sm">
-                    <span className="text-muted-foreground">Articles</span>
-                    <span className="font-semibold">{intake.items.length}</span>
+
+            <CardContent className="p-6 pt-2 space-y-4">
+                <div className="grid grid-cols-2 gap-3">
+                    <div className="p-3 rounded-2xl bg-muted/20 border border-white/5">
+                        <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground/40 mb-1 flex items-center gap-1">
+                            <Calendar className="h-2.5 w-2.5" /> Date
+                        </p>
+                        <p className="text-xs font-bold">{format(safeToDate(intake.createdAt!), 'dd MMM yyyy', { locale: fr })}</p>
+                    </div>
+                    <div className="p-3 rounded-2xl bg-muted/20 border border-white/5">
+                        <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground/40 mb-1 flex items-center gap-1">
+                            <ShoppingBag className="h-2.5 w-2.5" /> Articles
+                        </p>
+                        <p className="text-xs font-bold">{intake.items.length} Types</p>
+                    </div>
                 </div>
             </CardContent>
-            <CardFooter className="bg-muted p-4 rounded-b-lg">
-                <div className="flex justify-between items-center w-full">
-                    <span className="font-semibold">Valeur Totale</span>
-                    <span className="text-lg font-bold text-primary">{formatCurrency(intake.totalValue)}</span>
+
+            <CardFooter className="p-6 pt-3 border-t border-white/5 bg-muted/5 flex items-center justify-between">
+                <div className="space-y-0.5">
+                    <p className="text-2xl font-black text-primary tracking-tighter leading-none">{formatCurrency(intake.totalValue)}</p>
+                    <p className="text-[9px] text-muted-foreground font-black uppercase tracking-tight opacity-40">Investissement Total</p>
                 </div>
+                <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={() => onViewDetails(intake)}
+                    className="h-9 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-primary/10 hover:text-primary transition-all px-4"
+                >
+                    Examiner
+                </Button>
             </CardFooter>
         </Card>
     );

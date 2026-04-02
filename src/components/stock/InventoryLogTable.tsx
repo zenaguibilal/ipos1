@@ -1,3 +1,4 @@
+
 'use client';
 
 import React from 'react';
@@ -6,7 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { Badge } from '@/components/ui/badge';
-import { ArrowUpRight, ArrowDownLeft, RefreshCcw, ShoppingCart, Undo2, Archive, AlertTriangle, Hash } from 'lucide-react';
+import { ArrowUpRight, ArrowDownLeft, RefreshCcw, ShoppingCart, Undo2, Archive, AlertTriangle, Hash, Clock, Package } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface InventoryLogTableProps {
@@ -23,16 +24,16 @@ const reasonConfig: Record<string, { label: string, icon: React.ElementType, col
 
 export function InventoryLogTable({ logs }: InventoryLogTableProps) {
     return (
-        <div className="rounded-2xl border bg-card overflow-hidden shadow-sm">
+        <div className="rounded-[2.5rem] border border-white/5 bg-card/40 backdrop-blur-xl overflow-hidden shadow-2xl">
             <Table>
                 <TableHeader className="bg-muted/30">
-                    <TableRow>
-                        <TableHead className="w-[180px] font-bold">Date & Heure</TableHead>
-                        <TableHead className="font-bold">Produit</TableHead>
-                        <TableHead className="w-[150px] font-bold">Opération</TableHead>
-                        <TableHead className="font-bold">Référence</TableHead>
-                        <TableHead className="text-center w-[120px] font-bold">Variation</TableHead>
-                        <TableHead className="text-center w-[120px] font-bold">Solde Final</TableHead>
+                    <TableRow className="border-none">
+                        <TableHead className="p-6 font-black text-[10px] uppercase tracking-[0.2em] text-muted-foreground/60">Horodatage</TableHead>
+                        <TableHead className="p-6 font-black text-[10px] uppercase tracking-[0.2em] text-muted-foreground/60">Désignation Produit</TableHead>
+                        <TableHead className="p-6 font-black text-[10px] uppercase tracking-[0.2em] text-muted-foreground/60">Nature Flux</TableHead>
+                        <TableHead className="p-6 font-black text-[10px] uppercase tracking-[0.2em] text-muted-foreground/60">Référence</TableHead>
+                        <TableHead className="p-6 text-center font-black text-[10px] uppercase tracking-[0.2em] text-muted-foreground/60">Variation</TableHead>
+                        <TableHead className="p-6 text-center font-black text-[10px] uppercase tracking-[0.2em] text-primary">Solde Elite</TableHead>
                     </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -41,45 +42,53 @@ export function InventoryLogTable({ logs }: InventoryLogTableProps) {
                         const isPositive = log.change > 0;
 
                         return (
-                            <TableRow key={log.uuid} className="group hover:bg-muted/20 transition-all border-b border-border/50">
-                                <TableCell className="whitespace-nowrap">
-                                    <div className="flex flex-col">
-                                        <span className="font-bold text-xs">{format(new Date(log.createdAt), 'dd MMM yyyy', { locale: fr })}</span>
-                                        <span className="text-[10px] text-muted-foreground uppercase font-black tracking-tighter opacity-60">
-                                            {format(new Date(log.createdAt), 'HH:mm:ss')}
-                                        </span>
+                            <TableRow key={log.uuid} className="group hover:bg-white/5 border-b border-white/5 transition-all duration-300">
+                                <TableCell className="p-6 whitespace-nowrap">
+                                    <div className="flex items-center gap-3">
+                                        <div className="p-2 rounded-xl bg-black/20 text-muted-foreground/40 shadow-inner">
+                                            <Clock className="h-4 w-4" />
+                                        </div>
+                                        <div className="flex flex-col -space-y-0.5">
+                                            <span className="font-bold text-xs">{format(new Date(log.createdAt), 'dd MMM yyyy', { locale: fr })}</span>
+                                            <span className="text-[9px] text-muted-foreground/40 uppercase font-black tracking-widest">{format(new Date(log.createdAt), 'HH:mm:ss')}</span>
+                                        </div>
                                     </div>
                                 </TableCell>
-                                <TableCell>
-                                    <div className="font-black tracking-tight text-sm group-hover:text-primary transition-colors">{log.productName}</div>
+                                <TableCell className="p-6">
+                                    <div className="flex items-center gap-3">
+                                        <div className="p-2 rounded-xl bg-primary/5 text-primary/40">
+                                            <Package className="h-4 w-4" />
+                                        </div>
+                                        <span className="font-black tracking-tight text-sm group-hover:text-primary transition-colors">{log.productName}</span>
+                                    </div>
                                 </TableCell>
-                                <TableCell>
-                                    <Badge variant="outline" className={cn("gap-1.5 px-2.5 py-1 rounded-xl border font-bold text-[10px] uppercase tracking-wider shadow-sm", config.color)}>
-                                        <config.icon className="h-3 w-3" />
+                                <TableCell className="p-6">
+                                    <Badge variant="outline" className={cn("gap-2 px-3 py-1.5 rounded-xl border font-black text-[9px] uppercase tracking-widest shadow-sm", config.color)}>
+                                        <config.icon className="h-3.5 w-3.5" />
                                         {config.label}
                                     </Badge>
                                 </TableCell>
-                                <TableCell>
+                                <TableCell className="p-6">
                                     {log.reference ? (
-                                        <div className="flex items-center gap-1.5 text-xs font-mono font-bold text-muted-foreground bg-muted/50 px-2 py-1 rounded-md w-fit">
-                                            <Hash className="h-3 w-3" />
+                                        <div className="flex items-center gap-2 text-xs font-mono font-bold text-muted-foreground/60 bg-muted/20 px-3 py-1.5 rounded-xl w-fit border border-white/5">
+                                            <Hash className="h-3 w-3 opacity-30" />
                                             {log.reference}
                                         </div>
                                     ) : (
-                                        <span className="text-xs text-muted-foreground/40">-</span>
+                                        <span className="text-xs text-muted-foreground/20 italic">-</span>
                                     )}
                                 </TableCell>
-                                <TableCell className="text-center">
+                                <TableCell className="p-6 text-center">
                                     <div className={cn(
-                                        "inline-flex items-center gap-1 font-black text-sm px-3 py-1 rounded-full",
+                                        "inline-flex items-center gap-1 font-black text-sm px-4 py-1.5 rounded-full shadow-inner",
                                         isPositive ? "text-emerald-500 bg-emerald-500/5" : "text-destructive bg-destructive/5"
                                     )}>
-                                        {isPositive ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownLeft className="h-3 w-3" />}
+                                        {isPositive ? <ArrowUpRight className="h-3.5 w-3.5" /> : <ArrowDownLeft className="h-3.5 w-3.5" />}
                                         {isPositive ? `+${log.change}` : log.change}
                                     </div>
                                 </TableCell>
-                                <TableCell className="text-center">
-                                    <div className="inline-flex items-center justify-center px-3 py-1.5 rounded-xl bg-muted/50 border border-border/50 font-mono font-black text-sm shadow-inner min-w-[60px]">
+                                <TableCell className="p-6 text-center">
+                                    <div className="inline-flex items-center justify-center px-4 py-2 rounded-2xl bg-black/40 border border-white/5 font-mono font-black text-sm shadow-2xl text-primary min-w-[70px]">
                                         {log.newQuantity}
                                     </div>
                                 </TableCell>

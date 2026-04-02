@@ -1,16 +1,32 @@
+
 'use client';
 
 import { useMemo } from 'react';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { StockIntake } from '@/lib/types';
-import { Wallet, Archive, Building } from 'lucide-react';
-import { formatCurrency } from '@/lib/utils';
+import { Wallet, Archive, Building, TrendingUp, Sparkles } from 'lucide-react';
+import { formatCurrency, cn } from '@/lib/utils';
 
 interface StockIntakeStatsProps {
     intakes: StockIntake[] | undefined;
     isLoading: boolean;
 }
+
+const StatCard = ({ title, value, icon: Icon, colorClass, subtitle }: { title: string, value: string, icon: any, colorClass: string, subtitle?: string }) => (
+    <Card className="luxury-card h-full bg-card/40 backdrop-blur-2xl border-white/5 rounded-[2rem] group overflow-hidden">
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3 p-6">
+            <CardTitle className="text-[10px] font-black uppercase tracking-[0.25em] text-muted-foreground group-hover:text-primary transition-all duration-500">{title}</CardTitle>
+            <div className={cn("p-3 rounded-2xl shadow-inner transition-all duration-500 group-hover:scale-110", colorClass)}>
+                <Icon className="h-5 w-5" />
+            </div>
+        </CardHeader>
+        <CardContent className="px-6 pb-6">
+            <div className="text-3xl font-black tracking-tighter text-foreground group-hover:scale-105 transition-transform duration-500 origin-left mb-1">{value}</div>
+            {subtitle && <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground/40">{subtitle}</p>}
+        </CardContent>
+    </Card>
+);
 
 export const StockIntakeStats = ({ intakes, isLoading }: StockIntakeStatsProps) => {
     const stats = useMemo(() => {
@@ -25,43 +41,37 @@ export const StockIntakeStats = ({ intakes, isLoading }: StockIntakeStatsProps) 
 
     if (isLoading) {
         return (
-             <div className="grid gap-4 md:grid-cols-3">
-                <Card><CardHeader><Skeleton className="h-6 w-3/4" /></CardHeader><CardContent><Skeleton className="h-8 w-1/2" /></CardContent></Card>
-                <Card><CardHeader><Skeleton className="h-6 w-3/4" /></CardHeader><CardContent><Skeleton className="h-8 w-1/2" /></CardContent></Card>
-                <Card><CardHeader><Skeleton className="h-6 w-3/4" /></CardHeader><CardContent><Skeleton className="h-8 w-1/2" /></CardContent></Card>
+             <div className="grid gap-6 md:grid-cols-3">
+                {[...Array(3)].map((_, i) => (
+                    <Skeleton key={i} className="h-32 w-full rounded-[2rem] bg-card/40" />
+                ))}
             </div>
         )
     }
 
     return (
-        <div className="grid gap-4 md:grid-cols-3">
-            <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Valeur Totale Reçue</CardTitle>
-                    <Wallet className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                    <div className="text-2xl font-bold">{formatCurrency(stats.totalValue)}</div>
-                </CardContent>
-            </Card>
-            <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Nombre de Réceptions</CardTitle>
-                    <Archive className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                    <div className="text-2xl font-bold">{stats.intakeCount}</div>
-                </CardContent>
-            </Card>
-            <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Fournisseurs Distincts</CardTitle>
-                    <Building className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                    <div className="text-2xl font-bold">{stats.supplierCount}</div>
-                </CardContent>
-            </Card>
+        <div className="grid gap-6 md:grid-cols-3">
+            <StatCard 
+                title="Investissement Stock" 
+                value={formatCurrency(stats.totalValue)} 
+                icon={TrendingUp} 
+                colorClass="bg-emerald-500/10 text-emerald-500"
+                subtitle="Valeur totale des entrées"
+            />
+            <StatCard 
+                title="Bons de Réception" 
+                value={String(stats.intakeCount)} 
+                icon={Archive} 
+                colorClass="bg-primary/10 text-primary"
+                subtitle="Opérations enregistrées"
+            />
+            <StatCard 
+                title="Réseau Fournisseurs" 
+                value={String(stats.supplierCount)} 
+                icon={Building} 
+                colorClass="bg-amber-500/10 text-amber-500"
+                subtitle="Partenaires actifs"
+            />
         </div>
     );
 };

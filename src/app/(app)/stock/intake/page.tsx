@@ -1,19 +1,19 @@
+
 'use client';
 
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Trash2, Save, AlertTriangle, ChevronsUpDown, Plus, Truck } from 'lucide-react';
+import { ArrowLeft, Trash2, Save, AlertTriangle, ChevronsUpDown, Plus, Truck, Package, Archive, Landmark, Hash, Calendar, ShoppingBag, BadgeCheck, Loader2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { DatePicker } from '@/components/ui/date-picker';
 import type { StockIntakeItem, Supplier, Product } from '@/lib/types';
 import { v4 as uuidv4 } from 'uuid';
 import { toast } from 'sonner';
-import { formatCurrency } from '@/lib/utils';
-import { Loader2 } from 'lucide-react';
+import { formatCurrency, cn } from '@/lib/utils';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { ProductIntakeCombobox } from '@/components/stock/ProductIntakeCombobox';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -57,7 +57,7 @@ export default function NewStockIntakePage() {
                 const data = await supplierService.getSuppliers();
                 setSuppliers(data);
             } catch (error: any) {
-                toast.error("Impossible de charger les fournisseurs.", { description: error.message });
+                toast.error("Impossible de charger les partenaires.");
             }
         };
         fetchSuppliers();
@@ -76,7 +76,7 @@ export default function NewStockIntakePage() {
             const newItems = [...items];
             newItems[existingItemIndex].quantity += 1;
             setItems(newItems);
-            toast.info(`Quantité de "${product.name}" augmentée.`);
+            toast.info(`Quantité augmentée pour "${product.name}".`);
         } else {
             setItems(prev => [
                 ...prev,
@@ -138,26 +138,21 @@ export default function NewStockIntakePage() {
 
     const handleSave = async () => {
         if (!supplierName) {
-            toast.error("Veuillez remplir le nom du fournisseur.");
+            toast.error("Identité du fournisseur requise.");
             return;
         }
         if (items.length === 0) {
-            toast.error("Veuillez ajouter au moins un produit à la réception.");
+            toast.error("Veuillez lister au moins un article.");
             return;
         }
 
-        // --- Validation ---
         for (const item of items) {
             if (!item.name || item.quantity <= 0 || item.purchasePrice < 0) {
-                toast.error(`Veuillez remplir les informations pour l'article "${item.name || 'Nouvel article'}". La quantité doit être > 0 et le prix d'achat >= 0.`);
-                return;
-            }
-             if (item.quantityDamaged > item.quantity) {
-                toast.error(`La quantité endommagée ne peut pas dépasser la quantité reçue pour "${item.name}".`);
+                toast.error(`Informations invalides pour "${item.name || 'Nouvel article'}".`);
                 return;
             }
             if (item.isNew && item.price <= 0) {
-                toast.error(`Veuillez définir un prix de vente pour le nouvel article "${item.name}".`);
+                toast.error(`Prix de vente manquant pour "${item.name}".`);
                 return;
             }
         }
@@ -197,201 +192,238 @@ export default function NewStockIntakePage() {
     if (!isMounted) return null;
 
     return (
-        <div className="p-4 sm:p-6 space-y-6">
-            <PageHeader
-                title="Nouvelle Réception de Stock"
-                description="Enregistrez les marchandises reçues et répartissez les frais de transport."
-            >
-                <div className="flex items-center gap-4">
-                     <Button variant="outline" size="icon" asChild>
-                        <Link href="/stock"><ArrowLeft className="h-4 w-4" /></Link>
-                     </Button>
-                    <Button onClick={handleSave} disabled={isSaving}>
-                        {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                        {isSaving ? 'Enregistrement...' : 'Enregistrer la réception'}
-                    </Button>
-                </div>
-            </PageHeader>
+        <div className="p-6 sm:p-10 space-y-8 max-w-7xl mx-auto animate-in fade-in duration-1000">
+            <div className="flex items-center gap-4">
+                 <Button variant="outline" size="icon" className="h-12 w-12 rounded-2xl border-white/5 bg-card/40 backdrop-blur-md" asChild>
+                    <Link href="/stock"><ArrowLeft className="h-5 w-5" /></Link>
+                 </Button>
+                 <PageHeader
+                    title="Reception Center"
+                    description="Traitement Elite des entrées de marchandises"
+                 />
+                 <Button 
+                    onClick={handleSave} 
+                    disabled={isSaving || items.length === 0}
+                    className="ml-auto h-12 px-8 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-primary/20 transition-all active:scale-95 gap-3"
+                 >
+                    {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <BadgeCheck className="h-4 w-4" />}
+                    {isSaving ? 'Finalisation...' : 'Valider la Réception'}
+                 </Button>
+            </div>
 
-            <Card>
-                <CardContent className="p-6 grid md:grid-cols-4 gap-6">
-                    <div className="space-y-2">
-                        <Label htmlFor="supplier">Fournisseur</Label>
-                         <Popover open={supplierPopoverOpen} onOpenChange={setSupplierPopoverOpen}>
-                            <PopoverTrigger asChild>
-                                <Button
-                                    variant="outline"
-                                    role="combobox"
-                                    className="w-full justify-between"
-                                >
-                                    {supplierName || "Sélectionner ou créer..."}
-                                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                                </Button>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
-                                <Command>
-                                    <CommandInput 
-                                        placeholder="Rechercher ou créer..." 
-                                        onValueChange={setSupplierSearch}
-                                    />
-                                    <CommandList>
-                                        <CommandEmpty>
-                                            <Button 
-                                                variant="link" 
-                                                className="w-full"
-                                                onClick={handleSupplierCreate}>
-                                                <Plus className="mr-2 h-4 w-4" />
-                                                Créer "{supplierSearch}"
-                                            </Button>
-                                        </CommandEmpty>
-                                        <CommandGroup>
-                                            {supplierOptions?.map((supplier) => (
-                                                <CommandItem
-                                                    key={supplier.uuid}
-                                                    value={supplier.uuid}
-                                                    onSelect={() => handleSupplierSelect(supplier.uuid)}
-                                                >
-                                                    {supplier.name}
-                                                </CommandItem>
-                                            ))}
-                                        </CommandGroup>
-                                    </CommandList>
-                                </Command>
-                            </PopoverContent>
-                        </Popover>
-                    </div>
-                     <div className="space-y-2">
-                        <Label htmlFor="invoiceNumber">N° Facture/Bon</Label>
-                        <Input id="invoiceNumber" value={invoiceNumber} onChange={e => setInvoiceNumber(e.target.value)} placeholder="INV-12345" />
-                    </div>
-                    <div className="space-y-2">
-                        <Label>Date Facture</Label>
-                        <DatePicker date={invoiceDate} setDate={setInvoiceDate} />
-                    </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="shippingCost" className="flex items-center gap-2 text-primary font-bold">
-                            <Truck className="h-4 w-4" /> Frais de Transport (DA)
-                        </Label>
-                        <Input 
-                            id="shippingCost" 
-                            type="number" 
-                            className="border-primary/30 focus-visible:ring-primary font-bold"
-                            value={shippingCost} 
-                            onChange={e => setShippingCost(Number(e.target.value) || 0)} 
-                            placeholder="0.00" 
-                        />
-                    </div>
-                </CardContent>
-            </Card>
-
-             <Card>
-                <CardContent className="p-6 space-y-4">
-                    <h3 className="font-semibold text-lg">Articles Reçus</h3>
-                    
-                    <ProductIntakeCombobox 
-                        onProductSelected={handleAddProduct}
-                        onNewProductCreated={handleAddNewItem}
-                    />
-                    
-                     <div className="overflow-x-auto">
-                        <table className="w-full text-sm">
-                            <thead>
-                                <tr className="border-b">
-                                    <th className="p-2 text-left min-w-[200px]">Produit</th>
-                                    <th className="p-2 text-left w-24 text-center">Unité</th>
-                                    <th className="p-2 text-left w-24 text-center">Qté</th>
-                                    <th className="p-2 text-left w-32 text-right">P.U Achat</th>
-                                    <th className="p-2 text-left w-32 text-right bg-primary/5 text-primary">Coût de Revient</th>
-                                    <th className="p-2 text-left w-32 text-right">P.U Vente</th>
-                                    <th className="p-2 text-right w-12"></th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {items.map(item => {
-                                    const landingCost = item.purchasePrice * (1 + shippingFactor);
-                                    const isLoss = item.price > 0 && landingCost > 0 && item.price < landingCost;
-                                    
-                                    return (
-                                        <tr key={item.id} className="border-b hover:bg-muted/20 transition-colors">
-                                            <td className="p-2">
-                                                {item.isNew ? (
-                                                    <Input placeholder="Nom produit" value={item.name} onChange={e => handleItemChange(item.id, 'name', e.target.value)} />
-                                                ) : (
-                                                    <div className="flex flex-col">
-                                                        <span className="font-bold">{item.name}</span>
-                                                        <span className="text-[10px] text-muted-foreground uppercase">{item.category || 'N/A'}</span>
-                                                    </div>
-                                                )}
-                                            </td>
-                                            <td className="p-2">
-                                                {item.isNew ? (
-                                                    <Select value={item.unite} onValueChange={(value) => handleItemChange(item.id, 'unite', value)}>
-                                                        <SelectTrigger className="h-8"><SelectValue /></SelectTrigger>
-                                                        <SelectContent>
-                                                            {units.map(u => <SelectItem key={u} value={u}>{u}</SelectItem>)}
-                                                        </SelectContent>
-                                                    </Select>
-                                                ) : <div className="text-center">{item.unite || 'N/A'}</div>}
-                                            </td>
-                                            <td className="p-2"><Input type="number" className="h-8 text-center" value={item.quantity} onChange={e => handleItemChange(item.id, 'quantity', parseInt(e.target.value) || 0)} /></td>
-                                            <td className="p-2"><Input type="number" step="0.1" className="h-8 text-right" value={item.purchasePrice} onChange={e => handleItemChange(item.id, 'purchasePrice', parseFloat(e.target.value) || 0)} /></td>
-                                            <td className="p-2 text-right bg-primary/5 font-black text-primary">
-                                                {landingCost.toFixed(1)}
-                                            </td>
-                                            <td className="p-2">
-                                                <div className="relative">
-                                                     <Input type="number" step="0.1" className="h-8 text-right font-bold" value={item.price} onChange={e => handleItemChange(item.id, 'price', parseFloat(e.target.value) || 0)} disabled={!item.isNew} />
-                                                     {isLoss && (
-                                                        <div className="absolute -bottom-5 left-0 text-[10px] text-destructive flex items-center gap-1 font-bold uppercase">
-                                                          <AlertTriangle className="h-3 w-3" /> Vente à perte
-                                                        </div>
-                                                     )}
-                                                </div>
-                                            </td>
-                                            <td className="p-2 text-right">
-                                                <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => handleRemoveItem(item.id)}><Trash2 className="h-4 w-4" /></Button>
-                                            </td>
-                                        </tr>
-                                    )
-                                })}
-                                {items.length === 0 && (
-                                    <tr>
-                                        <td colSpan={7} className="p-8 text-center text-muted-foreground">Aucun article ajouté.</td>
-                                    </tr>
-                                )}
-                            </tbody>
-                        </table>
-                    </div>
-
-                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-6 border-t">
-                        <div className="p-4 rounded-xl bg-muted/30 border space-y-2">
-                            <h4 className="text-xs font-black uppercase tracking-widest text-muted-foreground">Résumé Distribution</h4>
-                            <div className="flex justify-between text-sm">
-                                <span>Part du transport par DA d'achat:</span>
-                                <span className="font-bold text-primary">{(shippingFactor * 100).toFixed(2)}%</span>
+            <div className="grid lg:grid-cols-12 gap-8 items-start">
+                {/* Header Information */}
+                <Card className="lg:col-span-4 rounded-[2.5rem] bg-card/40 backdrop-blur-3xl border-white/5 overflow-hidden shadow-2xl">
+                    <CardHeader className="bg-primary/5 p-8 border-b border-white/5">
+                        <div className="flex items-center gap-3">
+                            <div className="p-3 rounded-2xl bg-primary text-primary-foreground shadow-lg shadow-primary/20">
+                                <Archive className="h-6 w-6" />
                             </div>
-                            <p className="text-[10px] text-muted-foreground">
-                                * Les frais de transport sont répartis automatiquement sur le prix d'achat de chaque produit pour calculer le coût de revient réel.
+                            <div>
+                                <CardTitle className="text-xl font-black tracking-tighter">Entête du Bon</CardTitle>
+                                <CardDescription className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">Détails administratifs</CardDescription>
+                            </div>
+                        </div>
+                    </CardHeader>
+                    <CardContent className="p-8 space-y-6">
+                        <div className="space-y-2">
+                            <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1 flex items-center gap-2">
+                                <Building className="h-3 w-3 text-primary" /> Partenaire Fournisseur
+                            </Label>
+                             <Popover open={supplierPopoverOpen} onOpenChange={setSupplierPopoverOpen}>
+                                <PopoverTrigger asChild>
+                                    <Button variant="outline" role="combobox" className="w-full justify-between h-14 rounded-2xl bg-muted/20 border-none shadow-inner font-bold text-base px-6">
+                                        {supplierName || "Choisir ou créer..."}
+                                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-30" />
+                                    </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0 rounded-2xl shadow-2xl border-white/5 overflow-hidden">
+                                    <Command>
+                                        <CommandInput placeholder="Rechercher..." onValueChange={setSupplierSearch} />
+                                        <CommandList>
+                                            <CommandEmpty>
+                                                <Button variant="link" className="w-full text-xs" onClick={handleSupplierCreate}>
+                                                    <Plus className="mr-2 h-4 w-4" /> Créer "{supplierSearch}"
+                                                </Button>
+                                            </CommandEmpty>
+                                            <CommandGroup>
+                                                {supplierOptions?.map((supplier) => (
+                                                    <CommandItem key={supplier.uuid} value={supplier.uuid} onSelect={() => handleSupplierSelect(supplier.uuid)} className="font-bold p-3">
+                                                        {supplier.name}
+                                                    </CommandItem>
+                                                ))}
+                                            </CommandGroup>
+                                        </CommandList>
+                                    </Command>
+                                </PopoverContent>
+                            </Popover>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1 flex items-center gap-2">
+                                    <Hash className="h-3 w-3" /> N° Facture
+                                </Label>
+                                <Input value={invoiceNumber} onChange={e => setInvoiceNumber(e.target.value)} placeholder="Ex: INV-Elite" className="h-12 rounded-xl bg-muted/20 border-none shadow-inner font-bold" />
+                            </div>
+                            <div className="space-y-2">
+                                <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1 flex items-center gap-2">
+                                    <Calendar className="h-3 w-3" /> Date
+                                </Label>
+                                <DatePicker date={invoiceDate} setDate={setInvoiceDate} />
+                            </div>
+                        </div>
+
+                        <div className="p-6 bg-primary/5 rounded-[2rem] border border-primary/10 space-y-4">
+                            <Label className="text-[10px] font-black uppercase tracking-widest text-primary flex items-center gap-2">
+                                <Truck className="h-4 w-4" /> Logistique (Transport)
+                            </Label>
+                            <div className="relative">
+                                <Input 
+                                    type="number" 
+                                    className="h-16 rounded-2xl bg-background border-none shadow-inner font-black text-2xl text-primary text-center focus-visible:ring-primary/20"
+                                    value={shippingCost || ''} 
+                                    onChange={e => setShippingCost(Number(e.target.value) || 0)} 
+                                    placeholder="0.0" 
+                                />
+                                <div className="absolute right-6 top-1/2 -translate-y-1/2 font-black text-xs opacity-20">DA</div>
+                            </div>
+                            <p className="text-[9px] text-muted-foreground italic leading-relaxed text-center px-4">
+                                Ce montant sera répartي proportionnellement sur le coût de revient de chaque article.
                             </p>
                         </div>
+                    </CardContent>
+                </Card>
 
-                        <div className="space-y-2">
-                            <div className="flex justify-between items-center text-sm text-muted-foreground px-1">
-                                <span>Valeur Marchandise:</span>
-                                <span className="font-bold">{formatCurrency(itemsTotalValue)}</span>
+                {/* Articles List */}
+                <div className="lg:col-span-8 space-y-8">
+                    <Card className="rounded-[2.5rem] bg-card/40 backdrop-blur-3xl border-white/5 overflow-hidden shadow-2xl">
+                        <CardHeader className="bg-muted/20 p-8 border-b border-white/5 flex flex-row items-center justify-between">
+                            <div>
+                                <CardTitle className="text-xl font-black tracking-tighter">Manifeste des Marchandises</CardTitle>
+                                <CardDescription className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">{items.length} positions identifiées</CardDescription>
                             </div>
-                            <div className="flex justify-between items-center text-sm text-primary px-1">
-                                <span>Frais Transport:</span>
-                                <span className="font-bold">+ {formatCurrency(shippingCost)}</span>
+                            <div className="w-full max-w-xs">
+                                <ProductIntakeCombobox onProductSelected={handleAddProduct} onNewProductCreated={handleAddNewItem} />
                             </div>
-                            <div className="flex justify-between items-center p-4 bg-primary/10 rounded-xl border border-primary/20">
-                                <span className="font-black uppercase tracking-tighter">Total à Payer:</span>
-                                <span className="text-2xl font-black text-primary">{formatCurrency(grandTotal)}</span>
+                        </CardHeader>
+                        <CardContent className="p-0">
+                            <div className="overflow-x-auto">
+                                <table className="w-full">
+                                    <thead>
+                                        <tr className="bg-muted/30 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/60 border-b border-white/5">
+                                            <th className="p-6 text-left">Article / Rayon</th>
+                                            <th className="p-6 text-center">Qté</th>
+                                            <th className="p-6 text-right">P.U Achat</th>
+                                            <th className="p-6 text-right text-primary">C. Revient</th>
+                                            <th className="p-6 text-right">P.U Vente</th>
+                                            <th className="p-6 w-12"></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-white/5">
+                                        {items.map(item => {
+                                            const landingCost = item.purchasePrice * (1 + shippingFactor);
+                                            const isLoss = item.price > 0 && landingCost > 0 && item.price < landingCost;
+                                            
+                                            return (
+                                                <tr key={item.id} className="hover:bg-primary/5 transition-colors group">
+                                                    <td className="p-6">
+                                                        {item.isNew ? (
+                                                            <Input placeholder="Désignation..." value={item.name} onChange={e => handleItemChange(item.id, 'name', e.target.value)} className="h-10 bg-muted/20 border-none shadow-inner rounded-xl font-bold" />
+                                                        ) : (
+                                                            <div className="flex flex-col">
+                                                                <span className="font-black text-sm tracking-tight group-hover:text-primary transition-colors">{item.name}</span>
+                                                                <span className="text-[9px] text-muted-foreground/40 uppercase font-black tracking-widest">{item.category || 'Stock Général'}</span>
+                                                            </div>
+                                                        )}
+                                                    </td>
+                                                    <td className="p-6">
+                                                        <div className="flex items-center gap-2 justify-center">
+                                                            <Input type="number" className="h-10 w-20 text-center font-black rounded-xl bg-background/50 border-none shadow-inner" value={item.quantity} onChange={e => handleItemChange(item.id, 'quantity', parseInt(e.target.value) || 0)} />
+                                                            <span className="text-[9px] font-black text-muted-foreground/30 uppercase">{item.unite || 'pcs'}</span>
+                                                        </div>
+                                                    </td>
+                                                    <td className="p-6">
+                                                        <Input type="number" step="0.1" className="h-10 w-24 text-right font-bold rounded-xl bg-background/50 border-none shadow-inner ml-auto" value={item.purchasePrice || ''} onChange={e => handleItemChange(item.id, 'purchasePrice', parseFloat(e.target.value) || 0)} />
+                                                    </td>
+                                                    <td className="p-6 text-right">
+                                                        <div className="flex flex-col items-end">
+                                                            <span className="font-black text-primary tracking-tighter text-sm">{landingCost.toFixed(1)}</span>
+                                                            {shippingCost > 0 && <span className="text-[8px] font-black text-primary/40 uppercase tracking-tighter">Transport inclus</span>}
+                                                        </div>
+                                                    </td>
+                                                    <td className="p-6">
+                                                        <div className="relative flex items-center justify-end">
+                                                            <Input type="number" step="0.1" className={cn("h-10 w-24 text-right font-black rounded-xl bg-primary/5 border-none shadow-inner", isLoss && "text-destructive ring-1 ring-destructive/20")} value={item.price || ''} onChange={e => handleItemChange(item.id, 'price', parseFloat(e.target.value) || 0)} disabled={!item.isNew} />
+                                                            {isLoss && (
+                                                                <TooltipProvider>
+                                                                    <Tooltip>
+                                                                        <TooltipTrigger asChild>
+                                                                            <AlertTriangle className="absolute -right-6 h-4 w-4 text-destructive animate-pulse" />
+                                                                        </TooltipTrigger>
+                                                                        <TooltipContent className="bg-destructive text-white rounded-xl border-none shadow-xl font-bold">Vente à perte !</TooltipContent>
+                                                                    </Tooltip>
+                                                                </TooltipProvider>
+                                                            )}
+                                                        </div>
+                                                    </td>
+                                                    <td className="p-6">
+                                                        <Button variant="ghost" size="icon" className="h-9 w-9 text-muted-foreground/20 hover:text-destructive hover:bg-destructive/10 rounded-xl transition-all" onClick={() => handleRemoveItem(item.id)}><Trash2 className="h-4 w-4" /></Button>
+                                                    </td>
+                                                </tr>
+                                            )
+                                        })}
+                                        {items.length === 0 && (
+                                            <tr>
+                                                <td colSpan={6} className="p-20 text-center">
+                                                    <div className="flex flex-col items-center gap-4 opacity-20">
+                                                        <ShoppingBag className="h-16 w-16" />
+                                                        <p className="text-[10px] font-black uppercase tracking-[0.4em]">Le manifeste est vide</p>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        )}
+                                    </tbody>
+                                </table>
                             </div>
-                        </div>
-                    </div>
-                </CardContent>
-             </Card>
+
+                            <div className="p-10 bg-muted/10 border-t border-white/5">
+                                <div className="grid md:grid-cols-2 gap-10">
+                                    <div className="p-6 rounded-[2rem] bg-black/20 border border-white/5 space-y-4">
+                                        <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-primary/60">Analyse de Rentabilité</h4>
+                                        <div className="flex justify-between items-end border-b border-white/5 pb-4">
+                                            <span className="text-xs font-bold text-muted-foreground">Charge logistique par DA :</span>
+                                            <span className="text-xl font-black text-primary">{(shippingFactor * 100).toFixed(2)}%</span>
+                                        </div>
+                                        <p className="text-[9px] text-muted-foreground/50 leading-relaxed italic">
+                                            Le système a automatiquement calculé le surcoût de transport pour chaque unité afin de protéger vos marges.
+                                        </p>
+                                    </div>
+
+                                    <div className="space-y-4">
+                                        <div className="flex justify-between items-center text-xs font-bold text-muted-foreground px-2">
+                                            <span className="uppercase tracking-widest opacity-50">Marchandise Pure</span>
+                                            <span className="font-mono">{formatCurrency(itemsTotalValue)}</span>
+                                        </div>
+                                        <div className="flex justify-between items-center text-xs font-bold text-primary px-2">
+                                            <span className="uppercase tracking-widest opacity-50">Logistique Totale</span>
+                                            <span className="font-mono">+ {formatCurrency(shippingCost)}</span>
+                                        </div>
+                                        <div className="h-px bg-white/10 my-2" />
+                                        <div className="flex justify-between items-center p-6 rounded-[2rem] bg-primary text-primary-foreground shadow-2xl shadow-primary/20">
+                                            <div className="flex flex-col">
+                                                <span className="text-[10px] font-black uppercase tracking-[0.3em] opacity-60">Total à Facturer</span>
+                                                <span className="text-3xl font-black tracking-tighter">{formatCurrency(grandTotal)}</span>
+                                            </div>
+                                            <Landmark className="h-8 w-8 opacity-20" />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </div>
+            </div>
         </div>
     );
 }

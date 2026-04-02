@@ -1,3 +1,4 @@
+
 'use client';
 
 import React from 'react';
@@ -5,7 +6,7 @@ import type { Supplier } from '@/lib/types';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { formatCurrency } from '@/lib/utils';
-import { HandCoins, Edit, Trash2, Phone, Building, ChevronRight } from 'lucide-react';
+import { HandCoins, Edit, Trash2, Phone, Building, ChevronRight, Hash, ArrowUpRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
 
@@ -18,72 +19,76 @@ interface SupplierTableProps {
 
 export function SupplierTable({ suppliers, onPay, onEdit, onDelete }: SupplierTableProps) {
     return (
-        <div className="rounded-2xl border bg-card overflow-hidden shadow-sm">
+        <div className="rounded-[2.5rem] border border-white/5 bg-card/40 backdrop-blur-xl overflow-hidden shadow-2xl">
             <Table>
                 <TableHeader className="bg-muted/30">
-                    <TableRow>
-                        <TableHead className="font-bold">Nom du Fournisseur</TableHead>
-                        <TableHead className="font-bold">Contact / Tél</TableHead>
-                        <TableHead className="text-right font-bold">Solde (Dette)</TableHead>
-                        <TableHead className="text-right font-bold">Actions</TableHead>
+                    <TableRow className="border-none">
+                        <TableHead className="p-6 font-black text-[10px] uppercase tracking-[0.2em] text-muted-foreground/60">Partenaire</TableHead>
+                        <TableHead className="p-6 font-black text-[10px] uppercase tracking-[0.2em] text-muted-foreground/60">Contact Elite</TableHead>
+                        <TableHead className="p-6 text-right font-black text-[10px] uppercase tracking-[0.2em] text-destructive">Solde Du (Dette)</TableHead>
+                        <TableHead className="p-6 w-[150px] text-right font-black text-[10px] uppercase tracking-[0.2em] text-muted-foreground/60">Gestion</TableHead>
                     </TableRow>
                 </TableHeader>
                 <TableBody>
                     {suppliers.map((supplier) => (
-                        <TableRow key={supplier.uuid} className="group hover:bg-muted/20 transition-all border-b border-border/50">
-                            <TableCell>
-                                <Link href={`/stock/suppliers/${supplier.uuid}`} className="flex items-center gap-3 hover:text-primary transition-colors">
-                                    <div className="p-2 rounded-xl bg-primary/10 text-primary">
-                                        <Building className="h-4 w-4" />
+                        <TableRow key={supplier.uuid} className="group hover:bg-primary/5 border-b border-white/5 transition-all duration-300">
+                            <TableCell className="p-6">
+                                <Link href={`/stock/suppliers/${supplier.uuid}`} className="flex items-center gap-4 group/link">
+                                    <div className="p-3 rounded-2xl bg-muted text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary transition-all shadow-inner">
+                                        <Building className="h-5 w-5" />
                                     </div>
-                                    <div className="flex flex-col">
-                                        <span className="font-black tracking-tight">{supplier.name}</span>
-                                        <span className="text-[10px] text-muted-foreground flex items-center gap-1">Voir les détails <ChevronRight className="h-2 w-2" /></span>
+                                    <div className="flex flex-col -space-y-0.5">
+                                        <span className="font-black text-base tracking-tighter group-hover:text-primary transition-colors">{supplier.name}</span>
+                                        <span className="text-[9px] font-black uppercase text-muted-foreground/40 tracking-widest flex items-center gap-1 group-hover/link:text-primary/60 transition-colors">
+                                            Dossier Complet <ChevronRight className="h-2.5 w-2.5" />
+                                        </span>
                                     </div>
                                 </Link>
                             </TableCell>
-                            <TableCell>
-                                <div className="flex flex-col">
-                                    <span className="text-sm font-medium">{supplier.contactPerson || '-'}</span>
+                            <TableCell className="p-6">
+                                <div className="flex flex-col -space-y-0.5">
+                                    <span className="text-sm font-bold tracking-tight">{supplier.contactPerson || 'Non spécifié'}</span>
                                     {supplier.phone && (
-                                        <span className="text-xs text-muted-foreground flex items-center gap-1">
-                                            <Phone className="h-3 w-3" /> {supplier.phone}
+                                        <span className="text-[10px] font-mono font-bold text-muted-foreground/50 flex items-center gap-1.5 mt-1">
+                                            <Phone className="h-3 w-3 text-primary/40" /> {supplier.phone}
                                         </span>
                                     )}
                                 </div>
                             </TableCell>
-                            <TableCell className="text-right">
-                                <span className={cn(
-                                    "px-3 py-1.5 rounded-xl font-mono font-black text-sm shadow-inner",
-                                    supplier.balance > 0 ? "bg-destructive/10 text-destructive border border-destructive/20" : "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20"
+                            <TableCell className="p-6 text-right">
+                                <div className={cn(
+                                    "inline-flex items-center justify-center px-5 py-2 rounded-2xl font-mono font-black text-sm shadow-2xl border transition-all duration-500",
+                                    supplier.balance > 0 
+                                        ? "bg-destructive/5 text-destructive border-destructive/20 group-hover:bg-destructive/10" 
+                                        : "bg-emerald-500/5 text-emerald-500 border-emerald-500/20"
                                 )}>
                                     {formatCurrency(supplier.balance)}
-                                </span>
+                                </div>
                             </TableCell>
-                            <TableCell className="text-right">
-                                <div className="flex justify-end gap-1">
+                            <TableCell className="p-6 text-right">
+                                <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                                     <Button 
-                                        variant="ghost" 
+                                        variant="outline" 
                                         size="icon" 
-                                        className="h-9 w-9 text-primary hover:bg-primary/10"
+                                        className="h-10 w-10 rounded-xl border-white/5 bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500 hover:text-white transition-all shadow-lg"
                                         onClick={() => onPay(supplier)}
                                         disabled={supplier.balance <= 0}
-                                        title="Régler une dette"
+                                        title="Régler réelement"
                                     >
                                         <HandCoins className="h-4 w-4" />
                                     </Button>
                                     <Button 
-                                        variant="ghost" 
+                                        variant="outline" 
                                         size="icon" 
-                                        className="h-9 w-9 hover:bg-muted"
+                                        className="h-10 w-10 rounded-xl border-white/5 bg-background/50 hover:bg-primary/10 transition-all shadow-lg"
                                         onClick={() => onEdit(supplier)}
                                     >
                                         <Edit className="h-4 w-4" />
                                     </Button>
                                     <Button 
-                                        variant="ghost" 
+                                        variant="outline" 
                                         size="icon" 
-                                        className="h-9 w-9 text-destructive hover:bg-destructive/10"
+                                        className="h-10 w-10 rounded-xl border-white/5 bg-destructive/10 text-destructive hover:bg-destructive hover:text-white transition-all shadow-lg"
                                         onClick={() => onDelete(supplier)}
                                     >
                                         <Trash2 className="h-4 w-4" />
@@ -94,8 +99,11 @@ export function SupplierTable({ suppliers, onPay, onEdit, onDelete }: SupplierTa
                     ))}
                     {suppliers.length === 0 && (
                         <TableRow>
-                            <TableCell colSpan={4} className="h-24 text-center text-muted-foreground">
-                                Aucun fournisseur enregistré.
+                            <TableCell colSpan={4} className="p-24 text-center">
+                                <div className="flex flex-col items-center gap-4 opacity-20">
+                                    <Building className="h-16 w-16" />
+                                    <p className="text-[10px] font-black uppercase tracking-[0.4em]">Annuaire vide</p>
+                                </div>
                             </TableCell>
                         </TableRow>
                     )}
