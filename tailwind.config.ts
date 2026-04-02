@@ -71,12 +71,12 @@ const config: Config = {
         },
         "flash": {
           '0%, 100%': { background: 'transparent' },
-          '50%': { background: 'hsl(var(--primary) / 0.2)' },
+          '50%': { background: 'hsl(var(--primary) / 0.15)' },
         }
       },
       animation: {
         "warm-gradient": "warm-gradient 15s ease infinite",
-        "flash": "flash 0.5s ease-out",
+        "flash": "flash 0.6s ease-out",
       },
     },
   },

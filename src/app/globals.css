@@ -4,90 +4,83 @@
 
 @layer base {
   :root {
-    --background: 28 20% 6%; /* #1a120c */
-    --foreground: 30 25% 90%; /* Light beige */
+    /* Luxury Dark Coffee Palette */
+    --background: 25 35% 4%; /* Deep Coffee Dark */
+    --foreground: 30 20% 92%; /* Soft Cream/Beige for text */
 
-    --card: 28 20% 8%;
-    --card-foreground: 30 25% 90%;
+    --card: 25 30% 6%;
+    --card-foreground: 30 20% 92%;
  
-    --popover: 28 20% 6%;
-    --popover-foreground: 30 25% 90%;
+    --popover: 25 35% 4%;
+    --popover-foreground: 30 20% 92%;
  
-    --primary: 34 100% 65%; /* #ffb74d - Bright Amber */
-    --primary-foreground: 28 30% 10%;
+    --primary: 32 95% 55%; /* Luxury Vibrant Orange/Gold */
+    --primary-foreground: 25 40% 5%;
 
-    --secondary: 30 15% 20%;
-    --secondary-foreground: 30 25% 90%;
+    --secondary: 25 20% 12%;
+    --secondary-foreground: 30 20% 95%;
  
-    --muted: 30 15% 20%;
-    --muted-foreground: 30 20% 65%;
+    --muted: 25 20% 12%;
+    --muted-foreground: 25 15% 65%;
  
-    --accent: 30 15% 25%;
-    --accent-foreground: 30 25% 95%;
+    --accent: 32 95% 55%;
+    --accent-foreground: 25 40% 5%;
  
-    --destructive: 0 60% 50%;
+    --destructive: 0 70% 50%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 34 100% 65%;
-    --input: 30 15% 20%;
-    --ring: 34 100% 75%;
+    --border: 32 95% 55% / 0.15;
+    --input: 25 20% 12%;
+    --ring: 32 95% 55%;
  
-    --radius: 1.5rem;
+    --radius: 1.25rem;
     
-    --chart-primary: 34 100% 65%;
-    --chart-secondary: 28 80% 70%;
-    --chart-tertiary: 10 70% 65%;
-    --chart-quaternary: 150 60% 55%;
-    --chart-quinary: 280 92% 62%;
+    --chart-primary: 32 95% 55%;
+    --chart-secondary: 25 60% 45%;
+    --chart-tertiary: 15 80% 50%;
+    --chart-quaternary: 160 60% 45%;
+    --chart-quinary: 35 100% 60%;
   }
  
   .dark {
-     /* Same as root for forced dark mode */
-    --background: 28 20% 6%;
-    --foreground: 30 25% 90%;
+    --background: 25 35% 4%;
+    --foreground: 30 20% 92%;
 
-    --card: 28 20% 8%;
-    --card-foreground: 30 25% 90%;
+    --card: 25 30% 6%;
+    --card-foreground: 30 20% 92%;
  
-    --popover: 28 20% 6%;
-    --popover-foreground: 30 25% 90%;
+    --popover: 25 35% 4%;
+    --popover-foreground: 30 20% 92%;
  
-    --primary: 34 100% 65%;
-    --primary-foreground: 28 30% 10%;
+    --primary: 32 95% 55%;
+    --primary-foreground: 25 40% 5%;
     
-    --chart-primary: 34 100% 65%;
-    --chart-secondary: 28 80% 70%;
-    --chart-tertiary: 10 70% 65%;
-    --chart-quaternary: 150 60% 55%;
-    --chart-quinary: 280 92% 62%;
-
-    --secondary: 30 15% 20%;
-    --secondary-foreground: 30 25% 90%;
+    --secondary: 25 20% 12%;
+    --secondary-foreground: 30 20% 95%;
  
-    --muted: 30 15% 20%;
-    --muted-foreground: 30 20% 65%;
+    --muted: 25 20% 12%;
+    --muted-foreground: 25 15% 65%;
  
-    --accent: 30 15% 25%;
-    --accent-foreground: 30 25% 95%;
+    --accent: 32 95% 55% / 0.1;
+    --accent-foreground: 32 95% 55%;
  
     --destructive: 0 70% 55%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 34 100% 65%;
-    --input: 30 15% 20%;
-    --ring: 34 100% 75%;
+    --border: 32 95% 55% / 0.2;
+    --input: 25 20% 12%;
+    --ring: 32 95% 55%;
   }
 }
  
 @layer base {
   * {
-    @apply border-border/20;
+    @apply border-border/40;
   }
   body {
     @apply bg-background text-foreground;
-    background: linear-gradient(160deg, hsl(20, 36%, 8%) 0%, hsl(30, 43%, 5%) 100%);
-    background-size: 200% 200%;
-    animation: warm-gradient 15s ease infinite;
+    background: radial-gradient(circle at 50% 0%, hsl(25, 30%, 10%) 0%, hsl(25, 35%, 4%) 100%);
+    background-attachment: fixed;
     position: relative;
   }
 
@@ -100,31 +93,28 @@
     bottom: 0;
     width: 100vw;
     height: 100vh;
-    background-image: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMCIgaGVpZ2h0PSIzMCI+PHJlY3Qgd2lkdGg9IjMwIiBoZWlnaHQ9IjMwIiBmaWxsPSJub25lIi8+PHJlY3QgeD0iMTQiIHk9IjE0IiB3aWR0aD0iMSIgaGVpZ2h0PSIxIiBmaWxsPSJoc2woMzAgMjAlIDY1JCAvIDAuMDUpIi8+PC9zdmc+');
+    background-image: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMjAwIj48ZmlsdGVyIGlkPSdub2lzZSc+PGZlVHVyYnVsZW5jZSB0eXBlPSdmcmFjdGFsTm9pc2UnIGJhc2VGcmVxdWVuY3k9JzAuNjUnIG51bU9jdGF2ZXM9JzMnIHN0aWNoVGlsZXM9J3N0aWNoJy8+PC9maWx0ZXI+PHJlY3Qgd2lkdGg9JzEwMCUnIGhlaWdodD0nMTAwJScgZmlsdGVyPSd1cmwoI25vaXNlKScgb3BhY2l0eT0nMC4wNScvPjwvc3ZnPg==');
     z-index: -1;
     pointer-events: none;
   }
 }
 
-/* Custom Scrollbar */
+/* Luxury Custom Scrollbar */
 ::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
+  width: 8px;
+  height: 8px;
 }
 ::-webkit-scrollbar-track {
-  background: hsl(var(--background) / 0.5);
+  background: hsl(var(--background));
 }
 ::-webkit-scrollbar-thumb {
-  background: hsl(var(--primary) / 0.3);
-  border-radius: 10px;
-  border: 2px solid transparent;
-  background-clip: content-box;
+  background: hsl(var(--primary) / 0.2);
+  border-radius: 20px;
+  border: 2px solid hsl(var(--background));
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: hsl(var(--primary) / 0.5);
-  background-clip: content-box;
+  background: hsl(var(--primary) / 0.4);
 }
-
 
 /* Common print styles */
 @media print {
@@ -133,21 +123,13 @@
         print-color-adjust: exact;
         background: #fff !important;
     }
-
-    .print-hide {
-        display: none !important;
-    }
-
-    /* Hide everything except the specific print area */
+    .print-hide { display: none !important; }
     body > *:not(#receipt-for-print):not(.print-dialog-content) {
         display: none !important;
     }
 }
 
-/* Print container for receipts */
-#receipt-for-print {
-    display: none; /* Hidden by default */
-}
+#receipt-for-print { display: none; }
 @media print {
     #receipt-for-print {
         display: block !important;
@@ -155,93 +137,6 @@
         position: absolute;
         left: 0;
         top: 0;
-        margin: 0;
-        padding: 0;
         width: 100%;
-    }
-    #receipt-for-print * {
-       visibility: visible !important;
-    }
-}
-
-
-/* A4 Print Specific Styles */
-@page {
-    size: a4;
-    margin: 1cm;
-}
-.a4-receipt {
-    page-break-before: always;
-}
-
-
-/* Thermal Print Specific Styles */
-@page thermal-page {
-    size: 80mm auto;
-    margin: 3mm;
-}
-html.thermal, body.thermal {
-    width: 80mm;
-    background: white !important;
-}
-.thermal-receipt {
-    page: thermal-page;
-    page-break-before: always;
-    font-family: 'Courier New', Courier, monospace !important;
-    width: 100% !important;
-    color: black !important;
-    background: white !important;
-    box-shadow: none !important;
-    border: none !important;
-    font-size: 10pt !important;
-    line-height: 1.2 !important;
-}
-.thermal-receipt * {
-    font-family: 'Courier New', Courier, monospace !important;
-    color: black !important;
-    background: transparent !important;
-    font-size: 10pt !important;
-    line-height: 1.2 !important;
-}
-.thermal-receipt .text-lg { font-size: 12pt !important; }
-.thermal-receipt .text-base { font-size: 10pt !important; }
-.thermal-receipt .text-xs { font-size: 8pt !important; }
-.thermal-receipt table { width: 100% !important; }
-.thermal-receipt .border-dashed { border-style: dashed !important; }
-.thermal-receipt .border-black { border-color: black !important; }
-.thermal-receipt .font-bold { font-weight: 700 !important; }
-
-
-/* Barcode Label Printing Styles */
-.barcode-label {
-    break-inside: avoid;
-}
-
-@media print {
-    .print-dialog-content {
-        display: block !important;
-        position: static !important;
-        width: 100% !important;
-        max-width: none !important;
-        height: auto !important;
-        max-height: none !important;
-        border: none !important;
-        box-shadow: none !important;
-        padding: 0 !important;
-        margin: 0 !important;
-        transform: none !important;
-        animation: none !important;
-    }
-    .print-dialog-content #label-print-area-wrapper {
-        overflow: visible !important;
-    }
-    .print-dialog-content #label-print-area {
-        display: block !important;
-        overflow: visible !important;
-        background: transparent !important;
-        padding: 0 !important;
-    }
-    .label-sheet {
-        gap: 0 !important;
     }
 }

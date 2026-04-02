@@ -1,13 +1,12 @@
-
 import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import { Inter } from 'next/font/google';
 import { ClientProviders } from '@/components/layout/ClientProviders';
 
-const APP_NAME = "iPOS";
-const APP_DEFAULT_TITLE = "iPOS - Point de Vente";
+const APP_NAME = "iPOS Luxury";
+const APP_DEFAULT_TITLE = "iPOS - Point de Vente Premium";
 const APP_TITLE_TEMPLATE = "%s - iPOS";
-const APP_DESCRIPTION = "Application de point de vente intelligente pour le commerce de détail";
+const APP_DESCRIPTION = "Application de point de vente intelligente et luxueuse pour le commerce de détail";
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -21,7 +20,7 @@ export const metadata: Metadata = {
   manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
-    statusBarStyle: "default",
+    statusBarStyle: "black-translucent",
     title: APP_DEFAULT_TITLE,
   },
   formatDetection: {
@@ -50,7 +49,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: [{ media: "(prefers-color-scheme: dark)", color: "#1a120c" }],
+  themeColor: [{ media: "(prefers-color-scheme: dark)", color: "#0a0806" }],
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
