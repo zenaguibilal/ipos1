@@ -240,7 +240,7 @@ export default function SettingsPage() {
                             
                             <div className="space-y-5 text-[11px] font-medium text-muted-foreground/60 leading-relaxed italic px-2">
                                 <p>iPOS est une application "Client-Side Only" de nouvelle génération. Vos données commerciales ne transitent par aucun serveur externe.</p>
-                                <p>L'utilisation de la technologie IndexedDB garantit une confidentialité souveraine et une rapidité d'exécution maximale, sans dépendance au réseau.</p>
+                                <p>L'utilisation de la technologie IndexedDB garantit une confidentialité souveraine et une rapidité d'exécution maximale, بدون dépendance au réseau.</p>
                             </div>
                         </CardContent>
                         <CardFooter className="pt-0 pb-10 px-10">
@@ -289,7 +289,7 @@ export default function SettingsPage() {
                             {[
                                 'Catalogue Produits', 'Fichiers Clients', 
                                 'Registre des Ventes', 'Journal d\'Audit', 
-                                'Profil Établissement', 'Historique Stock'
+                                'Profil Étabلissement', 'Historique Stock'
                             ].map((item, i) => (
                                 <div key={i} className="flex items-center gap-2 p-2 rounded-xl bg-muted/20 border border-white/5">
                                     <X className="h-3 w-3 text-destructive opacity-40" />
