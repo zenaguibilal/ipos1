@@ -1,3 +1,4 @@
+
 'use client';
 
 import type { DashboardData, Sale, Product, Customer, Expense, ProductReturn, TopCustomer } from '@/lib/types';
@@ -36,6 +37,9 @@ class DashboardService {
             const totalCOGS = currentSales.reduce((sum, sale) => sum + sale.items.reduce((acc, item) => acc + (Number(item.purchasePrice) * Number(item.quantity)), 0), 0);
             const netProfit = totalRevenue - totalCOGS - totalExpenses;
             
+            const averageBasket = saleCount > 0 ? totalRevenue / saleCount : 0;
+            const profitMargin = totalRevenue > 0 ? (netProfit / totalRevenue) * 100 : 0;
+
             // 5. Calculate stats for PREVIOUS period
             const prevTotalRevenue = prevSales.reduce((sum, sale) => sum + Number(sale.total), 0);
             const prevTotalExpenses = prevExpenses.reduce((sum, expense) => sum + Number(expense.amount), 0);
@@ -169,6 +173,8 @@ class DashboardService {
                     saleCount,
                     totalOutstandingDebt,
                     totalInventoryValue,
+                    averageBasket,
+                    profitMargin,
                     totalRevenueChange,
                     netProfitChange,
                     totalExpensesChange,
