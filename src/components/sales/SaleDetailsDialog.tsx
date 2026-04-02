@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -22,6 +21,8 @@ import type { Sale } from '@/lib/types';
 import { formatCurrency, safeToDate } from '@/lib/utils';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import { Hash, User, Calendar, Receipt, Package, Banknote, X, Info } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 export function SaleDetailsDialog({
     isOpen,
@@ -38,61 +39,152 @@ export function SaleDetailsDialog({
 
     return (
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
-            <DialogContent className="max-w-xl">
-                <DialogHeader>
-                    <DialogTitle>Détails de la vente</DialogTitle>
-                    <DialogDescription>
-                        Facture n°: <span className="font-mono font-semibold">{sale.invoiceNumber}</span> | Client: {customerName || 'Client de passage'}
-                        <br />
-                        Date: {format(safeToDate(sale.createdAt!), 'd MMMM yyyy HH:mm', { locale: fr })}
-                    </DialogDescription>
-                </DialogHeader>
-                <div className="max-h-[60vh] overflow-y-auto my-4">
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>Produit</TableHead>
-                                <TableHead className="text-center">Qté</TableHead>
-                                <TableHead className="text-right">Prix Unitaire</TableHead>
-                                <TableHead className="text-right">Sous-total</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {sale.items?.map((item, index) => (
-                                <TableRow key={index}>
-                                    <TableCell>{item.name}</TableCell>
-                                    <TableCell className="text-center">{item.quantity}</TableCell>
-                                    <TableCell className="text-right">{formatCurrency(item.price)}</TableCell>
-                                    <TableCell className="text-right">{formatCurrency(item.price * item.quantity)}</TableCell>
-                                </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
-                </div>
-                 <div className="space-y-2 rounded-lg bg-muted p-4">
-                    <div className="flex justify-between text-sm"><span className="text-muted-foreground">Sous-total</span><span>{formatCurrency(sale.subtotal)}</span></div>
-                    {sale.discountAmount && sale.discountAmount > 0 && (
-                        <div className="flex justify-between text-sm text-destructive">
-                            <span className="text-muted-foreground">
-                                Remise
-                                {sale.discountType === 'percentage' && sale.subtotal > 0 && ` (${Math.round((sale.discountAmount / sale.subtotal) * 100)}%)`}
-                            </span>
-                            <span>- {formatCurrency(sale.discountAmount)}</span>
+            <DialogContent className="sm:max-w-3xl rounded-[3rem] border-none shadow-2xl p-0 overflow-hidden bg-card">
+                <DialogHeader className="bg-primary/5 p-8 border-b border-primary/10">
+                    <div className="flex items-center gap-4">
+                        <div className="p-3 rounded-2xl bg-primary text-primary-foreground shadow-lg shadow-primary/20">
+                            <Receipt className="h-6 w-6" />
                         </div>
-                    )}
-                    <div className="flex justify-between font-semibold text-lg"><span className="">Total</span><span>{formatCurrency(sale.total)}</span></div>
-                    <div className="flex justify-between text-sm pt-2 border-t"><span className="text-muted-foreground">Montant Payé</span><span>{formatCurrency(sale.amountPaid)}</span></div>
-                    <div className="flex justify-between text-sm font-semibold">
-                        <span className={sale.remainingBalance > 0 ? 'text-destructive' : 'text-green-600'}>
-                            {sale.remainingBalance > 0 ? 'Solde Restant' : 'Monnaie Rendue'}
-                        </span>
-                        <span className={sale.remainingBalance > 0 ? 'text-destructive' : 'text-green-600'}>
-                            {formatCurrency(Math.abs(sale.remainingBalance))}
-                        </span>
+                        <div>
+                            <DialogTitle className="text-2xl font-black tracking-tight">Détails de la Vente</DialogTitle>
+                            <div className="flex flex-wrap items-center gap-3 mt-1">
+                                <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 bg-muted/20 px-2 py-0.5 rounded-lg border border-white/5 shadow-inner">
+                                    <Hash className="h-3 w-3" /> {sale.invoiceNumber}
+                                </div>
+                                <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-primary bg-primary/5 px-2 py-0.5 rounded-lg border border-primary/10 shadow-inner">
+                                    <User className="h-3 w-3" /> {customerName || 'Client de passage'}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </DialogHeader>
+
+                <div className="p-8 space-y-8 max-h-[60vh] overflow-y-auto custom-scrollbar">
+                    {/* Header Info Grid */}
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                        <div className="p-4 rounded-2xl bg-muted/30 border border-border/50">
+                            <p className="text-[10px] uppercase font-black text-muted-foreground tracking-widest mb-1 flex items-center gap-1.5">
+                                <Calendar className="h-3 w-3" /> Émise le
+                            </p>
+                            <p className="font-bold text-xs">{format(safeToDate(sale.createdAt!), 'dd MMM yyyy, HH:mm', { locale: fr })}</p>
+                        </div>
+                        <div className="p-4 rounded-2xl bg-muted/30 border border-border/50">
+                            <p className="text-[10px] uppercase font-black text-muted-foreground tracking-widest mb-1 flex items-center gap-1.5">
+                                <Package className="h-3 w-3" /> Articles
+                            </p>
+                            <p className="font-bold text-xs">{sale.items?.length || 0} positions</p>
+                        </div>
+                        <div className="p-4 rounded-2xl bg-muted/30 border border-border/50">
+                            <p className="text-[10px] uppercase font-black text-muted-foreground tracking-widest mb-1 flex items-center gap-1.5">
+                                <Banknote className="h-3 w-3" /> Statut
+                            </p>
+                            <p className={cn(
+                                "font-black text-[10px] uppercase",
+                                sale.paymentStatus === 'paid' ? "text-emerald-500" : "text-destructive"
+                            )}>
+                                {sale.paymentStatus === 'paid' ? 'Soldée' : 'Impayée'}
+                            </p>
+                        </div>
+                        <div className="p-4 rounded-2xl bg-primary text-primary-foreground shadow-lg shadow-primary/20">
+                            <p className="text-[10px] uppercase font-black opacity-70 tracking-widest mb-1">Total Net</p>
+                            <p className="text-lg font-black">{formatCurrency(sale.total)}</p>
+                        </div>
+                    </div>
+
+                    <div className="space-y-4">
+                        <div className="flex items-center gap-2 ml-1">
+                            <div className="p-1 rounded-lg bg-primary/10 text-primary shadow-inner"><Package className="h-3 w-3" /></div>
+                            <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground opacity-60">Manifeste des Articles</h4>
+                        </div>
+                        <div className="rounded-3xl border border-white/5 bg-black/20 overflow-hidden shadow-inner">
+                            <Table>
+                                <TableHeader className="bg-muted/30">
+                                    <TableRow className="border-none">
+                                        <TableHead className="font-black text-[9px] uppercase tracking-widest p-4">Désignation</TableHead>
+                                        <TableHead className="text-center font-black text-[9px] uppercase tracking-widest p-4">Qté</TableHead>
+                                        <TableHead className="text-right font-black text-[9px] uppercase tracking-widest p-4">P.U</TableHead>
+                                        <TableHead className="text-right font-black text-[9px] uppercase tracking-widest p-4">Total</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {sale.items?.map((item, index) => (
+                                        <TableRow key={index} className="border-b border-white/5 hover:bg-white/5 transition-colors">
+                                            <TableCell className="p-4 font-bold text-sm tracking-tight">{item.name}</TableCell>
+                                            <TableCell className="p-4 text-center">
+                                                <span className="px-2 py-1 rounded-md bg-muted/50 font-mono font-black text-xs">{item.quantity}</span>
+                                            </TableCell>
+                                            <TableCell className="p-4 text-right font-medium text-xs text-muted-foreground/60">{formatCurrency(item.price)}</TableCell>
+                                            <TableCell className="p-4 text-right font-black text-sm tracking-tighter">{formatCurrency(item.price * item.quantity)}</TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        </div>
+                    </div>
+
+                    {/* Financial Summary */}
+                    <div className="grid md:grid-cols-2 gap-8 pt-4">
+                        <div className="space-y-4">
+                            <div className="p-6 bg-muted/20 rounded-[2rem] border border-dashed border-white/10 space-y-4">
+                                <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-primary/60">
+                                    <Info className="h-3 w-3" /> Audit financier
+                                </div>
+                                <div className="space-y-2">
+                                    <div className="flex justify-between items-center text-xs font-bold text-muted-foreground/60">
+                                        <span className="uppercase tracking-widest">Sous-total</span>
+                                        <span className="font-mono">{formatCurrency(sale.subtotal)}</span>
+                                    </div>
+                                    {sale.discountAmount && sale.discountAmount > 0 && (
+                                        <div className="flex justify-between items-center text-xs font-black text-amber-600">
+                                            <span className="uppercase tracking-widest flex items-center gap-1">
+                                                Remise {sale.discountType === 'percentage' && `(${Math.round((sale.discountAmount / sale.subtotal) * 100)}%)`}
+                                            </span>
+                                            <span className="font-mono">- {formatCurrency(sale.discountAmount)}</span>
+                                        </div>
+                                    )}
+                                    <div className="h-px bg-white/10 my-2" />
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Total à régler</span>
+                                        <span className="text-xl font-black text-primary tracking-tighter">{formatCurrency(sale.total)}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="space-y-4 flex flex-col justify-center">
+                            <div className="p-6 bg-emerald-500/5 rounded-[2rem] border border-emerald-500/10 flex justify-between items-center">
+                                <div className="space-y-1">
+                                    <p className="text-[9px] font-black uppercase text-emerald-600/60 tracking-widest">Montant Encaissé</p>
+                                    <p className="text-2xl font-black text-emerald-600 tracking-tighter">{formatCurrency(sale.amountPaid)}</p>
+                                </div>
+                                <CheckCircle2 className="h-8 w-8 text-emerald-500/20" />
+                            </div>
+                            
+                            <div className={cn(
+                                "p-6 rounded-[2rem] border flex justify-between items-center",
+                                sale.remainingBalance > 0 ? "bg-destructive/5 border-destructive/10" : "bg-primary/5 border-primary/10"
+                            )}>
+                                <div className="space-y-1">
+                                    <p className="text-[9px] font-black uppercase tracking-widest opacity-60">
+                                        {sale.remainingBalance > 0 ? 'Solde Débiteur' : 'Monnaie Rendue'}
+                                    </p>
+                                    <p className={cn(
+                                        "text-2xl font-black tracking-tighter",
+                                        sale.remainingBalance > 0 ? "text-destructive" : "text-primary"
+                                    )}>
+                                        {formatCurrency(Math.abs(sale.remainingBalance))}
+                                    </p>
+                                </div>
+                                {sale.remainingBalance > 0 ? <AlertCircle className="h-8 w-8 text-destructive/20" /> : <Sparkles className="h-8 w-8 text-primary/20" />}
+                            </div>
+                        </div>
                     </div>
                 </div>
-                <DialogFooter>
-                    <Button onClick={() => onOpenChange(false)}>Fermer</Button>
+
+                <DialogFooter className="p-8 bg-card border-t border-white/5">
+                    <Button variant="ghost" onClick={() => onOpenChange(false)} className="h-14 rounded-2xl font-black text-xs uppercase tracking-widest px-8 w-full sm:w-auto">
+                        <X className="mr-2 h-4 w-4" /> Fermer
+                    </Button>
                 </DialogFooter>
             </DialogContent>
         </Dialog>

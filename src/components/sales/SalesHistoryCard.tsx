@@ -1,4 +1,3 @@
-
 'use client';
 
 import React from 'react';
@@ -6,7 +5,7 @@ import type { Sale } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { MoreHorizontal, FileText, Trash2, CheckCircle, AlertCircle, Clock, Hash, Tag } from 'lucide-react';
+import { MoreHorizontal, FileText, Trash2, CheckCircle, AlertCircle, Clock, Hash, Tag, Receipt, ChevronRight } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { safeToDate, formatCurrency, cn } from '@/lib/utils';
@@ -31,9 +30,9 @@ const SalesHistoryCardComponent = ({
     onCancelSale 
 }: SalesHistoryCardProps) => {
     const paymentStatusMap = {
-        paid: { text: 'Payé', icon: CheckCircle, color: 'text-chart-quaternary', bg: 'bg-chart-quaternary/10' },
-        partial: { text: 'Partiel', icon: AlertCircle, color: 'text-chart-secondary', bg: 'bg-chart-secondary/10' },
-        unpaid: { text: 'Impayé', icon: Clock, color: 'text-destructive', bg: 'bg-destructive/10' },
+        paid: { text: 'Payé Cash', icon: CheckCircle, color: 'text-emerald-500', bg: 'bg-emerald-500/10 border-emerald-500/20' },
+        partial: { text: 'Solde Partiel', icon: AlertCircle, color: 'text-amber-500', bg: 'bg-amber-500/10 border-amber-500/20' },
+        unpaid: { text: 'Dette Totale', icon: Clock, color: 'text-destructive', bg: 'bg-destructive/10 border-destructive/20' },
     };
     const status = paymentStatusMap[sale.paymentStatus];
 
@@ -41,12 +40,17 @@ const SalesHistoryCardComponent = ({
         <Card 
             onClick={onToggleSelection}
             className={cn(
-                "group flex flex-col transition-all duration-300 hover:shadow-2xl hover:-translate-y-1 bg-card border-none relative overflow-hidden rounded-3xl cursor-pointer",
-                isSelected ? "ring-2 ring-primary shadow-lg" : "hover:bg-muted/5"
+                "luxury-card group flex flex-col transition-all duration-500 bg-card/40 backdrop-blur-xl border-white/5 relative overflow-hidden rounded-[2.5rem] cursor-pointer",
+                isSelected ? "ring-2 ring-primary border-primary/30 shadow-2xl scale-[1.02]" : "hover:bg-primary/5"
             )}
         >
-            <div className="absolute top-3 right-3 z-10 flex gap-1 items-center">
-                <div onClick={(e) => e.stopPropagation()} className="p-1.5 bg-background/80 backdrop-blur-md rounded-xl shadow-sm border border-white/5">
+            {/* Background Decor */}
+            <div className="absolute -right-4 -top-4 opacity-[0.02] group-hover:opacity-10 transition-opacity duration-700 pointer-events-none">
+                <Receipt className="h-32 w-32 rotate-12" />
+            </div>
+
+            <div className="absolute top-4 right-4 z-10 flex gap-2 items-center">
+                <div onClick={(e) => e.stopPropagation()} className="p-1.5 bg-background/80 backdrop-blur-md rounded-xl border border-white/5 shadow-sm">
                     <Checkbox
                         checked={isSelected}
                         onCheckedChange={onToggleSelection}
@@ -55,66 +59,71 @@ const SalesHistoryCardComponent = ({
                 </div>
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                        <Button variant="secondary" size="icon" className="h-8 w-8 bg-background/80 backdrop-blur-md border-none shadow-sm rounded-xl">
-                            <MoreHorizontal className="h-4 w-4" />
+                        <Button variant="secondary" size="icon" className="h-9 w-9 bg-background/80 backdrop-blur-md border-white/5 shadow-xl rounded-xl transition-all">
+                            <MoreHorizontal className="h-5 w-5" />
                         </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="rounded-2xl border-none shadow-xl">
-                        <DropdownMenuItem onClick={() => onViewDetails(sale)} className="rounded-xl">
-                            <FileText className="mr-2 h-4 w-4" /> Voir les détails
+                    <DropdownMenuContent align="end" className="rounded-2xl border-none shadow-2xl bg-card">
+                        <DropdownMenuItem onClick={() => onViewDetails(sale)} className="rounded-xl p-3">
+                            <FileText className="mr-2 h-4 w-4" /> Examiner détails
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => onCancelSale(sale)} className="text-destructive focus:text-destructive rounded-xl">
+                        <DropdownMenuItem onClick={() => onCancelSale(sale)} className="text-destructive focus:text-destructive rounded-xl p-3">
                             <Trash2 className="mr-2 h-4 w-4" /> Annuler la vente
                         </DropdownMenuItem>
                     </DropdownMenuContent>
                 </DropdownMenu>
             </div>
 
-            <CardHeader className="p-5 pb-2 space-y-2">
+            <CardHeader className="p-6 pb-2 space-y-3 relative z-10">
                 <div className="flex items-center gap-2">
-                    <Badge variant="outline" className={cn("rounded-md font-black uppercase text-[8px] tracking-widest px-2 py-0 border-none", status.bg, status.color)}>
+                    <Badge variant="outline" className={cn("rounded-lg font-black uppercase text-[8px] tracking-[0.2em] px-2 py-0.5 border shadow-sm", status.bg, status.color)}>
                         <status.icon className="h-2.5 w-2.5 mr-1" />
                         {status.text}
                     </Badge>
-                    <span className="text-[10px] font-mono text-muted-foreground/50 flex items-center gap-1">
+                    <span className="text-[10px] font-mono font-black text-muted-foreground/30 flex items-center gap-1 uppercase tracking-tighter">
                         <Hash className="h-2.5 w-2.5" /> {sale.invoiceNumber}
                     </span>
                 </div>
-                <CardTitle className="text-lg font-black leading-tight tracking-tight group-hover:text-primary transition-colors truncate pr-12">
+                <CardTitle className="text-xl font-black leading-tight tracking-tighter group-hover:text-primary transition-colors truncate pr-12">
                     {customerName || 'Client de passage'}
                 </CardTitle>
-                <div className="flex items-center gap-2 text-[10px] text-muted-foreground font-bold uppercase tracking-widest opacity-60">
-                    <Clock className="h-3 w-3" />
-                    {format(safeToDate(sale.createdAt!), 'd MMM, HH:mm', { locale: fr })}
+                <div className="flex items-center gap-2 text-[10px] text-muted-foreground/40 font-black uppercase tracking-widest">
+                    <Clock className="h-3 w-3 opacity-50" />
+                    {format(safeToDate(sale.createdAt!), 'd MMMM, HH:mm', { locale: fr })}
                 </div>
             </CardHeader>
 
-            <CardContent className="p-5 py-2 space-y-3 flex-grow">
-                <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-widest text-muted-foreground">
-                    <span className="flex items-center gap-1.5"><Tag className="h-3 w-3 opacity-50"/> Détails Paiement</span>
+            <CardContent className="p-6 py-4 space-y-5 relative z-10">
+                <div className="flex items-center justify-between text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground/60 border-b border-white/5 pb-2">
+                    <span className="flex items-center gap-1.5"><Tag className="h-3 w-3 opacity-50"/> Détails Flux</span>
                     <span className="text-foreground">Recu: {formatCurrency(sale.amountPaid)}</span>
                 </div>
-                <div className="grid grid-cols-2 gap-3">
-                    <div className="p-3 rounded-2xl bg-muted/30 border border-border/50">
-                        <p className="text-[9px] font-black uppercase tracking-tighter text-muted-foreground opacity-60 mb-1">Articles</p>
-                        <p className="font-black text-sm">{sale.items?.length || 0} PCS</p>
+                <div className="grid grid-cols-2 gap-4">
+                    <div className="p-4 rounded-3xl bg-black/20 border border-white/5 shadow-inner">
+                        <p className="text-[8px] font-black uppercase tracking-[0.2em] text-muted-foreground/40 mb-1.5">Volume Items</p>
+                        <p className="font-black text-sm tracking-tight">{sale.items?.length || 0} Positions</p>
                     </div>
-                    <div className="p-3 rounded-2xl bg-muted/30 border border-border/50">
-                        <p className="text-[9px] font-black uppercase tracking-tighter text-muted-foreground opacity-60 mb-1">Reste à payer</p>
-                        <p className={cn("font-black text-sm", sale.remainingBalance > 0 ? "text-destructive" : "text-emerald-500")}>
+                    <div className={cn(
+                        "p-4 rounded-3xl border transition-all duration-500 shadow-inner",
+                        sale.remainingBalance > 0 ? "bg-destructive/5 border-destructive/20" : "bg-emerald-500/5 border-emerald-500/20"
+                    )}>
+                        <p className={cn("text-[8px] font-black uppercase tracking-[0.2em] mb-1.5", sale.remainingBalance > 0 ? "text-destructive/70" : "text-emerald-600/70")}>
+                            {sale.remainingBalance > 0 ? 'Reste à Payé' : 'Vente Solder'}
+                        </p>
+                        <p className={cn("font-black text-sm tracking-tight", sale.remainingBalance > 0 ? "text-destructive" : "text-emerald-500")}>
                             {formatCurrency(Math.max(0, sale.remainingBalance))}
                         </p>
                     </div>
                 </div>
             </CardContent>
 
-            <CardFooter className="p-5 pt-3 flex justify-between items-end border-t border-white/5 bg-muted/5">
+            <CardFooter className="p-6 pt-4 border-t border-white/5 bg-muted/5 flex items-center justify-between relative z-10">
                  <div className="space-y-0.5">
+                    <p className="text-[9px] font-black text-muted-foreground/40 uppercase tracking-widest">Valeur Transaction</p>
                     <p className="text-2xl font-black text-primary tracking-tighter leading-none">{formatCurrency(sale.total)}</p>
-                    <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-tight opacity-60">Total Facturé</p>
                 </div>
-                <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); onViewDetails(sale); }} className="h-8 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-primary/10 hover:text-primary">
-                    Détails
+                <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); onViewDetails(sale); }} className="h-9 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-primary/10 hover:text-primary transition-all px-4">
+                    Details <ChevronRight className="ml-1 h-3 w-3 opacity-50" />
                 </Button>
             </CardFooter>
         </Card>
