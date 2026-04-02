@@ -3,16 +3,14 @@
 import { useState, useEffect } from 'react';
 import { PageHeader } from "@/components/layout/PageHeader";
 import { DataManagementCard } from "@/components/profile/DataManagementCard";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { 
     ShieldAlert, 
     Database, 
     HardDrive, 
-    RefreshCw, 
     Trash2, 
-    CheckCircle2,
     Cpu,
     Activity,
     Server,

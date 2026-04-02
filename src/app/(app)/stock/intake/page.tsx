@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
+import Link from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { 
     ArrowLeft, 
@@ -16,9 +16,7 @@ import {
     Building,
     Hash,
     Calendar,
-    ShoppingBag,
-    Landmark,
-    Sparkles
+    Landmark
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -309,7 +307,7 @@ export default function NewStockIntakePage() {
                     <Card className="rounded-[2.5rem] bg-card/40 backdrop-blur-3xl border-white/5 overflow-hidden shadow-2xl">
                         <CardHeader className="bg-muted/20 p-8 border-b border-white/5 flex flex-row items-center justify-between">
                             <div>
-                                <CardTitle className="text-xl font-black tracking-tighter">Manifeste des Marchandises</CardTitle>
+                                <CardTitle className="text-xl font-black tracking-tighter">Manifestه des Marchandises</CardTitle>
                                 <CardDescription className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">{items.length} positions identifiées</CardDescription>
                             </div>
                             <div className="w-full max-w-xs">
@@ -386,7 +384,7 @@ export default function NewStockIntakePage() {
                                             <tr>
                                                 <td colSpan={6} className="p-20 text-center">
                                                     <div className="flex flex-col items-center gap-4 opacity-20">
-                                                        <ShoppingBag className="h-16 w-16" />
+                                                        <Landmark className="h-16 w-16" />
                                                         <p className="text-[10px] font-black uppercase tracking-[0.4em]">Le manifeste est vide</p>
                                                     </div>
                                                 </td>
