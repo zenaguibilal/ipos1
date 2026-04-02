@@ -10,10 +10,10 @@ export function ClientProviders({ children }: { children: React.ReactNode }) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('/service-worker.js').then(
                     (registration) => {
-                        console.log('Service Worker registration successful with scope: ', registration.scope);
+                        console.log('iPOS Zen Service Worker registered');
                     },
                     (err) => {
-                        console.log('Service Worker registration failed: ', err);
+                        console.error('Service Worker registration failed: ', err);
                     }
                 );
             });
