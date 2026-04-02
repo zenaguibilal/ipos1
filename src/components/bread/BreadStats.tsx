@@ -1,17 +1,41 @@
-
 'use client';
 
 import { useMemo } from 'react';
 import type { BreadOrderWithCustomer } from '@/lib/types';
-import { Card, CardContent } from '@/components/ui/card';
-import { Package, Truck, Wallet, CheckCircle2, Clock } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Package, Truck, Wallet, CheckCircle2, Clock, Sparkles, TrendingUp } from 'lucide-react';
 import { Skeleton } from '../ui/skeleton';
 import { Progress } from '../ui/progress';
+import { cn, formatCurrency } from '@/lib/utils';
 
 interface BreadStatsProps {
     orders?: BreadOrderWithCustomer[];
     isLoading: boolean;
 }
+
+const StatCard = ({ title, value, icon: Icon, colorClass, subtitle, progress }: { title: string, value: string, icon: any, colorClass: string, subtitle?: string, progress?: number }) => (
+    <Card className="luxury-card h-full bg-card/40 backdrop-blur-2xl border-white/5 rounded-[2rem] group overflow-hidden">
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3 p-6">
+            <CardTitle className="text-[10px] font-black uppercase tracking-[0.25em] text-muted-foreground group-hover:text-primary transition-all duration-500">{title}</CardTitle>
+            <div className={cn("p-3 rounded-2xl shadow-inner transition-all duration-500 group-hover:scale-110", colorClass)}>
+                <Icon className="h-5 w-5" />
+            </div>
+        </CardHeader>
+        <CardContent className="px-6 pb-6">
+            <div className="text-3xl font-black tracking-tighter text-foreground group-hover:scale-105 transition-transform duration-500 origin-left mb-1">{value}</div>
+            {subtitle && <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground/40">{subtitle}</p>}
+            {progress !== undefined && (
+                <div className="mt-4 space-y-2">
+                    <div className="flex justify-between text-[8px] font-black uppercase tracking-widest text-muted-foreground/60">
+                        <span>Progression</span>
+                        <span>{progress}%</span>
+                    </div>
+                    <Progress value={progress} className="h-1 bg-white/5 [&>div]:bg-primary shadow-sm" />
+                </div>
+            )}
+        </CardContent>
+    </Card>
+);
 
 export function BreadStats({ orders, isLoading }: BreadStatsProps) {
     const stats = useMemo(() => {
@@ -31,94 +55,38 @@ export function BreadStats({ orders, isLoading }: BreadStatsProps) {
 
     if(isLoading) {
         return (
-            <div className="grid gap-4 grid-cols-1 md:grid-cols-3">
+            <div className="grid gap-6 grid-cols-1 md:grid-cols-3">
                 {[...Array(3)].map((_, i) => (
-                    <Skeleton key={i} className="h-32 w-full rounded-[2rem] bg-card/50" />
+                    <Skeleton key={i} className="h-32 w-full rounded-[2rem] bg-card/40" />
                 ))}
             </div>
         )
     }
 
     return (
-        <div className="grid gap-4 grid-cols-1 md:grid-cols-3">
-            {/* Production Card */}
-            <Card className="rounded-[2rem] border-none shadow-sm bg-card overflow-hidden group relative">
-                <div className="absolute -right-4 -bottom-4 opacity-[0.03] group-hover:opacity-10 transition-opacity duration-500">
-                    <Package className="h-32 w-32 rotate-12" />
-                </div>
-                <CardContent className="p-6 relative z-10">
-                    <div className="flex justify-between items-start mb-4">
-                        <div className="p-3 rounded-2xl bg-primary/10 text-primary shadow-inner">
-                            <Package className="h-6 w-6" />
-                        </div>
-                        <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground opacity-50">Total Requis</span>
-                    </div>
-                    <div className="flex items-baseline gap-2">
-                        <span className="text-4xl font-black tracking-tighter leading-none">{stats.totalQuantity}</span>
-                        <span className="text-xs font-black text-muted-foreground uppercase tracking-widest">PCS</span>
-                    </div>
-                    <div className="mt-3 flex items-center gap-2">
-                        <div className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
-                        <p className="text-[10px] font-bold text-muted-foreground/70 uppercase tracking-tight">Répartis sur {stats.totalOrders} commandes</p>
-                    </div>
-                </CardContent>
-            </Card>
-
-            {/* Delivery Progress Card */}
-            <Card className="rounded-[2rem] border-none shadow-sm bg-card overflow-hidden group relative">
-                <div className="absolute -right-4 -bottom-4 opacity-[0.03] group-hover:opacity-10 transition-opacity duration-500">
-                    <Truck className="h-32 w-32 -rotate-12" />
-                </div>
-                <CardContent className="p-6 relative z-10">
-                    <div className="flex justify-between items-start mb-4">
-                        <div className="p-3 rounded-2xl bg-emerald-500/10 text-emerald-500 shadow-inner">
-                            <Truck className="h-6 w-6" />
-                        </div>
-                        <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground opacity-50">Progression Livraison</span>
-                    </div>
-                    <div className="flex items-end justify-between mb-2.5">
-                        <div className="flex items-baseline gap-1.5">
-                            <span className="text-3xl font-black text-emerald-500 leading-none">{stats.deliveredQuantity}</span>
-                            <span className="text-xs font-bold text-muted-foreground/50">/ {stats.totalQuantity} pcs</span>
-                        </div>
-                        <div className="px-2 py-0.5 rounded-lg bg-emerald-500/10 text-emerald-600 text-[10px] font-black">
-                            {deliveryPercentage}%
-                        </div>
-                    </div>
-                    <Progress value={deliveryPercentage} className="h-2 bg-emerald-500/5 [&>div]:bg-emerald-500 rounded-full" />
-                </CardContent>
-            </Card>
-
-            {/* Billing Status Card */}
-            <Card className="rounded-[2rem] border-none shadow-sm bg-card overflow-hidden group relative">
-                <div className="absolute -right-4 -bottom-4 opacity-[0.03] group-hover:opacity-10 transition-opacity duration-500">
-                    <Wallet className="h-32 w-32 rotate-6" />
-                </div>
-                <CardContent className="p-6 relative z-10">
-                    <div className="flex justify-between items-start mb-4">
-                        <div className="p-3 rounded-2xl bg-amber-500/10 text-amber-500 shadow-inner">
-                            <Wallet className="h-6 w-6" />
-                        </div>
-                        <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground opacity-50">État Facturation</span>
-                    </div>
-                    <div className="space-y-3">
-                        <div className="flex justify-between items-center p-2 rounded-xl bg-muted/20 border border-transparent hover:border-border/50 transition-colors">
-                            <div className="flex items-center gap-2">
-                                <CheckCircle2 className="h-3 w-3 text-emerald-500" />
-                                <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Payés</span>
-                            </div>
-                            <span className="text-sm font-black font-mono">{stats.paidQuantity}</span>
-                        </div>
-                        <div className="flex justify-between items-center p-2 rounded-xl bg-amber-500/5 border border-amber-500/10">
-                            <div className="flex items-center gap-2">
-                                <Clock className="h-3 w-3 text-amber-500 animate-pulse" />
-                                <span className="text-[10px] font-black uppercase tracking-widest text-amber-600/70">En attente</span>
-                            </div>
-                            <span className="text-sm font-black font-mono text-amber-600">{stats.unpaidQuantity}</span>
-                        </div>
-                    </div>
-                </CardContent>
-            </Card>
+        <div className="grid gap-6 grid-cols-1 md:grid-cols-3">
+            <StatCard 
+                title="Volume de Production" 
+                value={String(stats.totalQuantity)} 
+                icon={Package} 
+                colorClass="bg-primary/10 text-primary" 
+                subtitle={`Répartis sur ${stats.totalOrders} bons`} 
+            />
+            <StatCard 
+                title="Taux de Livraison" 
+                value={String(stats.deliveredQuantity)} 
+                icon={Truck} 
+                colorClass="bg-emerald-500/10 text-emerald-500" 
+                subtitle="Unités expédiées" 
+                progress={deliveryPercentage}
+            />
+            <StatCard 
+                title="Encaissement Pain" 
+                value={String(stats.paidQuantity)} 
+                icon={Wallet} 
+                colorClass="bg-amber-500/10 text-amber-500" 
+                subtitle={`${stats.unpaidQuantity} unités en attente`} 
+            />
         </div>
     );
 }

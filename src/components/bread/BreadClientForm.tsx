@@ -7,11 +7,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import type { Customer } from '@/lib/types';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Wheat, Settings, Calendar, Package, CheckCircle2, X } from 'lucide-react';
 import { customerService } from '@/services/customer.service';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { BREAD_WEEK_DAY_LABELS_FULL } from '@/lib/constants';
+import { cn } from '@/lib/utils';
 
 const initialFormState: Partial<Customer> = {
     isBreadClient: true,
@@ -47,7 +48,7 @@ export function BreadClientForm({ isOpen, onOpenChange, customer, onSuccess }: B
                 bread_quantite_defaut: customer.bread_quantite_defaut || 10,
                 bread_jours_semaine: customer.bread_jours_semaine || initialFormState.bread_jours_semaine!
             });
-        } else {
+        } else if (isOpen) {
             setFormState(initialFormState);
         }
     }, [customer, isOpen]);
@@ -70,11 +71,11 @@ export function BreadClientForm({ isOpen, onOpenChange, customer, onSuccess }: B
             }
 
             await customerService.updateCustomer(customer.uuid, dataToSave);
-            toast.success(`Paramètres de pain pour "${customer.firstName} ${customer.lastName}" mis à jour.`);
+            toast.success(`Abonnement Elite mis à jour pour ${customer.firstName}.`);
             onSuccess();
             onOpenChange(false);
         } catch (error: any) {
-            toast.error("Une erreur est survenue.", { description: error.message });
+            toast.error("Échec de la mise à jour.");
         } finally {
             setIsLoading(false);
         }
@@ -103,68 +104,131 @@ export function BreadClientForm({ isOpen, onOpenChange, customer, onSuccess }: B
 
     if (!customer) return null;
 
+    const SectionTitle = ({ title, icon: Icon }: { title: string, icon: any }) => (
+        <div className="flex items-center gap-2 mb-4">
+            <div className="p-1.5 rounded-lg bg-primary/10 text-primary shadow-inner">
+                <Icon className="h-3 w-3" />
+            </div>
+            <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground opacity-60">{title}</h4>
+        </div>
+    );
+
     return (
-        <>
-            <Dialog open={isOpen} onOpenChange={onOpenChange}>
-                <DialogContent className="sm:max-w-lg">
-                    <form onSubmit={handleSubmit}>
-                        <DialogHeader>
-                            <DialogTitle>Client de Pain: {customer.firstName} {customer.lastName}</DialogTitle>
-                            <DialogDescription>
-                                Gérez les commandes récurrentes du client.
-                            </DialogDescription>
-                        </DialogHeader>
-                        <div className="grid gap-4 py-4 max-h-[60vh] overflow-y-auto pr-2">
-                            <div className="flex items-center justify-between">
-                                <Label htmlFor="isBreadClient" className="text-base">Activer les commandes de pain</Label>
-                                <Switch id="isBreadClient" checked={formState.isBreadClient} onCheckedChange={(checked) => setFormState(s => ({ ...s, isBreadClient: checked }))} />
+        <Dialog open={isOpen} onOpenChange={onOpenChange}>
+            <DialogContent className="sm:max-w-2xl rounded-[3rem] border-none shadow-2xl p-0 overflow-hidden bg-card">
+                <form onSubmit={handleSubmit}>
+                    <DialogHeader className="bg-primary/5 p-8 border-b border-primary/10">
+                        <div className="flex items-center gap-4">
+                            <div className="p-3 rounded-2xl bg-primary text-primary-foreground shadow-lg shadow-primary/20">
+                                <Wheat className="h-6 w-6" />
                             </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="bread_type_recurrence">Type de Récurence</Label>
-                                <Select value={formState.bread_type_recurrence} onValueChange={(value) => setFormState(s => ({ ...s, bread_type_recurrence: value as any }))}>
-                                    <SelectTrigger><SelectValue /></SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="quotidien">Quotidien</SelectItem>
-                                        <SelectItem value="jours_specifiques">Jours Spécifiques</SelectItem>
-                                        <SelectItem value="aucun">Manuel</SelectItem>
-                                    </SelectContent>
-                                </Select>
+                            <div>
+                                <DialogTitle className="text-2xl font-black tracking-tight">Paramétrage VIP Pain</DialogTitle>
+                                <DialogDescription className="font-medium">Gestion souveraine des commandes récurrentes pour {customer.firstName} {customer.lastName}.</DialogDescription>
                             </div>
-                            {formState.bread_type_recurrence === 'quotidien' && (
-                                <div className="space-y-2">
-                                    <Label htmlFor="bread_quantite_defaut">Quantité par défaut</Label>
-                                    <Input id="bread_quantite_defaut" type="number" value={formState.bread_quantite_defaut} onChange={(e) => setFormState(s => ({ ...s, bread_quantite_defaut: parseInt(e.target.value) || 0 }))} />
-                                </div>
-                            )}
-                            {formState.bread_type_recurrence === 'jours_specifiques' && (
-                                <div className="space-y-3">
-                                    <Label>Quantités par jour</Label>
-                                    <div className="space-y-2 rounded-md border p-4">
-                                        {Object.entries(BREAD_WEEK_DAY_LABELS_FULL).map(([key, label]) => (
-                                            <div key={key} className="flex items-center justify-between gap-4">
-                                                <Switch id={key} checked={formState.bread_jours_semaine![key as keyof typeof BREAD_WEEK_DAY_LABELS_FULL].actif} onCheckedChange={() => handleDayToggle(key as keyof typeof BREAD_WEEK_DAY_LABELS_FULL)} />
-                                                <Label htmlFor={key} className="flex-grow">{label}</Label>
-                                                <Input type="number" className="w-24" 
-                                                    value={formState.bread_jours_semaine![key as keyof typeof BREAD_WEEK_DAY_LABELS_FULL].quantite}
-                                                    onChange={e => handleDayQuantityChange(key as keyof typeof BREAD_WEEK_DAY_LABELS_FULL, e.target.value)}
-                                                    disabled={!formState.bread_jours_semaine![key as keyof typeof BREAD_WEEK_DAY_LABELS_FULL].actif}
-                                                />
-                                            </div>
-                                        ))}
+                        </div>
+                    </DialogHeader>
+
+                    <div className="p-8 space-y-10 max-h-[60vh] overflow-y-auto custom-scrollbar">
+                        {/* Section: Statut & Type */}
+                        <div>
+                            <SectionTitle title="Abonnement & Fréquence" icon={Settings} />
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 p-8 bg-muted/20 rounded-[2.5rem] border border-white/5 shadow-inner">
+                                <div className="space-y-4">
+                                    <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 ml-1">Statut du Programme</Label>
+                                    <div className={cn(
+                                        "flex items-center justify-between p-4 rounded-2xl border transition-all duration-500",
+                                        formState.isBreadClient ? "bg-emerald-500/5 border-emerald-500/20" : "bg-muted/20 border-white/5 opacity-40"
+                                    )}>
+                                        <span className={cn("text-xs font-black uppercase", formState.isBreadClient ? "text-emerald-500" : "text-muted-foreground")}>
+                                            {formState.isBreadClient ? 'ACTIF' : 'INACTIF'}
+                                        </span>
+                                        <Switch 
+                                            checked={formState.isBreadClient} 
+                                            onCheckedChange={(checked) => setFormState(s => ({ ...s, isBreadClient: checked }))} 
+                                            className="data-[state=checked]:bg-emerald-500"
+                                        />
                                     </div>
                                 </div>
-                            )}
+                                <div className="space-y-4">
+                                    <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 ml-1">Récurence Elite</Label>
+                                    <Select value={formState.bread_type_recurrence} onValueChange={(value) => setFormState(s => ({ ...s, bread_type_recurrence: value as any }))}>
+                                        <SelectTrigger className="h-12 rounded-xl bg-background border-none shadow-sm font-bold">
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent className="rounded-2xl shadow-2xl border-white/5">
+                                            <SelectItem value="quotidien" className="font-bold">Quotidien (Stable)</SelectItem>
+                                            <SelectItem value="jours_specifiques" className="font-bold">Calendrier (Variable)</SelectItem>
+                                            <SelectItem value="aucun" className="font-bold">Manuel (À la demande)</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                            </div>
                         </div>
-                        <DialogFooter>
-                            <Button type="button" variant="secondary" onClick={() => onOpenChange(false)} disabled={isLoading}>Annuler</Button>
-                            <Button type="submit" disabled={isLoading}>
-                                {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                Enregistrer
-                            </Button>
-                        </DialogFooter>
-                    </form>
-                </DialogContent>
-            </Dialog>
-        </>
+
+                        {/* Section: Quantités */}
+                        {formState.bread_type_recurrence === 'quotidien' && (
+                            <div className="animate-in slide-in-from-top-4 duration-500">
+                                <SectionTitle title="Configuration Unitaire" icon={Package} />
+                                <div className="p-8 bg-primary/5 rounded-[2.5rem] border border-primary/10 space-y-4 text-center">
+                                    <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Quantité Fixe par Jour</Label>
+                                    <div className="relative max-w-[200px] mx-auto">
+                                        <Input 
+                                            type="number" 
+                                            value={formState.bread_quantite_defaut} 
+                                            onChange={(e) => setFormState(s => ({ ...s, bread_quantite_defaut: parseInt(e.target.value) || 0 }))} 
+                                            className="h-20 rounded-2xl bg-background border-none shadow-xl font-black text-4xl text-primary text-center focus-visible:ring-primary/20"
+                                        />
+                                        <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-black text-primary opacity-30 uppercase">PCS</span>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {formState.bread_type_recurrence === 'jours_specifiques' && (
+                            <div className="animate-in slide-in-from-top-4 duration-500">
+                                <SectionTitle title="Calendrier Hebdomadaire" icon={Calendar} />
+                                <div className="grid gap-3 p-2 bg-muted/10 rounded-[2.5rem] border border-white/5">
+                                    {Object.entries(BREAD_WEEK_DAY_LABELS_FULL).map(([key, label]) => {
+                                        const dayData = formState.bread_jours_semaine![key];
+                                        return (
+                                            <div key={key} className={cn(
+                                                "flex items-center gap-4 p-4 rounded-2xl border transition-all duration-300",
+                                                dayData.actif ? "bg-card/60 border-white/5 shadow-sm" : "opacity-30 border-transparent grayscale"
+                                            )}>
+                                                <Switch 
+                                                    checked={dayData.actif} 
+                                                    onCheckedChange={() => handleDayToggle(key as keyof typeof BREAD_WEEK_DAY_LABELS_FULL)} 
+                                                    className="data-[state=checked]:bg-primary"
+                                                />
+                                                <Label className="flex-grow font-black text-[10px] uppercase tracking-widest">{label}</Label>
+                                                <div className="relative w-32">
+                                                    <Input 
+                                                        type="number" 
+                                                        className="h-10 text-center font-black rounded-xl bg-black/20 border-none shadow-inner" 
+                                                        value={dayData.quantite}
+                                                        onChange={e => handleDayQuantityChange(key as keyof typeof BREAD_WEEK_DAY_LABELS_FULL, e.target.value)}
+                                                        disabled={!dayData.actif}
+                                                    />
+                                                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[8px] font-black opacity-20 uppercase">PCS</span>
+                                                </div>
+                                            </div>
+                                        )
+                                    })}
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
+                    <DialogFooter className="p-8 bg-card border-t border-white/5 flex gap-4">
+                        <Button type="button" variant="ghost" onClick={() => onOpenChange(false)} className="h-14 rounded-2xl font-black text-xs uppercase tracking-widest px-8" disabled={isLoading}>Annuler</Button>
+                        <Button type="submit" disabled={isLoading} className="flex-1 h-14 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-primary/20 transition-all active:scale-95 gap-3">
+                             {isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <CheckCircle2 className="h-5 w-5" />}
+                            Enregistrer les paramètres Elite
+                        </Button>
+                    </DialogFooter>
+                </form>
+            </DialogContent>
+        </Dialog>
     );
 }

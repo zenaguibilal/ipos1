@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -11,7 +10,7 @@ import { toast } from 'sonner';
 import { breadService } from '@/services/bread.service';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useDebounce } from '@/hooks/useDebounce';
-import { CheckCircle2, UserCircle2, Package, Landmark, Loader2, Trash2, User } from 'lucide-react';
+import { CheckCircle2, UserCircle2, Package, Landmark, Loader2, Trash2, User, Sparkles, Hash } from 'lucide-react';
 import { useAppStore } from '@/stores/appStore';
 
 interface BreadOrderCardProps {
@@ -66,7 +65,7 @@ export function BreadOrderCard({ order, isSelected, onToggleSelection, onUpdate 
 
     const handleQuickPay = async () => {
         if (breadPrice <= 0) {
-            toast.error("Prix du pain non défini.", { description: "Veuillez le régler dans Profil > Paramètres." });
+            toast.error("Prix du pain non défini.", { description: "Veuillez le régler dans Profil > Configuration." });
             return;
         }
         setIsUpdatingStatus(true);
@@ -94,92 +93,113 @@ export function BreadOrderCard({ order, isSelected, onToggleSelection, onUpdate 
 
     return (
         <Card className={cn(
-            "group transition-all duration-300 rounded-3xl border-none shadow-sm relative overflow-hidden", 
-            isSelected ? "ring-2 ring-primary shadow-lg scale-[1.02] z-10" : "hover:shadow-md",
-            isPaid ? "bg-emerald-500/5 opacity-90" : "bg-card",
+            "luxury-card group flex flex-col transition-all duration-500 bg-card/40 backdrop-blur-xl border-white/5 relative overflow-hidden rounded-[2.5rem]", 
+            isSelected ? "ring-2 ring-primary border-primary/30 shadow-2xl scale-[1.02] z-10" : "hover:bg-primary/5",
+            isPaid ? "opacity-80" : "bg-card",
             isExternal && !isPaid && "border-l-4 border-l-amber-500/30"
         )}>
+            {/* Background Texture */}
+            <div className="absolute -right-4 -top-4 opacity-[0.02] group-hover:opacity-10 transition-opacity duration-700 pointer-events-none">
+                <Sparkles className="h-32 w-32 rotate-12" />
+            </div>
+
             {/* Actions Toolbar */}
-            <div className="absolute top-4 right-4 z-10 flex gap-2">
+            <div className="absolute top-6 right-6 z-10 flex gap-3 items-center">
                 {!isPaid && (
                     <Button 
                         variant="ghost" 
                         size="icon" 
-                        className="h-6 w-6 rounded-lg text-destructive hover:bg-destructive/10 opacity-0 group-hover:opacity-100 transition-opacity"
+                        className="h-8 w-8 rounded-xl text-destructive hover:bg-destructive/10 opacity-0 group-hover:opacity-100 transition-all active:scale-90"
                         onClick={handleDelete}
                     >
-                        <Trash2 className="h-3.5 w-3.5" />
+                        <Trash2 className="h-4 w-4" />
                     </Button>
                 )}
                 {!isPaid ? (
-                    <Checkbox 
-                        checked={isSelected} 
-                        onToggle={() => onToggleSelection(order.uuid)}
-                        onCheckedChange={() => onToggleSelection(order.uuid)} 
-                        className="h-6 w-6 border-primary data-[state=checked]:bg-primary rounded-lg transition-transform active:scale-90"
-                    />
+                    <div className="p-1.5 bg-background/80 backdrop-blur-md rounded-xl border border-white/5 shadow-sm">
+                        <Checkbox 
+                            checked={isSelected} 
+                            onCheckedChange={() => onToggleSelection(order.uuid)} 
+                            className="h-6 w-6 border-primary data-[state=checked]:bg-primary rounded-lg transition-transform active:scale-90"
+                        />
+                    </div>
                 ) : (
-                    <CheckCircle2 className="h-6 w-6 text-emerald-500" />
+                    <div className="p-2 rounded-xl bg-emerald-500/10 shadow-inner">
+                        <CheckCircle2 className="h-5 w-5 text-emerald-500 animate-in zoom-in" />
+                    </div>
                 )}
             </div>
 
-            <CardHeader className="p-6 pb-2">
-                <div className="flex items-center gap-2 mb-1">
-                    {isExternal ? (
-                        <UserCircle2 className="h-3 w-3 text-amber-500 opacity-50" />
-                    ) : (
-                        <User className="h-3 w-3 text-primary opacity-50" />
+            <CardHeader className="p-8 pb-4 space-y-3 relative z-10">
+                <div>
+                    <div className="flex items-center gap-2 mb-1.5">
+                        {isExternal ? (
+                            <div className="px-2 py-0.5 rounded-lg bg-amber-500/10 text-amber-500 border border-amber-500/20 text-[8px] font-black uppercase tracking-widest flex items-center gap-1.5">
+                                <UserCircle2 className="h-2.5 w-2.5" /> Client Passager
+                            </div>
+                        ) : (
+                            <div className="px-2 py-0.5 rounded-lg bg-primary/10 text-primary border border-primary/20 text-[8px] font-black uppercase tracking-widest flex items-center gap-1.5">
+                                <User className="h-2.5 w-2.5" /> Abonné Premium
+                            </div>
+                        )}
+                    </div>
+                    <CardTitle className="text-xl font-black leading-tight tracking-tighter group-hover:text-primary transition-colors truncate pr-16">
+                        {displayName}
+                    </CardTitle>
+                    {isPaid && (
+                        <p className="text-[10px] font-mono font-black uppercase text-emerald-600/60 mt-1 flex items-center gap-1.5 tracking-tighter">
+                            <Hash className="h-2.5 w-2.5" /> Vente validée
+                        </p>
                     )}
-                    <span className="text-[8px] font-black uppercase tracking-widest text-muted-foreground opacity-40">
-                        {isExternal ? 'Nom Externe' : 'Client Enregistré'}
-                    </span>
                 </div>
-                <CardTitle className="text-lg font-black tracking-tight pr-12 leading-tight truncate">
-                    {displayName}
-                </CardTitle>
             </CardHeader>
 
-            <CardContent className="p-6 pt-2 space-y-4">
+            <CardContent className="p-8 pt-2 space-y-6 relative z-10">
                 {/* Minimalist Quantity Display */}
-                <div className="flex items-center gap-3 bg-muted/20 rounded-2xl p-2 border border-border/50 group-hover:border-primary/20 transition-colors">
-                    <Input 
-                        type="number"
-                        value={quantity}
-                        onChange={(e) => setQuantity(parseInt(e.target.value) || 0)}
-                        className="h-12 text-2xl font-black text-center bg-background border-none shadow-inner rounded-xl focus-visible:ring-primary w-full"
-                        disabled={isPaid}
-                        min="0"
-                    />
-                    <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mr-3">PCS</span>
+                <div className="flex items-center gap-4 bg-black/20 rounded-[1.5rem] p-3 border border-white/5 group-hover:border-primary/20 transition-all shadow-inner">
+                    <div className="p-2.5 rounded-xl bg-muted text-muted-foreground shadow-inner">
+                        <Package className="h-5 w-5" />
+                    </div>
+                    <div className="flex-grow relative">
+                        <Input 
+                            type="number"
+                            value={quantity}
+                            onChange={(e) => setQuantity(parseInt(e.target.value) || 0)}
+                            className="h-14 text-3xl font-black text-center bg-transparent border-none focus-visible:ring-0 w-full text-primary"
+                            disabled={isPaid}
+                            min="0"
+                        />
+                        <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-black uppercase tracking-widest text-muted-foreground opacity-20">PCS</span>
+                    </div>
                 </div>
 
                 {/* Compact Action Buttons */}
-                <div className="flex gap-2">
+                <div className="grid grid-cols-2 gap-3">
                     <Button 
                         variant={isDelivered ? "secondary" : "outline"} 
-                        size="sm"
+                        size="lg"
                         onClick={toggleDelivery}
                         disabled={isUpdatingStatus || isPaid}
                         className={cn(
-                            "flex-1 rounded-xl h-10 font-bold text-[10px] uppercase tracking-widest gap-2",
-                            isDelivered && "bg-emerald-500/10 text-emerald-600 border-emerald-500/20 hover:bg-emerald-500/20"
+                            "rounded-2xl h-12 font-black text-[10px] uppercase tracking-widest gap-2 shadow-sm transition-all active:scale-95",
+                            isDelivered ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20 hover:bg-emerald-500/20" : "border-white/5 bg-card/40"
                         )}
                     >
-                        {isUpdatingStatus ? <Loader2 className="h-3 w-3 animate-spin" /> : <Package className="h-3 w-3" />}
-                        {isDelivered ? 'Livré' : 'Livrer'}
+                        {isUpdatingStatus ? <Loader2 className="h-4 w-4 animate-spin" /> : <Package className="h-4 w-4" />}
+                        {isDelivered ? 'LIVRÉ' : 'LIVRER'}
                     </Button>
                     <Button 
                         variant={isPaid ? "secondary" : "outline"} 
-                        size="sm"
+                        size="lg"
                         onClick={handleQuickPay}
                         disabled={isPaid || isUpdatingStatus}
                         className={cn(
-                            "flex-1 rounded-xl h-10 font-bold text-[10px] uppercase tracking-widest gap-2",
-                            isPaid && "bg-emerald-500/10 text-emerald-600 border-emerald-500/20"
+                            "rounded-2xl h-12 font-black text-[10px] uppercase tracking-widest gap-2 shadow-sm transition-all active:scale-95",
+                            isPaid ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20" : "border-white/5 bg-card/40"
                         )}
                     >
-                        {isPaid ? <CheckCircle2 className="h-3 w-3" /> : <Landmark className="h-3 w-3" />}
-                        {isPaid ? 'Facturé' : 'Compte'}
+                        {isPaid ? <CheckCircle2 className="h-4 w-4" /> : <Landmark className="h-4 w-4" />}
+                        {isPaid ? 'SOLDE' : 'COMPTE'}
                     </Button>
                 </div>
             </CardContent>

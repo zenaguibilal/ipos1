@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -12,7 +11,7 @@ import { ManualAddDialog } from './ManualAddDialog';
 import { PrintBreadListDialog } from './PrintBreadListDialog';
 import { toast } from 'sonner';
 import { breadService } from '@/services/bread.service';
-import { Loader2, Wheat, ShoppingBag, Power, AlertTriangle } from 'lucide-react';
+import { Loader2, Wheat, ShoppingBag, Power, AlertTriangle, Sparkles, LayoutGrid, CheckSquare } from 'lucide-react';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { useAppStore } from '@/stores/appStore';
 import { cn } from '@/lib/utils';
@@ -56,7 +55,7 @@ export function BreadDayView({ orders, currentDate, onOrdersChange }: BreadDayVi
     const handleConvertToSales = async () => {
         if (selectedOrders.size === 0) return;
         if (breadPrice <= 0) {
-            toast.error("Prix du pain non défini dans les paramètres.");
+            toast.error("Prix du pain non défini.", { description: "Veuillez configurer le prix dans votre profil." });
             return;
         }
         
@@ -83,7 +82,7 @@ export function BreadDayView({ orders, currentDate, onOrdersChange }: BreadDayVi
         setIsConverting(true);
         try {
             const count = await breadService.billAllRemainingOrdersForDate(currentDate, breadPrice);
-            toast.success(`Clôture du jour: ${count} commandes en attente converties en dettes.`);
+            toast.success(`Clôture Elite terminée: ${count} commandes converties.`);
             onOrdersChange();
         } catch (e) {
             toast.error("Erreur lors de la clôture.");
@@ -97,15 +96,20 @@ export function BreadDayView({ orders, currentDate, onOrdersChange }: BreadDayVi
 
     if (orders.length === 0) {
         return (
-             <Card className="rounded-3xl border-none shadow-sm bg-card overflow-hidden h-full flex flex-col">
-                <CardHeader className="bg-primary/5 border-b border-primary/10">
-                    <CardTitle className="text-xl font-black tracking-tight">Distribution Journalière</CardTitle>
+             <Card className="rounded-[2.5rem] border-none shadow-2xl bg-card/40 backdrop-blur-3xl overflow-hidden h-full flex flex-col">
+                <CardHeader className="bg-primary/5 border-b border-white/5 p-8">
+                    <div className="flex items-center gap-4">
+                        <div className="p-3 rounded-2xl bg-primary text-primary-foreground shadow-lg shadow-primary/20">
+                            <LayoutGrid className="h-6 w-6" />
+                        </div>
+                        <CardTitle className="text-2xl font-black tracking-tight">Distribution Journalière</CardTitle>
+                    </div>
                 </CardHeader>
-                <CardContent className="flex-grow flex items-center justify-center min-h-[400px]">
+                <CardContent className="flex-grow flex items-center justify-center min-h-[500px]">
                     <EmptyState
                         icon={Wheat}
-                        title="Aucune commande pour aujourd'hui"
-                        description="Aucune commande automatique ou manuelle n'a été créée pour cette date."
+                        title="Aucune commande détectée"
+                        description="Le registre est vierge pour cette date. Commencez par un ajout manuel ou vérifiez vos abonnements."
                     >
                         <ManualAddDialog currentDate={currentDate} onSuccess={onOrdersChange} />
                     </EmptyState>
@@ -116,43 +120,48 @@ export function BreadDayView({ orders, currentDate, onOrdersChange }: BreadDayVi
     
     return (
         <>
-        <Card className="flex flex-col h-full rounded-3xl border-none shadow-sm bg-card overflow-hidden">
-            <CardHeader className="flex-shrink-0 bg-muted/30 border-b border-border/50 pb-6">
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                    <div>
-                        <CardTitle className="text-xl font-black tracking-tight">Distribution du Jour</CardTitle>
-                        <p className="text-[10px] text-muted-foreground font-black uppercase tracking-widest mt-1 opacity-60">
-                            Total commandes enregistrées: {orders.length}
-                        </p>
+        <Card className="flex flex-col h-full rounded-[2.5rem] border-none shadow-2xl bg-card/40 backdrop-blur-3xl overflow-hidden">
+            <CardHeader className="flex-shrink-0 bg-muted/20 border-b border-white/5 p-8 pb-10">
+                <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-6">
+                    <div className="flex items-center gap-4">
+                        <div className="p-3 rounded-2xl bg-primary text-primary-foreground shadow-2xl shadow-primary/20">
+                            <Sparkles className="h-6 w-6" />
+                        </div>
+                        <div>
+                            <CardTitle className="text-2xl font-black tracking-tight">Registre de Distribution</CardTitle>
+                            <p className="text-[10px] text-primary/50 font-black uppercase tracking-[0.3em] mt-1">
+                                {orders.length} flux identifiés pour aujourd'hui
+                            </p>
+                        </div>
                     </div>
-                    <div className="flex flex-wrap gap-2 w-full sm:w-auto">
+                    <div className="flex flex-wrap gap-3 w-full xl:w-auto">
                         <ManualAddDialog currentDate={currentDate} onSuccess={onOrdersChange} />
                         <PrintBreadListDialog orders={orders} currentDate={currentDate}/>
                         {unbilledOrdersCount > 0 && (
                             <Button 
-                                variant="destructive" 
-                                className="rounded-xl h-10 font-black text-[10px] uppercase tracking-widest shadow-lg shadow-destructive/20 gap-2 px-4"
+                                variant="outline" 
+                                className="rounded-2xl h-12 font-black text-[10px] uppercase tracking-widest border-destructive/20 bg-destructive/5 text-destructive hover:bg-destructive hover:text-white transition-all gap-2 px-6"
                                 onClick={() => setIsClosingDay(true)}
                                 disabled={isConverting}
                             >
-                                <Power className="h-3.5 w-3.5" />
-                                Clôturer la journée (Dettes)
+                                <Power className="h-4 w-4" />
+                                Clôturer & Facturer
                             </Button>
                         )}
                     </div>
                 </div>
 
-                {/* Selection Bar */}
-                <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-6 bg-background/50 p-2.5 rounded-2xl border border-border/50 shadow-inner">
-                    <div className="flex items-center gap-3 px-3">
+                {/* Elite Selection Bar */}
+                <div className="flex flex-col md:flex-row items-center justify-between gap-6 mt-8 bg-black/40 p-2.5 rounded-[2rem] border border-white/5 shadow-inner backdrop-blur-xl">
+                    <div className="flex items-center gap-4 px-6">
                         <Checkbox 
                             id="select-all-bread" 
                             checked={isAllSelected} 
                             onCheckedChange={handleSelectAll} 
-                            className="h-5 w-5 border-primary data-[state=checked]:bg-primary rounded-md"
+                            className="h-6 w-6 border-primary data-[state=checked]:bg-primary rounded-xl transition-transform active:scale-90"
                         />
-                        <label htmlFor="select-all-bread" className="text-[10px] font-black uppercase tracking-widest text-primary cursor-pointer select-none">
-                            Tout sélectionner pour facturation ({selectedOrders.size})
+                        <label htmlFor="select-all-bread" className="text-[10px] font-black uppercase tracking-[0.2em] text-primary cursor-pointer select-none">
+                            Sélection Elite pour facturation ({selectedOrders.size})
                         </label>
                     </div>
                     
@@ -160,18 +169,18 @@ export function BreadDayView({ orders, currentDate, onOrdersChange }: BreadDayVi
                         onClick={handleConvertToSales} 
                         disabled={selectedOrders.size === 0 || isConverting}
                         className={cn(
-                            "rounded-xl font-black h-11 px-8 transition-all uppercase text-[10px] tracking-widest",
-                            selectedOrders.size > 0 ? "shadow-lg shadow-primary/20" : "opacity-20"
+                            "rounded-2xl font-black h-12 px-10 transition-all uppercase text-[10px] tracking-widest",
+                            selectedOrders.size > 0 ? "shadow-xl shadow-primary/20" : "opacity-20"
                         )}
                     >
                         {isConverting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ShoppingBag className="mr-2 h-4 w-4" />}
-                        Valider les ventes sélectionnées
+                        Valider les transactions
                     </Button>
                 </div>
             </CardHeader>
-            <CardContent className="flex-grow min-h-0 p-6">
-                <ScrollArea className="h-full pr-4 -mr-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+            <CardContent className="flex-grow min-h-0 p-8">
+                <ScrollArea className="h-full pr-6 -mr-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-3 gap-6">
                         {orders.map(order => (
                             <BreadOrderCard 
                                 key={order.uuid} 
@@ -189,18 +198,18 @@ export function BreadDayView({ orders, currentDate, onOrdersChange }: BreadDayVi
         <ConfirmAlertDialog 
             isOpen={isClosingDay}
             onOpenChange={setIsClosingDay}
-            title="Clôturer et facturer les dettes ?"
+            title="Confirmer la clôture souveraine ?"
             description={
-                <div className="space-y-3">
-                    <p>Cela va convertir <b>{unbilledOrdersCount}</b> commandes en attente en dettes enregistrées sur les comptes clients au prix de <b>{breadPrice} DA</b>/pcs.</p>
-                    <div className="flex items-start gap-3 p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl text-amber-600 text-xs">
-                        <AlertTriangle className="h-4 w-4 shrink-0" />
-                        <span>Cette opération est irréversible et affecte immédiatement les soldes clients.</span>
+                <div className="space-y-4">
+                    <p className="font-medium">Vous allez convertir <b>{unbilledOrdersCount}</b> commandes en dettes fermes au prix de <b>{breadPrice} DA/pcs</b>.</p>
+                    <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-2xl flex items-start gap-3 mt-4 text-amber-600">
+                        <AlertTriangle className="h-5 w-5 shrink-0 mt-0.5" />
+                        <p className="text-xs font-black uppercase tracking-tight leading-tight">Attention : Cette action est irréversible et modifiera instantanément les soldes de vos clients premium.</p>
                     </div>
                 </div>
             }
             onConfirm={handleFinalizeDay}
-            confirmText="Clôturer & Valider les dettes"
+            confirmText="Valider & Facturer tout"
         />
         </>
     );
