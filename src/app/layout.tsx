@@ -4,8 +4,8 @@ import { Inter } from 'next/font/google';
 import { ClientProviders } from '@/components/layout/ClientProviders';
 
 const APP_NAME = "iPOS Luxury";
-const APP_DEFAULT_TITLE = "iPOS - Point de Vente Premium";
-const APP_TITLE_TEMPLATE = "%s - iPOS";
+const APP_DEFAULT_TITLE = "iPOS Luxury - Point de Vente Premium";
+const APP_TITLE_TEMPLATE = "%s - iPOS Luxury";
 const APP_DESCRIPTION = "Application de point de vente intelligente et luxueuse pour le commerce de détail";
 
 const inter = Inter({ subsets: ['latin'] });
@@ -45,6 +45,8 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: '/icon.svg',
+    shortcut: '/icon.svg',
+    apple: '/icon.svg',
   },
 };
 
@@ -65,7 +67,8 @@ export default function RootLayout({
   return (
     <html lang="fr" suppressHydrationWarning>
       <head>
-         <link rel="manifest" href="/manifest.json" />
+         <link rel="icon" href="/icon.svg" type="image/svg+xml" />
+         <link rel="apple-touch-icon" href="/icon.svg" />
       </head>
       <body className={inter.className}>
         <ClientProviders>

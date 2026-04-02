@@ -51,10 +51,23 @@ export function AppHeader() {
                   className="flex items-center gap-3 group"
               >
                   <div className="relative">
-                    <div className="absolute -inset-2 bg-primary/20 rounded-full blur-lg opacity-0 group-hover:opacity-100 transition-opacity" />
-                    <Image src="/icon.svg" alt="iPOS logo" width={36} height={32} priority className="relative" />
+                    {/* Premium Glow Effect */}
+                    <div className="absolute -inset-3 bg-primary/20 rounded-full blur-xl opacity-0 group-hover:opacity-100 transition-all duration-700 scale-50 group-hover:scale-100" />
+                    <div className="relative h-10 w-10 flex items-center justify-center bg-black/40 rounded-xl border border-white/5 shadow-2xl group-hover:border-primary/30 transition-colors">
+                        <Image 
+                            src="/icon.svg" 
+                            alt="iPOS Luxury Logo" 
+                            width={32} 
+                            height={32} 
+                            priority 
+                            className="relative drop-shadow-[0_0_8px_rgba(249,115,22,0.4)] transform transition-transform duration-500 group-hover:scale-110" 
+                        />
+                    </div>
                   </div>
-                  <span className="hidden lg:inline-block text-2xl font-black tracking-tighter group-hover:text-primary transition-colors">iPOS <span className="text-primary/50 font-medium">Luxury</span></span>
+                  <div className="flex flex-col -space-y-1">
+                    <span className="hidden lg:inline-block text-xl font-black tracking-tighter group-hover:text-primary transition-colors">iPOS</span>
+                    <span className="hidden lg:inline-block text-[10px] font-black uppercase tracking-[0.3em] text-primary/50">Luxury</span>
+                  </div>
               </Link>
           </div>
       </div>
