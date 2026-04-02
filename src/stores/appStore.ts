@@ -61,7 +61,7 @@ const initialState: Omit<AppState, 'actions'> = {
 // Store Implementation
 export const useAppStore = create<AppState>()(
     persist(
-        (set, get) => ({
+        (set) => ({
             ...initialState,
             actions: {
                 fetchCompanyProfile: async () => {

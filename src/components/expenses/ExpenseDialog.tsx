@@ -191,7 +191,7 @@ export default function ExpenseDialog({ isOpen, onOpenChange, expense, onSuccess
                                     <span className="absolute right-8 top-1/2 -translate-y-1/2 font-black text-xs text-destructive opacity-40 uppercase tracking-widest">DA</span>
                                 </div>
                                 <p className="text-[9px] text-muted-foreground/50 text-center italic">
-                                    Déduit immédiatement de la trésorerie globale.
+                                    Déduit immédiatement de la trésorerية globale.
                                 </p>
                             </div>
                         </div>
@@ -200,7 +200,7 @@ export default function ExpenseDialog({ isOpen, onOpenChange, expense, onSuccess
                     <DialogFooter className="p-8 bg-card border-t border-white/5 flex gap-4">
                         <Button type="button" variant="ghost" onClick={() => onOpenChange(false)} className="h-14 rounded-2xl font-black text-xs uppercase tracking-widest px-8" disabled={isLoading}>Annuler</Button>
                         <Button type="submit" disabled={isLoading} className="flex-1 h-14 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-primary/20 transition-all active:scale-95 gap-3">
-                             {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <CheckCircle2 className="h-5 w-5" />}
+                             {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-5 w-5" />}
                             {expense ? 'Mettre à jour le Flux' : 'Valider le Décaissement'}
                         </Button>
                     </DialogFooter>
