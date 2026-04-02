@@ -5,6 +5,7 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { DataManagementCard } from "@/components/profile/DataManagementCard";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
 import { 
     ShieldAlert, 
     Database, 
@@ -12,9 +13,11 @@ import {
     HardDrive, 
     RefreshCcw, 
     Trash2, 
-    ChevronRight,
     CheckCircle2,
-    Cpu
+    Cpu,
+    Activity,
+    Server,
+    Smartphone
 } from "lucide-react";
 import { db } from "@/lib/db";
 import { toast } from "sonner";
@@ -28,6 +31,7 @@ export default function SettingsPage() {
         sales: 0,
         logs: 0
     });
+    const [storage, setStorage] = useState<{ used: string, quota: string, percent: number } | null>(null);
     const [isResetConfirmOpen, setIsResetConfirmOpen] = useState(false);
 
     useEffect(() => {
@@ -41,6 +45,19 @@ export default function SettingsPage() {
             setStats({ products: p, customers: c, sales: s, logs: l });
         };
         fetchStats();
+
+        // Estimate storage usage
+        if (typeof navigator !== 'undefined' && navigator.storage && navigator.storage.estimate) {
+            navigator.storage.estimate().then(estimate => {
+                const used = (estimate.usage || 0) / (1024 * 1024);
+                const quota = (estimate.quota || 0) / (1024 * 1024);
+                setStorage({
+                    used: used.toFixed(2) + ' Mo',
+                    quota: (quota / 1024).toFixed(1) + ' Go',
+                    percent: Math.round(((estimate.usage || 0) / (estimate.quota || 1)) * 100)
+                });
+            });
+        }
     }, []);
 
     const handleFullReset = async () => {
@@ -58,7 +75,7 @@ export default function SettingsPage() {
     };
 
     return (
-        <div className="p-4 sm:p-6 space-y-8 max-w-5xl mx-auto pb-24">
+        <div className="p-4 sm:p-6 space-y-8 max-w-6xl mx-auto pb-24">
             <PageHeader 
                 title="Paramètres Système"
                 description="Maintenance technique, diagnostic de base de données et gestion de la confidentialité."
@@ -76,36 +93,56 @@ export default function SettingsPage() {
                                     <Database className="h-5 w-5" />
                                 </div>
                                 <div>
-                                    <CardTitle className="text-xl font-black tracking-tight">Santé de la Base de Données</CardTitle>
+                                    <CardTitle className="text-xl font-black tracking-tight">Santé du Système Local</CardTitle>
                                     <CardDescription className="font-medium text-muted-foreground/70">
-                                        Vue d'ensemble de votre stockage local IndexedDB.
+                                        Analyse en temps réel de votre stockage IndexedDB.
                                     </CardDescription>
                                 </div>
                             </div>
                         </CardHeader>
-                        <CardContent className="p-8">
+                        <CardContent className="p-8 space-y-8">
                             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                                <div className="p-4 rounded-3xl bg-muted/30 border border-border/50 text-center">
-                                    <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest mb-1">Produits</p>
-                                    <p className="text-2xl font-black">{stats.products}</p>
+                                <div className="p-5 rounded-3xl bg-muted/20 border border-border/50 text-center hover:bg-muted/30 transition-colors">
+                                    <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest mb-2">Produits</p>
+                                    <p className="text-3xl font-black">{stats.products}</p>
                                 </div>
-                                <div className="p-4 rounded-3xl bg-muted/30 border border-border/50 text-center">
-                                    <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest mb-1">Clients</p>
-                                    <p className="text-2xl font-black">{stats.customers}</p>
+                                <div className="p-5 rounded-3xl bg-muted/20 border border-border/50 text-center hover:bg-muted/30 transition-colors">
+                                    <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest mb-2">Clients</p>
+                                    <p className="text-3xl font-black">{stats.customers}</p>
                                 </div>
-                                <div className="p-4 rounded-3xl bg-muted/30 border border-border/50 text-center">
-                                    <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest mb-1">Ventes</p>
-                                    <p className="text-2xl font-black">{stats.sales}</p>
+                                <div className="p-5 rounded-3xl bg-muted/20 border border-border/50 text-center hover:bg-muted/30 transition-colors">
+                                    <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest mb-2">Ventes</p>
+                                    <p className="text-3xl font-black">{stats.sales}</p>
                                 </div>
-                                <div className="p-4 rounded-3xl bg-muted/30 border border-border/50 text-center">
-                                    <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest mb-1">Logs</p>
-                                    <p className="text-2xl font-black">{stats.logs}</p>
+                                <div className="p-5 rounded-3xl bg-muted/20 border border-border/50 text-center hover:bg-muted/30 transition-colors">
+                                    <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest mb-2">Historique</p>
+                                    <p className="text-3xl font-black">{stats.logs}</p>
                                 </div>
                             </div>
+
+                            {/* Storage Estimation */}
+                            {storage && (
+                                <div className="p-6 rounded-[2rem] bg-background/50 border border-border/50 space-y-4">
+                                    <div className="flex justify-between items-end">
+                                        <div className="space-y-1">
+                                            <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-primary">
+                                                <Activity className="h-3 w-3" /> Utilisation Disque (Navigateur)
+                                            </div>
+                                            <p className="text-xs text-muted-foreground font-medium">Capacité totale allouée par le navigateur.</p>
+                                        </div>
+                                        <div className="text-right">
+                                            <span className="text-sm font-black">{storage.used}</span>
+                                            <span className="text-[10px] text-muted-foreground mx-1 font-bold">/</span>
+                                            <span className="text-[10px] text-muted-foreground font-bold">{storage.quota}</span>
+                                        </div>
+                                    </div>
+                                    <Progress value={storage.percent} className="h-1.5 bg-muted/30 [&>div]:bg-primary" />
+                                </div>
+                            )}
                             
-                            <div className="mt-8 flex items-center gap-3 p-4 bg-emerald-500/5 rounded-2xl border border-emerald-500/10 text-emerald-600">
+                            <div className="flex items-center gap-3 p-4 bg-emerald-500/5 rounded-2xl border border-emerald-500/10 text-emerald-600">
                                 <CheckCircle2 className="h-5 w-5 shrink-0" />
-                                <p className="text-xs font-bold uppercase tracking-tight">Système opérationnel : Toutes les tables sont synchronisées localement.</p>
+                                <p className="text-[10px] font-black uppercase tracking-widest">Moteur de données opérationnel : 100% Hors-ligne</p>
                             </div>
                         </CardContent>
                     </Card>
@@ -117,6 +154,33 @@ export default function SettingsPage() {
                 {/* Right Column: Info & Danger Zone */}
                 <div className="space-y-8 animate-in fade-in slide-in-from-right-4 duration-700 delay-100">
                     
+                    {/* Environment Card */}
+                    <Card className="rounded-[2.5rem] border-none shadow-sm bg-card overflow-hidden">
+                        <CardHeader className="pb-4">
+                            <div className="flex items-center gap-3">
+                                <Server className="h-4 w-4 text-primary opacity-50" />
+                                <CardTitle className="text-xs font-black uppercase tracking-widest text-muted-foreground">Environnement</CardTitle>
+                            </div>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            <div className="flex items-center justify-between p-4 bg-muted/30 rounded-2xl border border-border/50">
+                                <div className="flex items-center gap-3">
+                                    <Smartphone className="h-4 w-4 text-muted-foreground" />
+                                    <span className="text-[10px] font-black uppercase tracking-tight">Version PWA</span>
+                                </div>
+                                <span className="px-2 py-0.5 rounded-lg bg-emerald-500/10 text-emerald-500 text-[10px] font-black">ACTIVE</span>
+                            </div>
+                            <div className="flex items-center justify-between p-4 bg-muted/30 rounded-2xl border border-border/50">
+                                <div className="flex items-center gap-3">
+                                    <RefreshCcw className="h-4 w-4 text-muted-foreground" />
+                                    <span className="text-[10px] font-black uppercase tracking-tight">Synchro Locale</span>
+                                    <div className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                                </div>
+                                <span className="text-[10px] font-black">INSTANTANÉE</span>
+                            </div>
+                        </CardContent>
+                    </Card>
+
                     {/* About Card */}
                     <Card className="rounded-[2.5rem] border-none shadow-sm bg-card overflow-hidden">
                         <CardHeader className="pb-4">
@@ -131,14 +195,14 @@ export default function SettingsPage() {
                                     <Cpu className="h-6 w-6 text-primary" />
                                 </div>
                                 <div>
-                                    <p className="text-sm font-black tracking-tight">Version 1.2.0-Zen</p>
-                                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Build local stable</p>
+                                    <p className="text-sm font-black tracking-tight">iPOS Zen v1.5.0</p>
+                                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Build Local-First</p>
                                 </div>
                             </div>
                             
                             <div className="space-y-3 text-[11px] font-medium text-muted-foreground leading-relaxed italic px-2">
                                 <p>iPOS est une application "Client-Side Only". Cela signifie que vos données ne transitent par aucun serveur externe.</p>
-                                <p>L'utilisation de la technologie IndexedDB garantit une rapidité d'exécution maximale même sans connexion internet.</p>
+                                <p>L'utilisation de la technologie IndexedDB garantit une confidentialité totale et une rapidité d'exécution maximale.</p>
                             </div>
                         </CardContent>
                         <CardFooter className="pt-0 pb-8 px-8">
