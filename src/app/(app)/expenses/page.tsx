@@ -20,6 +20,7 @@ import {
     BarChart3,
     Trash2,
     X,
+    Printer,
     CheckSquare
 } from 'lucide-react';
 import { ExpenseCard } from '@/components/expenses/ExpenseCard';
@@ -45,6 +46,8 @@ import { toast } from 'sonner';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, Cell } from 'recharts';
 import { Checkbox } from '@/components/ui/checkbox';
 import Papa from 'papaparse';
+import { useAppStore } from '@/stores/appStore';
+import { format } from 'date-fns';
 
 const COLORS = [
     'hsl(var(--primary))', 
@@ -67,6 +70,7 @@ export default function ExpensesPage() {
     const [selectedExpenses, setSelectedExpenses] = useState<Set<string>>(new Set());
     
     const { dateRange, setDate, isMounted } = useDateRange(29);
+    const profile = useAppStore(state => state.companyProfile);
     
     const [expenses, setExpenses] = useState<Expense[] | undefined>(undefined);
     const [categories, setCategories] = useState<string[] | undefined>(undefined);
@@ -166,6 +170,88 @@ export default function ExpensesPage() {
         toast.success(`${dataToExport.length} dépense(s) exportée(s).`);
     };
 
+    const handlePrintSummary = () => {
+        if (!expenses || expenses.length === 0) {
+            toast.error("Aucune donnée à imprimer.");
+            return;
+        }
+
+        const printWindow = window.open('', '_blank');
+        if (!printWindow) return;
+
+        const dateStr = dateRange?.from ? `${format(dateRange.from, 'dd/MM/yyyy')} au ${format(dateRange.to!, 'dd/MM/yyyy')}` : 'Toutes les dates';
+
+        const html = `
+            <html>
+                <head>
+                    <title>Rapport de Dépenses - iPOS</title>
+                    <style>
+                        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 40px; color: #333; }
+                        header { border-bottom: 2px solid #000; padding-bottom: 20px; margin-bottom: 30px; display: flex; justify-content: space-between; align-items: flex-end; }
+                        h1 { margin: 0; font-size: 24px; text-transform: uppercase; }
+                        .meta { text-align: right; font-size: 12px; color: #666; }
+                        .summary-grid { display: grid; grid-template-cols: repeat(3, 1fr); gap: 20px; margin-bottom: 40px; }
+                        .stat-card { border: 1px solid #ddd; padding: 15px; border-radius: 8px; text-align: center; }
+                        .stat-card h4 { margin: 0 0 5px 0; font-size: 10px; text-transform: uppercase; color: #888; }
+                        .stat-card p { margin: 0; font-size: 18px; font-weight: bold; }
+                        table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 11px; }
+                        th, td { border-bottom: 1px solid #eee; padding: 12px 8px; text-align: left; }
+                        th { background-color: #f9f9f9; font-weight: bold; text-transform: uppercase; }
+                        .amount { text-align: right; font-family: monospace; font-size: 12px; font-weight: bold; }
+                        @media print { .no-print { display: none; } }
+                    </style>
+                </head>
+                <body>
+                    <header>
+                        <div>
+                            <h1>${profile?.companyName || 'Mon Commerce'}</h1>
+                            <p>${profile?.address || ''} | ${profile?.phone || ''}</p>
+                        </div>
+                        <div class="meta">
+                            <p>RAPPORT DE DÉPENSES</p>
+                            <p>Période: ${dateStr}</p>
+                            <p>Généré le: ${format(new Date(), 'dd/MM/yyyy HH:mm')}</p>
+                        </div>
+                    </header>
+
+                    <div class="summary-grid">
+                        <div class="stat-card"><h4>Total Dépensé</h4><p>${formatCurrency(stats.total)}</p></div>
+                        <div class="stat-card"><h4>Transactions</h4><p>${stats.count}</p></div>
+                        <div class="stat-card"><h4>Poste Principal</h4><p>${stats.topCategory}</p></div>
+                    </div>
+
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Description</th>
+                                <th>Catégorie</th>
+                                <th style="text-align: right;">Montant</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${expenses.map(e => `
+                                <tr>
+                                    <td>${format(new Date(e.expenseDate), 'dd/MM/yyyy')}</td>
+                                    <td><b>${e.description}</b></td>
+                                    <td>${e.category}</td>
+                                    <td class="amount">${e.amount.toFixed(1)} DA</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </body>
+            </html>
+        `;
+
+        printWindow.document.write(html);
+        printWindow.document.close();
+        setTimeout(() => {
+            printWindow.print();
+            printWindow.close();
+        }, 500);
+    };
+
     const handleEditExpense = (expense: Expense) => {
         setSelectedExpense(expense);
         setIsExpenseDialogOpen(true);
@@ -228,6 +314,9 @@ export default function ExpensesPage() {
                 description="Suivez et analysez toutes les charges de votre établissement."
             >
                 <div className="flex gap-2 w-full sm:w-auto">
+                    <Button variant="outline" onClick={handlePrintSummary} className="rounded-xl font-bold border-primary/20 hover:bg-primary/5">
+                        <Printer className="mr-2 h-4 w-4 text-primary" /> Rapport
+                    </Button>
                     <Button variant="outline" onClick={handleExportCsv} className="rounded-xl font-bold border-primary/20 hover:bg-primary/5">
                         <FileUp className="mr-2 h-4 w-4 text-primary" /> Exporter
                     </Button>
@@ -417,24 +506,30 @@ export default function ExpensesPage() {
                 </div>
             </div>
             
-            {/* Selection Info Bar */}
+            {/* Selection Action Bar - Enhanced Fixed Version */}
             {selectedExpenses.size > 0 && (
-                <div className="flex flex-col sm:flex-row gap-3 justify-between items-center bg-primary/10 border border-primary/20 rounded-2xl p-4 animate-in slide-in-from-top-2 shadow-inner">
-                    <div className="flex items-center gap-3">
-                        <Checkbox
-                            id="select-all-expenses"
-                            checked={!isLoading && expenses && expenses.length > 0 && selectedExpenses.size === expenses.length}
-                            onCheckedChange={handleSelectAll}
-                            className="h-5 w-5 border-primary data-[state=checked]:bg-primary"
-                        />
-                        <label htmlFor="select-all-expenses" className="text-xs font-black text-primary uppercase tracking-widest">
-                            {selectedExpenses.size} dépense(s) sélectionnée(s) • Total: {formatCurrency(selectedTotal)}
-                        </label>
-                    </div>
-                    <div className="flex gap-2">
-                        <Button variant="destructive" onClick={() => setIsBulkDeleteDialogOpen(true)} className="rounded-xl shadow-lg shadow-destructive/20 font-bold">
-                            <Trash2 className="mr-2 h-4 w-4" /> Supprimer la sélection
-                        </Button>
+                <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-50 animate-in slide-in-from-bottom-10 duration-300">
+                    <div className="bg-card/80 backdrop-blur-xl border-2 border-primary/20 shadow-2xl rounded-full px-6 py-3 flex items-center gap-6">
+                        <div className="flex items-center gap-2 pr-6 border-r border-border/50">
+                            <div className="h-8 w-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-black">
+                                {selectedExpenses.size}
+                            </div>
+                            <div className="flex flex-col">
+                                <span className="text-[8px] font-black uppercase tracking-widest text-muted-foreground">Sélection</span>
+                                <span className="text-xs font-black text-primary">{formatCurrency(selectedTotal)}</span>
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                            <Button variant="ghost" size="sm" onClick={handleExportCsv} className="rounded-full h-10 font-bold hover:bg-primary/10 hover:text-primary">
+                                <FileUp className="mr-2 h-4 w-4" /> Exporter
+                            </Button>
+                            <Button variant="ghost" size="sm" onClick={() => setIsBulkDeleteDialogOpen(true)} className="rounded-full h-10 font-bold text-destructive hover:bg-destructive/10">
+                                <Trash2 className="mr-2 h-4 w-4" /> Supprimer Tout
+                            </Button>
+                            <Button variant="ghost" size="icon" onClick={() => setSelectedExpenses(new Set())} className="rounded-full h-10 w-10 hover:bg-muted">
+                                <X className="h-4 w-4" />
+                            </Button>
+                        </div>
                     </div>
                 </div>
             )}
