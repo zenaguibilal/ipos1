@@ -1,4 +1,3 @@
-
 'use client';
 
 import React from 'react';
@@ -6,7 +5,7 @@ import type { ProductReturn, Customer } from '@/lib/types';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { MoreHorizontal, FileText, Trash2, Hash, Clock, User } from 'lucide-react';
+import { MoreHorizontal, FileText, Trash2, Hash, Clock, User, ChevronRight } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { safeToDate, formatCurrency, cn } from '@/lib/utils';
@@ -23,17 +22,23 @@ interface ReturnTableProps {
 
 export function ReturnTable({ returns, customerMap, selectedReturns, onToggleSelection, onViewDetails, onCancel }: ReturnTableProps) {
     return (
-        <div className="rounded-2xl border bg-card/50 backdrop-blur-sm overflow-hidden shadow-sm">
+        <div className="rounded-[2.5rem] border border-white/5 bg-card/40 backdrop-blur-xl overflow-hidden shadow-2xl">
             <Table>
                 <TableHeader className="bg-muted/30">
                     <TableRow className="border-none">
-                        <TableHead className="w-[40px] px-4"></TableHead>
-                        <TableHead className="font-black text-[10px] uppercase tracking-widest text-muted-foreground">Date & Heure</TableHead>
-                        <TableHead className="font-black text-[10px] uppercase tracking-widest text-muted-foreground">Facture Origine</TableHead>
-                        <TableHead className="font-black text-[10px] uppercase tracking-widest text-muted-foreground">Client</TableHead>
-                        <TableHead className="text-right font-black text-[10px] uppercase tracking-widest text-muted-foreground">Remboursé</TableHead>
-                        <TableHead className="text-right font-black text-[10px] uppercase tracking-widest text-primary">Valeur Retour</TableHead>
-                        <TableHead className="w-[50px] text-right"></TableHead>
+                        <TableHead className="w-[60px] px-6">
+                           <Checkbox
+                                checked={returns.length > 0 && selectedReturns.size === returns.length}
+                                onCheckedChange={() => {}} // Controlled by parent
+                                className="border-primary data-[state=checked]:bg-primary"
+                            />
+                        </TableHead>
+                        <TableHead className="p-6 font-black text-[10px] uppercase tracking-[0.2em] text-muted-foreground/60">Date & Flux</TableHead>
+                        <TableHead className="p-6 font-black text-[10px] uppercase tracking-[0.2em] text-muted-foreground/60">Origine Facture</TableHead>
+                        <TableHead className="p-6 font-black text-[10px] uppercase tracking-[0.2em] text-muted-foreground/60">Partenaire Client</TableHead>
+                        <TableHead className="p-6 text-right font-black text-[10px] uppercase tracking-[0.2em] text-muted-foreground/60">Remboursé</TableHead>
+                        <TableHead className="p-6 text-right font-black text-[10px] uppercase tracking-[0.2em] text-primary">Valeur Retour</TableHead>
+                        <TableHead className="p-6 w-[80px]"></TableHead>
                     </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -44,65 +49,67 @@ export function ReturnTable({ returns, customerMap, selectedReturns, onToggleSel
                         return (
                             <TableRow 
                                 key={r.uuid} 
-                                className={cn(
-                                    "group transition-all border-b border-border/50 cursor-pointer",
-                                    isSelected ? "bg-primary/10" : "hover:bg-muted/30"
-                                )}
                                 onClick={() => onToggleSelection(r.uuid)}
+                                className={cn(
+                                    "group transition-all border-b border-white/5 cursor-pointer",
+                                    isSelected ? "bg-primary/10" : "hover:bg-primary/5"
+                                )}
                             >
-                                <TableCell className="px-4" onClick={(e) => e.stopPropagation()}>
+                                <TableCell className="px-6" onClick={(e) => e.stopPropagation()}>
                                     <Checkbox 
                                         checked={isSelected} 
                                         onCheckedChange={() => onToggleSelection(r.uuid)}
                                         className="border-primary data-[state=checked]:bg-primary"
                                     />
                                 </TableCell>
-                                <TableCell className="whitespace-nowrap">
+                                <TableCell className="p-6 whitespace-nowrap">
                                     <div className="flex items-center gap-3">
-                                        <div className="p-2 rounded-xl bg-muted/50 text-muted-foreground">
+                                        <div className="p-2 rounded-xl bg-black/20 text-muted-foreground/40 shadow-inner">
                                             <Clock className="h-4 w-4" />
                                         </div>
-                                        <div className="flex flex-col">
+                                        <div className="flex flex-col -space-y-0.5">
                                             <span className="font-bold text-xs">{format(safeToDate(r.createdAt!), 'dd MMM yyyy', { locale: fr })}</span>
-                                            <span className="text-[9px] text-muted-foreground uppercase font-black tracking-tighter opacity-60">
-                                                {format(safeToDate(r.createdAt!), 'HH:mm')}
-                                            </span>
+                                            <span className="text-[9px] text-muted-foreground/40 uppercase font-black tracking-widest">{format(safeToDate(r.createdAt!), 'HH:mm')}</span>
                                         </div>
                                     </div>
                                 </TableCell>
-                                <TableCell>
-                                    <div className="flex items-center gap-2">
-                                        <Hash className="h-3 w-3 text-muted-foreground/40" />
-                                        <span className="font-mono text-xs font-black tracking-tight">{r.originalInvoiceNumber}</span>
+                                <TableCell className="p-6">
+                                    <div className="flex items-center gap-2 text-xs font-mono font-bold text-muted-foreground/60 bg-muted/20 px-3 py-1.5 rounded-xl w-fit border border-white/5">
+                                        <Hash className="h-3 w-3 opacity-30" />
+                                        {r.originalInvoiceNumber}
                                     </div>
                                 </TableCell>
-                                <TableCell>
-                                    <div className="flex items-center gap-2">
-                                        <User className="h-3 w-3 text-muted-foreground/40" />
-                                        <span className="font-bold text-sm truncate max-w-[150px]">
+                                <TableCell className="p-6">
+                                    <div className="flex items-center gap-3">
+                                        <div className="p-2 rounded-xl bg-primary/5 text-primary/40">
+                                            <User className="h-4 w-4" />
+                                        </div>
+                                        <span className="font-black tracking-tight text-sm group-hover:text-primary transition-colors">
                                             {customer ? `${customer.firstName} ${customer.lastName}` : 'Client de passage'}
                                         </span>
                                     </div>
                                 </TableCell>
-                                <TableCell className="text-right">
-                                    <span className="text-xs text-emerald-500 font-mono font-bold">{formatCurrency(r.amountRefunded)}</span>
+                                <TableCell className="p-6 text-right font-mono text-xs text-emerald-500 font-bold">
+                                    {formatCurrency(r.amountRefunded)}
                                 </TableCell>
-                                <TableCell className="text-right">
-                                    <span className="font-black text-primary text-sm font-mono">{formatCurrency(r.totalReturnValue)}</span>
+                                <TableCell className="p-6 text-right">
+                                    <span className="font-black text-primary text-base tracking-tighter font-mono">
+                                        {formatCurrency(r.totalReturnValue)}
+                                    </span>
                                 </TableCell>
-                                <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
+                                <TableCell className="p-6 text-right" onClick={(e) => e.stopPropagation()}>
                                     <DropdownMenu>
                                         <DropdownMenuTrigger asChild>
-                                            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-xl hover:bg-muted">
-                                                <MoreHorizontal className="h-4 w-4" />
+                                            <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl hover:bg-muted group-hover:bg-background/50 transition-all">
+                                                <MoreHorizontal className="h-5 w-5" />
                                             </Button>
                                         </DropdownMenuTrigger>
-                                        <DropdownMenuContent align="end" className="rounded-xl border-none shadow-xl">
-                                            <DropdownMenuItem onClick={() => onViewDetails(r)} className="rounded-xl">
-                                                <FileText className="mr-2 h-4 w-4" /> Détails
+                                        <DropdownMenuContent align="end" className="rounded-2xl border-none shadow-2xl bg-card">
+                                            <DropdownMenuItem onClick={() => onViewDetails(r)} className="rounded-xl p-3">
+                                                <FileText className="mr-2 h-4 w-4" /> Details Elite
                                             </DropdownMenuItem>
-                                            <DropdownMenuItem onClick={() => onCancel(r)} className="text-destructive focus:text-destructive rounded-xl">
-                                                <Trash2 className="mr-2 h-4 w-4" /> Annuler
+                                            <DropdownMenuItem onClick={() => onCancel(r)} className="text-destructive focus:text-destructive rounded-xl p-3">
+                                                <Trash2 className="mr-2 h-4 w-4" /> Annuler Retour
                                             </DropdownMenuItem>
                                         </DropdownMenuContent>
                                     </DropdownMenu>

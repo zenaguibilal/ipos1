@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { returnService } from '@/services/return.service';
 import { customerService } from '@/services/customer.service';
 import { useDebounce } from '@/hooks/useDebounce';
@@ -18,7 +18,7 @@ import {
     FilterX, 
     Trash2, 
     X,
-    CheckSquare
+    Sparkles
 } from 'lucide-react';
 import { DateRangePicker } from '@/components/ui/date-range-picker';
 import { useDateRange } from '@/hooks/useDateRange';
@@ -75,7 +75,7 @@ export default function ReturnsPage() {
             setReturns(returnsData);
             setCustomerMap(new Map(customersData.map(c => [c.uuid, c])));
         } catch (error: any) {
-            toast.error("Impossible de charger l'historique des retours.", { description: error.message });
+            toast.error("Impossible de charger l'historique des retours.");
             setReturns([]);
         } finally {
             setIsRefreshing(false);
@@ -176,163 +176,94 @@ export default function ReturnsPage() {
 
     const isFiltered = searchQuery !== '';
     
-    const renderContent = () => {
-        if (isLoading) {
-            return (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {[...Array(6)].map((_, i) => <Skeleton key={i} className="h-48 rounded-3xl" />)}
-                </div>
-            );
-        }
-
-        if (!returns || returns.length === 0) {
-            return (
-                <EmptyState
-                    icon={Undo2}
-                    title="Aucun retour trouvé"
-                    description={isFiltered ? "Ajustez vos filtres de recherche." : "Les retours de produits apparaîtront ici."}
-                >
-                    <div className="flex gap-2 justify-center">
-                        {isFiltered && <Button variant="outline" onClick={resetFilters} className="rounded-xl"><FilterX className="mr-2 h-4 w-4" /> Effacer</Button>}
-                        <Button asChild className="rounded-xl shadow-lg shadow-primary/20">
-                            <Link href="/returns/new"><Plus className="mr-2 h-4 w-4" /> Nouveau Retour</Link>
-                        </Button>
-                    </div>
-                </EmptyState>
-            );
-        }
-        
-        if (viewMode === 'list') {
-            return (
-                <div className="space-y-4">
-                    <div className="flex items-center gap-2 px-4 py-2 bg-primary/5 rounded-2xl border border-primary/10 w-fit">
-                        <Checkbox 
-                            id="select-all" 
-                            checked={selectedReturns.size === returns.length && returns.length > 0} 
-                            onCheckedChange={handleSelectAll}
-                            className="border-primary data-[state=checked]:bg-primary"
-                        />
-                        <label htmlFor="select-all" className="text-[10px] font-black uppercase tracking-widest text-primary cursor-pointer">
-                            Tout sélectionner ({selectedReturns.size})
-                        </label>
-                    </div>
-                    <ReturnTable 
-                        returns={returns}
-                        customerMap={customerMap}
-                        selectedReturns={selectedReturns}
-                        onToggleSelection={handleToggleSelection}
-                        onViewDetails={handleViewDetails}
-                        onCancel={handleCancelReturn}
-                    />
-                </div>
-            );
-        }
-
-        return (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {returns.map(r => {
-                    const customer = r.customerUuid ? customerMap.get(r.customerUuid) : undefined;
-                    const customerName = customer ? `${customer.firstName} ${customer.lastName}` : undefined;
-                    return (
-                        <ReturnHistoryCard 
-                            key={r.uuid} 
-                            productReturn={r}
-                            customerName={customerName}
-                            isSelected={selectedReturns.has(r.uuid)}
-                            onToggleSelection={() => handleToggleSelection(r.uuid)}
-                            onViewDetails={handleViewDetails}
-                            onCancelReturn={handleCancelReturn}
-                        />
-                    )
-                })}
-            </div>
-        );
-    }
-
     return (
-        <div className="p-4 sm:p-6 space-y-6 max-w-[1600px] mx-auto pb-24">
+        <div className="p-6 sm:p-10 space-y-10 max-w-[1800px] mx-auto animate-in fade-in duration-1000">
             <PageHeader
-                title="Gestion des Retours"
-                description="Suivez les retours de marchandises et régularisez vos stocks."
+                title="Registre des Retours"
+                description="Régularisation Elite des flux de marchandises et des crédits"
             >
-                <div className="flex gap-2 w-full sm:w-auto">
-                    <Button variant="outline" onClick={handleExportCsv} className="rounded-xl font-bold border-primary/20 hover:bg-primary/5">
+                <div className="flex gap-3 w-full sm:w-auto">
+                    <Button variant="outline" onClick={handleExportCsv} className="flex-1 sm:flex-none h-12 rounded-2xl font-black text-xs uppercase tracking-widest border-primary/20 hover:bg-primary/5 transition-all">
                         <FileUp className="mr-2 h-4 w-4 text-primary" /> Exporter
                     </Button>
-                    <Button asChild className="rounded-xl font-bold shadow-lg shadow-primary/20">
-                        <Link href="/returns/new"><Plus className="mr-2 h-4 w-4" /> Nouveau</Link>
+                    <Button asChild className="flex-1 sm:flex-none h-12 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-primary/20 transition-all active:scale-95">
+                        <Link href="/returns/new">
+                            <Plus className="mr-2 h-4 w-4" /> Nouveau Retour
+                        </Link>
                     </Button>
                     <Button 
                         variant="outline" 
                         size="icon" 
-                        className="rounded-xl border-none shadow-sm bg-card h-10 w-10"
+                        className="h-12 w-12 rounded-2xl border-white/5 bg-card/40 hover:bg-primary/10 transition-all group"
                         onClick={fetchReturnsAndCustomers}
                         disabled={isRefreshing}
                     >
-                        <RefreshCw className={cn("h-4 w-4 text-primary", isRefreshing && "animate-spin")} />
+                        <RefreshCw className={cn("h-5 w-5 text-primary transition-all duration-1000", isRefreshing && "animate-spin")} />
                     </Button>
                 </div>
             </PageHeader>
 
             <ReturnStats returns={returns} isLoading={isLoading} />
 
-            <div className="flex flex-col lg:flex-row gap-3">
-                <div className="relative flex-grow">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/50" />
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 bg-card/20 p-2 rounded-[2.5rem] border border-white/5 backdrop-blur-xl">
+                <div className="relative group flex-grow max-w-xl px-4">
+                    <Search className="absolute left-8 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground group-focus-within:text-primary transition-colors duration-500" />
                     <Input 
                         placeholder="Rechercher par N° Facture..."
-                        className="pl-10 h-11 rounded-xl bg-card border-none shadow-sm focus-visible:ring-primary/20"
+                        className="pl-14 h-14 rounded-2xl bg-black/20 border-none shadow-inner focus-visible:ring-primary/20 font-bold text-lg"
                         value={searchQuery}
                         onChange={e => setSearchQuery(e.target.value)}
                     />
                 </div>
                 
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-3 px-4">
                     <DateRangePicker date={dateRange} setDate={setDate} />
                     
-                    <div className="flex items-center gap-1 rounded-xl bg-card border-none shadow-sm p-1 h-11">
+                    <div className="flex items-center gap-1 p-1 bg-black/20 rounded-2xl border border-white/5 shadow-inner">
                         <Button 
                             variant={viewMode === 'grid' ? 'secondary': 'ghost'} 
                             size="icon" 
-                            className="rounded-lg h-9 w-9"
+                            className="rounded-xl h-10 w-10"
                             onClick={() => setViewMode('grid')}
                         >
-                            <LayoutGrid className="h-4 w-4"/>
+                            <LayoutGrid className="h-5 w-5"/>
                         </Button>
                         <Button 
                             variant={viewMode === 'list' ? 'secondary': 'ghost'} 
                             size="icon" 
-                            className="rounded-lg h-9 w-9"
+                            className="rounded-xl h-10 w-10"
                             onClick={() => setViewMode('list')}
                         >
-                            <List className="h-4 w-4"/>
+                            <List className="h-5 w-5"/>
                         </Button>
                     </div>
+
+                    {isFiltered && (
+                        <Button variant="ghost" size="icon" className="h-12 w-12 rounded-2xl text-destructive hover:bg-destructive/10" onClick={resetFilters}>
+                            <FilterX className="h-5 w-5" />
+                        </Button>
+                    )}
                 </div>
             </div>
             
-            <div className="min-h-[450px] animate-in fade-in duration-500">
-                {renderContent()}
-            </div>
-
-            {/* Selection Action Bar */}
+            {/* Elite Selection Action Bar */}
             {selectedReturns.size > 0 && (
-                <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-50 animate-in slide-in-from-bottom-10 duration-300">
-                    <div className="bg-card/80 backdrop-blur-xl border-2 border-primary/20 shadow-2xl rounded-full px-6 py-3 flex items-center gap-6">
-                        <div className="flex items-center gap-2 pr-6 border-r border-border/50">
-                            <div className="h-8 w-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-black">
+                <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 animate-in slide-in-from-bottom-10 duration-500">
+                    <div className="bg-card/80 backdrop-blur-3xl border-2 border-primary/20 shadow-2xl rounded-full px-8 py-4 flex items-center gap-10">
+                        <div className="flex items-center gap-4 pr-8 border-r border-white/10">
+                            <div className="h-10 w-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-black shadow-lg shadow-primary/20">
                                 {selectedReturns.size}
                             </div>
-                            <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Sélectionnées</span>
+                            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Retours Sélectionnés</span>
                         </div>
-                        <div className="flex items-center gap-3">
-                            <Button variant="ghost" size="sm" onClick={handleExportCsv} className="rounded-full h-10 font-bold hover:bg-primary/10 hover:text-primary">
-                                <FileUp className="mr-2 h-4 w-4" /> Exporter
+                        <div className="flex items-center gap-4">
+                            <Button variant="ghost" onClick={handleExportCsv} className="rounded-full h-12 px-6 font-black text-[10px] uppercase tracking-widest hover:bg-primary/10 hover:text-primary transition-all">
+                                <FileUp className="mr-2 h-4 w-4" /> Exporter (.csv)
                             </Button>
-                            <Button variant="ghost" size="sm" onClick={() => setIsBulkCancelConfirmOpen(true)} className="rounded-full h-10 font-bold text-destructive hover:bg-destructive/10">
-                                <Trash2 className="mr-2 h-4 w-4" /> Annuler Tout
+                            <Button variant="ghost" onClick={() => setIsBulkCancelConfirmOpen(true)} className="rounded-full h-12 px-6 font-black text-[10px] uppercase tracking-widest text-destructive hover:bg-destructive/10 transition-all">
+                                <Trash2 className="mr-2 h-4 w-4" /> Annuler Flux
                             </Button>
-                            <Button variant="ghost" size="icon" onClick={() => setSelectedReturns(new Set())} className="rounded-full h-10 w-10 hover:bg-muted">
+                            <Button variant="ghost" size="icon" onClick={() => setSelectedReturns(new Set())} className="rounded-full h-12 w-12 hover:bg-white/5 transition-all">
                                 <X className="h-4 w-4" />
                             </Button>
                         </div>
@@ -340,12 +271,57 @@ export default function ReturnsPage() {
                 </div>
             )}
 
+            <div className="min-h-[600px] animate-in fade-in slide-in-from-bottom-4 duration-1000">
+                {isLoading ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+                        {[...Array(8)].map((_, i) => <Skeleton key={i} className="h-56 w-full rounded-[2.5rem] bg-card/40 animate-pulse" />)}
+                    </div>
+                ) : returns.length === 0 ? (
+                    <EmptyState
+                        icon={Undo2}
+                        title="Aucun retour identifié"
+                        description={isFiltered ? "Ajustez vos filtres pour localiser les flux." : "Commencez par enregistrer votre premier retour Premium."}
+                    >
+                        {isFiltered && <Button variant="outline" onClick={resetFilters} className="rounded-2xl h-12 font-bold px-8 border-primary/20 hover:bg-primary/5">Effacer les filtres</Button>}
+                    </EmptyState>
+                ) : (
+                    viewMode === 'list' ? (
+                        <ReturnTable 
+                            returns={returns}
+                            customerMap={customerMap}
+                            selectedReturns={selectedReturns}
+                            onToggleSelection={handleToggleSelection}
+                            onViewDetails={handleViewDetails}
+                            onCancel={handleCancelReturn}
+                        />
+                    ) : (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+                            {returns.map(r => {
+                                const customer = r.customerUuid ? customerMap.get(r.customerUuid) : undefined;
+                                return (
+                                    <ReturnHistoryCard 
+                                        key={r.uuid} 
+                                        productReturn={r}
+                                        customerName={customer ? `${customer.firstName} ${customer.lastName}` : 'Client de passage'}
+                                        isSelected={selectedReturns.has(r.uuid)}
+                                        onToggleSelection={() => handleToggleSelection(r.uuid)}
+                                        onViewDetails={handleViewDetails}
+                                        onCancelReturn={handleCancelReturn}
+                                    />
+                                )
+                            })}
+                        </div>
+                    )
+                )}
+            </div>
+
             <ReturnDetailsDialog 
                 isOpen={isDetailsOpen}
                 onOpenChange={setIsDetailsOpen}
                 productReturn={selectedReturn}
                 customerName={selectedReturn?.customerUuid ? `${customerMap.get(selectedReturn.customerUuid)?.firstName} ${customerMap.get(selectedReturn.customerUuid)?.lastName}` : 'Client de passage'}
             />
+            
             <CancelReturnDialog 
                 isOpen={isCancelOpen}
                 onOpenChange={setIsCancelOpen}
@@ -356,10 +332,19 @@ export default function ReturnsPage() {
             <ConfirmAlertDialog
                 isOpen={isBulkCancelConfirmOpen}
                 onOpenChange={setIsBulkCancelConfirmOpen}
-                title={`Annuler ${selectedReturns.size} retour(s) ?`}
-                description="Cette opération est irréversible. Toutes les quantités seront soustraites du stock (si elles ont été réintégrées) et les soldes clients seront recalculés."
+                title={`Annuler ${selectedReturns.size} retours de marchandise ?`}
+                description={
+                    <div className="space-y-4">
+                        <p>Cette opération est <b>définitive</b>. Les conséquences suivantes seront appliquées :</p>
+                        <ul className="list-disc list-inside text-xs space-y-1 opacity-70 ml-2">
+                            <li>Soustraction immédiate des articles du stock</li>
+                            <li>Annulation des avoirs et recalcul des soldes clients</li>
+                            <li>Réversion des écritures comptables associées</li>
+                        </ul>
+                    </div>
+                }
                 onConfirm={handleBulkCancel}
-                confirmText="Oui, Annuler Tout"
+                confirmText="Confirmer l'Annulation Elite"
             />
         </div>
     );
