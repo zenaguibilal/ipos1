@@ -5,7 +5,24 @@ import { useState, useMemo, useCallback, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Trash2, Save, AlertTriangle, ChevronsUpDown, Plus, Truck, Package, Archive, Landmark, Hash, Calendar, ShoppingBag, BadgeCheck, Loader2 } from 'lucide-react';
+import { 
+    ArrowLeft, 
+    Trash2, 
+    Save, 
+    AlertTriangle, 
+    ChevronsUpDown, 
+    Plus, 
+    Truck, 
+    Package, 
+    Archive, 
+    Landmark, 
+    Hash, 
+    Calendar, 
+    ShoppingBag, 
+    BadgeCheck, 
+    Loader2,
+    Building 
+} from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -25,6 +42,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { supplierService } from '@/services/supplier.service';
 import { useAppActions } from '@/stores/appStore';
 
@@ -243,7 +266,7 @@ export default function NewStockIntakePage() {
                                         <CommandList>
                                             <CommandEmpty>
                                                 <Button variant="link" className="w-full text-xs" onClick={handleSupplierCreate}>
-                                                    <Plus className="mr-2 h-4 w-4" /> Créer "{supplierSearch}"
+                                                    <Plus className="mr-2 h-4 w-4" /> Créر "{supplierSearch}"
                                                 </Button>
                                             </CommandEmpty>
                                             <CommandGroup>
