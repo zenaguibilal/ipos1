@@ -1,12 +1,11 @@
 {
-  "name": "iPOS - Point de Vente Intelligent",
+  "name": "iPOS Zen Evolution",
   "short_name": "iPOS Zen",
-  "description": "Logiciel de gestion de point de vente 100% local et hors-ligne.",
+  "description": "Point de Vente Intelligent & 100% Hors-ligne",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#1a120c",
   "theme_color": "#ffb74d",
-  "orientation": "any",
   "icons": [
     {
       "src": "/icon.svg",
@@ -15,5 +14,6 @@
       "purpose": "any maskable"
     }
   ],
-  "categories": ["business", "finance", "productivity"]
+  "orientation": "portrait-primary",
+  "scope": "/"
 }

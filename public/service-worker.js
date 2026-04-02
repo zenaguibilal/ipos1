@@ -1,24 +1,16 @@
-const CACHE_NAME = 'ipos-zen-v1';
-const OFFLINE_URL = '/dashboard';
-
-const urlsToCache = [
+const CACHE_NAME = 'ipos-zen-cache-v1';
+const ASSETS_TO_CACHE = [
   '/',
-  '/dashboard',
-  '/sell',
-  '/products',
-  '/customers',
-  '/stock',
-  '/install',
   '/icon.svg',
   '/manifest.json'
 ];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then((cache) => cache.addAll(urlsToCache))
+    caches.open(CACHE_NAME).then((cache) => {
+      return cache.addAll(ASSETS_TO_CACHE);
+    })
   );
-  self.skipWaiting();
 });
 
 self.addEventListener('activate', (event) => {
@@ -33,21 +25,12 @@ self.addEventListener('activate', (event) => {
       );
     })
   );
-  self.clients.claim();
 });
 
 self.addEventListener('fetch', (event) => {
-  if (event.request.mode === 'navigate') {
-    event.respondWith(
-      fetch(event.request).catch(() => {
-        return caches.match(OFFLINE_URL);
-      })
-    );
-    return;
-  }
-
   event.respondWith(
-    caches.match(event.request)
-      .then((response) => response || fetch(event.request))
+    caches.match(event.request).then((response) => {
+      return response || fetch(event.request);
+    })
   );
 });
