@@ -200,7 +200,7 @@ export default function ExpenseDialog({ isOpen, onOpenChange, expense, onSuccess
                     <DialogFooter className="p-8 bg-card border-t border-white/5 flex gap-4">
                         <Button type="button" variant="ghost" onClick={() => onOpenChange(false)} className="h-14 rounded-2xl font-black text-xs uppercase tracking-widest px-8" disabled={isLoading}>Annuler</Button>
                         <Button type="submit" disabled={isLoading} className="flex-1 h-14 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-primary/20 transition-all active:scale-95 gap-3">
-                             {isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <CheckCircle2 className="h-5 w-5" />}
+                             {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <CheckCircle2 className="h-5 w-5" />}
                             {expense ? 'Mettre à jour le Flux' : 'Valider le Décaissement'}
                         </Button>
                     </DialogFooter>

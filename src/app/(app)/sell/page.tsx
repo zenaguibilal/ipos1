@@ -83,6 +83,9 @@ export default function SellPage() {
 
             {/* Shortcut Help Legend - Professional Luxury Bar */}
             <div className="hidden md:flex flex-wrap items-center justify-center gap-8 py-4 px-10 bg-card/50 backdrop-blur-xl border border-white/5 rounded-full text-[9px] font-black tracking-[0.2em] text-muted-foreground uppercase shadow-2xl">
+                <div className="flex items-center justify-center gap-3 pr-4 border-r border-white/10">
+                    <span className="text-primary font-black">Légende des Raccourcis</span>
+                </div>
                 <div className="flex items-center gap-3 group">
                     <kbd className="bg-muted px-2.5 py-1.5 rounded-xl border border-white/10 text-primary shadow-inner transition-all group-hover:scale-110">F1</kbd>
                     <span>Rechercher</span>
