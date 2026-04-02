@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -36,11 +37,11 @@ export function ManualAddDialog({ currentDate, onSuccess }: ManualAddDialogProps
 
     const handleAdd = async () => {
         if (mode === 'registered' && !selectedClientUuid) {
-            toast.error("Veuillez sélectionner un زبون.");
+            toast.error("Veuillez sélectionner un client.");
             return;
         }
         if (mode === 'external' && !customName.trim()) {
-            toast.error("Veuillez entrer un اسم.");
+            toast.error("Veuillez entrer un nom.");
             return;
         }
         if (quantity <= 0) {
@@ -74,13 +75,13 @@ export function ManualAddDialog({ currentDate, onSuccess }: ManualAddDialogProps
     return (
         <>
             <Button variant="outline" onClick={() => setIsOpen(true)} className="rounded-xl h-10 border-primary/20 hover:bg-primary/5 font-bold">
-                <Plus className="mr-2 h-4 w-4 text-primary" /> إضافة يدوية
+                <Plus className="mr-2 h-4 w-4 text-primary" /> Ajout Manuel
             </Button>
             <Dialog open={isOpen} onOpenChange={setIsOpen}>
                 <DialogContent className="sm:max-w-md rounded-3xl border-none shadow-2xl">
                     <DialogHeader>
-                        <DialogTitle className="text-xl font-black tracking-tight">إضافة طلب خبز</DialogTitle>
-                        <DialogDescription className="font-medium">إضافة طلب ليوم {currentDate} لزبون مسجل أو اسم خارجي.</DialogDescription>
+                        <DialogTitle className="text-xl font-black tracking-tight">Ajouter une Commande</DialogTitle>
+                        <DialogDescription className="font-medium">Ajouter une commande pour le {currentDate} (Client ou Externe).</DialogDescription>
                     </DialogHeader>
 
                     <div className="space-y-6 py-4">
@@ -93,7 +94,7 @@ export function ManualAddDialog({ currentDate, onSuccess }: ManualAddDialogProps
                                     mode === 'registered' ? "bg-background shadow-sm text-primary" : "text-muted-foreground hover:text-foreground"
                                 )}
                             >
-                                <User className="h-3.5 w-3.5" /> زبون مسجل
+                                <User className="h-3.5 w-3.5" /> Client Enregistré
                             </button>
                             <button 
                                 onClick={() => setMode('external')}
@@ -102,16 +103,16 @@ export function ManualAddDialog({ currentDate, onSuccess }: ManualAddDialogProps
                                     mode === 'external' ? "bg-background shadow-sm text-primary" : "text-muted-foreground hover:text-foreground"
                                 )}
                             >
-                                <UserPlus className="h-3.5 w-3.5" /> اسم خارجي
+                                <UserPlus className="h-3.5 w-3.5" /> Nom Externe
                             </button>
                         </div>
 
                         {mode === 'registered' ? (
                             <div className="space-y-2">
-                                <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">اختر الزبون</Label>
+                                <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Choisir le client</Label>
                                 <Select value={selectedClientUuid} onValueChange={setSelectedClientUuid}>
                                     <SelectTrigger className="h-12 rounded-xl bg-muted/30 border-none shadow-inner font-bold">
-                                        <SelectValue placeholder="بحث في قائمة الزبائن..." />
+                                        <SelectValue placeholder="Rechercher un client..." />
                                     </SelectTrigger>
                                     <SelectContent className="rounded-xl border-none shadow-xl">
                                         {manualClients?.map(client => (
@@ -124,9 +125,9 @@ export function ManualAddDialog({ currentDate, onSuccess }: ManualAddDialogProps
                             </div>
                         ) : (
                             <div className="space-y-2">
-                                <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">اسم صاحب الطلب</Label>
+                                <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Nom du demandeur</Label>
                                 <Input 
-                                    placeholder="ادخل الاسم الكامل..." 
+                                    placeholder="Ex: Client de passage..." 
                                     className="h-12 rounded-xl bg-muted/30 border-none shadow-inner font-bold"
                                     value={customName}
                                     onChange={e => setCustomName(e.target.value)}
@@ -136,7 +137,7 @@ export function ManualAddDialog({ currentDate, onSuccess }: ManualAddDialogProps
                         )}
 
                         <div className="space-y-2">
-                            <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">الكمية المطلوبة</Label>
+                            <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Quantité demandée</Label>
                             <div className="relative">
                                 <Input 
                                     type="number" 
@@ -150,9 +151,9 @@ export function ManualAddDialog({ currentDate, onSuccess }: ManualAddDialogProps
                     </div>
 
                     <DialogFooter className="gap-2">
-                        <Button variant="ghost" onClick={() => setIsOpen(false)} className="rounded-xl font-bold h-12 flex-1">إلغاء</Button>
+                        <Button variant="ghost" onClick={() => setIsOpen(false)} className="rounded-xl font-bold h-12 flex-1">Annuler</Button>
                         <Button onClick={handleAdd} className="rounded-xl font-black h-12 flex-1 shadow-lg shadow-primary/20">
-                            تأكيد الطلب
+                            Confirmer
                         </Button>
                     </DialogFooter>
                 </DialogContent>

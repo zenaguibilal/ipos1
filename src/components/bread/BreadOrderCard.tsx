@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -37,7 +38,7 @@ export function BreadOrderCard({ order, isSelected, onToggleSelection, onUpdate 
             await breadService.updateBreadOrderQuantity(order.uuid, newQuantity);
             onUpdate();
         } catch (error) {
-            toast.error("خطأ في تحديث الكمية.");
+            toast.error("Erreur lors de la mise à jour de la quantité.");
         }
     }, [order.uuid, onUpdate, isPaid]);
 
@@ -57,7 +58,7 @@ export function BreadOrderCard({ order, isSelected, onToggleSelection, onUpdate 
             await breadService.updateBreadOrderDeliveryStatus(order.uuid, !isDelivered);
             onUpdate();
         } catch (e) {
-            toast.error("فشل في تغيير حالة الاستلام.");
+            toast.error("Erreur lors du changement de statut de livraison.");
         } finally {
             setIsUpdatingStatus(false);
         }
@@ -65,16 +66,16 @@ export function BreadOrderCard({ order, isSelected, onToggleSelection, onUpdate 
 
     const handleQuickPay = async () => {
         if (breadPrice <= 0) {
-            toast.error("سعر الخبز غير محدد", { description: "يرجى ضبطه من الملف الشخصي > الإعدادات." });
+            toast.error("Prix du pain non défini.", { description: "Veuillez le régler dans Profil > Paramètres." });
             return;
         }
         setIsUpdatingStatus(true);
         try {
             await breadService.convertBreadOrdersToSales([order.uuid], breadPrice);
-            toast.success("تم تحويل الطلب إلى حساب الزبون.");
+            toast.success("Commande convertie en vente.");
             onUpdate();
         } catch (e) {
-            toast.error("فشل في معالجة الدفع.");
+            toast.error("Erreur lors du traitement du paiement.");
         } finally {
             setIsUpdatingStatus(false);
         }
@@ -84,10 +85,10 @@ export function BreadOrderCard({ order, isSelected, onToggleSelection, onUpdate 
         if (isPaid) return;
         try {
             await breadService.deleteBreadOrder(order.uuid);
-            toast.success("تم حذف الطلب.");
+            toast.success("Commande supprimée.");
             onUpdate();
         } catch (e) {
-            toast.error("خطأ أثناء الحذف.");
+            toast.error("Erreur lors de la suppression.");
         }
     };
 
@@ -130,7 +131,7 @@ export function BreadOrderCard({ order, isSelected, onToggleSelection, onUpdate 
                         <User className="h-3 w-3 text-primary opacity-50" />
                     )}
                     <span className="text-[8px] font-black uppercase tracking-widest text-muted-foreground opacity-40">
-                        {isExternal ? 'اسم خارجي' : 'زبون مسجل'}
+                        {isExternal ? 'Nom Externe' : 'Client Enregistré'}
                     </span>
                 </div>
                 <CardTitle className="text-lg font-black tracking-tight pr-12 leading-tight truncate">
@@ -149,7 +150,7 @@ export function BreadOrderCard({ order, isSelected, onToggleSelection, onUpdate 
                         disabled={isPaid}
                         min="0"
                     />
-                    <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mr-3">قطعة</span>
+                    <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mr-3">PCS</span>
                 </div>
 
                 {/* Compact Action Buttons */}
@@ -165,7 +166,7 @@ export function BreadOrderCard({ order, isSelected, onToggleSelection, onUpdate 
                         )}
                     >
                         {isUpdatingStatus ? <Loader2 className="h-3 w-3 animate-spin" /> : <Package className="h-3 w-3" />}
-                        {isDelivered ? 'تم الاستلام' : 'الاستلام'}
+                        {isDelivered ? 'Livré' : 'Livrer'}
                     </Button>
                     <Button 
                         variant={isPaid ? "secondary" : "outline"} 
@@ -178,7 +179,7 @@ export function BreadOrderCard({ order, isSelected, onToggleSelection, onUpdate 
                         )}
                     >
                         {isPaid ? <CheckCircle2 className="h-3 w-3" /> : <Landmark className="h-3 w-3" />}
-                        {isPaid ? 'تم التحويل' : 'للحساب'}
+                        {isPaid ? 'Facturé' : 'Compte'}
                     </Button>
                 </div>
             </CardContent>

@@ -280,7 +280,7 @@ export default function ProductsPage() {
                 <EmptyState
                     icon={Package}
                     title="Aucun produit trouvé"
-                    description={isFiltered ? "Essayez d'ajuster vos filtres ou de réinitialiser la recherche." : "Commenceز par ajouter votre premier produit."}
+                    description={isFiltered ? "Essayez d'ajuster vos filtres ou de réinitialiser la recherche." : "Commencez par ajouter votre premier produit."}
                 >
                     <div className="flex gap-2 justify-center">
                         {isFiltered && <Button variant="outline" onClick={resetFilters} className="rounded-xl"><FilterX className="mr-2 h-4 w-4" /> Effacer</Button>}
@@ -390,7 +390,7 @@ export default function ProductsPage() {
                         <DropdownMenuTrigger asChild>
                             <Button variant="outline" className="rounded-xl h-11 border-none shadow-sm bg-card hover:bg-primary/5 min-w-[140px] font-medium">
                                 <Building className="mr-2 h-4 w-4 opacity-50" />
-                                {selectedSupplier === 'all' ? 'Tous les Moteurs' : suppliers?.find(s => s.uuid === selectedSupplier)?.name}
+                                {selectedSupplier === 'all' ? 'Tous les Fournisseurs' : suppliers?.find(s => s.uuid === selectedSupplier)?.name}
                             </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent className="rounded-xl border-none shadow-xl min-w-[200px] max-h-80 overflow-y-auto custom-scrollbar">

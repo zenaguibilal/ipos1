@@ -161,7 +161,7 @@ export default function CustomerDetailPage() {
 
     const handleWhatsApp = () => {
         if (!customer?.phone) return;
-        const message = encodeURIComponent(`Bonjour ${customer.firstName}, je vous contactه بشأن حسابكم لدينا. رصيدكم الحالي هو ${formatCurrency(customer.outstandingBalance)}. شكراً.`);
+        const message = encodeURIComponent(`Bonjour ${customer.firstName}, je vous contacte concernant votre compte chez nous. Votre solde actuel est de ${formatCurrency(customer.outstandingBalance)}. Merci.`);
         window.open(`https://wa.me/${customer.phone}?text=${message}`, '_blank');
     };
 
@@ -216,7 +216,7 @@ export default function CustomerDetailPage() {
                         <CardHeader className="bg-muted/30 border-b border-border/50">
                             <CardTitle className="text-xl font-black tracking-tight">Historique d'activité</CardTitle>
                             <CardDescription className="font-medium">
-                                Liste chronologique des transactions. Cliquez على أي عملية للمزيد من التفاصيل.
+                                Liste chronologique des transactions. Cliquez sur une opération pour plus de détails.
                             </CardDescription>
                         </CardHeader>
                         <CardContent className="p-6">

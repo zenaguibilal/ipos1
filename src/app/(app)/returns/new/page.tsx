@@ -256,7 +256,7 @@ export default function NewReturnPage() {
                                         />
                                         <div className="absolute right-5 top-1/2 -translate-y-1/2 font-black opacity-30">DA</div>
                                     </div>
-                                    <p className="text-[10px] text-muted-foreground px-1 italic">Laissez 0 إذا كان المبلغ سيُحول كرصيد دائن في حساب الزبون.</p>
+                                    <p className="text-[10px] text-muted-foreground px-1 italic">Laissez 0 si le montant doit être crédité sur le compte du client.</p>
                                 </div>
                                 <div className="space-y-2">
                                     <Label htmlFor="notes" className="text-xs font-black uppercase tracking-widest text-muted-foreground ml-1">Notes Internes</Label>

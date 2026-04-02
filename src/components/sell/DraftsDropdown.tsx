@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -170,7 +171,7 @@ export function DraftsDropdown() {
                     <AlertDialogHeader>
                         <AlertDialogTitle className="text-xl font-black tracking-tighter">Identifier cette vente</AlertDialogTitle>
                         <AlertDialogDescription className="text-muted-foreground font-medium">
-                           Entrez un nom pour cette مسودة (مثلاً: رقم الطاولة، اسم العميل، إلخ)
+                           Entrez un nom pour ce brouillon (ex: n° table, nom client, etc.)
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <div className="py-6">

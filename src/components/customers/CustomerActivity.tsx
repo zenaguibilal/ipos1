@@ -1,3 +1,4 @@
+
 'use client';
 
 import React from 'react';
@@ -37,7 +38,7 @@ export function CustomerActivity({ activity, onSaleClick, onReturnClick }: Custo
            const sale = item as Sale;
            const title = `Vente #${sale.invoiceNumber}`;
           return (
-            <TimelineItem key={`sale-${item.id}`}>
+            <TimelineItem key={`sale-${item.uuid || item.id}`}>
               {!isLast && <TimelineConnector />}
               <TimelineHeader>
                 <TimelineIcon>
@@ -71,7 +72,7 @@ export function CustomerActivity({ activity, onSaleClick, onReturnClick }: Custo
         } else if (item.type === 'return') {
             const pr = item as ProductReturn;
            return (
-             <TimelineItem key={`return-${item.id}`}>
+             <TimelineItem key={`return-${item.uuid || item.id}`}>
                {!isLast && <TimelineConnector />}
               <TimelineHeader>
                 <TimelineIcon>
@@ -94,7 +95,7 @@ export function CustomerActivity({ activity, onSaleClick, onReturnClick }: Custo
         } else if (item.type === 'payment') {
           const payment = item as Payment;
           return (
-             <TimelineItem key={`payment-${item.id}`}>
+             <TimelineItem key={`payment-${item.uuid || item.id}`}>
                {!isLast && <TimelineConnector />}
               <TimelineHeader>
                 <TimelineIcon>
