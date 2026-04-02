@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -29,7 +28,7 @@ export function ManualAddDialog({ currentDate, onSuccess }: ManualAddDialogProps
 
     useEffect(() => {
         if(isOpen && mode === 'registered') {
-            customerService.filterCustomers({ status: 'all' }) // Load all customers for manual addition
+            customerService.filterCustomers({ status: 'all' })
                 .then(setManualClients)
                 .catch(() => toast.error("Impossible de charger les clients."));
         }

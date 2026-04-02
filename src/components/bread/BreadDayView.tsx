@@ -65,7 +65,7 @@ export function BreadDayView({ orders, currentDate, onOrdersChange }: BreadDayVi
         setIsConverting(true);
         try {
             await breadService.convertBreadOrdersToSales(Array.from(selectedOrders), breadPrice);
-            toast.success(`${selectedOrders.size} commande(s) validée(s) et ajoutée(s aux comptes.`);
+            toast.success(`${selectedOrders.size} commande(s) validée(s) et ajoutée(s) aux comptes.`);
             setSelectedOrders(new Set());
             onOrdersChange();
         } catch (error: any) {
@@ -127,7 +127,7 @@ export function BreadDayView({ orders, currentDate, onOrdersChange }: BreadDayVi
                     
                     <Button 
                         onClick={handleConvertToSales} 
-                        disabled={isConverting || selectedOrders.size === 0}
+                        disabled={isAllSelected === false && selectedOrders.size === 0}
                         className={cn(
                             "rounded-xl font-black h-11 px-8 transition-all uppercase text-[10px] tracking-widest",
                             selectedOrders.size > 0 ? "shadow-lg shadow-primary/20" : "opacity-20"

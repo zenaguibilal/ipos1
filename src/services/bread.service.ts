@@ -9,6 +9,7 @@ import { BREAD_WEEK_DAYS } from '@/lib/constants';
 class BreadService {
     
     async generateAndGetOrdersForDate(date: string): Promise<BreadOrderWithCustomer[]> {
+        // First check if orders already exist for this date
         const count = await db.bread_orders.where('date').equals(date).count();
         if (count === 0) {
             await this.createDayOrders(date);
@@ -26,6 +27,7 @@ class BreadService {
     }
     
     private async createDayOrders(date: string): Promise<void> {
+        // Get day of week from date string
         const dayOfWeek = BREAD_WEEK_DAYS[new Date(date.replace(/-/g, '/')).getDay()];
         const activeBreadClients = await db.customers.where('isBreadClient').equals(1).toArray();
         
@@ -119,6 +121,7 @@ class BreadService {
             const filteredOrders = orders.filter(o => !o.venteUuid);
             if (filteredOrders.length === 0) return;
 
+            // Group orders by customer to create one sale per customer
             const groupedOrders = new Map<string, BreadOrder[]>();
             
             filteredOrders.forEach(order => {
@@ -148,10 +151,11 @@ class BreadService {
                     items: [breadCartItem],
                     discountType: 'fixed',
                     discountValue: 0,
-                    amountPaid: 0,
+                    amountPaid: 0, // Recorded as debt for registered customers
                     customerUuid: firstOrder.customerUuid,
                 });
 
+                // Update orders with sale reference
                 const orderIds = customerOrders.map(o => o.id!);
                 await db.bread_orders.where('id').anyOf(orderIds).modify({ venteUuid: sale.uuid, est_paye: true, est_livre: true });
             }
