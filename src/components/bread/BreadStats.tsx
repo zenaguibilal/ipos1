@@ -40,7 +40,7 @@ export function BreadStats({ orders, isLoading }: BreadStatsProps) {
 
     return (
         <div className="grid gap-4 grid-cols-1 md:grid-cols-3">
-            {/* Production Card - Focused on Pieces */}
+            {/* Production Card */}
             <Card className="rounded-[2rem] border-none shadow-sm bg-card overflow-hidden group relative">
                 <div className="absolute -right-4 -bottom-4 opacity-[0.03] group-hover:opacity-10 transition-opacity duration-500">
                     <Package className="h-32 w-32 rotate-12" />
@@ -50,7 +50,7 @@ export function BreadStats({ orders, isLoading }: BreadStatsProps) {
                         <div className="p-3 rounded-2xl bg-primary/10 text-primary shadow-inner">
                             <Package className="h-6 w-6" />
                         </div>
-                        <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground opacity-50">الإنتاج المطلوب</span>
+                        <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground opacity-50">إجمالي المطلوب</span>
                     </div>
                     <div className="flex items-baseline gap-2">
                         <span className="text-4xl font-black tracking-tighter leading-none">{stats.totalQuantity}</span>
@@ -58,7 +58,7 @@ export function BreadStats({ orders, isLoading }: BreadStatsProps) {
                     </div>
                     <div className="mt-3 flex items-center gap-2">
                         <div className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
-                        <p className="text-[10px] font-bold text-muted-foreground/70 uppercase tracking-tight">موزعة على {stats.totalOrders} شخصاً</p>
+                        <p className="text-[10px] font-bold text-muted-foreground/70 uppercase tracking-tight">موزعة على {stats.totalOrders} طلباً</p>
                     </div>
                 </CardContent>
             </Card>
@@ -88,7 +88,7 @@ export function BreadStats({ orders, isLoading }: BreadStatsProps) {
                 </CardContent>
             </Card>
 
-            {/* Financial Status Card */}
+            {/* Billing Status Card */}
             <Card className="rounded-[2rem] border-none shadow-sm bg-card overflow-hidden group relative">
                 <div className="absolute -right-4 -bottom-4 opacity-[0.03] group-hover:opacity-10 transition-opacity duration-500">
                     <Wallet className="h-32 w-32 rotate-6" />
@@ -98,20 +98,20 @@ export function BreadStats({ orders, isLoading }: BreadStatsProps) {
                         <div className="p-3 rounded-2xl bg-amber-500/10 text-amber-500 shadow-inner">
                             <Wallet className="h-6 w-6" />
                         </div>
-                        <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground opacity-50">الفوترة بالقطع</span>
+                        <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground opacity-50">حالة الفوترة</span>
                     </div>
                     <div className="space-y-3">
                         <div className="flex justify-between items-center p-2 rounded-xl bg-muted/20 border border-transparent hover:border-border/50 transition-colors">
                             <div className="flex items-center gap-2">
                                 <CheckCircle2 className="h-3 w-3 text-emerald-500" />
-                                <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">قطع مدفوعة</span>
+                                <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">تم دفعها</span>
                             </div>
                             <span className="text-sm font-black font-mono">{stats.paidQuantity}</span>
                         </div>
                         <div className="flex justify-between items-center p-2 rounded-xl bg-amber-500/5 border border-amber-500/10">
                             <div className="flex items-center gap-2">
                                 <Clock className="h-3 w-3 text-amber-500 animate-pulse" />
-                                <span className="text-[10px] font-black uppercase tracking-widest text-amber-600/70">قيد الانتظار</span>
+                                <span className="text-[10px] font-black uppercase tracking-widest text-amber-600/70">بانتظار الإغلاق</span>
                             </div>
                             <span className="text-sm font-black font-mono text-amber-600">{stats.unpaidQuantity}</span>
                         </div>

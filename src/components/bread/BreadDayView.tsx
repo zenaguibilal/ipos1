@@ -11,10 +11,11 @@ import { ManualAddDialog } from './ManualAddDialog';
 import { PrintBreadListDialog } from './PrintBreadListDialog';
 import { toast } from 'sonner';
 import { breadService } from '@/services/bread.service';
-import { Loader2, Wheat, ShoppingBag, Landmark, Power } from 'lucide-react';
+import { Loader2, Wheat, ShoppingBag, Power, AlertTriangle } from 'lucide-react';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { useAppStore } from '@/stores/appStore';
 import { cn } from '@/lib/utils';
+import { ConfirmAlertDialog } from '../ui/ConfirmAlertDialog';
 
 interface BreadDayViewProps {
     orders: BreadOrderWithCustomer[];
@@ -25,6 +26,7 @@ interface BreadDayViewProps {
 export function BreadDayView({ orders, currentDate, onOrdersChange }: BreadDayViewProps) {
     const [selectedOrders, setSelectedOrders] = useState(new Set<string>());
     const [isConverting, setIsConverting] = useState(false);
+    const [isClosingDay, setIsClosingDay] = useState(false);
     const breadPrice = useAppStore((state) => state.companyProfile?.prix_pain) || 0;
 
     const unbilledOrders = useMemo(() => orders.filter(o => !o.venteUuid), [orders]);
@@ -51,37 +53,29 @@ export function BreadDayView({ orders, currentDate, onOrdersChange }: BreadDayVi
     };
     
     const handleConvertToSales = async () => {
-        if (selectedOrders.size === 0) {
-            toast.info("Veuillez sélectionner au moins une commande.");
-            return;
-        }
+        if (selectedOrders.size === 0) return;
         if (breadPrice <= 0) {
-            toast.error("Prix du pain non défini", {
-                description: "Veuillez le configurer dans Profil > Paramètres قبل المتابعة."
-            });
+            toast.error("سعر الخبز غير محدد في الإعدادات.");
             return;
         }
         
         setIsConverting(true);
         try {
             await breadService.convertBreadOrdersToSales(Array.from(selectedOrders), breadPrice);
-            toast.success(`${selectedOrders.size} طلب(ات) تم تحويلها إلى الديون بنجاح.`);
+            toast.success(`تم تحويل ${selectedOrders.size} طلب إلى الديون.`);
             setSelectedOrders(new Set());
             onOrdersChange();
         } catch (error: any) {
-            toast.error("فشل في تحويل الطلبات.");
+            toast.error("خطأ في التحويل.");
         } finally {
             setIsConverting(false);
         }
     };
 
     const handleFinalizeDay = async () => {
-        if (unbilledOrdersCount === 0) {
-            toast.info("Tous les ordres sont déjà facturés.");
-            return;
-        }
+        if (unbilledOrdersCount === 0) return;
         if (breadPrice <= 0) {
-            toast.error("Prix du pain non configuré.");
+            toast.error("سعر الخبز غير محدد.");
             return;
         }
 
@@ -94,6 +88,7 @@ export function BreadDayView({ orders, currentDate, onOrdersChange }: BreadDayVi
             toast.error("خطأ أثناء إغلاق اليوم.");
         } finally {
             setIsConverting(false);
+            setIsClosingDay(false);
         }
     };
 
@@ -103,13 +98,13 @@ export function BreadDayView({ orders, currentDate, onOrdersChange }: BreadDayVi
         return (
              <Card className="rounded-3xl border-none shadow-sm bg-card overflow-hidden h-full flex flex-col">
                 <CardHeader className="bg-primary/5 border-b border-primary/10">
-                    <CardTitle className="text-xl font-black tracking-tight">التوزيع</CardTitle>
+                    <CardTitle className="text-xl font-black tracking-tight">التوزيع اليومي</CardTitle>
                 </CardHeader>
                 <CardContent className="flex-grow flex items-center justify-center min-h-[400px]">
                     <EmptyState
                         icon={Wheat}
                         title="لا توجد طلبات لهذا اليوم"
-                        description="لم يتم برمجة أي طلبات مسبقة لهذا التاريخ."
+                        description="لم يتم إنشاء أي طلبات تلقائية أو يدوية لهذا التاريخ."
                     >
                         <ManualAddDialog currentDate={currentDate} onSuccess={onOrdersChange} />
                     </EmptyState>
@@ -119,13 +114,14 @@ export function BreadDayView({ orders, currentDate, onOrdersChange }: BreadDayVi
     }
     
     return (
+        <>
         <Card className="flex flex-col h-full rounded-3xl border-none shadow-sm bg-card overflow-hidden">
             <CardHeader className="flex-shrink-0 bg-muted/30 border-b border-border/50 pb-6">
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                     <div>
                         <CardTitle className="text-xl font-black tracking-tight">توزيع اليوم</CardTitle>
                         <p className="text-[10px] text-muted-foreground font-black uppercase tracking-widest mt-1 opacity-60">
-                            إجمالي الطلبات المبرمجة: {orders.length}
+                            إجمالي الطلبات المسجلة: {orders.length}
                         </p>
                     </div>
                     <div className="flex flex-wrap gap-2 w-full sm:w-auto">
@@ -135,11 +131,11 @@ export function BreadDayView({ orders, currentDate, onOrdersChange }: BreadDayVi
                             <Button 
                                 variant="destructive" 
                                 className="rounded-xl h-10 font-black text-[10px] uppercase tracking-widest shadow-lg shadow-destructive/20 gap-2 px-4"
-                                onClick={handleFinalizeDay}
+                                onClick={() => setIsClosingDay(true)}
                                 disabled={isConverting}
                             >
                                 <Power className="h-3.5 w-3.5" />
-                                إغلاق اليوم (توريد الديون)
+                                إغلاق اليوم (تحويل الديون)
                             </Button>
                         )}
                     </div>
@@ -188,5 +184,23 @@ export function BreadDayView({ orders, currentDate, onOrdersChange }: BreadDayVi
                 </ScrollArea>
             </CardContent>
         </Card>
+
+        <ConfirmAlertDialog 
+            isOpen={isClosingDay}
+            onOpenChange={setIsClosingDay}
+            title="إغلاق اليوم وتوريد الديون؟"
+            description={
+                <div className="space-y-3">
+                    <p>سيتم تحويل <b>{unbilledOrdersCount}</b> طلب معلق إلى ديون مسجلة في حسابات الزبائن بسعر <b>{breadPrice} DA</b> للقطعة.</p>
+                    <div className="flex items-start gap-3 p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl text-amber-600 text-xs">
+                        <AlertTriangle className="h-4 w-4 shrink-0" />
+                        <span>هذه العملية غير قابلة للتراجع وتؤثر على أرصدة الزبائن فوراً.</span>
+                    </div>
+                </div>
+            }
+            onConfirm={handleFinalizeDay}
+            confirmText="إغلاق وتأكيد الديون"
+        />
+        </>
     );
 }

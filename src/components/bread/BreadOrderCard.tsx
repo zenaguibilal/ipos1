@@ -37,7 +37,7 @@ export function BreadOrderCard({ order, isSelected, onToggleSelection, onUpdate 
             await breadService.updateBreadOrderQuantity(order.uuid, newQuantity);
             onUpdate();
         } catch (error) {
-            toast.error("Erreur lors de la mise à jour.");
+            toast.error("خطأ في تحديث الكمية.");
         }
     }, [order.uuid, onUpdate, isPaid]);
 
@@ -57,7 +57,7 @@ export function BreadOrderCard({ order, isSelected, onToggleSelection, onUpdate 
             await breadService.updateBreadOrderDeliveryStatus(order.uuid, !isDelivered);
             onUpdate();
         } catch (e) {
-            toast.error("Échec de la mise à jour.");
+            toast.error("فشل في تغيير حالة الاستلام.");
         } finally {
             setIsUpdatingStatus(false);
         }
@@ -65,16 +65,16 @@ export function BreadOrderCard({ order, isSelected, onToggleSelection, onUpdate 
 
     const handleQuickPay = async () => {
         if (breadPrice <= 0) {
-            toast.error("Prix du pain non configuré", { description: "Allez dans Profil > Paramètres pour le définir." });
+            toast.error("سعر الخبز غير محدد", { description: "يرجى ضبطه من الملف الشخصي > الإعدادات." });
             return;
         }
         setIsUpdatingStatus(true);
         try {
             await breadService.convertBreadOrdersToSales([order.uuid], breadPrice);
-            toast.success("تم تأكيد الطلب وتحويله إلى حساب الزبون.");
+            toast.success("تم تحويل الطلب إلى حساب الزبون.");
             onUpdate();
         } catch (e) {
-            toast.error("Erreur de paiement.");
+            toast.error("فشل في معالجة الدفع.");
         } finally {
             setIsUpdatingStatus(false);
         }
@@ -84,10 +84,10 @@ export function BreadOrderCard({ order, isSelected, onToggleSelection, onUpdate 
         if (isPaid) return;
         try {
             await breadService.deleteBreadOrder(order.uuid);
-            toast.success("Commande supprimée.");
+            toast.success("تم حذف الطلب.");
             onUpdate();
         } catch (e) {
-            toast.error("Erreur lors de la suppression.");
+            toast.error("خطأ أثناء الحذف.");
         }
     };
 
@@ -98,7 +98,7 @@ export function BreadOrderCard({ order, isSelected, onToggleSelection, onUpdate 
             isPaid ? "bg-emerald-500/5 opacity-90" : "bg-card",
             isExternal && !isPaid && "border-l-4 border-l-amber-500/30"
         )}>
-            {/* Actions & Selection */}
+            {/* Actions Toolbar */}
             <div className="absolute top-4 right-4 z-10 flex gap-2">
                 {!isPaid && (
                     <Button 
@@ -113,6 +113,7 @@ export function BreadOrderCard({ order, isSelected, onToggleSelection, onUpdate 
                 {!isPaid ? (
                     <Checkbox 
                         checked={isSelected} 
+                        onToggle={() => onToggleSelection(order.uuid)}
                         onCheckedChange={() => onToggleSelection(order.uuid)} 
                         className="h-6 w-6 border-primary data-[state=checked]:bg-primary rounded-lg transition-transform active:scale-90"
                     />
@@ -138,7 +139,7 @@ export function BreadOrderCard({ order, isSelected, onToggleSelection, onUpdate 
             </CardHeader>
 
             <CardContent className="p-6 pt-2 space-y-4">
-                {/* Quantity Input Area */}
+                {/* Minimalist Quantity Display */}
                 <div className="flex items-center gap-3 bg-muted/20 rounded-2xl p-2 border border-border/50 group-hover:border-primary/20 transition-colors">
                     <Input 
                         type="number"
@@ -148,10 +149,10 @@ export function BreadOrderCard({ order, isSelected, onToggleSelection, onUpdate 
                         disabled={isPaid}
                         min="0"
                     />
-                    <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mr-3">PCS</span>
+                    <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mr-3">قطعة</span>
                 </div>
 
-                {/* Status Toggle Buttons */}
+                {/* Compact Action Buttons */}
                 <div className="flex gap-2">
                     <Button 
                         variant={isDelivered ? "secondary" : "outline"} 
