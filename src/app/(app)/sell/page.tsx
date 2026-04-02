@@ -8,6 +8,7 @@ import { SaleActions } from "@/components/sell/SaleActions";
 import { CustomerCombobox } from "@/components/sell/CustomerCombobox";
 import { useCartActions } from '@/stores/cartStore';
 import { toast } from 'sonner';
+import { PageHeader } from '@/components/layout/PageHeader';
 
 export default function SellPage() {
     const { createCart } = useCartActions();
@@ -15,18 +16,15 @@ export default function SellPage() {
     // Global Keyboard Shortcuts
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
-            // Check if user is typing in an input
             const activeElement = document.activeElement as HTMLElement;
             const isTyping = activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA' || activeElement.contentEditable === 'true';
             
-            // F1 always focuses search, even if typing
             if (e.key === 'F1') {
                 e.preventDefault();
                 document.getElementById('sell-search-input')?.focus();
                 return;
             }
             
-            // Other shortcuts only if not typing inside a modal input (unless it's the search input)
             if (isTyping && activeElement.id !== 'sell-search-input') return;
 
             if (e.key === 'F2') {
@@ -62,15 +60,17 @@ export default function SellPage() {
     }, [createCart]);
 
     return (
-        <div className="h-full flex flex-col p-4 sm:p-6 gap-4 overflow-hidden">
-            <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 flex-grow min-h-0">
+        <div className="h-full flex flex-col p-4 sm:p-8 gap-6 overflow-hidden animate-in slide-in-from-bottom-2 duration-700">
+            <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 flex-grow min-h-0">
                 {/* Main Column: Cart and Finalization */}
-                <div className="lg:col-span-3 flex flex-col bg-card border rounded-xl shadow-lg min-h-0">
-                    <div className="p-4 border-b">
+                <div className="lg:col-span-3 flex flex-col bg-card luxury-card rounded-[2rem] overflow-hidden border-none min-h-0">
+                    <div className="p-6 bg-muted/30 border-b border-white/5">
                         <CustomerCombobox />
                     </div>
+                    
                     <CartDisplay />
-                    <div className="mt-auto p-4 border-t space-y-4 bg-background/30 rounded-b-xl">
+                    
+                    <div className="mt-auto p-6 space-y-6 bg-muted/20 border-t border-white/5">
                         <CartTotalBar />
                         <SaleActions />
                     </div>
@@ -82,39 +82,36 @@ export default function SellPage() {
                 </div>
             </div>
 
-            {/* Shortcut Help Legend - Professional Bar */}
-            <div className="hidden md:flex flex-wrap items-center justify-center gap-6 py-3 px-6 bg-muted/20 border rounded-full text-[10px] font-bold tracking-widest text-muted-foreground uppercase transition-all hover:bg-muted/30">
-                <div className="flex items-center gap-2 group">
-                    <kbd className="bg-background px-2 py-1 rounded-md border-2 border-border shadow-sm text-foreground transition-all group-hover:border-primary group-hover:text-primary">F1</kbd>
+            {/* Shortcut Help Legend - Professional Luxury Bar */}
+            <div className="hidden md:flex flex-wrap items-center justify-center gap-8 py-4 px-10 bg-card/50 backdrop-blur-xl border border-white/5 rounded-full text-[9px] font-black tracking-[0.2em] text-muted-foreground uppercase shadow-2xl">
+                <div className="flex items-center gap-3 group">
+                    <kbd className="bg-muted px-2.5 py-1.5 rounded-xl border border-white/10 text-primary shadow-inner transition-all group-hover:scale-110">F1</kbd>
                     <span>Rechercher</span>
                 </div>
-                <div className="flex items-center gap-2 group">
-                    <kbd className="bg-background px-2 py-1 rounded-md border-2 border-border shadow-sm text-foreground transition-all group-hover:border-primary group-hover:text-primary">F2</kbd>
+                <div className="flex items-center gap-3 group">
+                    <kbd className="bg-muted px-2.5 py-1.5 rounded-xl border border-white/10 text-primary shadow-inner transition-all group-hover:scale-110">F2</kbd>
                     <span>Payer</span>
                 </div>
-                <div className="flex items-center gap-2 group">
-                    <kbd className="bg-background px-2 py-1 rounded-md border-2 border-border shadow-sm text-foreground transition-all group-hover:border-primary group-hover:text-primary">F4</kbd>
+                <div className="flex items-center gap-3 group">
+                    <kbd className="bg-muted px-2.5 py-1.5 rounded-xl border border-white/10 text-primary shadow-inner transition-all group-hover:scale-110">F4</kbd>
                     <span>Client</span>
                 </div>
-                <div className="flex items-center gap-2 group">
-                    <kbd className="bg-background px-2 py-1 rounded-md border-2 border-border shadow-sm text-foreground transition-all group-hover:border-primary group-hover:text-primary">F8</kbd>
+                <div className="flex items-center gap-3 group">
+                    <kbd className="bg-muted px-2.5 py-1.5 rounded-xl border border-white/10 text-primary shadow-inner transition-all group-hover:scale-110">F8</kbd>
                     <span>Brouillons</span>
                 </div>
-                <div className="flex items-center gap-2 group">
-                    <kbd className="bg-background px-2 py-1 rounded-md border-2 border-border shadow-sm text-foreground transition-all group-hover:border-primary group-hover:text-primary">F9</kbd>
+                <div className="flex items-center gap-3 group">
+                    <kbd className="bg-muted px-2.5 py-1.5 rounded-xl border border-white/10 text-primary shadow-inner transition-all group-hover:scale-110">F9</kbd>
                     <span>Suspendre</span>
                 </div>
-                <div className="flex items-center gap-2 group">
-                    <kbd className="bg-background px-2 py-1 rounded-md border-2 border-border shadow-sm text-foreground transition-all group-hover:border-primary group-hover:text-primary">F10</kbd>
+                <div className="flex items-center gap-3 group">
+                    <kbd className="bg-muted px-2.5 py-1.5 rounded-xl border border-white/10 text-primary shadow-inner transition-all group-hover:scale-110">F10</kbd>
                     <span>Spécial</span>
                 </div>
-                <div className="flex items-center gap-2 group">
-                    <kbd className="bg-background px-2 py-1 rounded-md border-2 border-border shadow-sm text-foreground transition-all group-hover:border-primary group-hover:text-primary font-black px-1.5">Esc</kbd>
-                    <span>Fermer</span>
-                </div>
-                <div className="flex items-center gap-2 group">
-                    <kbd className="bg-background px-2 py-1 rounded-md border-2 border-border shadow-sm text-foreground transition-all group-hover:border-primary group-hover:text-primary font-black px-1.5">Enter</kbd>
-                    <span>Valider</span>
+                <div className="h-4 w-px bg-white/10" />
+                <div className="flex items-center gap-3 group">
+                    <kbd className="bg-primary text-primary-foreground px-2.5 py-1.5 rounded-xl shadow-lg group-hover:scale-110 transition-all">Enter</kbd>
+                    <span className="text-primary">Valider</span>
                 </div>
             </div>
         </div>

@@ -8,7 +8,7 @@ import { useDateRange } from '@/hooks/useDateRange';
 import type { DashboardData, RecentSale, RecentReturn, SalesByDay, TopProduct, TopCustomer, LowStockProduct } from '@/lib/types';
 import { dashboardService } from '@/services/dashboard.service';
 import { toast } from 'sonner';
-import { TrendingUp, TrendingDown, DollarSign, Receipt, Undo2, Users, CreditCard, Archive, RefreshCw } from 'lucide-react';
+import { TrendingUp, TrendingDown, DollarSign, Receipt, Undo2, Users, CreditCard, Archive, RefreshCw, Star, ArrowUpRight, ArrowDownRight } from 'lucide-react';
 import { formatCurrency, safeToDate, cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -19,87 +19,114 @@ import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
 
 const StatCard = ({ title, value, icon: Icon, change, isLoading, href, positiveIsGood = true }: { title: string, value: string, icon: React.ElementType, change?: number, isLoading: boolean, href?: string, positiveIsGood?: boolean }) => {
+    const isPositive = change !== undefined && change >= 0;
+    const isGood = positiveIsGood ? isPositive : !isPositive;
+
     const cardContent = (
-        <Card className="h-full">
+        <Card className="luxury-card h-full bg-card overflow-hidden group">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">{title}</CardTitle>
-                <Icon className="h-4 w-4 text-muted-foreground" />
+                <CardTitle className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground group-hover:text-primary transition-colors">{title}</CardTitle>
+                <div className="p-2 rounded-xl bg-muted/50 text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary transition-all">
+                    <Icon className="h-4 w-4" />
+                </div>
             </CardHeader>
             <CardContent>
-                {isLoading ? <Skeleton className="h-8 w-24" /> : <div className="text-2xl font-bold">{value}</div>}
-                {isLoading ? <Skeleton className="h-4 w-40 mt-1" /> : (
+                {isLoading ? (
+                    <Skeleton className="h-9 w-32 bg-muted/20" />
+                ) : (
+                    <div className="text-3xl font-black tracking-tighter text-foreground">{value}</div>
+                )}
+                {isLoading ? (
+                    <Skeleton className="h-4 w-24 mt-2 bg-muted/20" />
+                ) : (
                     (change !== undefined && isFinite(change)) ? (
-                        <p className="text-xs text-muted-foreground flex items-center gap-1">
-                            <span className={cn(
-                                'font-semibold',
-                                (positiveIsGood && change >= 0) || (!positiveIsGood && change < 0) ? 'text-green-500' : 'text-destructive'
+                        <div className="mt-2 flex items-center gap-1.5">
+                            <div className={cn(
+                                "flex items-center gap-0.5 px-1.5 py-0.5 rounded-lg text-[10px] font-black tracking-tighter",
+                                isGood ? "bg-emerald-500/10 text-emerald-500" : "bg-destructive/10 text-destructive"
                             )}>
-                                {change >= 0 ? '▲' : '▼'} {Math.abs(change).toFixed(1)}%
-                            </span>
-                            <span>vs. période précédente</span>
-                        </p>
-                    ) : <div className="h-[18px]"></div> /* Placeholder to prevent layout shift */
+                                {isPositive ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
+                                {Math.abs(change).toFixed(1)}%
+                            </div>
+                            <span className="text-[10px] font-bold text-muted-foreground uppercase opacity-40">vs. Période Précédente</span>
+                        </div>
+                    ) : <div className="h-6"></div>
                 )}
             </CardContent>
         </Card>
     );
 
     if (href) {
-        return <Link href={href} className="transition-all hover:-translate-y-1 block">{cardContent}</Link>;
+        return <Link href={href} className="block transition-transform hover:scale-[1.02] active:scale-[0.98]">{cardContent}</Link>;
     }
 
     return cardContent;
 };
 
 const SalesChart = ({ data, isLoading }: { data: SalesByDay[], isLoading: boolean }) => (
-    <Card className="lg:col-span-2">
-        <CardHeader>
-            <CardTitle>Aperçu Financier</CardTitle>
-            <CardDescription>Évolution du chiffre d'affaires et du bénéfice brut sur la période.</CardDescription>
+    <Card className="luxury-card lg:col-span-2 bg-card border-white/5">
+        <CardHeader className="bg-muted/30 border-b border-white/5">
+            <div className="flex items-center gap-3">
+                <div className="p-2.5 rounded-2xl bg-primary text-primary-foreground shadow-lg shadow-primary/20">
+                    <TrendingUp className="h-5 w-5" />
+                </div>
+                <div>
+                    <CardTitle className="text-xl font-black tracking-tighter">Performance Financière</CardTitle>
+                    <CardDescription className="text-xs font-medium uppercase tracking-widest opacity-50">Évolution du C.A et des profits</CardDescription>
+                </div>
+            </div>
         </CardHeader>
-        <CardContent className="h-80 w-full p-2">
+        <CardContent className="h-80 w-full p-6">
              {isLoading ? (
-                <div className="h-full w-full p-2">
-                    <Skeleton className="h-full w-full" />
+                <div className="h-full w-full flex items-center justify-center bg-muted/10 rounded-2xl animate-pulse">
+                    <RefreshCw className="h-8 w-8 text-primary/20 animate-spin" />
                 </div>
             ) : (
             <ResponsiveContainer>
-                <AreaChart data={data}>
+                <AreaChart data={data} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                     <defs>
                         <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="hsl(var(--chart-primary))" stopOpacity={0.8}/>
+                            <stop offset="5%" stopColor="hsl(var(--chart-primary))" stopOpacity={0.3}/>
                             <stop offset="95%" stopColor="hsl(var(--chart-primary))" stopOpacity={0}/>
                         </linearGradient>
                          <linearGradient id="colorProfit" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="hsl(var(--chart-quaternary))" stopOpacity={0.7}/>
+                            <stop offset="5%" stopColor="hsl(var(--chart-quaternary))" stopOpacity={0.2}/>
                             <stop offset="95%" stopColor="hsl(var(--chart-quaternary))" stopOpacity={0}/>
                         </linearGradient>
                     </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border) / 0.5)" />
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border) / 0.3)" vertical={false} />
                     <XAxis 
                         dataKey="date" 
                         tickFormatter={(str) => format(new Date(str), 'd MMM', { locale: fr })}
                         stroke="hsl(var(--muted-foreground))"
-                        fontSize={12}
+                        fontSize={10}
+                        fontWeight="bold"
                         tickLine={false}
                         axisLine={false}
+                        dy={10}
                     />
                     <YAxis 
                         tickFormatter={(val) => `${val / 1000}k`}
                         stroke="hsl(var(--muted-foreground))"
-                        fontSize={12}
+                        fontSize={10}
+                        fontWeight="bold"
                         tickLine={false}
                         axisLine={false}
+                        dx={-10}
                     />
                     <Tooltip 
                         contentStyle={{
-                            backgroundColor: 'hsl(var(--background))',
-                            borderColor: 'hsl(var(--border))'
+                            backgroundColor: 'hsl(var(--card))',
+                            borderColor: 'hsl(var(--border))',
+                            borderRadius: '1.25rem',
+                            boxShadow: '0 10px 30px -5px rgba(0,0,0,0.5)',
+                            border: '1px solid rgba(255,255,255,0.05)'
                         }}
-                        formatter={(value: number, name: string) => [formatCurrency(value), name === 'total' ? "Chiffre d'affaires" : 'Bénéfice brut']}
+                        itemStyle={{ fontSize: '12px', fontWeight: 'bold' }}
+                        formatter={(value: number, name: string) => [formatCurrency(value), name === 'total' ? "Ventes" : 'Bénéfice']}
                     />
-                    <Area type="monotone" dataKey="total" name="Chiffre d'affaires" stroke="hsl(var(--chart-primary))" fillOpacity={1} fill="url(#colorRevenue)" />
-                    <Area type="monotone" dataKey="profit" name="Bénéfice brut" stroke="hsl(var(--chart-quaternary))" fillOpacity={1} fill="url(#colorProfit)" />
+                    <Area type="monotone" dataKey="total" name="total" stroke="hsl(var(--chart-primary))" strokeWidth={4} fillOpacity={1} fill="url(#colorRevenue)" />
+                    <Area type="monotone" dataKey="profit" name="profit" stroke="hsl(var(--chart-quaternary))" strokeWidth={2} strokeDasharray="5 5" fillOpacity={1} fill="url(#colorProfit)" />
                 </AreaChart>
             </ResponsiveContainer>
              )}
@@ -108,176 +135,55 @@ const SalesChart = ({ data, isLoading }: { data: SalesByDay[], isLoading: boolea
 );
 
 const RecentActivity = ({ sales, returns, isLoading }: { sales: RecentSale[], returns: RecentReturn[], isLoading: boolean }) => (
-    <Card>
-        <CardHeader>
-            <CardTitle>Activité Récente</CardTitle>
-            <CardDescription>Dernières ventes et retours enregistrés.</CardDescription>
+    <Card className="luxury-card bg-card border-white/5">
+        <CardHeader className="bg-muted/30 border-b border-white/5">
+            <CardTitle className="text-lg font-black tracking-tight">Flux Récents</CardTitle>
+            <CardDescription className="text-[10px] font-black uppercase tracking-widest opacity-40">Dernières opérations</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4 max-h-80 overflow-y-auto">
+        <CardContent className="p-4 space-y-4 max-h-[340px] overflow-y-auto custom-scrollbar">
              {isLoading ? (
-                <div className="space-y-6">
-                    <div>
-                        <Skeleton className="h-5 w-32 mb-2" />
-                        <div className="space-y-2">
-                            <Skeleton className="h-14 w-full" />
-                            <Skeleton className="h-14 w-full" />
-                        </div>
-                    </div>
-                    <div className="mt-4">
-                        <Skeleton className="h-5 w-32 mb-2" />
-                        <div className="space-y-2">
-                            <Skeleton className="h-14 w-full" />
-                        </div>
-                    </div>
+                <div className="space-y-4">
+                    {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-16 w-full rounded-2xl bg-muted/20" />)}
                 </div>
             ) : (
-                <>
-                <div>
-                    <h3 className="text-sm font-semibold mb-2 flex items-center gap-2"><Receipt className="h-4 w-4"/> Ventes Récentes</h3>
-                    <div className="space-y-2">
-                        {sales.length > 0 ? sales.map(s => (
-                            <Link href={`/sales-history?query=${s.invoiceNumber}`} key={s.uuid} className="block p-2 rounded-md hover:bg-accent">
-                                <div className="flex justify-between text-sm">
-                                    <span className="font-medium truncate">{s.customerName}</span>
-                                    <span className="font-bold text-primary">{formatCurrency(s.total)}</span>
-                                </div>
-                                <p className="text-xs text-muted-foreground">{format(safeToDate(s.createdAt!), 'd MMM, HH:mm', { locale: fr })} - #{s.invoiceNumber}</p>
-                            </Link>
-                        )) : <p className="text-sm text-muted-foreground text-center">Aucune vente récente.</p>}
-                    </div>
+                <div className="space-y-3">
+                    {sales.length === 0 && returns.length === 0 ? (
+                        <div className="py-12 text-center text-muted-foreground/30 font-bold text-xs uppercase tracking-widest">Aucun flux enregistré</div>
+                    ) : (
+                        <>
+                            {sales.map(s => (
+                                <Link href={`/sales-history?query=${s.invoiceNumber}`} key={s.uuid} className="flex items-center gap-3 p-3 rounded-2xl bg-muted/20 border border-transparent hover:border-primary/20 hover:bg-muted/40 transition-all group">
+                                    <div className="p-2.5 rounded-xl bg-primary/10 text-primary">
+                                        <Receipt className="h-4 w-4" />
+                                    </div>
+                                    <div className="flex-grow min-w-0">
+                                        <p className="font-bold text-sm truncate group-hover:text-primary transition-colors">{s.customerName}</p>
+                                        <p className="text-[10px] font-bold text-muted-foreground opacity-50 uppercase">{format(safeToDate(s.createdAt!), 'HH:mm')} • #{s.invoiceNumber}</p>
+                                    </div>
+                                    <div className="text-right">
+                                        <p className="font-black text-sm text-primary">{formatCurrency(s.total)}</p>
+                                    </div>
+                                </Link>
+                            ))}
+                            {returns.map(r => (
+                                <Link href={`/returns?query=${r.originalInvoiceNumber}`} key={r.uuid} className="flex items-center gap-3 p-3 rounded-2xl bg-destructive/5 border border-transparent hover:border-destructive/20 hover:bg-destructive/10 transition-all group">
+                                    <div className="p-2.5 rounded-xl bg-destructive/10 text-destructive">
+                                        <Undo2 className="h-4 w-4" />
+                                    </div>
+                                    <div className="flex-grow min-w-0">
+                                        <p className="font-bold text-sm truncate">{r.customerName}</p>
+                                        <p className="text-[10px] font-bold text-muted-foreground opacity-50 uppercase">{format(safeToDate(r.createdAt!), 'HH:mm')} • Retour</p>
+                                    </div>
+                                    <div className="text-right">
+                                        <p className="font-black text-sm text-destructive">-{formatCurrency(r.totalReturnValue)}</p>
+                                    </div>
+                                </Link>
+                            ))}
+                        </>
+                    )}
                 </div>
-                 <div className="mt-4">
-                    <h3 className="text-sm font-semibold mb-2 flex items-center gap-2"><Undo2 className="h-4 w-4"/> Retours Récents</h3>
-                    <div className="space-y-2">
-                        {returns.length > 0 ? returns.map(r => (
-                             <Link href={`/returns?query=${r.originalInvoiceNumber}`} key={r.uuid} className="block p-2 rounded-md hover:bg-accent">
-                                <div className="flex justify-between text-sm">
-                                    <span className="font-medium truncate">{r.customerName}</span>
-                                    <span className="font-bold text-destructive">-{formatCurrency(r.totalReturnValue)}</span>
-                                </div>
-                                 <p className="text-xs text-muted-foreground">{format(safeToDate(r.createdAt!), 'd MMM, HH:mm', { locale: fr })} - Facture #{r.originalInvoiceNumber}</p>
-                            </Link>
-                        )) : <p className="text-sm text-muted-foreground text-center">Aucun retour récent.</p>}
-                    </div>
-                </div>
-                </>
              )}
         </CardContent>
-    </Card>
-);
-
-const TopProductsCard = ({ products, isLoading }: { products: TopProduct[], isLoading: boolean }) => (
-    <Card>
-        <CardHeader>
-            <CardTitle>Top Produits</CardTitle>
-            <CardDescription>Produits les plus rentables sur la période.</CardDescription>
-        </CardHeader>
-        <CardContent>
-            {isLoading ? (
-                <div className="space-y-4">
-                    {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-12 w-full" />)}
-                </div>
-            ) : products.length === 0 ? (
-                <p className="text-sm text-muted-foreground text-center py-4">Aucune donnée de produit disponible.</p>
-            ) : (
-                <div className="space-y-4">
-                    {products.map((p, index) => (
-                        <div key={p.productUuid} className="flex items-center gap-4">
-                            <span className="font-bold text-lg text-muted-foreground w-6 text-center">{index + 1}</span>
-                            <div className="flex items-center justify-center h-10 w-10 rounded-md bg-muted text-muted-foreground font-bold">
-                                {p.name.substring(0, 1)}
-                            </div>
-                            <div className="flex-grow">
-                                <p className="font-semibold">{p.name}</p>
-                                <p className="text-sm text-muted-foreground">{p.quantitySold} vendus</p>
-                            </div>
-                            <div className="font-bold text-lg text-primary">{formatCurrency(p.revenueGenerated)}</div>
-                        </div>
-                    ))}
-                </div>
-            )}
-        </CardContent>
-         <CardFooter>
-            <Button asChild variant="outline" className="w-full">
-                <Link href="/products">Voir tous les produits</Link>
-            </Button>
-        </CardFooter>
-    </Card>
-);
-
-const TopCustomersCard = ({ customers, isLoading }: { customers: TopCustomer[], isLoading: boolean }) => (
-    <Card className="flex flex-col">
-        <CardHeader>
-            <CardTitle>Top Clients</CardTitle>
-            <CardDescription>Clients les plus dépensiers sur la période.</CardDescription>
-        </CardHeader>
-        <CardContent className="flex-grow">
-             {isLoading ? (
-                <div className="space-y-4">
-                    {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-12 w-full" />)}
-                </div>
-            ) : customers.length === 0 ? (
-                <p className="text-sm text-muted-foreground text-center py-4">Aucune donnée de client.</p>
-            ) : (
-                <div className="space-y-4">
-                    {customers.map((c, index) => (
-                        <div key={c.customerUuid} className="flex items-center gap-4">
-                            <span className="font-bold text-lg text-muted-foreground w-6 text-center">{index + 1}</span>
-                             <div className="flex items-center justify-center h-10 w-10 rounded-full bg-muted text-muted-foreground font-bold">
-                                {c.name.substring(0, 1)}
-                            </div>
-                            <div className="flex-grow">
-                                <Link href={`/customers/${c.customerUuid}`} className="font-semibold hover:underline">{c.name}</Link>
-                            </div>
-                            <div className="font-bold text-lg text-primary">{formatCurrency(c.totalSpent)}</div>
-                        </div>
-                    ))}
-                </div>
-            )}
-        </CardContent>
-         <CardFooter>
-            <Button asChild variant="outline" className="w-full">
-                <Link href="/customers">Voir tous les clients</Link>
-            </Button>
-        </CardFooter>
-    </Card>
-);
-
-
-const LowStockProductsCard = ({ products, isLoading }: { products: LowStockProduct[], isLoading: boolean }) => (
-    <Card className="flex flex-col">
-        <CardHeader>
-            <CardTitle>Alertes de Stock Faible</CardTitle>
-            <CardDescription>Produits qui ont besoin d'être réapprovisionnés.</CardDescription>
-        </CardHeader>
-        <CardContent className="flex-grow">
-             {isLoading ? (
-                <div className="space-y-4">
-                    {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-12 w-full" />)}
-                </div>
-            ) : products.length === 0 ? (
-                <p className="text-sm text-muted-foreground text-center py-4">Aucun produit en stock faible.</p>
-            ) : (
-                <div className="space-y-4">
-                    {products.map(p => (
-                        <div key={p.uuid}>
-                           <Link href={`/products?query=${p.name}`} className="block hover:bg-accent p-2 rounded-md">
-                                <div className="flex justify-between items-center text-sm">
-                                    <p className="font-semibold">{p.name}</p>
-                                    <p className="font-mono font-bold text-chart-secondary">{p.quantity} / {p.minStockLevel} {p.unite}</p>
-                                </div>
-                                <Progress value={(p.quantity / p.minStockLevel) * 100} className="h-2 mt-1" />
-                           </Link>
-                        </div>
-                    ))}
-                </div>
-            )}
-        </CardContent>
-         <CardFooter>
-            <Button asChild variant="outline" className="w-full">
-                <Link href="/products?stockStatus=low_stock">Voir tous les produits en stock faible</Link>
-            </Button>
-        </CardFooter>
     </Card>
 );
 
@@ -292,7 +198,7 @@ export default function DashboardPage() {
             const dashboardData = await dashboardService.getDashboardData(from, to);
             setData(dashboardData);
         } catch (error: any) {
-            toast.error("Impossible de charger les données du tableau de bord.", { description: error.message });
+            toast.error("Échec du chargement du Dashboard.");
         } finally {
             setIsLoading(false);
         }
@@ -305,41 +211,140 @@ export default function DashboardPage() {
     }, [dateRange, isMounted, fetchData]);
 
     return (
-        <div className="p-4 sm:p-6 space-y-6">
+        <div className="p-4 sm:p-8 space-y-10 max-w-[1600px] mx-auto animate-in fade-in duration-1000">
             <PageHeader 
-                title="Tableau de Bord"
-                description="Vue d'ensemble de l'activité de votre commerce."
+                title="iPOS Luxury"
+                description="Pilotage intelligent de votre établissement"
             >
-                <DateRangePicker date={dateRange} setDate={setDate} />
-                <Button 
-                    variant="outline" 
-                    size="icon" 
-                    onClick={() => dateRange?.from && dateRange?.to && fetchData(dateRange.from, dateRange.to)}
-                    disabled={isLoading}
-                >
-                    <RefreshCw className={cn("h-4 w-4", isLoading && "animate-spin")} />
-                </Button>
+                <div className="flex items-center gap-3">
+                    <DateRangePicker date={dateRange} setDate={setDate} />
+                    <Button 
+                        variant="outline" 
+                        size="icon" 
+                        className="rounded-2xl h-12 w-12 border-white/10 bg-card hover:bg-muted"
+                        onClick={() => dateRange?.from && dateRange?.to && fetchData(dateRange.from, dateRange.to)}
+                        disabled={isLoading}
+                    >
+                        <RefreshCw className={cn("h-5 w-5 text-primary", isLoading && "animate-spin")} />
+                    </Button>
+                </div>
             </PageHeader>
             
-            <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-                <StatCard title="Total des Ventes" value={formatCurrency(data?.stats.totalRevenue ?? 0)} icon={TrendingUp} isLoading={isLoading} href="/sales-history" change={data?.stats.totalRevenueChange} />
-                <StatCard title="Bénéfice Net" value={formatCurrency(data?.stats.netProfit ?? 0)} icon={DollarSign} isLoading={isLoading} change={data?.stats.netProfitChange} />
-                <StatCard title="Total des Dépenses" value={formatCurrency(data?.stats.totalExpenses ?? 0)} icon={TrendingDown} isLoading={isLoading} href="/expenses" change={data?.stats.totalExpensesChange} positiveIsGood={false} />
-                <StatCard title="Dette Client Totale" value={formatCurrency(data?.stats.totalOutstandingDebt ?? 0)} icon={CreditCard} isLoading={isLoading} href="/customers?status=has_debt" />
-                <StatCard title="Valeur de l'Inventaire" value={formatCurrency(data?.stats.totalInventoryValue ?? 0)} icon={Archive} isLoading={isLoading} href="/products" />
-                <StatCard title="Nombre de Ventes" value={String(data?.stats.saleCount ?? 0)} icon={Receipt} isLoading={isLoading} href="/sales-history" change={data?.stats.saleCountChange} />
+            <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+                <StatCard title="Revenu Total" value={formatCurrency(data?.stats.totalRevenue ?? 0)} icon={TrendingUp} isLoading={isLoading} href="/sales-history" change={data?.stats.totalRevenueChange} />
+                <StatCard title="Bénéfice Net" value={formatCurrency(data?.stats.netProfit ?? 0)} icon={Star} isLoading={isLoading} change={data?.stats.netProfitChange} />
+                <StatCard title="Dépenses" value={formatCurrency(data?.stats.totalExpenses ?? 0)} icon={TrendingDown} isLoading={isLoading} href="/expenses" change={data?.stats.totalExpensesChange} positiveIsGood={false} />
+                <StatCard title="Créances Clients" value={formatCurrency(data?.stats.totalOutstandingDebt ?? 0)} icon={CreditCard} isLoading={isLoading} href="/customers?status=has_debt" />
+                <StatCard title="Valeur Stock" value={formatCurrency(data?.stats.totalInventoryValue ?? 0)} icon={Archive} isLoading={isLoading} href="/products" />
+                <StatCard title="Volume Ventes" value={String(data?.stats.saleCount ?? 0)} icon={Receipt} isLoading={isLoading} href="/sales-history" change={data?.stats.saleCountChange} />
             </div>
 
-            <div className="space-y-6">
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    <SalesChart data={data?.salesByDay ?? []} isLoading={isLoading}/>
-                    <RecentActivity sales={data?.recentSales ?? []} returns={data?.recentReturns ?? []} isLoading={isLoading}/>
-                </div>
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    <TopProductsCard products={data?.topProducts ?? []} isLoading={isLoading} />
-                    <TopCustomersCard customers={data?.topCustomers ?? []} isLoading={isLoading} />
-                    <LowStockProductsCard products={data?.lowStockProducts ?? []} isLoading={isLoading} />
-                </div>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <SalesChart data={data?.salesByDay ?? []} isLoading={isLoading}/>
+                <RecentActivity sales={data?.recentSales ?? []} returns={data?.recentReturns ?? []} isLoading={isLoading}/>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                {/* Top Products Card - Luxury Style */}
+                <Card className="luxury-card bg-card overflow-hidden">
+                    <CardHeader className="bg-muted/30 border-b border-white/5">
+                        <CardTitle className="text-lg font-black tracking-tight flex items-center gap-2">
+                            <Star className="h-5 w-5 text-primary" />
+                            Champions de Vente
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-6">
+                        {isLoading ? (
+                            <div className="space-y-4">
+                                {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-14 w-full rounded-2xl bg-muted/20" />)}
+                            </div>
+                        ) : (
+                            <div className="space-y-4">
+                                {data?.topProducts.map((p, i) => (
+                                    <div key={p.productUuid} className="flex items-center gap-4 group">
+                                        <span className="text-xl font-black text-muted-foreground/30 w-6">{i + 1}</span>
+                                        <div className="flex-grow">
+                                            <p className="font-bold text-sm tracking-tight group-hover:text-primary transition-colors">{p.name}</p>
+                                            <div className="flex items-center gap-3 mt-1">
+                                                <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground opacity-50">{p.quantitySold} vendus</span>
+                                                <div className="h-1 w-1 rounded-full bg-muted-foreground/30" />
+                                                <span className="text-[10px] font-bold text-primary">{p.category}</span>
+                                            </div>
+                                        </div>
+                                        <div className="font-black text-sm text-foreground">{formatCurrency(p.revenueGenerated)}</div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </CardContent>
+                </Card>
+
+                {/* Top Customers Card */}
+                <Card className="luxury-card bg-card overflow-hidden">
+                    <CardHeader className="bg-muted/30 border-b border-white/5">
+                        <CardTitle className="text-lg font-black tracking-tight flex items-center gap-2">
+                            <Users className="h-5 w-5 text-primary" />
+                            Élite Clients
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-6">
+                        {isLoading ? (
+                            <div className="space-y-4">
+                                {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-14 w-full rounded-2xl bg-muted/20" />)}
+                            </div>
+                        ) : (
+                            <div className="space-y-4">
+                                {data?.topCustomers.map((c, i) => (
+                                    <Link href={`/customers/${c.customerUuid}`} key={c.customerUuid} className="flex items-center gap-4 group">
+                                        <div className="h-10 w-10 rounded-2xl bg-muted/50 flex items-center justify-center text-muted-foreground font-black group-hover:bg-primary/10 group-hover:text-primary transition-all">
+                                            {c.name.substring(0, 1)}
+                                        </div>
+                                        <div className="flex-grow">
+                                            <p className="font-bold text-sm tracking-tight group-hover:underline">{c.name}</p>
+                                            <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/50">Rang #{i+1}</p>
+                                        </div>
+                                        <div className="font-black text-sm text-primary">{formatCurrency(c.totalSpent)}</div>
+                                    </Link>
+                                ))}
+                            </div>
+                        )}
+                    </CardContent>
+                </Card>
+
+                {/* Low Stock Alerts */}
+                <Card className="luxury-card bg-card overflow-hidden">
+                    <CardHeader className="bg-muted/30 border-b border-white/5">
+                        <CardTitle className="text-lg font-black tracking-tight flex items-center gap-2 text-amber-500">
+                            <Archive className="h-5 w-5" />
+                            Réapprovisionnement
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-6">
+                        {isLoading ? (
+                            <div className="space-y-4">
+                                {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-14 w-full rounded-2xl bg-muted/20" />)}
+                            </div>
+                        ) : (
+                            <div className="space-y-5">
+                                {data?.lowStockProducts.map(p => (
+                                    <div key={p.uuid} className="space-y-2">
+                                        <div className="flex justify-between items-center text-xs font-bold">
+                                            <span className="truncate pr-4">{p.name}</span>
+                                            <span className="text-amber-500 font-black">{p.quantity} / {p.minStockLevel}</span>
+                                        </div>
+                                        <Progress value={(p.quantity / p.minStockLevel) * 100} className="h-1.5 bg-muted/30 [&>div]:bg-amber-500 shadow-sm" />
+                                    </div>
+                                ))}
+                                {data?.lowStockProducts.length === 0 && (
+                                    <div className="py-12 text-center flex flex-col items-center gap-3 opacity-30">
+                                        <Star className="h-8 w-8 text-primary" />
+                                        <p className="text-[10px] font-black uppercase tracking-[0.2em]">Stock Optimal</p>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                    </CardContent>
+                </Card>
             </div>
         </div>
     );

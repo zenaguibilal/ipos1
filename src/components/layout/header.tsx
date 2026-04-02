@@ -15,6 +15,7 @@ import {
   ShoppingCart,
   Building,
   Download,
+  Menu,
 } from 'lucide-react';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
@@ -25,6 +26,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { cn } from '@/lib/utils';
 
 const allNavLinks = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -42,86 +44,97 @@ export function AppHeader() {
   const pathname = usePathname();
 
   return (
-    <header className="flex h-16 items-center gap-4 bg-background/80 px-4 sm:px-6 print-hide sticky top-0 z-30 border-b backdrop-blur-xl">
-      <div className="flex-1 flex justify-start">
-         <div className="flex items-baseline gap-2">
+    <header className="flex h-20 items-center gap-4 bg-background/60 backdrop-blur-3xl px-6 sm:px-10 print-hide sticky top-0 z-40 border-b border-white/5">
+      <div className="flex-1 flex justify-start items-center gap-4">
+         <div className="flex items-center gap-3">
               <Link
                   href="/dashboard"
-                  className="flex items-center gap-2 font-semibold"
+                  className="flex items-center gap-3 group"
               >
-                  <Image src="/icon.svg" alt="iPOS logo" width={32} height={32} priority />
-                  <span className="hidden sm:inline-block text-xl font-semibold">iPOS</span>
+                  <div className="relative">
+                    <div className="absolute -inset-2 bg-primary/20 rounded-full blur-lg opacity-0 group-hover:opacity-100 transition-opacity" />
+                    <Image src="/icon.svg" alt="iPOS logo" width={36} height={32} priority className="relative" />
+                  </div>
+                  <span className="hidden lg:inline-block text-2xl font-black tracking-tighter group-hover:text-primary transition-colors">iPOS <span className="text-primary/50 font-medium">Luxury</span></span>
               </Link>
           </div>
       </div>
 
         <div className="flex-1 flex justify-center">
             <TooltipProvider>
-                <nav className="hidden md:flex items-center gap-1 rounded-full border bg-black/20 p-1">
-                    {allNavLinks.map(link => (
-                        <Tooltip key={link.href} delayDuration={0}>
-                            <TooltipTrigger asChild>
-                                <Button 
-                                    asChild
-                                    variant={pathname.startsWith(link.href) ? "secondary" : "ghost"}
-                                    size="icon"
-                                    className="rounded-full relative"
-                                >
-                                    <Link href={link.href}>
-                                        <link.icon className="h-5 w-5" />
-                                        <span className="sr-only">{link.label}</span>
-                                    </Link>
-                                </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                                <p>{link.label}</p>
-                            </TooltipContent>
-                        </Tooltip>
-                    ))}
+                <nav className="hidden md:flex items-center gap-1.5 rounded-2xl border border-white/5 bg-black/40 p-1.5 shadow-2xl">
+                    {allNavLinks.map(link => {
+                        const isActive = pathname.startsWith(link.href);
+                        return (
+                            <Tooltip key={link.href} delayDuration={0}>
+                                <TooltipTrigger asChild>
+                                    <Button 
+                                        asChild
+                                        variant={isActive ? "secondary" : "ghost"}
+                                        size="icon"
+                                        className={cn(
+                                            "rounded-xl relative transition-all duration-300 h-10 w-10",
+                                            isActive ? "bg-primary/10 text-primary shadow-inner" : "hover:bg-white/5 hover:text-primary"
+                                        )}
+                                    >
+                                        <Link href={link.href}>
+                                            <link.icon className={cn("h-5 w-5", isActive && "scale-110")} />
+                                            {isActive && (
+                                                <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 bg-primary rounded-full" />
+                                            )}
+                                            <span className="sr-only">{link.label}</span>
+                                        </Link>
+                                    </Button>
+                                </TooltipTrigger>
+                                <TooltipContent className="rounded-xl border-white/5 shadow-2xl bg-card">
+                                    <p className="text-[10px] font-black uppercase tracking-widest">{link.label}</p>
+                                </TooltipContent>
+                            </Tooltip>
+                        );
+                    })}
                 </nav>
             </TooltipProvider>
         </div>
 
 
         <div className="flex-1 flex justify-end">
-            <div className="flex items-center gap-2 sm:gap-4">
-                <Clock />
-                <div className="flex items-center gap-1 bg-muted/30 p-1 rounded-full border border-border/50">
+            <div className="flex items-center gap-4">
+                <div className="hidden xl:block">
+                    <Clock />
+                </div>
+                <div className="flex items-center gap-1.5 bg-muted/30 p-1.5 rounded-2xl border border-white/5 shadow-inner">
                     <TooltipProvider>
                         <Tooltip delayDuration={0}>
                             <TooltipTrigger asChild>
-                                <Button asChild variant={pathname === '/install' ? "default" : "ghost"} size="icon" className="rounded-full h-9 w-9">
+                                <Button asChild variant={pathname === '/install' ? "default" : "ghost"} size="icon" className="rounded-xl h-9 w-9">
                                     <Link href="/install">
                                         <Download className="h-4 w-4" />
-                                        <span className="sr-only">Installer</span>
                                     </Link>
                                 </Button>
                             </TooltipTrigger>
-                            <TooltipContent><p>Installer l'App</p></TooltipContent>
+                            <TooltipContent><p className="text-[10px] font-black uppercase">Installer</p></TooltipContent>
                         </Tooltip>
 
                         <Tooltip delayDuration={0}>
                             <TooltipTrigger asChild>
-                                <Button asChild variant={pathname === '/profile' ? "default" : "ghost"} size="icon" className="rounded-full h-9 w-9">
+                                <Button asChild variant={pathname === '/profile' ? "default" : "ghost"} size="icon" className="rounded-xl h-9 w-9">
                                     <Link href="/profile">
                                         <Building className="h-4 w-4" />
-                                        <span className="sr-only">Profil</span>
                                     </Link>
                                 </Button>
                             </TooltipTrigger>
-                            <TooltipContent><p>Profil Entreprise</p></TooltipContent>
+                            <TooltipContent><p className="text-[10px] font-black uppercase">Profil</p></TooltipContent>
                         </Tooltip>
 
                         <Tooltip delayDuration={0}>
                             <TooltipTrigger asChild>
-                                <Button asChild variant={pathname === '/settings' ? "default" : "ghost"} size="icon" className="rounded-full h-9 w-9">
+                                <Button asChild variant={pathname === '/settings' ? "default" : "ghost"} size="icon" className="rounded-xl h-9 w-9">
                                     <Link href="/settings">
                                         <Settings className="h-4 w-4" />
-                                        <span className="sr-only">Paramètres</span>
                                     </Link>
                                 </Button>
                             </TooltipTrigger>
-                            <TooltipContent><p>Paramètres Système</p></TooltipContent>
+                            <TooltipContent><p className="text-[10px] font-black uppercase">Système</p></TooltipContent>
                         </Tooltip>
                     </TooltipProvider>
                 </div>
