@@ -8,7 +8,6 @@ import { SaleActions } from "@/components/sell/SaleActions";
 import { CustomerCombobox } from "@/components/sell/CustomerCombobox";
 import { useCartActions } from '@/stores/cartStore';
 import { toast } from 'sonner';
-import { PageHeader } from '@/components/layout/PageHeader';
 
 export default function SellPage() {
     const { createCart } = useCartActions();
