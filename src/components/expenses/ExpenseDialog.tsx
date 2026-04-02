@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import type { Expense, ExpenseCategory } from '@/lib/types';
-import { Loader2, Banknote, Calendar, Tag, FileText, Coins, Hash, CheckCircle2 } from 'lucide-react';
+import { Loader2, Banknote, Calendar, Tag, FileText, Coins, CheckCircle2 } from 'lucide-react';
 import { expenseService } from '@/services/expense.service';
 import { DatePicker } from '../ui/date-picker';
 import { Combobox } from '../ui/combobox';
@@ -92,7 +92,7 @@ export default function ExpenseDialog({ isOpen, onOpenChange, expense, onSuccess
             onSuccess();
             onOpenChange(false);
         } catch (err: any) {
-            setError(err.message || "Une erreur est survenue lors de l'enregistrement.");
+            setError(err.message || "Une erreur est survenue.");
             toast.error("Opération échouée.");
         } finally {
             setIsLoading(false);
@@ -193,7 +193,7 @@ export default function ExpenseDialog({ isOpen, onOpenChange, expense, onSuccess
                                     <span className="absolute right-8 top-1/2 -translate-y-1/2 font-black text-xs text-destructive opacity-40 uppercase tracking-widest">DA</span>
                                 </div>
                                 <p className="text-[9px] text-muted-foreground/50 text-center italic">
-                                    Ce montant sera déduit immédiatement de la trésorerie globale.
+                                    Déduit immédiatement de la trésorerie globale.
                                 </p>
                             </div>
                         </div>

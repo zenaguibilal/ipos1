@@ -7,26 +7,29 @@ import { Button } from '@/components/ui/button';
 import { 
     ArrowLeft, 
     Trash2, 
-    Save, 
     AlertTriangle, 
     ChevronsUpDown, 
     Plus, 
     Truck, 
-    Package, 
-    Archive, 
-    Landmark, 
-    Hash, 
-    Calendar, 
-    ShoppingBag, 
     BadgeCheck, 
     Loader2,
-    Building 
+    Building,
+    Hash,
+    Calendar,
+    ShoppingBag,
+    Landmark
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { DatePicker } from '@/components/ui/date-picker';
-import type { StockIntakeItem, Supplier, Product } from '@/lib/types';
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+} from "@/components/ui/tooltip";
+import type { StockIntakeItem, Supplier } from '@/lib/types';
 import { v4 as uuidv4 } from 'uuid';
 import { toast } from 'sonner';
 import { formatCurrency, cn } from '@/lib/utils';
@@ -34,12 +37,6 @@ import { PageHeader } from '@/components/layout/PageHeader';
 import { ProductIntakeCombobox } from '@/components/stock/ProductIntakeCombobox';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
-import {
-    Tooltip,
-    TooltipContent,
-    TooltipProvider,
-    TooltipTrigger,
-} from "@/components/ui/tooltip";
 import { supplierService } from '@/services/supplier.service';
 import { useAppActions } from '@/stores/appStore';
 
@@ -301,7 +298,7 @@ export default function NewStockIntakePage() {
                                 <div className="absolute right-6 top-1/2 -translate-y-1/2 font-black text-xs opacity-20">DA</div>
                             </div>
                             <p className="text-[9px] text-muted-foreground italic leading-relaxed text-center px-4">
-                                Ce montant sera réparti proportionnellement sur le coût de revient de chaque article.
+                                Ce montant sera réparti proportionnellement sur le coût de revient.
                             </p>
                         </div>
                     </CardContent>
@@ -360,7 +357,7 @@ export default function NewStockIntakePage() {
                                                     <td className="p-6 text-right">
                                                         <div className="flex flex-col items-end">
                                                             <span className="font-black text-primary tracking-tighter text-sm">{landingCost.toFixed(1)}</span>
-                                                            {shippingCost > 0 && <span className="text-[8px] font-black text-primary/40 uppercase tracking-tighter">Transport inclus</span>}
+                                                            {shippingCost > 0 && <span className="text-[8px] font-black text-primary/40 uppercase tracking-tighter">Inclus</span>}
                                                         </div>
                                                     </td>
                                                     <td className="p-6">
@@ -403,11 +400,11 @@ export default function NewStockIntakePage() {
                                     <div className="p-6 rounded-[2rem] bg-black/20 border border-white/5 space-y-4">
                                         <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-primary/60">Analyse de Rentabilité</h4>
                                         <div className="flex justify-between items-end border-b border-white/5 pb-4">
-                                            <span className="text-xs font-bold text-muted-foreground">Charge logistique par DA :</span>
+                                            <span className="text-xs font-bold text-muted-foreground">Logistique (DA) :</span>
                                             <span className="text-xl font-black text-primary">{(shippingFactor * 100).toFixed(2)}%</span>
                                         </div>
                                         <p className="text-[9px] text-muted-foreground/50 leading-relaxed italic">
-                                            Le système a automatiquement calculé le surcoût de transport pour chaque unité afin de protéger vos marges.
+                                            Calcul automatique du surcoût logistique réparti.
                                         </p>
                                     </div>
 

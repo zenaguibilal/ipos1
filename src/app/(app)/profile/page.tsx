@@ -4,9 +4,8 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/com
 import { CompanyProfileForm } from "@/components/profile/company-profile-form";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { useAppStore } from "@/stores/appStore";
-import { Building, MapPin, Phone, Globe, ShieldCheck, ChevronRight, Share2, Sparkles, Star } from "lucide-react";
+import { Building, MapPin, Phone, Globe, ShieldCheck, Share2, Sparkles, Star } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { cn } from "@/lib/utils";
 
 export default function ProfilePage() {
     const { companyProfile, isCompanyProfileLoading } = useAppStore(state => ({
@@ -18,7 +17,7 @@ export default function ProfilePage() {
         <div className="p-6 sm:p-10 space-y-12 max-w-6xl mx-auto pb-32 animate-in fade-in duration-1000">
             <PageHeader 
                 title="Identité Institutionnelle"
-                description="Configuration souveraine de l'établissement pour documents officiels et gestion des offres"
+                description="Configuration souveraine de l'établissement pour documents officiels"
             />
 
             {/* Elite Business Card Preview */}
@@ -61,7 +60,7 @@ export default function ProfilePage() {
                                             <div className="flex items-center gap-3 bg-white/5 px-4 py-2 rounded-2xl border border-white/5 backdrop-blur-md shadow-inner group-hover:border-primary/10 transition-colors">
                                                 <Phone className="h-4 w-4 text-primary/60" />
                                                 <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest leading-none">
-                                                    {companyProfile?.phone || 'Ligne Non Définie'}
+                                                    {companyProfile?.phone || 'Ligne Directe'}
                                                 </span>
                                             </div>
                                             {companyProfile?.website && (
@@ -99,7 +98,7 @@ export default function ProfilePage() {
                             <div>
                                 <CardTitle className="text-3xl font-black tracking-tighter">Configuration des Registres</CardTitle>
                                 <CardDescription className="text-sm font-medium text-muted-foreground/60 mt-1">
-                                    Définissez les paramètres légaux et les prix de référence de votre boutique de luxe.
+                                    Définissez les paramètres légaux et les prix de référence.
                                 </CardDescription>
                             </div>
                         </div>
