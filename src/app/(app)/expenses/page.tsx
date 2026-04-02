@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
@@ -19,11 +18,14 @@ import {
     PieChart,
     CalendarDays,
     BarChart3,
-    ArrowRight
+    Trash2,
+    X,
+    CheckSquare
 } from 'lucide-react';
 import { ExpenseCard } from '@/components/expenses/ExpenseCard';
 import ExpenseDialog from '@/components/expenses/ExpenseDialog';
 import DeleteExpenseDialog from '@/components/expenses/DeleteExpenseDialog';
+import { DeleteMultipleExpensesDialog } from '@/components/expenses/DeleteMultipleExpensesDialog';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -41,6 +43,7 @@ import { PageHeader } from '@/components/layout/PageHeader';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { toast } from 'sonner';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, Cell } from 'recharts';
+import { Checkbox } from '@/components/ui/checkbox';
 import Papa from 'papaparse';
 
 const COLORS = [
@@ -58,7 +61,11 @@ export default function ExpensesPage() {
     
     const [isExpenseDialogOpen, setIsExpenseDialogOpen] = useState(false);
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+    const [isBulkDeleteDialogOpen, setIsBulkDeleteDialogOpen] = useState(false);
+    
     const [selectedExpense, setSelectedExpense] = useState<Expense | null>(null);
+    const [selectedExpenses, setSelectedExpenses] = useState<Set<string>>(new Set());
+    
     const { dateRange, setDate, isMounted } = useDateRange(29);
     
     const [expenses, setExpenses] = useState<Expense[] | undefined>(undefined);
@@ -77,7 +84,6 @@ export default function ExpensesPage() {
                 to: dateRange.to
             });
             
-            // Filtrage par recherche côté client
             let filteredData = data;
             if (debouncedSearch) {
                 const q = debouncedSearch.toLowerCase();
@@ -110,13 +116,39 @@ export default function ExpensesPage() {
         fetchCategories();
     }, [fetchCategories]);
 
+    useEffect(() => {
+        setSelectedExpenses(new Set());
+    }, [expenses]);
+
+    const handleToggleSelection = (uuid: string) => {
+        setSelectedExpenses(prev => {
+            const newSet = new Set(prev);
+            if (newSet.has(uuid)) newSet.delete(uuid);
+            else newSet.add(uuid);
+            return newSet;
+        });
+    };
+
+    const handleSelectAll = () => {
+        if (!expenses) return;
+        if (selectedExpenses.size === expenses.length) {
+            setSelectedExpenses(new Set());
+        } else {
+            setSelectedExpenses(new Set(expenses.map(e => e.uuid)));
+        }
+    };
+
     const handleExportCsv = () => {
-        if (!expenses || expenses.length === 0) {
+        const dataToExport = selectedExpenses.size > 0 
+            ? (expenses?.filter(e => selectedExpenses.has(e.uuid)) || [])
+            : (expenses || []);
+
+        if (dataToExport.length === 0) {
             toast.error("Aucune dépense à exporter.");
             return;
         }
 
-        const csv = Papa.unparse(expenses.map(e => ({
+        const csv = Papa.unparse(dataToExport.map(e => ({
             Date: new Date(e.expenseDate).toLocaleDateString('fr-FR'),
             Description: e.description,
             Catégorie: e.category,
@@ -131,7 +163,7 @@ export default function ExpensesPage() {
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
-        toast.success("Exportation terminée.");
+        toast.success(`${dataToExport.length} dépense(s) exportée(s).`);
     };
 
     const handleEditExpense = (expense: Expense) => {
@@ -175,6 +207,13 @@ export default function ExpensesPage() {
         return { total, count: expenses.length, topCategory: topCat, chartData };
     }, [expenses]);
 
+    const selectedTotal = useMemo(() => {
+        if (!expenses || selectedExpenses.size === 0) return 0;
+        return expenses
+            .filter(e => selectedExpenses.has(e.uuid))
+            .reduce((sum, e) => sum + e.amount, 0);
+    }, [expenses, selectedExpenses]);
+
     const resetFilters = () => {
         setSearchQuery('');
         setSelectedCategory('all');
@@ -190,7 +229,7 @@ export default function ExpensesPage() {
             >
                 <div className="flex gap-2 w-full sm:w-auto">
                     <Button variant="outline" onClick={handleExportCsv} className="rounded-xl font-bold border-primary/20 hover:bg-primary/5">
-                        <FileUp className="mr-2 h-4 w-4 text-primary" /> Exporter CSV
+                        <FileUp className="mr-2 h-4 w-4 text-primary" /> Exporter
                     </Button>
                     <Button 
                         onClick={() => { setSelectedExpense(null); setIsExpenseDialogOpen(true); }}
@@ -378,6 +417,28 @@ export default function ExpensesPage() {
                 </div>
             </div>
             
+            {/* Selection Info Bar */}
+            {selectedExpenses.size > 0 && (
+                <div className="flex flex-col sm:flex-row gap-3 justify-between items-center bg-primary/10 border border-primary/20 rounded-2xl p-4 animate-in slide-in-from-top-2 shadow-inner">
+                    <div className="flex items-center gap-3">
+                        <Checkbox
+                            id="select-all-expenses"
+                            checked={!isLoading && expenses && expenses.length > 0 && selectedExpenses.size === expenses.length}
+                            onCheckedChange={handleSelectAll}
+                            className="h-5 w-5 border-primary data-[state=checked]:bg-primary"
+                        />
+                        <label htmlFor="select-all-expenses" className="text-xs font-black text-primary uppercase tracking-widest">
+                            {selectedExpenses.size} dépense(s) sélectionnée(s) • Total: {formatCurrency(selectedTotal)}
+                        </label>
+                    </div>
+                    <div className="flex gap-2">
+                        <Button variant="destructive" onClick={() => setIsBulkDeleteDialogOpen(true)} className="rounded-xl shadow-lg shadow-destructive/20 font-bold">
+                            <Trash2 className="mr-2 h-4 w-4" /> Supprimer la sélection
+                        </Button>
+                    </div>
+                </div>
+            )}
+
             {/* Grid of Expenses */}
             <div className="min-h-[450px] animate-in fade-in duration-500">
                {isLoading ? (
@@ -408,6 +469,8 @@ export default function ExpensesPage() {
                                 expense={e} 
                                 onEdit={handleEditExpense} 
                                 onDelete={handleDeleteExpense}
+                                isSelected={selectedExpenses.has(e.uuid)}
+                                onToggleSelection={() => handleToggleSelection(e.uuid)}
                             />
                         ))}
                     </div>
@@ -426,6 +489,15 @@ export default function ExpensesPage() {
                 onOpenChange={setIsDeleteDialogOpen}
                 expense={selectedExpense}
                 onSuccess={fetchExpenses}
+            />
+            <DeleteMultipleExpensesDialog
+                isOpen={isBulkDeleteDialogOpen}
+                onOpenChange={setIsBulkDeleteDialogOpen}
+                expenseUuids={Array.from(selectedExpenses)}
+                onSuccess={() => {
+                    setSelectedExpenses(new Set());
+                    fetchExpenses();
+                }}
             />
         </div>
     );

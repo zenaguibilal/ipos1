@@ -58,6 +58,12 @@ class ExpenseService {
             await db.expenses.delete(existing.id);
         }
     }
+
+    async bulkDelete(uuids: string[]): Promise<void> {
+        const expensesToDelete = await db.expenses.where('uuid').anyOf(uuids).toArray();
+        const idsToDelete = expensesToDelete.map(e => e.id!);
+        await db.expenses.bulkDelete(idsToDelete);
+    }
 }
 
 export const expenseService = new ExpenseService();

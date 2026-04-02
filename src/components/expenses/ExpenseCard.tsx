@@ -1,4 +1,3 @@
-
 'use client';
 
 import React from 'react';
@@ -10,34 +9,50 @@ import { MoreHorizontal, Edit, Trash2, Banknote, Calendar, Tag, ChevronRight } f
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { formatCurrency, cn, safeToDate } from '@/lib/utils';
+import { Checkbox } from '../ui/checkbox';
 
 interface ExpenseCardProps {
     expense: Expense;
     onEdit: (expense: Expense) => void;
     onDelete: (expense: Expense) => void;
+    isSelected: boolean;
+    onToggleSelection: () => void;
 }
 
-const ExpenseCardComponent = ({ expense, onEdit, onDelete }: ExpenseCardProps) => {
+const ExpenseCardComponent = ({ expense, onEdit, onDelete, isSelected, onToggleSelection }: ExpenseCardProps) => {
     return (
-        <Card className="group flex flex-col transition-all duration-300 hover:shadow-2xl hover:-translate-y-1 bg-card border-none relative overflow-hidden rounded-3xl">
+        <Card 
+            onClick={onToggleSelection}
+            className={cn(
+                "group flex flex-col transition-all duration-300 hover:shadow-2xl hover:-translate-y-1 bg-card border-none relative overflow-hidden rounded-3xl cursor-pointer",
+                isSelected ? "ring-2 ring-primary shadow-lg" : "hover:bg-muted/5"
+            )}
+        >
             {/* Background Decorative Element */}
             <div className="absolute top-0 right-0 p-8 opacity-[0.02] group-hover:opacity-[0.05] transition-opacity pointer-events-none">
                 <Banknote className="h-24 w-24 rotate-12" />
             </div>
 
-            {/* Action Menu */}
-            <div className="absolute top-3 right-3 z-10">
+            {/* Action Menu & Checkbox */}
+            <div className="absolute top-3 right-3 z-10 flex gap-2 items-center">
+                <div onClick={(e) => e.stopPropagation()} className="p-1.5 bg-background/80 backdrop-blur-md rounded-xl shadow-sm border border-white/5">
+                    <Checkbox
+                        checked={isSelected}
+                        onCheckedChange={onToggleSelection}
+                        className="h-5 w-5 border-primary data-[state=checked]:bg-primary"
+                    />
+                </div>
                 <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
+                    <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
                         <Button variant="secondary" size="icon" className="h-8 w-8 bg-background/80 backdrop-blur-md border-none shadow-sm rounded-xl">
                             <MoreHorizontal className="h-4 w-4" />
                         </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="rounded-2xl border-none shadow-xl">
-                        <DropdownMenuItem onClick={() => onEdit(expense)} className="rounded-xl">
+                        <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onEdit(expense); }} className="rounded-xl">
                             <Edit className="mr-2 h-4 w-4" /> Modifier
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => onDelete(expense)} className="text-destructive focus:text-destructive rounded-xl">
+                        <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onDelete(expense); }} className="text-destructive focus:text-destructive rounded-xl">
                             <Trash2 className="mr-2 h-4 w-4" /> Supprimer
                         </DropdownMenuItem>
                     </DropdownMenuContent>
@@ -49,7 +64,7 @@ const ExpenseCardComponent = ({ expense, onEdit, onDelete }: ExpenseCardProps) =
                     <div className="p-2.5 rounded-2xl bg-destructive/10 text-destructive transition-colors group-hover:bg-destructive/20 shadow-inner">
                         <Banknote className="h-5 w-5" />
                     </div>
-                    <div className="min-w-0 pr-8">
+                    <div className="min-w-0 pr-12">
                         <CardTitle className="text-base font-black leading-tight tracking-tight truncate group-hover:text-primary transition-colors">
                             {expense.description}
                         </CardTitle>
@@ -78,10 +93,10 @@ const ExpenseCardComponent = ({ expense, onEdit, onDelete }: ExpenseCardProps) =
                 <Button 
                     variant="ghost" 
                     size="sm" 
-                    onClick={() => onEdit(expense)}
+                    onClick={(e) => { e.stopPropagation(); onEdit(expense); }}
                     className="h-8 rounded-xl font-black text-[9px] uppercase tracking-widest hover:bg-primary/10 hover:text-primary transition-all px-3"
                 >
-                    Modifier <ChevronRight className="ml-1 h-3 w-3 opacity-50" />
+                    Détails <ChevronRight className="ml-1 h-3 w-3 opacity-50" />
                 </Button>
             </CardFooter>
         </Card>
