@@ -41,7 +41,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { DateRangePicker } from '@/components/ui/date-range-picker';
 import { useDateRange } from '@/hooks/useDateRange';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { formatCurrency, cn } from '@/lib/utils';
 import { PageHeader } from '@/components/layout/PageHeader';
@@ -51,6 +51,7 @@ import { ResponsiveContainer, BarChart as RechartsBarChart, Bar, XAxis, YAxis, T
 import { useAppStore } from '@/stores/appStore';
 import { format, differenceInDays } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import Papa from 'papaparse';
 
 const COLORS = [
     'hsl(var(--primary))', 
@@ -280,7 +281,7 @@ export default function ExpensesPage() {
                         <div class="stat-card"><h4>Total Dépensé</h4><p>${formatCurrency(stats.total)}</p></div>
                         <div class="stat-card"><h4>Moyenne / Jour</h4><p>${formatCurrency(stats.dailyAverage)}</p></div>
                         <div class="stat-card"><h4>Transactions</h4><p>${stats.count}</p></div>
-                        <div class="stat-card"><h4>Postه Principal</h4><p>${stats.topCategory}</p></div>
+                        <div class="stat-card"><h4>Poste Principal</h4><p>${stats.topCategory}</p></div>
                     </div>
 
                     <table>

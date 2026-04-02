@@ -150,7 +150,7 @@ export default function ExpenseDialog({ isOpen, onOpenChange, expense, onSuccess
                                 </div>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                                     <div className="space-y-2">
-                                        <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Postه de Dépense</Label>
+                                        <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Poste de Dépense</Label>
                                         <Combobox 
                                             options={categoryOptions}
                                             value={formState.category}

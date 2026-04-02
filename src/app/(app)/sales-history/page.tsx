@@ -566,7 +566,7 @@ export default function SalesHistoryPage() {
                             <EmptyState
                                 icon={History}
                                 title="Le Grand Livre est vide"
-                                description={isFiltered ? "Ajustez vos filtres pour déنicher les transactions." : "Lancez votre première vente Premium dès maintenant."}
+                                description={isFiltered ? "Ajustez vos filtres pour dénicher les transactions." : "Lancez votre première vente Premium dès maintenant."}
                             >
                                 {isFiltered && <Button variant="outline" onClick={resetFilters} className="rounded-2xl h-12 font-bold px-8 border-primary/20 hover:bg-primary/5">Effacer les filtres</Button>}
                             </EmptyState>
