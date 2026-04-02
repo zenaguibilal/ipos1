@@ -17,7 +17,8 @@ import {
     ArrowRight,
     Trophy,
     Star,
-    LayoutDashboard
+    LayoutDashboard,
+    Sparkles
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Link from 'next/link';
@@ -66,105 +67,116 @@ export default function InstallPWAPage() {
     if (!isMounted) return null;
 
     return (
-        <div className="p-4 sm:p-6 space-y-8 max-w-5xl mx-auto pb-24">
+        <div className="p-6 sm:p-10 space-y-12 max-w-6xl mx-auto pb-24 animate-in fade-in duration-1000">
             <PageHeader 
                 title="Expérience iPOS Zen"
-                description="Installez l'application pour profiter d'un confort de travail maximal, sans les contraintes d'un navigateur classique."
+                description="L'apogée du confort et de la réactivité pour votre gestion quotidienne."
             />
 
             {isInstalled ? (
-                <Card className="rounded-[3rem] border-none shadow-2xl bg-emerald-500/5 border-emerald-500/20 overflow-hidden animate-in zoom-in-95 duration-700">
-                    <CardContent className="p-12 text-center space-y-8">
-                        <div className="relative mx-auto w-24 h-24">
-                            <div className="absolute inset-0 bg-emerald-500/20 blur-2xl animate-pulse rounded-full"></div>
-                            <div className="relative h-24 w-24 rounded-[2.5rem] bg-emerald-500/10 flex items-center justify-center text-emerald-500 shadow-inner">
-                                <Trophy className="h-12 w-12" />
+                <div className="relative group">
+                    <div className="absolute -inset-1 bg-gradient-to-r from-emerald-500/20 to-primary/20 rounded-[3.5rem] blur-2xl opacity-30 group-hover:opacity-50 transition duration-1000"></div>
+                    <Card className="relative rounded-[3rem] border-white/5 shadow-2xl bg-card/40 backdrop-blur-3xl overflow-hidden animate-in zoom-in-95 duration-700">
+                        <CardContent className="p-16 text-center space-y-10">
+                            <div className="relative mx-auto w-32 h-32">
+                                <div className="absolute inset-0 bg-emerald-500/20 blur-3xl animate-pulse rounded-full"></div>
+                                <div className="relative h-32 w-32 rounded-[2.5rem] bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-500 shadow-inner">
+                                    <Trophy className="h-16 w-16" />
+                                </div>
                             </div>
-                        </div>
-                        <div className="space-y-3">
-                            <h2 className="text-4xl font-black tracking-tighter text-emerald-600">Félicitations !</h2>
-                            <p className="text-muted-foreground font-medium max-w-md mx-auto leading-relaxed">
-                                iPOS Zen est désormais installé sur votre appareil. Vous bénéficiez d'une réactivité accrue et d'un accès direct depuis votre bureau.
-                            </p>
-                        </div>
-                        <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
-                            <Button asChild variant="outline" className="rounded-2xl h-14 px-8 font-black border-emerald-500/20 hover:bg-emerald-500/5 gap-2">
-                                <Link href="/settings">
-                                    Diagnostic Système
-                                </Link>
-                            </Button>
-                            <Button asChild className="rounded-2xl h-14 px-10 font-black bg-emerald-500 hover:bg-emerald-600 shadow-xl shadow-emerald-500/20 gap-2">
-                                <Link href="/dashboard">
-                                    Tableau de Bord <LayoutDashboard className="h-4 w-4" />
-                                </Link>
-                            </Button>
-                        </div>
-                    </CardContent>
-                </Card>
+                            <div className="space-y-4">
+                                <h2 className="text-5xl font-black tracking-tighter text-emerald-500">Statut Zen Activé</h2>
+                                <p className="text-muted-foreground font-medium max-w-lg mx-auto leading-relaxed text-lg">
+                                    iPOS Luxury est désormais une partie intégrante de votre système. Profitez d'une immersion totale et d'une fluidité souveraine.
+                                </p>
+                            </div>
+                            <div className="flex flex-col sm:flex-row gap-6 justify-center pt-6">
+                                <Button asChild variant="outline" className="rounded-2xl h-16 px-10 font-black border-white/5 bg-card/40 hover:bg-emerald-500/5 gap-3 uppercase text-xs tracking-widest transition-all">
+                                    <Link href="/settings">
+                                        Diagnostic Système
+                                    </Link>
+                                </Button>
+                                <Button asChild className="rounded-2xl h-16 px-12 font-black bg-emerald-500 hover:bg-emerald-600 shadow-2xl shadow-emerald-500/20 gap-3 uppercase text-xs tracking-widest transition-all active:scale-95">
+                                    <Link href="/dashboard">
+                                        Ouvrir le Tableau de Bord <LayoutDashboard className="h-5 w-5" />
+                                    </Link>
+                                </Button>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </div>
             ) : (
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                    {/* Instructions Card */}
-                    <div className="lg:col-span-2 space-y-8">
-                        <Card className="rounded-[2.5rem] border-none shadow-sm bg-card overflow-hidden">
-                            <CardHeader className="bg-primary/5 p-8 border-b border-primary/10">
-                                <div className="flex items-center gap-4">
-                                    <div className="p-3 rounded-2xl bg-primary text-primary-foreground shadow-lg shadow-primary/20">
-                                        <Zap className="h-5 w-5" />
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+                    {/* Main Configuration Card */}
+                    <div className="lg:col-span-8 space-y-10">
+                        <Card className="rounded-[3rem] border-white/5 shadow-2xl bg-card/40 backdrop-blur-3xl overflow-hidden">
+                            <CardHeader className="bg-primary/5 p-10 border-b border-white/5">
+                                <div className="flex items-center gap-5">
+                                    <div className="p-4 rounded-2xl bg-primary text-primary-foreground shadow-2xl shadow-primary/20">
+                                        <Zap className="h-7 w-7" />
                                     </div>
                                     <div>
-                                        <CardTitle className="text-2xl font-black tracking-tight">Guide d'installation</CardTitle>
-                                        <CardDescription className="font-medium text-muted-foreground/70 italic">Suivez ces étapes simples pour activer le mode Zen.</CardDescription>
+                                        <CardTitle className="text-3xl font-black tracking-tighter">Guide d'Activation Zen</CardTitle>
+                                        <CardDescription className="text-sm font-bold uppercase tracking-widest text-primary/50 mt-1">Libérez la puissance locale de votre application</CardDescription>
                                     </div>
                                 </div>
                             </CardHeader>
-                            <CardContent className="p-8 space-y-8">
+                            <CardContent className="p-10 space-y-10">
                                 {platform === 'ios' ? (
-                                    <div className="space-y-6">
-                                        <p className="text-[10px] font-black text-primary uppercase tracking-[0.2em] flex items-center gap-2">
-                                            <Globe className="h-4 w-4" /> Instructions Safari (iPhone/iPad)
-                                        </p>
-                                        <div className="grid gap-4">
-                                            <div className="flex items-start gap-5 p-6 bg-muted/20 rounded-3xl border border-border/50 transition-all hover:bg-muted/30">
-                                                <div className="h-10 w-10 rounded-2xl bg-background flex items-center justify-center font-black text-sm shadow-sm shrink-0">1</div>
-                                                <p className="text-sm font-medium pt-2">Touchez l'icône <span className="text-primary font-black inline-flex items-center gap-1 mx-1 bg-primary/10 px-2 py-0.5 rounded-lg"><Share className="h-4 w-4"/> Partager</span> située en bas de votre écran Safari.</p>
+                                    <div className="space-y-8">
+                                        <div className="flex items-center gap-3">
+                                            <div className="h-1.5 w-10 bg-primary rounded-full" />
+                                            <p className="text-[10px] font-black text-primary uppercase tracking-[0.3em]">Protocole Safari (iPhone/iPad)</p>
+                                        </div>
+                                        <div className="grid gap-6">
+                                            <div className="flex items-start gap-6 p-8 bg-black/20 rounded-[2rem] border border-white/5 transition-all hover:bg-black/30 group">
+                                                <div className="h-12 w-12 rounded-2xl bg-background flex items-center justify-center font-black text-lg shadow-inner shrink-0 group-hover:text-primary transition-colors">1</div>
+                                                <div className="pt-2">
+                                                    <p className="text-lg font-bold leading-snug">Touchez l'icône <span className="text-primary font-black inline-flex items-center gap-2 mx-2 bg-primary/10 px-3 py-1 rounded-xl"><Share className="h-5 w-5"/> Partager</span> en bas de l'écran.</p>
+                                                </div>
                                             </div>
-                                            <div className="flex items-start gap-5 p-6 bg-muted/20 rounded-3xl border border-border/50 transition-all hover:bg-muted/30">
-                                                <div className="h-10 w-10 rounded-2xl bg-background flex items-center justify-center font-black text-sm shadow-sm shrink-0">2</div>
-                                                <p className="text-sm font-medium pt-2">Faites défiler vers le bas et sélectionnez <span className="text-primary font-black inline-flex items-center gap-1 mx-1 bg-primary/10 px-2 py-0.5 rounded-lg"><PlusSquare className="h-4 w-4"/> Sur l'écran d'accueil</span>.</p>
+                                            <div className="flex items-start gap-6 p-8 bg-black/20 rounded-[2rem] border border-white/5 transition-all hover:bg-black/30 group">
+                                                <div className="h-12 w-12 rounded-2xl bg-background flex items-center justify-center font-black text-lg shadow-inner shrink-0 group-hover:text-primary transition-colors">2</div>
+                                                <div className="pt-2">
+                                                    <p className="text-lg font-bold leading-snug">Faites défiler et choisissez <span className="text-primary font-black inline-flex items-center gap-2 mx-2 bg-primary/10 px-3 py-1 rounded-xl"><PlusSquare className="h-5 w-5"/> Sur l'écran d'accueil</span>.</p>
+                                                </div>
                                             </div>
-                                            <div className="flex items-start gap-5 p-6 bg-muted/20 rounded-3xl border border-border/50 transition-all hover:bg-muted/30">
-                                                <div className="h-10 w-10 rounded-2xl bg-background flex items-center justify-center font-black text-sm shadow-sm shrink-0">3</div>
-                                                <p className="text-sm font-medium pt-2">Validez en appuyant sur <span className="text-primary font-black mx-1">Ajouter</span> en haut à droite.</p>
+                                            <div className="flex items-start gap-6 p-8 bg-black/20 rounded-[2rem] border border-white/5 transition-all hover:bg-black/30 group">
+                                                <div className="h-12 w-12 rounded-2xl bg-background flex items-center justify-center font-black text-lg shadow-inner shrink-0 group-hover:text-primary transition-colors">3</div>
+                                                <div className="pt-2">
+                                                    <p className="text-lg font-bold leading-snug">Validez avec <span className="text-primary font-black mx-2">Ajouter</span> pour ancrer iPOS sur votre bureau.</p>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
                                 ) : (
-                                    <div className="space-y-8">
+                                    <div className="space-y-10">
                                         <div className="space-y-4">
-                                            <p className="text-[10px] font-black text-primary uppercase tracking-[0.2em] flex items-center gap-2">
-                                                <Download className="h-4 w-4" /> Installation Automatique
-                                            </p>
-                                            <p className="text-sm text-muted-foreground font-medium leading-relaxed px-1">
-                                                Sur Android, Chrome ou Edge Desktop, vous pouvez installer l'application instantanément en utilisant le bouton ci-dessous.
+                                            <div className="flex items-center gap-3">
+                                                <div className="h-1.5 w-10 bg-primary rounded-full" />
+                                                <p className="text-[10px] font-black text-primary uppercase tracking-[0.3em]">Déploiement Automatique (Chrome / Edge / Android)</p>
+                                            </div>
+                                            <p className="text-muted-foreground font-medium leading-relaxed px-1">
+                                                L'installation permet à iPOS Luxury de s'exécuter dans son propre processus système, garantissant des performances maximales et une confidentialité totale.
                                             </p>
                                         </div>
                                         
                                         <div className="relative group">
-                                            <div className="absolute -inset-1 bg-primary/20 rounded-2xl blur-lg opacity-0 group-hover:opacity-100 transition duration-500"></div>
+                                            <div className="absolute -inset-2 bg-primary/20 rounded-3xl blur-xl opacity-0 group-hover:opacity-100 transition duration-700"></div>
                                             <Button 
                                                 onClick={handleInstallClick} 
                                                 disabled={!deferredPrompt}
-                                                className="relative w-full h-20 rounded-2xl font-black text-xl shadow-2xl shadow-primary/20 gap-4 transition-all active:scale-95"
+                                                className="relative w-full h-24 rounded-[2rem] font-black text-2xl shadow-2xl shadow-primary/20 gap-5 transition-all active:scale-[0.98] border border-white/10"
                                             >
-                                                <Download className="h-7 w-7 animate-bounce" />
-                                                Installer iPOS Zen
+                                                <Download className="h-8 w-8 animate-bounce" />
+                                                Activer le Mode iPOS Zen
                                             </Button>
                                         </div>
 
                                         {!deferredPrompt && (
-                                            <div className="p-6 bg-amber-500/5 rounded-[2rem] border border-dashed border-amber-500/20 text-center">
-                                                <p className="text-[10px] font-black uppercase text-amber-600/70 tracking-widest leading-relaxed">
-                                                    Si le bouton est inactif, l'installation est disponible dans le menu <span className="inline-block p-1 bg-background rounded mx-1 shadow-sm">⋮</span> de votre navigateur.
+                                            <div className="p-8 bg-amber-500/5 rounded-[2.5rem] border border-dashed border-amber-500/20 text-center">
+                                                <p className="text-[10px] font-black uppercase text-amber-600/70 tracking-[0.2em] leading-relaxed">
+                                                    Si le bouton est inactif, l'installation est disponible dans le menu <span className="inline-block p-1 bg-background rounded-lg mx-2 shadow-inner border border-white/5">⋮</span> de votre navigateur.
                                                 </p>
                                             </div>
                                         )}
@@ -173,64 +185,63 @@ export default function InstallPWAPage() {
                             </CardContent>
                         </Card>
 
-                        {/* Desktop Shortcut Tip */}
-                        <Card className="rounded-[2.5rem] border-none shadow-sm bg-muted/20 overflow-hidden border border-border/50">
-                            <CardContent className="p-8 flex items-center gap-6">
-                                <div className="h-16 w-16 rounded-2xl bg-background flex items-center justify-center shadow-inner group">
-                                    <Monitor className="h-8 w-8 text-primary opacity-40 group-hover:opacity-100 transition-opacity" />
-                                </div>
-                                <div>
-                                    <h4 className="text-sm font-black uppercase tracking-tight">Utilisateurs PC / Mac</h4>
-                                    <p className="text-xs text-muted-foreground font-medium leading-relaxed mt-1">
-                                        Sur Chrome ou Edge, cliquez sur l'icône <span className="inline-block p-1 bg-background rounded-md border shadow-sm mx-1"><Download className="h-3 w-3 text-primary" /></span> à droite de votre barre d'adresse pour installer iPOS sur votre bureau.
-                                    </p>
-                                </div>
-                            </CardContent>
-                        </Card>
+                        {/* PC/Mac Tip */}
+                        <div className="flex items-center gap-8 p-10 bg-muted/20 rounded-[3rem] border border-white/5 group hover:bg-muted/30 transition-all duration-700">
+                            <div className="h-20 w-20 rounded-[1.5rem] bg-background flex items-center justify-center shadow-inner shrink-0 group-hover:scale-110 transition-transform duration-500">
+                                <Monitor className="h-10 w-10 text-primary opacity-40 group-hover:opacity-100 transition-opacity" />
+                            </div>
+                            <div>
+                                <h4 className="text-lg font-black uppercase tracking-tight">Poste de Travail PC / Mac</h4>
+                                <p className="text-sm text-muted-foreground font-medium leading-relaxed mt-2">
+                                    Pour une expérience de caisse optimale, cliquez sur l'icône <span className="inline-block p-1.5 bg-background rounded-xl border border-white/10 shadow-lg mx-2"><Download className="h-4 w-4 text-primary" /></span> à droite de votre barre d'adresse.
+                                </p>
+                            </div>
+                        </div>
                     </div>
 
                     {/* Features Sidebar */}
-                    <div className="space-y-6">
-                        <div className="p-8 bg-card rounded-[2.5rem] shadow-sm border border-white/5 space-y-8">
-                            <h3 className="text-sm font-black uppercase tracking-[0.2em] text-center border-b pb-6 opacity-50">Les avantages Zen</h3>
+                    <div className="lg:col-span-4 space-y-8">
+                        <div className="p-10 bg-card/40 backdrop-blur-2xl rounded-[3rem] shadow-2xl border border-white/5 space-y-10">
+                            <h3 className="text-xs font-black uppercase tracking-[0.3em] text-center border-b border-white/5 pb-8 opacity-40 italic">Privilèges iPOS Zen</h3>
                             
-                            <div className="space-y-8">
-                                <div className="flex gap-4 group">
-                                    <div className="h-12 w-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary shadow-inner shrink-0 group-hover:scale-110 transition-transform">
-                                        <Zap className="h-6 w-6" />
+                            <div className="space-y-10">
+                                <div className="flex gap-6 group">
+                                    <div className="h-14 w-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary shadow-inner shrink-0 group-hover:scale-110 transition-transform">
+                                        <Zap className="h-7 w-7" />
                                     </div>
                                     <div>
-                                        <h4 className="text-xs font-black uppercase tracking-tight">Rapidité Éclair</h4>
-                                        <p className="text-[10px] text-muted-foreground font-medium mt-1 leading-relaxed">Lancement instantané sans chargement de page navigateur.</p>
+                                        <h4 className="text-sm font-black uppercase tracking-widest">Rapidité Éclair</h4>
+                                        <p className="text-[11px] text-muted-foreground font-medium mt-2 leading-relaxed">Lancement instantané. Aucune latence réseau pour vos ventes.</p>
                                     </div>
                                 </div>
 
-                                <div className="flex gap-4 group">
-                                    <div className="h-12 w-12 rounded-2xl bg-emerald-500/10 flex items-center justify-center text-emerald-500 shadow-inner shrink-0 group-hover:scale-110 transition-transform">
-                                        <ShieldCheck className="h-6 w-6" />
+                                <div className="flex gap-6 group">
+                                    <div className="h-14 w-12 rounded-2xl bg-emerald-500/10 flex items-center justify-center text-emerald-500 shadow-inner shrink-0 group-hover:scale-110 transition-transform">
+                                        <ShieldCheck className="h-7 w-7" />
                                     </div>
                                     <div>
-                                        <h4 className="text-xs font-black uppercase tracking-tight">Focus Total</h4>
-                                        <p className="text-[10px] text-muted-foreground font-medium mt-1 leading-relaxed">Supprime la barre d'adresse pour un espace de travail pur.</p>
+                                        <h4 className="text-sm font-black uppercase tracking-widest">Focus Absolu</h4>
+                                        <p className="text-[11px] text-muted-foreground font-medium mt-2 leading-relaxed">Supprime toute distraction pour un espace de travail pur.</p>
                                     </div>
                                 </div>
 
-                                <div className="flex gap-4 group">
-                                    <div className="h-12 w-12 rounded-2xl bg-amber-500/10 flex items-center justify-center text-amber-500 shadow-inner shrink-0 group-hover:scale-110 transition-transform">
-                                        <Star className="h-6 w-6" />
+                                <div className="flex gap-6 group">
+                                    <div className="h-14 w-12 rounded-2xl bg-amber-500/10 flex items-center justify-center text-amber-500 shadow-inner shrink-0 group-hover:scale-110 transition-transform">
+                                        <Star className="h-7 w-7" />
                                     </div>
                                     <div>
-                                        <h4 className="text-xs font-black uppercase tracking-tight">Icone Dédiée</h4>
-                                        <p className="text-[10px] text-muted-foreground font-medium mt-1 leading-relaxed">Retrouvez iPOS sur votre écran d'accueil comme une vraie App.</p>
+                                        <h4 className="text-sm font-black uppercase tracking-widest">Souveraineté</h4>
+                                        <p className="text-[11px] text-muted-foreground font-medium mt-2 leading-relaxed">Retrouvez iPOS sur votre écran d'accueil comme une App native.</p>
                                     </div>
                                 </div>
                             </div>
                         </div>
 
-                        <div className="p-8 bg-primary/5 rounded-[2.5rem] border border-primary/10 text-center space-y-2">
-                            <p className="text-[9px] font-black uppercase tracking-widest text-primary/60">Statut de Sécurité</p>
-                            <p className="text-[10px] font-bold text-muted-foreground leading-relaxed">
-                                Installation locale : Vos données restent 100% privées sur ce disque dur.
+                        <div className="p-10 bg-primary/5 rounded-[3rem] border border-primary/10 text-center space-y-4 relative overflow-hidden group">
+                            <Sparkles className="absolute -right-4 -top-4 h-24 w-24 text-primary/5 group-hover:opacity-20 transition-opacity" />
+                            <p className="text-[10px] font-black uppercase tracking-[0.25em] text-primary/60">Confidentialité Elite</p>
+                            <p className="text-xs font-bold text-muted-foreground leading-relaxed italic relative z-10">
+                                Installation 100% Locale : Vos données commerciales ne transitent par aucun serveur. Tout reste chez vous.
                             </p>
                         </div>
                     </div>
@@ -238,14 +249,14 @@ export default function InstallPWAPage() {
             )}
 
             {/* Tech Footer */}
-            <div className="p-10 bg-muted/20 rounded-[3rem] border border-border/50 flex flex-col md:flex-row items-center gap-10 animate-in fade-in duration-1000 delay-300">
-                <div className="h-24 w-24 rounded-[2.5rem] bg-background flex items-center justify-center shadow-inner border border-white/5 shrink-0 group">
-                    <Smartphone className="h-12 w-12 text-primary opacity-20 group-hover:opacity-100 transition-opacity duration-700" />
+            <div className="p-12 bg-muted/20 rounded-[4rem] border border-white/5 flex flex-col md:flex-row items-center gap-12 animate-in fade-in duration-1000 delay-300">
+                <div className="h-28 w-28 rounded-[2.5rem] bg-background flex items-center justify-center shadow-2xl border border-white/5 shrink-0 group">
+                    <Smartphone className="h-14 w-14 text-primary opacity-20 group-hover:opacity-100 transition-opacity duration-700" />
                 </div>
-                <div className="space-y-3 text-center md:text-left">
-                    <h3 className="text-xl font-black tracking-tight">Technologie Progressive Web App</h3>
-                    <p className="text-sm text-muted-foreground font-medium leading-relaxed max-w-2xl">
-                        iPOS Zen utilise les technologies Web les plus avancées pour vous offrir la légèreté d'un site web alliée à la puissance d'un logiciel de bureau. Une fois installée, l'application est optimisée pour une fluidité sans compromis.
+                <div className="space-y-4 text-center md:text-left">
+                    <h3 className="text-2xl font-black tracking-tighter">Technologie Progressive Web App</h3>
+                    <p className="text-base text-muted-foreground font-medium leading-relaxed max-w-3xl">
+                        iPOS Zen utilise les standards du Web moderne pour vous offrir la légèreté d'un site allié à la puissance d'un logiciel de bureau. Une fois installée, l'application fonctionne de manière autonome, optimisant chaque cycle CPU pour votre confort.
                     </p>
                 </div>
             </div>
