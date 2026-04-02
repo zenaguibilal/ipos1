@@ -1,6 +1,5 @@
 import { create } from 'zustand';
-import { produce } from 'immer';
-import type { CompanyProfile, ReturnItem, StockIntakeItem, Sale, StockIntake } from '@/lib/types';
+import type { CompanyProfile, ReturnItem, StockIntakeItem } from '@/lib/types';
 import { toast } from 'sonner';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { db } from '@/lib/db';
@@ -11,9 +10,7 @@ import { returnService } from '@/services/return.service';
 import { inventoryService } from '@/services/inventory.service';
 import { supplierService } from '@/services/supplier.service';
 import { productService } from '@/services/product.service';
-import { stockService } from '@/services/stock.service';
 import { customerService } from '@/services/customer.service';
-import { salesService } from '@/services/sales.service';
 
 // Main State Interface
 interface AppState {

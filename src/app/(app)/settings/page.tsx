@@ -53,13 +53,17 @@ export default function SettingsPage() {
     useEffect(() => {
         setIsMounted(true);
         const fetchStats = async () => {
-            const [p, c, s, l] = await Promise.all([
-                db.products.count(),
-                db.customers.count(),
-                db.sales.count(),
-                db.inventory_logs.count()
-            ]);
-            setStats({ products: p, customers: c, sales: s, logs: l });
+            try {
+                const [p, c, s, l] = await Promise.all([
+                    db.products.count(),
+                    db.customers.count(),
+                    db.sales.count(),
+                    db.inventory_logs.count()
+                ]);
+                setStats({ products: p, customers: c, sales: s, logs: l });
+            } catch (err) {
+                console.error("Erreur stats:", err);
+            }
         };
         fetchStats();
 
@@ -111,7 +115,7 @@ export default function SettingsPage() {
         <div className="p-6 sm:p-10 space-y-12 max-w-[1800px] mx-auto pb-32 animate-in fade-in duration-1000">
             <PageHeader 
                 title="Configuration Souveraine"
-                description="Maintenance technique, diagnostic de base de données et gestion locale."
+                description="Maintenance technique, diagnostic de base de données et gestion de la confidentialité locale."
             />
 
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
@@ -231,7 +235,7 @@ export default function SettingsPage() {
                                 </div>
                                 <div>
                                     <p className="text-lg font-black tracking-tighter">iPOS Zen Evolution</p>
-                                    <p className="text-[9px] font-black text-primary/40 uppercase">Version 1.9.2 - Elite Stable</p>
+                                    <p className="text-[9px] font-black text-primary/40 uppercase tracking-[0.3em]">Version 1.9.2 - Elite Stable</p>
                                 </div>
                             </div>
                             
@@ -259,8 +263,8 @@ export default function SettingsPage() {
                             </div>
                         </CardHeader>
                         <CardContent className="p-8 space-y-6">
-                            <p className="text-[10px] font-bold text-destructive/60 leading-relaxed text-center italic uppercase tracking-widest px-2">
-                                Les actions ci-dessous sont irréversibles et entraînent la perte totale de vos données locales.
+                            <p className="text-[10px] font-bold text-destructive/60 leading-relaxed text-center italic px-2 uppercase tracking-widest">
+                                Les actions ci-dessous sont irréversibles et entraînent la perte totale de vos données locales non sauvegardées.
                             </p>
                             <Button 
                                 variant="outline" 
@@ -297,8 +301,8 @@ export default function SettingsPage() {
                         <div className="p-5 bg-destructive/10 border border-destructive/20 rounded-2xl flex items-start gap-4 mt-4">
                             <ShieldAlert className="h-6 w-6 text-destructive shrink-0" />
                             <div className="space-y-1">
-                                <p className="text-xs font-black text-destructive uppercase tracking-tight">Attention Critique</p>
-                                <p className="text-[10px] text-destructive/70 font-medium">Aucun retour en arrière n'est possible sans sauvegarde externe.</p>
+                                <p className="text-xs font-black text-destructive uppercase tracking-tight leading-tight">Attention Critique</p>
+                                <p className="text-[10px] text-destructive/70 leading-relaxed font-medium">Aucun retour en arrière n'est possible sans un fichier de sauvegarde (.json) externe.</p>
                             </div>
                         </div>
                     </div>
