@@ -10,7 +10,7 @@ import { toast } from 'sonner';
 import { breadService } from '@/services/bread.service';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useDebounce } from '@/hooks/useDebounce';
-import { CheckCircle2, UserCircle2, Package, Wallet, Loader2, Trash2 } from 'lucide-react';
+import { CheckCircle2, UserCircle2, Package, Landmark, Loader2, Trash2 } from 'lucide-react';
 import { useAppStore } from '@/stores/appStore';
 
 interface BreadOrderCardProps {
@@ -71,7 +71,7 @@ export function BreadOrderCard({ order, isSelected, onToggleSelection, onUpdate 
         setIsUpdatingStatus(true);
         try {
             await breadService.convertBreadOrdersToSales([order.uuid], breadPrice);
-            toast.success("Commande payée (ajoutée aux comptes).");
+            toast.success("تم تأكيد الطلب وتحويله إلى حساب الزبون.");
             onUpdate();
         } catch (e) {
             toast.error("Erreur de paiement.");
@@ -169,8 +169,8 @@ export function BreadOrderCard({ order, isSelected, onToggleSelection, onUpdate 
                             isPaid && "bg-emerald-500/10 text-emerald-600 border-emerald-500/20"
                         )}
                     >
-                        {isPaid ? <CheckCircle2 className="h-3 w-3" /> : <Wallet className="h-3 w-3" />}
-                        {isPaid ? 'مدفوع' : 'دفع'}
+                        {isPaid ? <CheckCircle2 className="h-3 w-3" /> : <Landmark className="h-3 w-3" />}
+                        {isPaid ? 'تم التحويل' : 'للحساب'}
                     </Button>
                 </div>
             </CardContent>

@@ -11,7 +11,7 @@ import { ManualAddDialog } from './ManualAddDialog';
 import { PrintBreadListDialog } from './PrintBreadListDialog';
 import { toast } from 'sonner';
 import { breadService } from '@/services/bread.service';
-import { Loader2, Wheat, ShoppingBag } from 'lucide-react';
+import { Loader2, Wheat, ShoppingBag, Landmark } from 'lucide-react';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { useAppStore } from '@/stores/appStore';
 import { cn } from '@/lib/utils';
@@ -27,6 +27,9 @@ export function BreadDayView({ orders, currentDate, onOrdersChange }: BreadDayVi
     const [isConverting, setIsConverting] = useState(false);
     const breadPrice = useAppStore((state) => state.companyProfile?.prix_pain) || 0;
 
+    const unbilledOrders = useMemo(() => orders.filter(o => !o.venteUuid), [orders]);
+    const unbilledOrdersCount = unbilledOrders.length;
+
     const handleToggleSelection = (orderUuid: string) => {
         setSelectedOrders(prev => {
             const newSet = new Set(prev);
@@ -39,11 +42,8 @@ export function BreadDayView({ orders, currentDate, onOrdersChange }: BreadDayVi
         });
     };
 
-    const unbilledOrdersCount = useMemo(() => orders.filter(o => !o.venteUuid).length, [orders]);
-
     const handleSelectAll = () => {
-        const unbilledOrders = orders.filter(o => !o.venteUuid);
-        if (selectedOrders.size === unbilledOrders.length) {
+        if (selectedOrders.size === unbilledOrdersCount) {
             setSelectedOrders(new Set());
         } else {
             setSelectedOrders(new Set(unbilledOrders.map(o => o.uuid)));
@@ -57,7 +57,7 @@ export function BreadDayView({ orders, currentDate, onOrdersChange }: BreadDayVi
         }
         if (breadPrice <= 0) {
             toast.error("Prix du pain non défini", {
-                description: "Veuillez le configurer dans les paramètres avant de continuer."
+                description: "Veuillez le configurer dans les paramètres قبل المتابعة."
             });
             return;
         }
@@ -65,11 +65,30 @@ export function BreadDayView({ orders, currentDate, onOrdersChange }: BreadDayVi
         setIsConverting(true);
         try {
             await breadService.convertBreadOrdersToSales(Array.from(selectedOrders), breadPrice);
-            toast.success(`${selectedOrders.size} commande(s) validée(s) et ajoutée(s) aux comptes.`);
+            toast.success(`${selectedOrders.size} طلب(ات) تم تحويلها إلى الديون بنجاح.`);
             setSelectedOrders(new Set());
             onOrdersChange();
         } catch (error: any) {
-            toast.error("Échec de la validation.");
+            toast.error("فشل في تحويل الطلبات.");
+        } finally {
+            setIsConverting(false);
+        }
+    };
+
+    const handleFinalizeDay = async () => {
+        if (unbilledOrdersCount === 0) return;
+        if (breadPrice <= 0) {
+            toast.error("Prix du pain non configuré.");
+            return;
+        }
+
+        setIsConverting(true);
+        try {
+            const count = await breadService.billAllRemainingOrdersForDate(currentDate, breadPrice);
+            toast.success(`إغلاق اليوم: تم تحويل ${count} طلب معلق إلى ديون الزبائن.`);
+            onOrdersChange();
+        } catch (e) {
+            toast.error("خطأ أثناء إغلاق اليوم.");
         } finally {
             setIsConverting(false);
         }
@@ -103,12 +122,23 @@ export function BreadDayView({ orders, currentDate, onOrdersChange }: BreadDayVi
                     <div>
                         <CardTitle className="text-xl font-black tracking-tight">Distribution du Jour</CardTitle>
                         <p className="text-[10px] text-muted-foreground font-black uppercase tracking-widest mt-1 opacity-60">
-                            {orders.length} clients en attente
+                            {orders.length} طلبات إجمالية اليوم
                         </p>
                     </div>
                     <div className="flex gap-2 w-full sm:w-auto">
                         <ManualAddDialog currentDate={currentDate} onSuccess={onOrdersChange} />
                         <PrintBreadListDialog orders={orders} currentDate={currentDate}/>
+                        {unbilledOrdersCount > 0 && (
+                            <Button 
+                                variant="destructive" 
+                                className="rounded-xl h-10 font-black text-[10px] uppercase tracking-widest shadow-lg shadow-destructive/20 gap-2"
+                                onClick={handleFinalizeDay}
+                                disabled={isConverting}
+                            >
+                                <Landmark className="h-3.5 w-3.5" />
+                                إغلاق اليوم (تحويل للديون)
+                            </Button>
+                        )}
                     </div>
                 </div>
 
@@ -127,14 +157,14 @@ export function BreadDayView({ orders, currentDate, onOrdersChange }: BreadDayVi
                     
                     <Button 
                         onClick={handleConvertToSales} 
-                        disabled={isAllSelected === false && selectedOrders.size === 0}
+                        disabled={selectedOrders.size === 0 || isConverting}
                         className={cn(
                             "rounded-xl font-black h-11 px-8 transition-all uppercase text-[10px] tracking-widest",
                             selectedOrders.size > 0 ? "shadow-lg shadow-primary/20" : "opacity-20"
                         )}
                     >
                         {isConverting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ShoppingBag className="mr-2 h-4 w-4" />}
-                        Valider Sélection
+                        Valider Sélection (Compte)
                     </Button>
                 </div>
             </CardHeader>

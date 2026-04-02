@@ -161,6 +161,19 @@ class BreadService {
             }
         });
     }
+
+    async billAllRemainingOrdersForDate(date: string, breadPrice: number): Promise<number> {
+        const unpaidOrders = await db.bread_orders
+            .where('date').equals(date)
+            .and(o => !o.venteUuid && o.quantite > 0)
+            .toArray();
+        
+        if (unpaidOrders.length === 0) return 0;
+
+        const uuids = unpaidOrders.map(o => o.uuid);
+        await this.convertBreadOrdersToSales(uuids, breadPrice);
+        return unpaidOrders.length;
+    }
 }
 
 export const breadService = new BreadService();
