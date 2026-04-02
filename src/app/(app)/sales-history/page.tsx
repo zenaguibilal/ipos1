@@ -342,7 +342,6 @@ export default function SalesHistoryPage() {
             </PageHeader>
 
             <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-                {/* Left: Premium Stats & Detailed Filter */}
                 <div className="lg:col-span-1 space-y-8">
                     <Card className="luxury-card rounded-[2.5rem] bg-card/40 backdrop-blur-3xl border-white/5 overflow-hidden">
                         <CardHeader className="bg-primary/5 border-b border-white/5 p-6">
@@ -432,9 +431,7 @@ export default function SalesHistoryPage() {
                     </Card>
                 </div>
 
-                {/* Right: Premium Visualization & Ledger */}
                 <div className="lg:col-span-3 space-y-8">
-                    {/* Sales Trend Chart: Jewel Style */}
                     <Card className="luxury-card rounded-[2.5rem] bg-card/40 backdrop-blur-3xl border-white/5 overflow-hidden">
                         <CardHeader className="flex flex-row items-center justify-between p-8 border-b border-white/5 bg-muted/20">
                             <div className="flex items-center gap-4">
@@ -571,7 +568,7 @@ export default function SalesHistoryPage() {
                             <EmptyState
                                 icon={History}
                                 title="Le Grand Livre est vide"
-                                description={isFiltered ? "Ajustez vos filtres pour déنicher les transactions." : "Lancez votre première vente Premium dès maintenant."}
+                                description={isFiltered ? "Ajustez vos filtres pour dénicher les transactions." : "Lancez votre première vente Premium dès maintenant."}
                             >
                                 {isFiltered && <Button variant="outline" onClick={resetFilters} className="rounded-2xl h-12 font-bold px-8 border-primary/20 hover:bg-primary/5">Effacer les filtres</Button>}
                             </EmptyState>
@@ -580,7 +577,6 @@ export default function SalesHistoryPage() {
                 </div>
             </div>
 
-            {/* Elite Selection Action Bar */}
             {selectedSales.size > 0 && (
                 <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 animate-in slide-in-from-bottom-10 duration-500">
                     <div className="bg-card/80 backdrop-blur-3xl border-2 border-primary/20 shadow-2xl rounded-full px-8 py-4 flex items-center gap-10">
@@ -588,7 +584,10 @@ export default function SalesHistoryPage() {
                             <div className="h-10 w-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-black shadow-lg shadow-primary/20">
                                 {selectedSales.size}
                             </div>
-                            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Commandes Elite</span>
+                            <div className="flex flex-col">
+                                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Commandes Elite</span>
+                                <span className="text-xs font-black text-primary">{formatCurrency(stats.total)}</span>
+                            </div>
                         </div>
                         <div className="flex items-center gap-4">
                             <Button variant="ghost" size="sm" onClick={handleExportCsv} className="rounded-full h-12 px-6 font-black text-[10px] uppercase tracking-widest hover:bg-primary/10 hover:text-primary transition-all">

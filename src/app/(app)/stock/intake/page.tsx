@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useCallback, useEffect } from 'react';
@@ -36,13 +35,6 @@ import { ProductIntakeCombobox } from '@/components/stock/ProductIntakeCombobox'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import {
     Tooltip,
     TooltipContent,
     TooltipProvider,
@@ -50,8 +42,6 @@ import {
 } from "@/components/ui/tooltip";
 import { supplierService } from '@/services/supplier.service';
 import { useAppActions } from '@/stores/appStore';
-
-const units: NonNullable<Product['unite']>[] = ['Pièce', 'Kg', 'Litre', 'Boîte', 'Carton', 'Sachet', 'Bouteille'];
 
 export default function NewStockIntakePage() {
     const router = useRouter();
@@ -221,7 +211,7 @@ export default function NewStockIntakePage() {
                     <Link href="/stock"><ArrowLeft className="h-5 w-5" /></Link>
                  </Button>
                  <PageHeader
-                    title="Reception Center"
+                    title="Réception de Stock"
                     description="Traitement Elite des entrées de marchandises"
                  />
                  <Button 
@@ -235,12 +225,11 @@ export default function NewStockIntakePage() {
             </div>
 
             <div className="grid lg:grid-cols-12 gap-8 items-start">
-                {/* Header Information */}
                 <Card className="lg:col-span-4 rounded-[2.5rem] bg-card/40 backdrop-blur-3xl border-white/5 overflow-hidden shadow-2xl">
                     <CardHeader className="bg-primary/5 p-8 border-b border-white/5">
                         <div className="flex items-center gap-3">
                             <div className="p-3 rounded-2xl bg-primary text-primary-foreground shadow-lg shadow-primary/20">
-                                <Archive className="h-6 w-6" />
+                                <Building className="h-6 w-6" />
                             </div>
                             <div>
                                 <CardTitle className="text-xl font-black tracking-tighter">Entête du Bon</CardTitle>
@@ -266,7 +255,7 @@ export default function NewStockIntakePage() {
                                         <CommandList>
                                             <CommandEmpty>
                                                 <Button variant="link" className="w-full text-xs" onClick={handleSupplierCreate}>
-                                                    <Plus className="mr-2 h-4 w-4" /> Créر "{supplierSearch}"
+                                                    <Plus className="mr-2 h-4 w-4" /> Créer "{supplierSearch}"
                                                 </Button>
                                             </CommandEmpty>
                                             <CommandGroup>
@@ -312,13 +301,12 @@ export default function NewStockIntakePage() {
                                 <div className="absolute right-6 top-1/2 -translate-y-1/2 font-black text-xs opacity-20">DA</div>
                             </div>
                             <p className="text-[9px] text-muted-foreground italic leading-relaxed text-center px-4">
-                                Ce montant sera répartي proportionnellement sur le coût de revient de chaque article.
+                                Ce montant sera réparti proportionnellement sur le coût de revient de chaque article.
                             </p>
                         </div>
                     </CardContent>
                 </Card>
 
-                {/* Articles List */}
                 <div className="lg:col-span-8 space-y-8">
                     <Card className="rounded-[2.5rem] bg-card/40 backdrop-blur-3xl border-white/5 overflow-hidden shadow-2xl">
                         <CardHeader className="bg-muted/20 p-8 border-b border-white/5 flex flex-row items-center justify-between">

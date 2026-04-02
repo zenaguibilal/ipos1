@@ -46,7 +46,7 @@ export function SupplierDialog({ isOpen, onOpenChange, supplier, onSuccess }: Su
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!formState.name) {
-            toast.error("Le nombre du fournisseur est requis.");
+            toast.error("Le nom du fournisseur est requis.");
             return;
         }
 
@@ -56,10 +56,6 @@ export function SupplierDialog({ isOpen, onOpenChange, supplier, onSuccess }: Su
                 await supplierService.updateSupplier(supplier.uuid, formState);
                 toast.success(`Fournisseur "${formState.name}" mis à jour.`);
             } else {
-                await supplierService.findOrCreateSupplier(formState.name);
-                // Note: findOrCreate doesn't support extra fields yet in the service, 
-                // but for a full implementation we'd extend it. 
-                // For now, we update it immediately after to save other fields.
                 const newSup = await supplierService.findOrCreateSupplier(formState.name);
                 await supplierService.updateSupplier(newSup.uuid, formState);
                 toast.success(`Fournisseur "${formState.name}" ajouté.`);

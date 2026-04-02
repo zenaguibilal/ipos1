@@ -59,7 +59,6 @@ export default function SettingsPage() {
         };
         fetchStats();
 
-        // Estimate storage usage
         if (typeof navigator !== 'undefined' && navigator.storage && navigator.storage.estimate) {
             navigator.storage.estimate().then(estimate => {
                 const used = (estimate.usage || 0) / (1024 * 1024);
@@ -72,7 +71,6 @@ export default function SettingsPage() {
             });
         }
 
-        // Detect environment info
         const ua = window.navigator.userAgent;
         let os = "Système inconnu";
         if (ua.indexOf("Win") !== -1) os = "Windows";
@@ -113,10 +111,7 @@ export default function SettingsPage() {
             />
 
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
-                {/* Main Column: Diagnostics & Data */}
                 <div className="lg:col-span-8 space-y-10">
-                    
-                    {/* Database Health Card */}
                     <Card className="luxury-card rounded-[2.5rem] border-white/5 bg-card/40 backdrop-blur-3xl overflow-hidden animate-in slide-in-from-left-4 duration-700">
                         <CardHeader className="bg-muted/20 border-b border-white/5 p-8">
                             <div className="flex items-center gap-4">
@@ -144,7 +139,6 @@ export default function SettingsPage() {
                                 ))}
                             </div>
 
-                            {/* Storage Estimation */}
                             {storage && (
                                 <div className="p-10 rounded-[2.5rem] bg-muted/10 border border-white/5 space-y-8 relative overflow-hidden group">
                                     <div className="absolute -right-10 -bottom-10 opacity-[0.02] group-hover:opacity-10 transition-opacity duration-1000">
@@ -186,16 +180,12 @@ export default function SettingsPage() {
                         </CardContent>
                     </Card>
 
-                    {/* Data Management Section */}
                     <div className="animate-in slide-in-from-bottom-4 duration-700 delay-200">
                         <DataManagementCard />
                     </div>
                 </div>
 
-                {/* Right Column: Info & Danger Zone */}
                 <div className="lg:col-span-4 space-y-10 animate-in slide-in-from-right-4 duration-700 delay-300">
-                    
-                    {/* Environment Card */}
                     <Card className="luxury-card rounded-[2.5rem] border-white/5 bg-card/40 backdrop-blur-3xl overflow-hidden">
                         <CardHeader className="p-8 pb-4 border-b border-white/5 bg-muted/20">
                             <div className="flex items-center gap-3">
@@ -223,7 +213,6 @@ export default function SettingsPage() {
                         </CardContent>
                     </Card>
 
-                    {/* About Card */}
                     <Card className="luxury-card rounded-[2.5rem] border-white/5 bg-card/40 backdrop-blur-3xl overflow-hidden">
                         <CardHeader className="p-8 pb-4">
                             <div className="flex items-center gap-3">
@@ -258,7 +247,6 @@ export default function SettingsPage() {
                         </CardFooter>
                     </Card>
 
-                    {/* Danger Zone */}
                     <Card className="rounded-[2.5rem] border-destructive/20 bg-destructive/5 overflow-hidden group">
                         <CardHeader className="p-6 bg-destructive/10 border-b border-destructive/10">
                             <div className="flex items-center gap-3 text-destructive">
