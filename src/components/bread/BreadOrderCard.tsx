@@ -3,14 +3,13 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import type { BreadOrderWithCustomer } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { breadService } from '@/services/bread.service';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useDebounce } from '@/hooks/useDebounce';
-import { User, ShoppingBag, CheckCircle2 } from 'lucide-react';
+import { CheckCircle2 } from 'lucide-react';
 
 interface BreadOrderCardProps {
     order: BreadOrderWithCustomer;
@@ -26,11 +25,12 @@ export function BreadOrderCard({ order, isSelected, onToggleSelection, onUpdate 
     const isPaid = !!order.venteUuid;
 
     const handleQuantityChange = useCallback(async (newQuantity: number) => {
+        if (newQuantity < 0) return;
         try {
             await breadService.updateBreadOrderQuantity(order.uuid, newQuantity);
             onUpdate();
         } catch (error) {
-            toast.error("Erreur lors de la mise à jour de la quantité.");
+            toast.error("Erreur lors de la mise à jour.");
         }
     }, [order.uuid, onUpdate]);
 
@@ -46,52 +46,39 @@ export function BreadOrderCard({ order, isSelected, onToggleSelection, onUpdate 
 
     return (
         <Card className={cn(
-            "group flex flex-col transition-all duration-300 rounded-3xl border-none shadow-sm relative overflow-hidden", 
-            isSelected ? "ring-2 ring-primary shadow-lg" : "hover:shadow-md",
-            isPaid ? "bg-emerald-500/5 border border-emerald-500/10 opacity-80" : "bg-card"
+            "group transition-all duration-300 rounded-3xl border-none shadow-sm relative overflow-hidden", 
+            isSelected ? "ring-2 ring-primary shadow-lg scale-[1.02] z-10" : "hover:shadow-md",
+            isPaid ? "bg-emerald-500/5 opacity-60 grayscale-[0.5]" : "bg-card"
         )}>
-            <div className="absolute top-3 right-3 z-10">
-                <Checkbox 
-                    checked={isSelected} 
-                    onCheckedChange={() => onToggleSelection(order.uuid)} 
-                    disabled={isPaid}
-                    className="h-5 w-5 border-primary data-[state=checked]:bg-primary"
-                />
+            <div className="absolute top-4 right-4 z-10">
+                {!isPaid ? (
+                    <Checkbox 
+                        checked={isSelected} 
+                        onCheckedChange={() => onToggleSelection(order.uuid)} 
+                        className="h-6 w-6 border-primary data-[state=checked]:bg-primary rounded-lg transition-transform active:scale-90"
+                    />
+                ) : (
+                    <CheckCircle2 className="h-6 w-6 text-emerald-500" />
+                )}
             </div>
 
-            <CardHeader className="p-5 pb-2">
-                <div className="flex items-center gap-3">
-                    <div className={cn(
-                        "p-2 rounded-xl",
-                        isPaid ? "bg-emerald-500/10 text-emerald-600" : "bg-muted/50 text-muted-foreground"
-                    )}>
-                        <User className="h-4 w-4" />
-                    </div>
-                    <div className="min-w-0 pr-6">
-                        <CardTitle className="text-base font-black truncate tracking-tight">
-                            {order.customer.firstName} {order.customer.lastName}
-                        </CardTitle>
-                        <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest opacity-60 flex items-center gap-1">
-                            {isPaid ? <><CheckCircle2 className="h-2 w-2" /> Encaissé</> : <><ShoppingBag className="h-2 w-2" /> À livrer</>}
-                        </p>
-                    </div>
-                </div>
+            <CardHeader className="p-6 pb-2">
+                <CardTitle className="text-lg font-black tracking-tight pr-8 leading-tight">
+                    {order.customer.firstName} {order.customer.lastName}
+                </CardTitle>
             </CardHeader>
 
-            <CardContent className="p-5 pt-3 pb-6">
-                <div className="flex items-center justify-between bg-muted/20 rounded-2xl p-3 border border-border/50">
-                    <Label htmlFor={`qty-${order.uuid}`} className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Quantité</Label>
-                    <div className="flex items-center gap-2">
-                        <Input 
-                            id={`qty-${order.uuid}`}
-                            type="number"
-                            value={quantity}
-                            onChange={(e) => setQuantity(parseInt(e.target.value) || 0)}
-                            className="w-16 h-8 text-center font-black bg-background border-none shadow-inner rounded-lg text-sm"
-                            disabled={isPaid}
-                        />
-                        <span className="text-[10px] font-bold text-muted-foreground">PCS</span>
-                    </div>
+            <CardContent className="p-6 pt-2">
+                <div className="flex items-center gap-3 bg-muted/20 rounded-2xl p-2 border border-border/50 group-hover:border-primary/20 transition-colors">
+                    <Input 
+                        type="number"
+                        value={quantity}
+                        onChange={(e) => setQuantity(parseInt(e.target.value) || 0)}
+                        className="h-12 text-2xl font-black text-center bg-background border-none shadow-inner rounded-xl focus-visible:ring-primary w-full"
+                        disabled={isPaid}
+                        min="0"
+                    />
+                    <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mr-3">PCS</span>
                 </div>
             </CardContent>
         </Card>
