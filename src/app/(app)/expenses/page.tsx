@@ -21,7 +21,9 @@ import {
     Trash2,
     X,
     Printer,
-    BarChart
+    BarChart,
+    SortAsc,
+    CheckSquare
 } from 'lucide-react';
 import { ExpenseCard } from '@/components/expenses/ExpenseCard';
 import ExpenseDialog from '@/components/expenses/ExpenseDialog';
@@ -34,6 +36,8 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem
 } from "@/components/ui/dropdown-menu";
 import { DateRangePicker } from '@/components/ui/date-range-picker';
 import { useDateRange } from '@/hooks/useDateRange';
@@ -48,6 +52,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import Papa from 'papaparse';
 import { useAppStore } from '@/stores/appStore';
 import { format, differenceInDays } from 'date-fns';
+import { fr } from 'date-fns/locale';
 
 const COLORS = [
     'hsl(var(--primary))', 
@@ -57,9 +62,17 @@ const COLORS = [
     'hsl(var(--chart-quinary))'
 ];
 
+const sortOptions = {
+    'date_desc': 'Plus récents',
+    'date_asc': 'Plus anciens',
+    'amount_desc': 'Montant (Max)',
+    'amount_asc': 'Montant (Min)',
+};
+
 export default function ExpensesPage() {
     const [selectedCategory, setSelectedCategory] = useState<string>('all');
     const [searchQuery, setSearchQuery] = useState('');
+    const [sortBy, setSortBy] = useState('date_desc');
     const debouncedSearch = useDebounce(searchQuery, 300);
     
     const [isExpenseDialogOpen, setIsExpenseDialogOpen] = useState(false);
@@ -88,11 +101,23 @@ export default function ExpensesPage() {
                 to: dateRange.to
             });
             
-            let filteredData = data;
+            let filteredData = [...data];
+            
             if (debouncedSearch) {
                 const q = debouncedSearch.toLowerCase();
-                filteredData = data.filter(e => e.description.toLowerCase().includes(q));
+                filteredData = filteredData.filter(e => e.description.toLowerCase().includes(q));
             }
+
+            // Sorting logic
+            filteredData.sort((a, b) => {
+                switch(sortBy) {
+                    case 'amount_desc': return Number(b.amount) - Number(a.amount);
+                    case 'amount_asc': return Number(a.amount) - Number(b.amount);
+                    case 'date_asc': return new Date(a.expenseDate).getTime() - new Date(b.expenseDate).getTime();
+                    case 'date_desc': 
+                    default: return new Date(b.expenseDate).getTime() - new Date(a.expenseDate).getTime();
+                }
+            });
             
             setExpenses(filteredData);
         } catch (error: any) {
@@ -101,7 +126,7 @@ export default function ExpensesPage() {
         } finally {
             setIsRefreshing(false);
         }
-    }, [isMounted, selectedCategory, dateRange, debouncedSearch]);
+    }, [isMounted, selectedCategory, dateRange, debouncedSearch, sortBy]);
     
     useEffect(() => {
         fetchExpenses();
@@ -142,34 +167,6 @@ export default function ExpensesPage() {
         }
     };
 
-    const handleExportCsv = () => {
-        const dataToExport = selectedExpenses.size > 0 
-            ? (expenses?.filter(e => selectedExpenses.has(e.uuid)) || [])
-            : (expenses || []);
-
-        if (dataToExport.length === 0) {
-            toast.error("Aucune dépense à exporter.");
-            return;
-        }
-
-        const csv = Papa.unparse(dataToExport.map(e => ({
-            Date: new Date(e.expenseDate).toLocaleDateString('fr-FR'),
-            Description: e.description,
-            Catégorie: e.category,
-            Montant: e.amount
-        })));
-
-        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.setAttribute('download', `ipos-depenses-${new Date().toISOString().split('T')[0]}.csv`);
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        toast.success(`${dataToExport.length} dépense(s) exportée(s).`);
-    };
-
     const stats = useMemo(() => {
         if (!expenses) return { total: 0, count: 0, topCategory: '-', chartData: [], dailyAverage: 0 };
         
@@ -202,6 +199,34 @@ export default function ExpensesPage() {
 
         return { total, count: expenses.length, topCategory: topCat, chartData, dailyAverage };
     }, [expenses, dateRange]);
+
+    const handleExportCsv = () => {
+        const dataToExport = selectedExpenses.size > 0 
+            ? (expenses?.filter(e => selectedExpenses.has(e.uuid)) || [])
+            : (expenses || []);
+
+        if (dataToExport.length === 0) {
+            toast.error("Aucune dépense à exporter.");
+            return;
+        }
+
+        const csv = Papa.unparse(dataToExport.map(e => ({
+            Date: new Date(e.expenseDate).toLocaleDateString('fr-FR'),
+            Description: e.description,
+            Catégorie: e.category,
+            Montant: e.amount
+        })));
+
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', `ipos-depenses-${new Date().toISOString().split('T')[0]}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        toast.success(`${dataToExport.length} dépense(s) exportée(s).`);
+    };
 
     const handlePrintSummary = () => {
         if (!expenses || expenses.length === 0) {
@@ -311,9 +336,10 @@ export default function ExpensesPage() {
     const resetFilters = () => {
         setSearchQuery('');
         setSelectedCategory('all');
+        setSortBy('date_desc');
     };
 
-    const isFiltered = searchQuery !== '' || selectedCategory !== 'all';
+    const isFiltered = searchQuery !== '' || selectedCategory !== 'all' || sortBy !== 'date_desc';
     
     return (
         <div className="p-4 sm:p-6 space-y-6 max-w-[1600px] mx-auto pb-24">
@@ -337,10 +363,10 @@ export default function ExpensesPage() {
                 </div>
             </PageHeader>
 
-            <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <Card className="rounded-3xl border-none shadow-sm bg-card overflow-hidden group relative">
                     <div className="absolute -right-4 -bottom-4 opacity-[0.03] group-hover:opacity-10 transition-opacity duration-500">
-                        <TrendingDown className="h-32 w-32 rotate-12" />
+                        <Wallet className="h-32 w-32 rotate-12" />
                     </div>
                     <CardContent className="p-6 relative z-10">
                         <div className="flex justify-between items-start mb-4">
@@ -429,7 +455,6 @@ export default function ExpensesPage() {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* Visual Analysis Chart */}
                 <Card className="lg:col-span-3 rounded-3xl border-none shadow-sm bg-card overflow-hidden">
                     <CardHeader className="bg-primary/5 border-b border-primary/10">
                         <div className="flex items-center gap-3">
@@ -438,7 +463,7 @@ export default function ExpensesPage() {
                             </div>
                             <div>
                                 <CardTitle className="text-sm font-black uppercase tracking-tight">Répartition par Catégorie</CardTitle>
-                                <CardDescription className="text-[10px] font-medium">Comparaison visuelle des charges financières.</CardDescription>
+                                <CardDescription className="text-[10px] font-medium">Analyse visuelle du poids financier par poste.</CardDescription>
                             </div>
                         </div>
                     </CardHeader>
@@ -479,7 +504,6 @@ export default function ExpensesPage() {
                 </Card>
             </div>
 
-            {/* Filter Bar */}
             <div className="flex flex-col lg:flex-row gap-3">
                 <div className="relative flex-grow">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/50" />
@@ -509,6 +533,24 @@ export default function ExpensesPage() {
                         </DropdownMenuContent>
                     </DropdownMenu>
 
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="outline" className="rounded-xl h-11 border-none shadow-sm bg-card hover:bg-primary/5 min-w-[140px] font-medium">
+                                <SortAsc className="mr-2 h-4 w-4 opacity-50" />
+                                {sortOptions[sortBy as keyof typeof sortOptions]}
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent className="rounded-xl border-none shadow-xl min-w-[200px]">
+                            <DropdownMenuLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Trier par</DropdownMenuLabel>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuRadioGroup value={sortBy} onValueChange={setSortBy}>
+                                {Object.entries(sortOptions).map(([key, value]) => (
+                                    <DropdownMenuRadioItem key={key} value={key} className="text-xs font-bold">{value}</DropdownMenuRadioItem>
+                                ))}
+                            </DropdownMenuRadioGroup>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+
                     <DateRangePicker date={dateRange} setDate={setDate} />
 
                     {isFiltered && (
@@ -535,7 +577,6 @@ export default function ExpensesPage() {
                 </div>
             </div>
             
-            {/* Selection Action Bar */}
             {selectedExpenses.size > 0 && (
                 <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-50 animate-in slide-in-from-bottom-10 duration-300">
                     <div className="bg-card/80 backdrop-blur-xl border-2 border-primary/20 shadow-2xl rounded-full px-6 py-3 flex items-center gap-6">
@@ -563,7 +604,6 @@ export default function ExpensesPage() {
                 </div>
             )}
 
-            {/* Grid of Expenses */}
             <div className="min-h-[450px] animate-in fade-in duration-500">
                {isLoading ? (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
