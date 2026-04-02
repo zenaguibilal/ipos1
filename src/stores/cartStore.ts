@@ -42,15 +42,18 @@ const defaultCart: Omit<Cart, 'id' | 'name'> = {
     discount: { type: 'fixed', value: 0 },
 };
 
+// Use a stable ID for the initial cart to prevent hydration mismatch
+const INITIAL_CART_ID = 'initial-cart-id';
+
 const createInitialCart = (): Cart => ({
-    id: uuidv4(),
+    id: INITIAL_CART_ID,
     name: `Vente 1`,
     ...defaultCart,
 });
 
 const initialState: Omit<CartState, 'actions'> = {
     carts: [createInitialCart()],
-    activeCartId: null, // Will be set on hydration or mount
+    activeCartId: INITIAL_CART_ID,
 };
 
 
@@ -59,7 +62,6 @@ export const useCartStore = create<CartState>()(
     persist(
         (set, get) => ({
             ...initialState,
-            activeCartId: initialState.carts[0].id,
             actions: {
                 getActiveCart: () => {
                     const { carts, activeCartId } = get();

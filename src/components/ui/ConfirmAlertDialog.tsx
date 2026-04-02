@@ -37,7 +37,7 @@ export function ConfirmAlertDialog({
             await onConfirm();
             onOpenChange(false);
         } catch (error: any) {
-            toast.error(error.message || "L'opération a échoué.", {
+            toast.error(error.message || "L'opération a échوé.", {
                 description: "Veuillez réessayer ou contacter le support si le problème persiste."
             });
         } finally {
@@ -50,7 +50,10 @@ export function ConfirmAlertDialog({
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle>{title}</AlertDialogTitle>
-              <AlertDialogDescription>{description}</AlertDialogDescription>
+              {/* Use asChild to allow div/complex content inside description without invalid HTML nesting */}
+              <AlertDialogDescription asChild>
+                <div className="pt-2">{description}</div>
+              </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel disabled={isMutating}>{cancelText}</AlertDialogCancel>
