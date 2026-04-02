@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { PageHeader } from "@/components/layout/PageHeader";
 import { DataManagementCard } from "@/components/profile/DataManagementCard";
-import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardFooter, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { 
@@ -71,10 +71,10 @@ export default function SettingsPage() {
         const ua = window.navigator.userAgent;
         let os = "Système inconnu";
         if (ua.indexOf("Win") !== -1) os = "Windows";
-        if (ua.indexOf("Mac") !== -1) os = "macOS";
-        if (ua.indexOf("Linux") !== -1) os = "Linux";
-        if (ua.indexOf("Android") !== -1) os = "Android";
-        if (ua.indexOf("like Mac") !== -1) os = "iOS";
+        else if (ua.indexOf("Mac") !== -1) os = "macOS";
+        else if (ua.indexOf("Linux") !== -1) os = "Linux";
+        else if (ua.indexOf("Android") !== -1) os = "Android";
+        else if (ua.indexOf("like Mac") !== -1) os = "iOS";
 
         let browser = "Navigateur inconnu";
         if (ua.indexOf("Chrome") !== -1) browser = "Chrome / Edge";
