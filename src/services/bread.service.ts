@@ -1,11 +1,9 @@
-
 'use client';
 
 import { v4 as uuidv4 } from 'uuid';
 import type { BreadOrder, Customer, CartItem, BreadOrderWithCustomer } from '@/lib/types';
 import { db } from '@/lib/db';
 import { salesService } from './sales.service';
-import { customerService } from './customer.service';
 import { BREAD_WEEK_DAYS } from '@/lib/constants';
 
 class BreadService {
@@ -66,7 +64,6 @@ class BreadService {
     async addManualBreadOrder(params: { customerUuid?: string, customName?: string, date: string, quantity: number }): Promise<BreadOrder> {
         const { customerUuid, customName, date, quantity } = params;
 
-        // Prevent duplicate for registered customers on the same day
         if (customerUuid) {
             const existingOrder = await db.bread_orders.where({ customerUuid, date }).first();
             if (existingOrder) {
@@ -93,7 +90,7 @@ class BreadService {
 
     async updateBreadOrderQuantity(uuid: string, quantity: number): Promise<void> {
         const order = await db.bread_orders.where('uuid').equals(uuid).first();
-        if(!order) return;
+        if(!order || order.venteUuid) return;
 
         const updateData: Partial<BreadOrder> = { quantite: quantity, updatedAt: new Date() };
         if (order.quantite_origine === undefined) {
@@ -108,14 +105,23 @@ class BreadService {
         await db.bread_orders.update(order.id!, { est_livre: delivered, updatedAt: new Date() });
     }
 
+    async deleteBreadOrder(uuid: string): Promise<void> {
+        const order = await db.bread_orders.where('uuid').equals(uuid).first();
+        if (order && !order.venteUuid) {
+            await db.bread_orders.delete(order.id!);
+        }
+    }
+
     async convertBreadOrdersToSales(orderUuids: string[], breadPrice: number): Promise<void> {
         await db.transaction('rw', db.bread_orders, db.sales, db.products, db.inventory_logs, db.customers, db.payments, db.product_returns, async () => {
             const orders = await db.bread_orders.where('uuid').anyOf(orderUuids).toArray();
             
-            // Group by grouping key (either customerUuid or uuid for custom names to make them individual sales)
+            const filteredOrders = orders.filter(o => !o.venteUuid);
+            if (filteredOrders.length === 0) return;
+
             const groupedOrders = new Map<string, BreadOrder[]>();
             
-            orders.forEach(order => {
+            filteredOrders.forEach(order => {
                 const key = order.customerUuid || `unreg-${order.uuid}`;
                 if (!groupedOrders.has(key)) groupedOrders.set(key, []);
                 groupedOrders.get(key)!.push(order);
@@ -142,12 +148,12 @@ class BreadService {
                     items: [breadCartItem],
                     discountType: 'fixed',
                     discountValue: 0,
-                    amountPaid: 0, // Unpaid by default, goes to credit if registered, or unpaid walk-in
+                    amountPaid: 0,
                     customerUuid: firstOrder.customerUuid,
                 });
 
                 const orderIds = customerOrders.map(o => o.id!);
-                await db.bread_orders.where('id').anyOf(orderIds).modify({ venteUuid: sale.uuid, est_paye: true });
+                await db.bread_orders.where('id').anyOf(orderIds).modify({ venteUuid: sale.uuid, est_paye: true, est_livre: true });
             }
         });
     }

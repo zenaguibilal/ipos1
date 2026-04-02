@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useMemo } from 'react';
@@ -24,7 +23,7 @@ export function BreadStats({ orders, isLoading }: BreadStatsProps) {
 
     if(isLoading) {
         return (
-            <div className="grid gap-4 grid-cols-3">
+            <div className="grid gap-4 grid-cols-1 sm:grid-cols-3">
                 {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-24 w-full rounded-3xl" />)}
             </div>
         )

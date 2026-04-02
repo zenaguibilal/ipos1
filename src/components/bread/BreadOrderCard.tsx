@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -11,7 +10,7 @@ import { toast } from 'sonner';
 import { breadService } from '@/services/bread.service';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useDebounce } from '@/hooks/useDebounce';
-import { CheckCircle2, UserCircle2, Package, Wallet, Loader2 } from 'lucide-react';
+import { CheckCircle2, UserCircle2, Package, Wallet, Loader2, Trash2 } from 'lucide-react';
 import { useAppStore } from '@/stores/appStore';
 
 interface BreadOrderCardProps {
@@ -30,23 +29,23 @@ export function BreadOrderCard({ order, isSelected, onToggleSelection, onUpdate 
     const isPaid = !!order.venteUuid;
     const isDelivered = order.est_livre;
     const isExternal = !order.customerUuid;
-    const displayName = order.customer ? `${order.customer.firstName} ${order.customer.lastName}` : order.customName;
+    const displayName = order.customer ? `${order.customer.firstName} ${order.customer.lastName}` : (order.customName || 'Inconnu');
 
     const handleQuantityChange = useCallback(async (newQuantity: number) => {
-        if (newQuantity < 0) return;
+        if (newQuantity < 0 || isPaid) return;
         try {
             await breadService.updateBreadOrderQuantity(order.uuid, newQuantity);
             onUpdate();
         } catch (error) {
             toast.error("Erreur lors de la mise à jour.");
         }
-    }, [order.uuid, onUpdate]);
+    }, [order.uuid, onUpdate, isPaid]);
 
     useEffect(() => {
-        if (debouncedQuantity !== order.quantite) {
+        if (debouncedQuantity !== order.quantite && !isPaid) {
             handleQuantityChange(debouncedQuantity);
         }
-    }, [debouncedQuantity, order.quantite, handleQuantityChange]);
+    }, [debouncedQuantity, order.quantite, handleQuantityChange, isPaid]);
     
     useEffect(() => {
         setQuantity(order.quantite);
@@ -81,6 +80,17 @@ export function BreadOrderCard({ order, isSelected, onToggleSelection, onUpdate 
         }
     };
 
+    const handleDelete = async () => {
+        if (isPaid) return;
+        try {
+            await breadService.deleteBreadOrder(order.uuid);
+            toast.success("Commande supprimée.");
+            onUpdate();
+        } catch (e) {
+            toast.error("Erreur lors de la suppression.");
+        }
+    };
+
     return (
         <Card className={cn(
             "group transition-all duration-300 rounded-3xl border-none shadow-sm relative overflow-hidden", 
@@ -88,7 +98,17 @@ export function BreadOrderCard({ order, isSelected, onToggleSelection, onUpdate 
             isPaid ? "bg-emerald-500/5 opacity-90" : "bg-card",
             isExternal && !isPaid && "border-l-4 border-l-amber-500/30"
         )}>
-            <div className="absolute top-4 right-4 z-10">
+            <div className="absolute top-4 right-4 z-10 flex gap-2">
+                {!isPaid && (
+                    <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="h-6 w-6 rounded-lg text-destructive hover:bg-destructive/10 opacity-0 group-hover:opacity-100 transition-opacity"
+                        onClick={handleDelete}
+                    >
+                        <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
+                )}
                 {!isPaid ? (
                     <Checkbox 
                         checked={isSelected} 
@@ -107,7 +127,7 @@ export function BreadOrderCard({ order, isSelected, onToggleSelection, onUpdate 
                         {isExternal ? 'اسم خارجي' : 'زبون دائم'}
                     </span>
                 </div>
-                <CardTitle className="text-lg font-black tracking-tight pr-8 leading-tight truncate">
+                <CardTitle className="text-lg font-black tracking-tight pr-12 leading-tight truncate">
                     {displayName}
                 </CardTitle>
             </CardHeader>
@@ -130,7 +150,7 @@ export function BreadOrderCard({ order, isSelected, onToggleSelection, onUpdate 
                         variant={isDelivered ? "secondary" : "outline"} 
                         size="sm"
                         onClick={toggleDelivery}
-                        disabled={isUpdatingStatus}
+                        disabled={isUpdatingStatus || isPaid}
                         className={cn(
                             "flex-1 rounded-xl h-10 font-bold text-[10px] uppercase tracking-widest gap-2",
                             isDelivered && "bg-emerald-500/10 text-emerald-600 border-emerald-500/20 hover:bg-emerald-500/20"
