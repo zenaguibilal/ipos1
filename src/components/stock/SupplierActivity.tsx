@@ -19,7 +19,7 @@ export function SupplierActivity({ activity, onIntakeClick }: SupplierActivityPr
       <div className="flex flex-col items-center justify-center h-60 text-center rounded-2xl border-2 border-dashed border-border/50 bg-muted/10">
         <Receipt className="h-12 w-12 text-muted-foreground/30" />
         <h3 className="mt-4 text-lg font-bold tracking-tight">Aucune activité</h3>
-        <p className="text-muted-foreground text-sm">Ce moteur n'a pas encore d'historique de réceptions ou de paiements.</p>
+        <p className="text-muted-foreground text-sm">Ce fournisseur n'a pas encore d'historique de réceptions ou de paiements.</p>
       </div>
     );
   }

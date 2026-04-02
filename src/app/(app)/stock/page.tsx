@@ -217,7 +217,7 @@ export default function StockPage() {
                 <div className="flex gap-2 w-full sm:w-auto">
                     {activeTab === 'suppliers' ? (
                         <Button onClick={handleAddSupplier} className="flex-1 sm:flex-none rounded-xl font-bold shadow-lg shadow-primary/20">
-                            <UserPlus className="mr-2 h-4 w-4" /> Nouveau Moteur
+                            <UserPlus className="mr-2 h-4 w-4" /> Nouveau Fournisseur
                         </Button>
                     ) : (
                         <>

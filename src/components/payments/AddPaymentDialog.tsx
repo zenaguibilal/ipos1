@@ -102,7 +102,7 @@ export function AddPaymentDialog({ isOpen, onOpenChange, customer, onPaymentSucc
                 "p-4 rounded-2xl border transition-all duration-300",
                 isFullySettled ? "bg-green-500/10 border-green-500/30" : "bg-background/50 shadow-sm"
             )}>
-                <p className="text-[10px] uppercase font-bold text-muted-foreground mb-1 tracking-wider">Nouveau Solده</p>
+                <p className="text-[10px] uppercase font-bold text-muted-foreground mb-1 tracking-wider">Nouveau Solde</p>
                 <div className="flex items-center gap-2">
                     <p className={cn(
                         "text-xl font-black",

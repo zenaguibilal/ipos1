@@ -68,7 +68,7 @@ export function SupplierTable({ suppliers, onPay, onEdit, onDelete }: SupplierTa
                                         className="h-9 w-9 text-primary hover:bg-primary/10"
                                         onClick={() => onPay(supplier)}
                                         disabled={supplier.balance <= 0}
-                                        title="Régler μια dette"
+                                        title="Régler une dette"
                                     >
                                         <HandCoins className="h-4 w-4" />
                                     </Button>
