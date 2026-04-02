@@ -170,6 +170,32 @@ export default function ExpensesPage() {
         toast.success(`${dataToExport.length} dépense(s) exportée(s).`);
     };
 
+    const stats = useMemo(() => {
+        if (!expenses) return { total: 0, count: 0, topCategory: '-', chartData: [] };
+        
+        const total = expenses.reduce((acc, e) => acc + Number(e.amount), 0);
+        
+        const catMap = new Map<string, number>();
+        expenses.forEach(e => {
+            catMap.set(e.category, (catMap.get(e.category) || 0) + Number(e.amount));
+        });
+        
+        let topCat = '-';
+        let maxVal = 0;
+        catMap.forEach((val, cat) => {
+            if (val > maxVal) {
+                maxVal = val;
+                topCat = cat;
+            }
+        });
+
+        const chartData = Array.from(catMap.entries())
+            .map(([name, value]) => ({ name, value }))
+            .sort((a, b) => b.value - a.value);
+
+        return { total, count: expenses.length, topCategory: topCat, chartData };
+    }, [expenses]);
+
     const handlePrintSummary = () => {
         if (!expenses || expenses.length === 0) {
             toast.error("Aucune donnée à imprimer.");
@@ -235,7 +261,7 @@ export default function ExpensesPage() {
                                     <td>${format(new Date(e.expenseDate), 'dd/MM/yyyy')}</td>
                                     <td><b>${e.description}</b></td>
                                     <td>${e.category}</td>
-                                    <td class="amount">${e.amount.toFixed(1)} DA</td>
+                                    <td class="amount">${Number(e.amount).toFixed(1)} DA</td>
                                 </tr>
                             `).join('')}
                         </tbody>
@@ -267,37 +293,11 @@ export default function ExpensesPage() {
         fetchCategories();
     };
 
-    const stats = useMemo(() => {
-        if (!expenses) return { total: 0, count: 0, topCategory: '-', chartData: [] };
-        
-        const total = expenses.reduce((acc, e) => acc + e.amount, 0);
-        
-        const catMap = new Map<string, number>();
-        expenses.forEach(e => {
-            catMap.set(e.category, (catMap.get(e.category) || 0) + e.amount);
-        });
-        
-        let topCat = '-';
-        let maxVal = 0;
-        catMap.forEach((val, cat) => {
-            if (val > maxVal) {
-                maxVal = val;
-                topCat = cat;
-            }
-        });
-
-        const chartData = Array.from(catMap.entries())
-            .map(([name, value]) => ({ name, value }))
-            .sort((a, b) => b.value - a.value);
-
-        return { total, count: expenses.length, topCategory: topCat, chartData };
-    }, [expenses]);
-
     const selectedTotal = useMemo(() => {
         if (!expenses || selectedExpenses.size === 0) return 0;
         return expenses
             .filter(e => selectedExpenses.has(e.uuid))
-            .reduce((sum, e) => sum + e.amount, 0);
+            .reduce((sum, e) => sum + Number(e.amount), 0);
     }, [expenses, selectedExpenses]);
 
     const resetFilters = () => {
@@ -465,7 +465,7 @@ export default function ExpensesPage() {
                 <div className="flex flex-wrap gap-2">
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                            <Button variant="outline" className="rounded-xl h-11 border-none shadow-sm bg-card hover:bg-primary/5 min-w-[160px] font-medium">
+                            <Button variant="outline" className="rounded-xl h-11 border-none shadow-sm bg-card hover:bg-primary/5 min-w-[140px] font-medium">
                                 <Filter className="mr-2 h-4 w-4 opacity-50" />
                                 {selectedCategory === 'all' ? 'Toutes les catégories' : selectedCategory}
                             </Button>

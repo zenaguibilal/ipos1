@@ -30,17 +30,17 @@ class DashboardService {
 
 
             // 4. Calculate stats for CURRENT period
-            const totalRevenue = currentSales.reduce((sum, sale) => sum + sale.total, 0);
-            const totalExpenses = currentExpenses.reduce((sum, expense) => sum + expense.amount, 0);
+            const totalRevenue = currentSales.reduce((sum, sale) => sum + Number(sale.total), 0);
+            const totalExpenses = currentExpenses.reduce((sum, expense) => sum + Number(expense.amount), 0);
             const saleCount = currentSales.length;
-            const totalCOGS = currentSales.reduce((sum, sale) => sum + sale.items.reduce((acc, item) => acc + (item.purchasePrice * item.quantity), 0), 0);
+            const totalCOGS = currentSales.reduce((sum, sale) => sum + sale.items.reduce((acc, item) => acc + (Number(item.purchasePrice) * Number(item.quantity)), 0), 0);
             const netProfit = totalRevenue - totalCOGS - totalExpenses;
             
             // 5. Calculate stats for PREVIOUS period
-            const prevTotalRevenue = prevSales.reduce((sum, sale) => sum + sale.total, 0);
-            const prevTotalExpenses = prevExpenses.reduce((sum, expense) => sum + expense.amount, 0);
+            const prevTotalRevenue = prevSales.reduce((sum, sale) => sum + Number(sale.total), 0);
+            const prevTotalExpenses = prevExpenses.reduce((sum, expense) => sum + Number(expense.amount), 0);
             const prevSaleCount = prevSales.length;
-            const prevTotalCOGS = prevSales.reduce((sum, sale) => sum + sale.items.reduce((acc, item) => acc + (item.purchasePrice * item.quantity), 0), 0);
+            const prevTotalCOGS = prevSales.reduce((sum, sale) => sum + sale.items.reduce((acc, item) => acc + (Number(item.purchasePrice) * Number(item.quantity)), 0), 0);
             const prevNetProfit = prevTotalRevenue - prevTotalCOGS - prevTotalExpenses;
 
             // 6. Calculate percentage changes
@@ -56,8 +56,8 @@ class DashboardService {
             const totalExpensesChange = calculateChange(totalExpenses, prevTotalExpenses);
             const saleCountChange = calculateChange(saleCount, prevSaleCount);
 
-            const totalOutstandingDebt = customers.reduce((sum, c) => sum + c.outstandingBalance, 0);
-            const totalInventoryValue = allProducts.reduce((sum, p) => sum + (p.quantity * p.purchasePrice), 0);
+            const totalOutstandingDebt = customers.reduce((sum, c) => sum + Number(c.outstandingBalance), 0);
+            const totalInventoryValue = allProducts.reduce((sum, p) => sum + (Number(p.quantity) * Number(p.purchasePrice)), 0);
 
 
             // --- Process data for charts and lists (for current period only) ---
@@ -73,13 +73,13 @@ class DashboardService {
 
             currentSales.forEach(sale => {
                 const day = format(startOfDay(sale.createdAt!), 'yyyy-MM-dd');
-                const saleCOGS = sale.items.reduce((acc, item) => acc + (item.purchasePrice * item.quantity), 0);
-                const saleGrossProfit = sale.total - saleCOGS;
+                const saleCOGS = sale.items.reduce((acc, item) => acc + (Number(item.purchasePrice) * Number(item.quantity)), 0);
+                const saleGrossProfit = Number(sale.total) - saleCOGS;
 
                 if (salesByDayMap.has(day)) {
                     const current = salesByDayMap.get(day)!;
                     salesByDayMap.set(day, {
-                        total: current.total + sale.total,
+                        total: current.total + Number(sale.total),
                         profit: current.profit + saleGrossProfit,
                     });
                 }
@@ -94,9 +94,9 @@ class DashboardService {
                 sale.items.forEach(item => {
                     if (!item.productUuid) return;
                     const current = productSales.get(item.productUuid) || { quantitySold: 0, revenueGenerated: 0 };
-                    current.quantitySold += item.quantity;
-                    const itemSubtotal = item.price * item.quantity;
-                    const itemRevenue = sale.subtotal > 0 ? (itemSubtotal / sale.subtotal) * sale.total : itemSubtotal;
+                    current.quantitySold += Number(item.quantity);
+                    const itemSubtotal = Number(item.price) * Number(item.quantity);
+                    const itemRevenue = Number(sale.subtotal) > 0 ? (itemSubtotal / Number(sale.subtotal)) * Number(sale.total) : itemSubtotal;
                     current.revenueGenerated += itemRevenue;
                     productSales.set(item.productUuid, current);
                 });
@@ -121,7 +121,7 @@ class DashboardService {
             currentSales.forEach(sale => {
                 if (!sale.customerUuid) return;
                 const currentSpending = customerSpending.get(sale.customerUuid) || 0;
-                customerSpending.set(sale.customerUuid, currentSpending + sale.total);
+                customerSpending.set(sale.customerUuid, currentSpending + Number(sale.total));
             });
 
             const topCustomersData = Array.from(customerSpending.entries())
@@ -135,8 +135,8 @@ class DashboardService {
             }));
 
             const lowStockProducts = allProducts
-                .filter(p => p.quantity > 0 && p.quantity <= p.minStockLevel)
-                .sort((a, b) => a.quantity - b.quantity)
+                .filter(p => Number(p.quantity) > 0 && Number(p.quantity) <= Number(p.minStockLevel))
+                .sort((a, b) => Number(a.quantity) - Number(b.quantity))
                 .slice(0, 5);
                 
             const recentSales = currentSales
@@ -145,7 +145,7 @@ class DashboardService {
                 .map(sale => ({
                     uuid: sale.uuid,
                     invoiceNumber: sale.invoiceNumber,
-                    total: sale.total,
+                    total: Number(sale.total),
                     createdAt: sale.createdAt,
                     customerName: sale.customerUuid ? customerMap.get(sale.customerUuid) || 'Client Inconnu' : defaultCustomerName,
                 }));
@@ -156,7 +156,7 @@ class DashboardService {
                 .map(pr => ({
                     uuid: pr.uuid,
                     originalInvoiceNumber: pr.originalInvoiceNumber,
-                    totalReturnValue: pr.totalReturnValue,
+                    totalReturnValue: Number(pr.totalReturnValue),
                     createdAt: pr.createdAt,
                     customerName: pr.customerUuid ? customerMap.get(pr.customerUuid) || 'Client Inconnu' : defaultCustomerName,
                 }));

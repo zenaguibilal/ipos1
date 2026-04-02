@@ -67,20 +67,26 @@ export default function ExpenseDialog({ isOpen, onOpenChange, expense, onSuccess
         setError(null);
         setIsLoading(true);
 
-        const { description, amount } = formState;
+        const amountNum = Number(formState.amount);
 
-        if (!description.trim() || amount <= 0) {
+        if (!formState.description.trim() || isNaN(amountNum) || amountNum <= 0) {
             setError("Veuillez remplir la description et un montant valide.");
             setIsLoading(false);
             return;
         }
 
+        const dataToSave = {
+            ...formState,
+            amount: amountNum,
+            expenseDate: new Date(formState.expenseDate)
+        };
+
         try {
             if (expense && expense.uuid) {
-                await expenseService.updateExpense(expense.uuid, formState);
+                await expenseService.updateExpense(expense.uuid, dataToSave);
                 toast.success(`Dépense mise à jour.`);
             } else {
-                await expenseService.addExpense(formState);
+                await expenseService.addExpense(dataToSave);
                 toast.success(`Dépense enregistrée avec succès.`);
             }
             onSuccess();

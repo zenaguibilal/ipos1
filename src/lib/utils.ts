@@ -22,8 +22,9 @@ export function formatDateToYYYYMMDD(date: Date): string {
     return date.toISOString().split('T')[0];
 }
 
-export function formatCurrency(value: number, currency = 'DA') {
-  const formattedValue = (typeof value !== 'number' || isNaN(value)) ? '0.0' : value.toFixed(1);
+export function formatCurrency(value: number | string, currency = 'DA') {
+  const numValue = typeof value === 'string' ? parseFloat(value) : value;
+  const formattedValue = (typeof numValue !== 'number' || isNaN(numValue)) ? '0.0' : numValue.toFixed(1);
   return `${formattedValue} ${currency}`;
 }
 
