@@ -3,9 +3,8 @@
 import { useMemo } from 'react';
 import type { BreadOrderWithCustomer } from '@/lib/types';
 import { Card, CardContent } from '@/components/ui/card';
-import { Package, Truck, Wallet, CheckCircle2, PieChart } from 'lucide-react';
+import { Package, Truck, Wallet } from 'lucide-react';
 import { Skeleton } from '../ui/skeleton';
-import { cn } from '@/lib/utils';
 import { Progress } from '../ui/progress';
 
 interface BreadStatsProps {
@@ -15,18 +14,18 @@ interface BreadStatsProps {
 
 export function BreadStats({ orders, isLoading }: BreadStatsProps) {
     const stats = useMemo(() => {
-        if (!orders) return { totalOrders: 0, totalQuantity: 0, deliveredCount: 0, paidCount: 0, unpaidCount: 0 };
+        if (!orders) return { totalQuantity: 0, deliveredQuantity: 0, paidQuantity: 0, unpaidQuantity: 0, totalOrders: 0 };
         return {
             totalOrders: orders.length,
             totalQuantity: orders.reduce((sum, o) => sum + o.quantite, 0),
-            deliveredCount: orders.filter(o => o.est_livre).length,
-            paidCount: orders.filter(o => !!o.venteUuid).length,
-            unpaidCount: orders.filter(o => !o.venteUuid).length,
+            deliveredQuantity: orders.filter(o => o.est_livre).reduce((sum, o) => sum + o.quantite, 0),
+            paidQuantity: orders.filter(o => !!o.venteUuid).reduce((sum, o) => sum + o.quantite, 0),
+            unpaidQuantity: orders.filter(o => !o.venteUuid).reduce((sum, o) => sum + o.quantite, 0),
         };
     }, [orders]);
 
-    const deliveryPercentage = stats.totalOrders > 0 
-        ? Math.round((stats.deliveredCount / stats.totalOrders) * 100) 
+    const deliveryPercentage = stats.totalQuantity > 0 
+        ? Math.round((stats.deliveredQuantity / stats.totalQuantity) * 100) 
         : 0;
 
     if(isLoading) {
@@ -51,7 +50,7 @@ export function BreadStats({ orders, isLoading }: BreadStatsProps) {
                         <div className="p-3 rounded-2xl bg-primary/10 text-primary shadow-inner">
                             <Package className="h-6 w-6" />
                         </div>
-                        <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground opacity-50">إجمالي الإنتاج</span>
+                        <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground opacity-50">إجمالي قطع الخبز</span>
                     </div>
                     <div className="flex items-baseline gap-2">
                         <span className="text-4xl font-black tracking-tighter leading-none">{stats.totalQuantity}</span>
@@ -59,7 +58,7 @@ export function BreadStats({ orders, isLoading }: BreadStatsProps) {
                     </div>
                     <div className="mt-3 flex items-center gap-2">
                         <div className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
-                        <p className="text-[10px] font-bold text-muted-foreground/70 uppercase tracking-tight">موزعة على {stats.totalOrders} طلبات</p>
+                        <p className="text-[10px] font-bold text-muted-foreground/70 uppercase tracking-tight">موزعة على {stats.totalOrders} شخصاً</p>
                     </div>
                 </CardContent>
             </Card>
@@ -74,12 +73,12 @@ export function BreadStats({ orders, isLoading }: BreadStatsProps) {
                         <div className="p-3 rounded-2xl bg-emerald-500/10 text-emerald-500 shadow-inner">
                             <Truck className="h-6 w-6" />
                         </div>
-                        <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground opacity-50">تقدم التوزيع</span>
+                        <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground opacity-50">تقدم تسليم الكميات</span>
                     </div>
                     <div className="flex items-end justify-between mb-2.5">
                         <div className="flex items-baseline gap-1.5">
-                            <span className="text-3xl font-black text-emerald-500 leading-none">{stats.deliveredCount}</span>
-                            <span className="text-xs font-bold text-muted-foreground/50">/ {stats.totalOrders}</span>
+                            <span className="text-3xl font-black text-emerald-500 leading-none">{stats.deliveredQuantity}</span>
+                            <span className="text-xs font-bold text-muted-foreground/50">/ {stats.totalQuantity} قطعة</span>
                         </div>
                         <div className="px-2 py-0.5 rounded-lg bg-emerald-500/10 text-emerald-600 text-[10px] font-black">
                             {deliveryPercentage}%
@@ -99,22 +98,22 @@ export function BreadStats({ orders, isLoading }: BreadStatsProps) {
                         <div className="p-3 rounded-2xl bg-amber-500/10 text-amber-500 shadow-inner">
                             <Wallet className="h-6 w-6" />
                         </div>
-                        <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground opacity-50">حالة الفوترة</span>
+                        <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground opacity-50">الفوترة بالقطع</span>
                     </div>
                     <div className="space-y-3">
                         <div className="flex justify-between items-center p-2 rounded-xl bg-muted/20 border border-transparent hover:border-border/50 transition-colors">
                             <div className="flex items-center gap-2">
                                 <div className="h-2 w-2 rounded-full bg-emerald-500" />
-                                <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">تم الدفع</span>
+                                <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">قطع مدفوعة</span>
                             </div>
-                            <span className="text-sm font-black font-mono">{stats.paidCount}</span>
+                            <span className="text-sm font-black font-mono">{stats.paidQuantity}</span>
                         </div>
                         <div className="flex justify-between items-center p-2 rounded-xl bg-amber-500/5 border border-amber-500/10">
                             <div className="flex items-center gap-2">
                                 <div className="h-2 w-2 rounded-full bg-amber-500 animate-pulse" />
-                                <span className="text-[10px] font-black uppercase tracking-widest text-amber-600/70">في الانتظار</span>
+                                <span className="text-[10px] font-black uppercase tracking-widest text-amber-600/70">قطع قيد الانتظار</span>
                             </div>
-                            <span className="text-sm font-black font-mono text-amber-600">{stats.unpaidCount}</span>
+                            <span className="text-sm font-black font-mono text-amber-600">{stats.unpaidQuantity}</span>
                         </div>
                     </div>
                 </CardContent>
