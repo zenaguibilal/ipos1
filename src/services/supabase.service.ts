@@ -1,4 +1,3 @@
-
 'use client';
 
 import { db } from '@/lib/db';
@@ -7,7 +6,7 @@ import { getSupabaseClient } from '@/lib/supabase';
 class SupabaseSyncService {
     
     /**
-     * Ordonnancement des tables pour garantir l'intégrité référentielle
+     * Ordonnancement strict des tables pour garantir l'intégrité référentielle
      */
     private readonly tableSyncOrder = [
         { name: 'company_profile', table: db.company_profile },
@@ -44,7 +43,7 @@ class SupabaseSyncService {
         const records = await dexieTable.toArray();
         if (records.length === 0) return;
 
-        // Préparation des données (suppression de l'ID auto-incrémenté local pour Supabase)
+        // Préparation des données pour Supabase (on enlève l'ID local auto-incrémenté)
         const dataToSync = records.map((r: any) => {
             const { id, ...rest } = r;
             return rest;
@@ -83,10 +82,10 @@ class SupabaseSyncService {
                     for (const remoteRecord of data) {
                         const localRecord = await dexieTable.where('uuid').equals(remoteRecord.uuid).first();
                         if (localRecord) {
-                            // On conserve l'ID local mais on met à jour le reste
+                            // On conserve l'ID local mais on écrase le reste avec les données cloud
                             await dexieTable.update(localRecord.id, remoteRecord);
                         } else {
-                            // Dexie gérera l'ID auto-incrémenté local
+                            // Nouvel enregistrement venant du cloud
                             await dexieTable.add(remoteRecord);
                         }
                     }
