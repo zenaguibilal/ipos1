@@ -26,12 +26,25 @@ class BackupService {
         }
     }
 
-    async restoreBackup(backupFile: File): Promise<void> {
+    async validateAndParseBackup(file: File): Promise<Record<string, any[]>> {
         try {
-            const text = await backupFile.text();
+            const text = await file.text();
             const data = JSON.parse(text);
+            
+            // Basic validation: check if at least some expected tables exist
+            if (!data.products && !data.customers && !data.sales && !data.company_profile) {
+                throw new Error("Le fichier ne semble pas être une sauvegarde iPOS valide.");
+            }
+            
+            return data;
+        } catch (error: any) {
+            throw new Error("Fichier invalide : " + error.message);
+        }
+    }
 
-            toast.info("Restauration en cours... Effacement des données existantes.");
+    async restoreBackup(data: Record<string, any[]>): Promise<void> {
+        try {
+            toast.info("Restauration souveraine en cours... Purge du cache local.");
 
             await db.transaction('rw', db.tables, async () => {
                 // Clear all tables
@@ -39,7 +52,6 @@ class BackupService {
                     await table.clear();
                 }
 
-                toast.info("Restauration des données...");
                 // Restore data in order
                 if (data.company_profile?.length) await db.company_profile.bulkPut(data.company_profile);
                 if (data.suppliers?.length) await db.suppliers.bulkPut(data.suppliers);
@@ -52,11 +64,12 @@ class BackupService {
                 if (data.payments?.length) await db.payments.bulkPut(data.payments);
                 if (data.bread_orders?.length) await db.bread_orders.bulkPut(data.bread_orders);
                 if (data.inventory_logs?.length) await db.inventory_logs.bulkPut(data.inventory_logs);
+                if (data.supplier_payments?.length) await db.supplier_payments.bulkPut(data.supplier_payments);
             });
 
-        } catch (error) {
+        } catch (error: any) {
             console.error("Restore failed:", error);
-            throw new Error("Le fichier de sauvegarde est corrompu ou invalide.");
+            throw new Error("Échec de la restauration : " + error.message);
         }
     }
 }

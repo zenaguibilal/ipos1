@@ -5,16 +5,13 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter }
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { backupService } from "@/services/backup.service";
-import { Loader2, Download, Upload, HardDrive, Info, ShieldCheck, Sparkles, Database } from 'lucide-react';
-import { ConfirmAlertDialog } from '../ui/ConfirmAlertDialog';
-import { cn } from '@/lib/utils';
+import { Loader2, Download, Upload, HardDrive, ShieldCheck, Sparkles, Database } from 'lucide-react';
+import { BackupPreviewDialog } from './BackupPreviewDialog';
 
 export function DataManagementCard() {
     const [isCreating, setIsCreating] = useState(false);
-    const [isRestoring, setIsRestoring] = useState(false);
-
-    const [isRestoreConfirmOpen, setIsRestoreConfirmOpen] = useState(false);
-    const [pendingRestoreFile, setPendingRestoreFile] = useState<File | null>(null);
+    const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+    const [backupData, setBackupData] = useState<Record<string, any[]> | null>(null);
 
     const handleCreateBackup = async () => {
         setIsCreating(true);
@@ -36,37 +33,18 @@ export function DataManagementCard() {
         }
     };
 
-    const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
         if (file) {
-            setPendingRestoreFile(file);
-            setIsRestoreConfirmOpen(true);
+            try {
+                const data = await backupService.validateAndParseBackup(file);
+                setBackupData(data);
+                setIsPreviewOpen(true);
+            } catch (error: any) {
+                toast.error("Erreur d'analyse", { description: error.message });
+            }
         }
         event.target.value = '';
-    };
-
-    const handleConfirmRestore = async () => {
-        if (!pendingRestoreFile) return;
-        setIsRestoring(true);
-
-        const promise = backupService.restoreBackup(pendingRestoreFile);
-        toast.promise(promise, {
-            loading: 'Extraction des données souveraines... Merci de patienter.',
-            success: () => {
-                setIsRestoring(false);
-                setPendingRestoreFile(null);
-                return 'Restauration Elite terminée. Redémarrage du système...';
-            },
-            error: (err) => {
-                setIsRestoring(false);
-                setPendingRestoreFile(null);
-                return `Erreur critique: ${err.message}`;
-            },
-        });
-        
-        promise.then(() => {
-            setTimeout(() => window.location.reload(), 2000);
-        });
     };
 
     return (
@@ -100,7 +78,7 @@ export function DataManagementCard() {
                             </p>
                             <Button 
                                 onClick={handleCreateBackup} 
-                                disabled={isCreating || isRestoring} 
+                                disabled={isCreating} 
                                 className="w-full rounded-2xl h-14 font-black text-[10px] uppercase tracking-[0.2em] shadow-xl shadow-primary/20 transition-all active:scale-95 gap-3"
                             >
                                 {isCreating ? <Loader2 className="h-4 w-4 animate-spin"/> : <Sparkles className="h-4 w-4" />}
@@ -119,19 +97,18 @@ export function DataManagementCard() {
                                 <span className="text-[10px] font-black uppercase tracking-[0.3em]">Restauration Système</span>
                             </div>
                             <p className="text-xs text-muted-foreground/60 font-medium leading-relaxed relative z-10">
-                                Réinitialise le système et déploie les données à partir d'un manifeste iPOS existant. Écrase le cache actuel.
+                                Réinitialise le système et déploie les données à partir d'un manifeste iPOS existant. Analyse et aperçu inclus.
                             </p>
-                            <Button asChild variant="outline" className="w-full rounded-2xl h-14 font-black text-[10px] uppercase tracking-[0.2em] border-white/5 bg-black/20 hover:bg-white/5 transition-all relative z-10" disabled={isCreating || isRestoring}>
+                            <Button asChild variant="outline" className="w-full rounded-2xl h-14 font-black text-[10px] uppercase tracking-[0.2em] border-white/5 bg-black/20 hover:bg-white/5 transition-all relative z-10">
                                 <label htmlFor="restore-backup-input" className="cursor-pointer flex items-center justify-center gap-3">
-                                    {isRestoring ? <Loader2 className="h-4 w-4 animate-spin" /> : <HardDrive className="h-4 w-4" />}
-                                    {isRestoring ? 'Expansion...' : 'Sélectionner Archives'}
+                                    <HardDrive className="h-4 w-4" />
+                                    Analyser Archives
                                     <input
                                         type="file"
                                         id="restore-backup-input"
                                         className="sr-only"
                                         accept=".json"
                                         onChange={handleFileSelect}
-                                        disabled={isRestoring}
                                     />
                                 </label>
                             </Button>
@@ -159,28 +136,13 @@ export function DataManagementCard() {
                 </CardFooter>
             </Card>
 
-            <ConfirmAlertDialog
-                isOpen={isRestoreConfirmOpen}
-                onOpenChange={setIsRestoreConfirmOpen}
-                title="Substitution des données souveraines ?"
-                description={
-                    <div className="space-y-6">
-                        <div className="p-4 rounded-2xl bg-muted/20 border border-white/5 text-center">
-                            <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/40 mb-1">Archive identifiée</p>
-                            <p className="text-sm font-mono font-black text-primary truncate px-2">{pendingRestoreFile?.name}</p>
-                        </div>
-                        <div className="p-5 bg-amber-500/5 border border-amber-500/20 rounded-2xl flex items-start gap-4 text-amber-600">
-                            <Info className="h-6 w-6 shrink-0" />
-                            <div className="space-y-1">
-                                <p className="text-xs font-black uppercase tracking-tight">Attention Critique</p>
-                                <p className="text-[10px] font-bold leading-relaxed opacity-80 uppercase tracking-tighter">Cette opération écrasera l'intégralité du cache actuel de manière irréversible.</p>
-                            </div>
-                        </div>
-                    </div>
-                }
-                onConfirm={handleConfirmRestore}
-                confirmText="Oui, restaurer le système"
-            />
+            {backupData && (
+                <BackupPreviewDialog 
+                    isOpen={isPreviewOpen}
+                    onOpenChange={setIsPreviewOpen}
+                    initialData={backupData}
+                />
+            )}
         </>
     );
 }

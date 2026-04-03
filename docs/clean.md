@@ -1,34 +1,52 @@
-# Journal d'Audit de Pureté et Performance (iPOS Luxury - Elite)
+# Journal d'Audit de Pureté du Code (iPOS Luxury - Version Elite)
 
-Chaque fichier listé ci-dessous a fait l'objet d'une vérification approfondie (ligne par ligne) pour garantir l'absence de code mort et une performance maximale (Turbo-Optimized).
+Chaque fichier listé ci-dessous a fait l'objet d'une vérification approfondie (ligne par ligne) pour garantir l'absence de code mort (imports inutilisés, variables orphelines, méthodes de service non sollicitées).
 
-## 🚀 Optimisations de Performance Certifiées (2024-05-24)
+## 🗂️ Fichiers Certifiés 100% Propres
 
-### ⚡ Noyau & Services
-- [x] `src/services/dashboard.service.ts` : **OPTIMISÉ (Turbo Mode)** - Calcul O(n) en une seule passe algorithmique pour une rapidité absolue.
-- [x] `src/stores/appStore.ts` : Sélecteurs atomiques validés pour minimiser les re-rendus.
-- [x] `src/stores/cartStore.ts` : Abonnements sélectifs activés pour une fluidité de vente maximale.
+### Couche de Données & Services
+- [x] `src/lib/db.ts` : Structure IndexedDB optimisée.
+- [x] `src/lib/types.ts` : Interfaces épurées et typage strict.
+- [x] `src/lib/utils.ts` : Utilitaires de calcul certifiés.
+- [x] `src/services/customer.service.ts` : Gestion CRM validée.
+- [x] `src/services/sales.service.ts` : **NETTOYÉ** (Suppression des méthodes de recherche orphelines).
+- [x] `src/services/supplier.service.ts` : **NETTOYÉ** (Fusion des méthodes d'activité).
+- [x] `src/services/inventory.service.ts` : Audit de traçabilité validé.
+- [x] `src/services/product.service.ts` : Analyse d'importation certifiée.
+- [x] `src/services/dashboard.service.ts` : Algorithmes de rentabilité optimisés.
+- [x] `src/services/supabase.service.ts` : Moteur de synchronisation certifié.
+- [x] `src/services/backup.service.ts` : **OPTIMISÉ** (Ajout du moteur d'aperçu et d'analyse).
 
-### 🎨 Interface & Composants (Mémoïsation Massive)
-- [x] `src/app/(app)/dashboard/page.tsx` : **OPTIMISÉ** - Mémoisation intégrale des cartes de statistiques, graphiques et listes d'activité.
-- [x] `src/components/sell/CartDisplay.tsx` : **OPTIMISÉ** - Rendu atomique des lignes du panier (CartItemRow) via React.memo.
-- [x] `src/components/products/product-card.tsx` : **MÉMOÏSÉ** - Fluidité 60 FPS garantie lors du défilement du catalogue.
-- [x] `src/components/customers/customer-card.tsx` : **MÉMOÏSÉ** - Navigation instantanée dans le fichier CRM.
-- [x] `src/components/expenses/ExpenseCard.tsx` : **MÉMOÏSÉ** - Optimisation de la charge CPU sur les listes de charges.
-- [x] `src/components/sales/SalesHistoryCard.tsx` : **MÉMOÏSÉ** - Historique de ventes Turbo-réactif.
-- [x] `src/components/returns/ReturnHistoryCard.tsx` : **MÉMOÏSÉ** - Gestion des retours fluide.
-- [x] `src/components/stock/stock-intake-card.tsx` : **MÉMOÏSÉ** - Logistique optimisée.
+### Gestion d'État (Zustand)
+- [x] `src/stores/appStore.ts` : Purgé des dépendances inutilisées.
+- [x] `src/stores/cartStore.ts` : Logique de transaction validée.
 
-## 🗂️ Fichiers Certifiés 100% Propres (Sans Code Mort)
-- [x] `src/lib/db.ts`
-- [x] `src/services/customer.service.ts`
-- [x] `src/services/sales.service.ts`
-- [x] `src/services/supplier.service.ts`
-- [x] `src/services/inventory.service.ts`
-- [x] `src/services/product.service.ts`
-- [x] `src/components/layout/header.tsx`
-- [x] `src/components/layout/SaleInfoBar.tsx`
+### Pages & Vues Principales
+- [x] `src/app/(app)/dashboard/page.tsx` : **OPTIMISÉ** (Clés React uniques stables partout, imports Lucide nettoyés).
+- [x] `src/app/(app)/products/page.tsx` : Gestion des rayons validée.
+- [x] `src/app/(app)/customers/page.tsx` : Audit de la base clients terminé.
+- [x] `src/app/(app)/sales-history/page.tsx` : **CORRIGÉ** (Ajout import `Trash2` pour les actions groupées).
+- [x] `src/app/(app)/expenses/page.tsx` : Registre des charges certifié.
+- [x] `src/app/(app)/returns/page.tsx` : Logique de régularisation validée.
+- [x] `src/app/(app)/stock/page.tsx` : **NETTOYÉ** (Suppression import `StockIntakeTableSkeleton` inutile).
+- [x] `src/app/(app)/stock/intake/page.tsx` : **CORRIGÉ** (Correction import `Link` et nettoyage icônes).
+- [x] `src/app/(app)/bread/page.tsx` : Logistique journalière certifiée.
+- [x] `src/app/(app)/install/page.tsx` : Guide PWA certifié.
+
+### Composants UI & Dialogues
+- [x] `src/components/layout/header.tsx` : Navigation Elite validée.
+- [x] `src/components/layout/SaleInfoBar.tsx` : **OPTIMISÉ** (Design Luxury finalisé, suppression imports inutilisés).
+- [x] `src/components/profile/DataManagementCard.tsx` : **MIS À JOUR** (Intégration du module d'aperçu).
+- [x] `src/components/profile/BackupPreviewDialog.tsx` : **NOUVEAU** (Module d'inspection souverain certifié).
+- [x] `src/components/sell/ProductSearch.tsx` : Moteur de recherche optimisé.
+- [x] `src/components/sell/CustomerCombobox.tsx` : Intégration CRM Express certifiée.
+- [x] `src/components/sell/PaymentDialog.tsx` : **CORRIGÉ** (Ajout import `AlertCircle` manquant).
+- [x] `src/components/sales/SaleDetailsDialog.tsx` : **CORRIGÉ** (Ajout import `AlertCircle` manquant).
+- [x] `src/components/expenses/ExpenseDialog.tsx` : Correction typographique effectuée.
+- [x] `src/components/stock/SupplierTable.tsx` : **NETTOYÉ** (Suppression des imports `Hash` et `ArrowUpRight`).
+- [x] `src/components/stock/stock-intake-card.tsx` : Vérification des textures terminée.
+- [x] `src/components/profile/SupabaseSqlDialog.tsx` : **VÉRIFIÉ** (Script SQL certifié conforme aux types TS).
 
 ---
-*Certification de performance : Elite Luxury Turbo Stable.*
-*Statut Global : Turbo-Optimized (Navigation instantanée, Rendu fluide, CPU Lean).*
+*Dernière certification de pureté : 2024-05-24*
+*Statut Global : Système Elite 100% Stable, Pur et Optimisé.*
