@@ -10,8 +10,8 @@ import { formatCurrency } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 
 /**
- * Composant ligne du panier mémoïsé pour éviter les re-rendus 
- * lors de la modification d'autres articles.
+ * Composant ligne du panier mémoïsé (Turbo Mode).
+ * Empêche les re-rendus globaux lors de la modification d'un seul article.
  */
 const CartItemRow = React.memo(({ item, onUpdate, onRemove }: { item: any, onUpdate: any, onRemove: any }) => (
     <div 
@@ -59,7 +59,6 @@ CartItemRow.displayName = 'CartItemRow';
 
 export function CartDisplay() {
     const [isMounted, setIsMounted] = useState(false);
-    // On s'abonne sélectivement aux changements du panier actif
     const cart = useActiveCart();
     const { updateItemQuantity, removeItemFromCart } = useCartActions();
     
