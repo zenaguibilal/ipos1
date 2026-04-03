@@ -14,7 +14,6 @@ import {
     RefreshCw, 
     Wallet, 
     FilterX, 
-    TrendingDown,
     PieChart,
     CalendarDays,
     BarChart3,
@@ -23,7 +22,8 @@ import {
     Printer,
     BarChart,
     SortAsc,
-    Sparkles
+    Sparkles,
+    TrendingDown
 } from 'lucide-react';
 import { ExpenseCard } from '@/components/expenses/ExpenseCard';
 import ExpenseDialog from '@/components/expenses/ExpenseDialog';
