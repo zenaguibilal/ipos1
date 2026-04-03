@@ -1,3 +1,4 @@
+
 'use client';
 
 import { v4 as uuidv4 } from 'uuid';
@@ -117,7 +118,7 @@ class BreadService {
     }
 
     async convertBreadOrdersToSales(orderUuids: string[], breadPrice: number): Promise<void> {
-        await db.transaction('rw', db.bread_orders, db.sales, db.products, db.inventory_logs, db.customers, db.payments, db.product_returns, async () => {
+        await db.transaction('rw', [db.bread_orders, db.sales, db.products, db.inventory_logs, db.customers, db.payments, db.product_returns], async () => {
             const orders = await db.bread_orders.where('uuid').anyOf(orderUuids).toArray();
             
             const filteredOrders = orders.filter(o => !o.venteUuid);

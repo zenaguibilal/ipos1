@@ -46,7 +46,7 @@ class StockService {
     }
 
     async processStockIntakeCancellation(intakeUuid: string): Promise<void> {
-        await db.transaction('rw', db.stock_intakes, db.products, db.suppliers, db.inventory_logs, async () => {
+        await db.transaction('rw', [db.stock_intakes, db.products, db.suppliers, db.inventory_logs], async () => {
             const intake = await db.stock_intakes.where('uuid').equals(intakeUuid).first();
             if (!intake || !intake.id) {
                 throw new Error("Réception de stock non trouvée.");

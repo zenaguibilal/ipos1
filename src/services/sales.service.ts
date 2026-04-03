@@ -1,3 +1,4 @@
+
 'use client';
 import { v4 as uuidv4 } from 'uuid';
 import type { Sale, CartItem, SaleItem } from '@/lib/types';
@@ -91,7 +92,7 @@ class SalesService {
             dueDate: saleData.dueDate,
         };
         
-        const saleId = await db.transaction('rw', db.sales, db.products, db.inventory_logs, db.customers, db.payments, db.product_returns, async () => {
+        const saleId = await db.transaction('rw', [db.sales, db.products, db.inventory_logs, db.customers, db.payments, db.product_returns], async () => {
             const id = await db.sales.add(newSale);
             newSale.id = id;
 
@@ -111,7 +112,7 @@ class SalesService {
     }
 
     async processSaleCancellation(uuid: string): Promise<void> {
-        await db.transaction('rw', db.sales, db.products, db.customers, db.inventory_logs, async () => {
+        await db.transaction('rw', [db.sales, db.products, db.customers, db.inventory_logs], async () => {
             const sale = await this.getSaleByUuid(uuid);
             if (!sale || !sale.id) {
                 throw new Error("Vente non trouvée.");

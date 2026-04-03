@@ -1,3 +1,4 @@
+
 'use client';
 import { v4 as uuidv4 } from 'uuid';
 import type { ProductReturn, ReturnItem } from '@/lib/types';
@@ -30,7 +31,8 @@ class ReturnService {
             returns = returns.filter(r => r.originalInvoiceNumber.toLowerCase().includes(lowerQuery));
         }
         
-        return returns.sort((a,b) => new Date(b.createdAt!).getTime() - new Date(a.createdAt!).getTime());
+        returns.sort((a,b) => new Date(b.createdAt!).getTime() - new Date(a.createdAt!).getTime());
+        return returns;
     }
     
     async addReturn(returnData: {
@@ -66,7 +68,7 @@ class ReturnService {
     }
 
     async processReturnCancellation(uuid: string): Promise<void> {
-        await db.transaction('rw', db.product_returns, db.products, db.customers, db.inventory_logs, async () => {
+        await db.transaction('rw', [db.product_returns, db.products, db.customers, db.inventory_logs], async () => {
             const productReturn = await this.getReturnByUuid(uuid);
             if (!productReturn || !productReturn.id) {
                 throw new Error("Retour non trouvé.");

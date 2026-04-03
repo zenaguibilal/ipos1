@@ -1,3 +1,4 @@
+
 'use client';
 
 import { v4 as uuidv4 } from 'uuid';
@@ -44,7 +45,7 @@ class SupplierService {
     }
 
     async processSupplierPayment(paymentData: Omit<SupplierPayment, 'uuid' | 'createdAt'>): Promise<void> {
-        await db.transaction('rw', db.suppliers, db.supplier_payments, async () => {
+        await db.transaction('rw', [db.suppliers, db.supplier_payments], async () => {
             const supplier = await this.getSupplierByUuid(paymentData.supplierUuid);
             if (!supplier || !supplier.id) throw new Error("Fournisseur non trouvé.");
 
