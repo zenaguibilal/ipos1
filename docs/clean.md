@@ -33,6 +33,7 @@ Chaque fichier listé ci-dessous a fait l'objet d'une vérification approfondie 
 
 ### Composants UI & Dialogues
 - [x] `src/components/layout/header.tsx` : Navigation Elite validée.
+- [x] `src/components/layout/SaleInfoBar.tsx` : **OPTIMISÉ** (Design Luxury finalisé, suppression imports inutilisés).
 - [x] `src/components/sell/ProductSearch.tsx` : Moteur de recherche optimisé.
 - [x] `src/components/sell/PaymentDialog.tsx` : **CORRIGÉ** (Ajout import `AlertCircle` manquant).
 - [x] `src/components/sales/SaleDetailsDialog.tsx` : **CORRIGÉ** (Ajout import `AlertCircle` manquant).

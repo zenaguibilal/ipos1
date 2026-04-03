@@ -6,7 +6,7 @@ import { useActiveCart, useCartActions } from '@/stores/cartStore';
 import { customerService } from '@/services/customer.service';
 import type { Customer } from '@/lib/types';
 import { calculateCartTotals, formatCurrency } from '@/lib/utils';
-import { User, HandCoins, Trash2, ChevronRight, Receipt } from 'lucide-react';
+import { User, HandCoins, Trash2, ChevronRight, Receipt, Sparkles } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -60,7 +60,7 @@ export function SaleInfoBar() {
         <>
             <div className="bg-card/40 backdrop-blur-3xl text-foreground print-hide shadow-2xl z-20 relative border-b border-white/5 animate-in slide-in-from-top duration-700">
                 <div className="max-w-[1800px] mx-auto px-6 sm:px-10">
-                    <div className="flex flex-col lg:flex-row items-center justify-between min-h-[4rem] py-3 gap-6">
+                    <div className="flex flex-col lg:flex-row items-center justify-between min-h-[4.5rem] py-3 gap-6">
                         
                         {/* Section 1: Cart Context & Session Identity */}
                         <div className="flex items-center gap-6">
@@ -103,8 +103,8 @@ export function SaleInfoBar() {
                                 <TooltipProvider>
                                     <Tooltip>
                                         <TooltipTrigger asChild>
-                                            <div className="flex flex-col items-end border-l border-white/10 pl-8 cursor-help">
-                                                <span className="text-[8px] font-black text-amber-500 uppercase tracking-widest">Privilège</span>
+                                            <div className="flex flex-col items-end border-l border-white/10 pl-8 cursor-help group/disc">
+                                                <span className="text-[8px] font-black text-amber-500 uppercase tracking-widest group-hover/disc:text-amber-400 transition-colors">Privilège</span>
                                                 <span className="text-xs font-black text-amber-500/60">-{formatCurrency(discountAmount)}</span>
                                             </div>
                                         </TooltipTrigger>
