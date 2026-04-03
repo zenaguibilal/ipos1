@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -11,6 +10,7 @@ import type { CompanyProfile } from '@/lib/types';
 import { Skeleton } from '../ui/skeleton';
 import { Loader2, Building, MapPin, Phone, Mail, Wheat, Coins, FileText, CheckCircle2, RotateCcw, Hash, Cloud, Key } from 'lucide-react';
 import { useAppStore } from '@/stores/appStore';
+import { SupabaseSqlDialog } from './SupabaseSqlDialog';
 
 export function CompanyProfileForm() {
     const { companyProfile, isCompanyProfileLoading } = useAppStore(state => ({
@@ -83,12 +83,15 @@ export function CompanyProfileForm() {
         );
     }
 
-    const SectionTitle = ({ title, icon: Icon }: { title: string, icon: any }) => (
-        <div className="flex items-center gap-3 mb-10">
-            <div className="p-2.5 rounded-xl bg-primary/10 text-primary shadow-inner border border-primary/10">
-                <Icon className="h-4 w-4" />
+    const SectionTitle = ({ title, icon: Icon, action }: { title: string, icon: any, action?: React.ReactNode }) => (
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-10">
+            <div className="flex items-center gap-3">
+                <div className="p-2.5 rounded-xl bg-primary/10 text-primary shadow-inner border border-primary/10">
+                    <Icon className="h-4 w-4" />
+                </div>
+                <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground opacity-60 italic">{title}</h4>
             </div>
-            <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground opacity-60 italic">{title}</h4>
+            {action && action}
         </div>
     );
 
@@ -147,11 +150,15 @@ export function CompanyProfileForm() {
 
                 {/* Cloud Sync Section */}
                 <div className="space-y-10 pt-16 border-t border-white/5 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-50">
-                    <SectionTitle title="Connectivité Cloud (Supabase)" icon={Cloud} />
+                    <SectionTitle 
+                        title="Connectivité Cloud (Supabase)" 
+                        icon={Cloud} 
+                        action={<SupabaseSqlDialog />}
+                    />
                     <div className="grid grid-cols-1 gap-10">
                         <div className="p-6 bg-primary/5 rounded-[2rem] border border-primary/10 mb-4">
                             <p className="text-xs text-muted-foreground leading-relaxed italic">
-                                Connectez votre propre instance Supabase pour activer la synchronisation multi-terminaux. Assurez-vous que vos tables correspondent au schéma iPOS.
+                                Connectez votre propre instance Supabase pour activer la synchronisation multi-terminaux. Assurez-vous que vos tables correspondent au schéma iPOS en utilisant le bouton SQL ci-dessus.
                             </p>
                         </div>
                         <div className="space-y-4">
