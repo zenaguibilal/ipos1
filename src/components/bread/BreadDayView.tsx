@@ -11,7 +11,7 @@ import { ManualAddDialog } from './ManualAddDialog';
 import { PrintBreadListDialog } from './PrintBreadListDialog';
 import { toast } from 'sonner';
 import { breadService } from '@/services/bread.service';
-import { Loader2, Wheat, ShoppingBag, Power, AlertTriangle, Sparkles, LayoutGrid, CheckSquare } from 'lucide-react';
+import { Loader2, Wheat, ShoppingBag, Power, AlertTriangle, Sparkles, LayoutGrid } from 'lucide-react';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { useAppStore } from '@/stores/appStore';
 import { cn } from '@/lib/utils';

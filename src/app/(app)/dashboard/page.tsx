@@ -78,7 +78,7 @@ const StatCard = ({ title, value, icon: Icon, change, isLoading, href, positiveI
     );
 
     if (href) {
-        return <Link href={href} className="block transition-all hover:scale-[1.03] active:scale-[0.97]">{cardContent}</Link>;
+        return <Link href={href} className="block transition-all hover:scale-[1.03] active:scale-97">{cardContent}</Link>;
     }
 
     return cardContent;
@@ -176,7 +176,7 @@ const RecentActivity = ({ sales, returns, isLoading }: { sales: RecentSale[], re
         <CardContent className="p-6 space-y-4 max-h-[400px] overflow-y-auto custom-scrollbar">
              {isLoading ? (
                 <div className="space-y-4">
-                    {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-20 w-full rounded-3xl bg-muted/10" />)}
+                    {[...Array(5)].map((_, i) => <Skeleton key={`recent-skel-${i}`} className="h-20 w-full rounded-3xl bg-muted/10" />)}
                 </div>
             ) : (
                 <div className="space-y-3">
@@ -188,7 +188,7 @@ const RecentActivity = ({ sales, returns, isLoading }: { sales: RecentSale[], re
                     ) : (
                         <>
                             {sales.map(s => (
-                                <Link href={`/sales-history?query=${s.invoiceNumber}`} key={s.uuid} className="flex items-center gap-4 p-4 rounded-[1.5rem] bg-muted/20 border border-transparent hover:border-primary/30 hover:bg-primary/5 transition-all duration-500 group">
+                                <Link href={`/sales-history?query=${s.invoiceNumber}`} key={`sale-act-${s.uuid}`} className="flex items-center gap-4 p-4 rounded-[1.5rem] bg-muted/20 border border-transparent hover:border-primary/30 hover:bg-primary/5 transition-all duration-500 group">
                                     <div className="p-3 rounded-2xl bg-primary/10 text-primary group-hover:scale-110 group-hover:rotate-6 transition-all duration-500 shadow-inner">
                                         <Receipt className="h-5 w-5" />
                                     </div>
@@ -202,7 +202,7 @@ const RecentActivity = ({ sales, returns, isLoading }: { sales: RecentSale[], re
                                 </Link>
                             ))}
                             {returns.map(r => (
-                                <Link href={`/returns?query=${r.originalInvoiceNumber}`} key={r.uuid} className="flex items-center gap-4 p-4 rounded-[1.5rem] bg-destructive/5 border border-transparent hover:border-destructive/30 hover:bg-destructive/10 transition-all duration-500 group">
+                                <Link href={`/returns?query=${r.originalInvoiceNumber}`} key={`return-act-${r.uuid}`} className="flex items-center gap-4 p-4 rounded-[1.5rem] bg-destructive/5 border border-transparent hover:border-destructive/30 hover:bg-destructive/10 transition-all duration-500 group">
                                     <div className="p-3 rounded-2xl bg-destructive/10 text-destructive group-hover:scale-110 group-hover:-rotate-6 transition-all duration-500 shadow-inner">
                                         <Undo2 className="h-5 w-5" />
                                     </div>
@@ -347,12 +347,12 @@ export default function DashboardPage() {
                     <CardContent className="p-8">
                         {isLoading ? (
                             <div className="space-y-6">
-                                {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-16 w-full rounded-2xl bg-muted/10" />)}
+                                {[...Array(5)].map((_, i) => <Skeleton key={`top-prod-skel-${i}`} className="h-16 w-full rounded-2xl bg-muted/10" />)}
                             </div>
                         ) : (
                             <div className="space-y-6">
                                 {data?.topProducts.map((p, i) => (
-                                    <div key={p.productUuid} className="flex items-center gap-5 group cursor-default">
+                                    <div key={p.productUuid || `top-prod-${i}`} className="flex items-center gap-5 group cursor-default">
                                         <span className="text-2xl font-black text-muted-foreground/20 w-8 group-hover:text-primary/40 transition-colors">0{i + 1}</span>
                                         <div className="flex-grow">
                                             <p className="font-black text-sm tracking-tight group-hover:text-primary transition-colors">{p.name}</p>
@@ -383,12 +383,12 @@ export default function DashboardPage() {
                     <CardContent className="p-8">
                         {isLoading ? (
                             <div className="space-y-6">
-                                {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-16 w-full rounded-2xl bg-muted/10" />)}
+                                {[...Array(5)].map((_, i) => <Skeleton key={`top-cust-skel-${i}`} className="h-16 w-full rounded-2xl bg-muted/10" />)}
                             </div>
                         ) : (
                             <div className="space-y-6">
                                 {data?.topCustomers.map((c, i) => (
-                                    <Link href={`/customers/${c.customerUuid}`} key={c.customerUuid} className="flex items-center gap-5 group">
+                                    <Link href={`/customers/${c.customerUuid}`} key={c.customerUuid || `top-cust-${i}`} className="flex items-center gap-5 group">
                                         <div className="h-12 w-12 rounded-[1.25rem] bg-muted/50 border border-white/5 flex items-center justify-center text-muted-foreground font-black group-hover:bg-primary/10 group-hover:text-primary group-hover:border-primary/20 group-hover:rotate-6 transition-all duration-500 shadow-inner">
                                             {c.name.substring(0, 1)}
                                         </div>
@@ -415,12 +415,12 @@ export default function DashboardPage() {
                     <CardContent className="p-8">
                         {isLoading ? (
                             <div className="space-y-6">
-                                {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-16 w-full rounded-2xl bg-muted/10" />)}
+                                {[...Array(5)].map((_, i) => <Skeleton key={`low-skel-${i}`} className="h-16 w-full rounded-2xl bg-muted/10" />)}
                             </div>
                         ) : (
                             <div className="space-y-8">
-                                {data?.lowStockProducts.map(p => (
-                                    <div key={p.uuid} className="space-y-3 group">
+                                {data?.lowStockProducts.map((p, i) => (
+                                    <div key={p.uuid || `low-stock-${i}`} className="space-y-3 group">
                                         <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-[0.15em]">
                                             <span className="truncate pr-4 group-hover:text-amber-500 transition-colors">{p.name}</span>
                                             <span className="text-amber-500 font-black bg-amber-500/10 px-2 py-0.5 rounded-lg border border-amber-500/20">{p.quantity} / {p.minStockLevel}</span>
