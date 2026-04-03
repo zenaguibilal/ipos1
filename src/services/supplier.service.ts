@@ -1,7 +1,7 @@
 'use client';
 
 import { v4 as uuidv4 } from 'uuid';
-import type { Supplier, SupplierPayment, StockIntake } from '@/lib/types';
+import type { Supplier, SupplierPayment } from '@/lib/types';
 import { db } from '@/lib/db';
 
 class SupplierService {
@@ -74,10 +74,6 @@ class SupplierService {
         ];
 
         return activity.sort((a, b) => new Date(b.date!).getTime() - new Date(a.date!).getTime());
-    }
-
-    async getSupplierPayments(supplierUuid: string): Promise<SupplierPayment[]> {
-        return db.supplier_payments.where('supplierUuid').equals(supplierUuid).sortBy('paymentDate');
     }
 
     async updateSupplier(uuid: string, data: Partial<Supplier>): Promise<void> {

@@ -7,24 +7,12 @@ import { customerService } from './customer.service';
 
 class SalesService {
 
-    async getAllSales(): Promise<Sale[]> {
-        return db.sales.orderBy('createdAt').reverse().toArray();
-    }
-
     async getSaleByUuid(uuid: string): Promise<Sale | undefined> {
         return db.sales.where('uuid').equals(uuid).first();
     }
     
     async getSaleByInvoiceNumber(invoiceNumber: string): Promise<Sale | undefined> {
         return db.sales.where('invoiceNumber').equals(invoiceNumber).first();
-    }
-
-    async findSalesByCustomerUuid(customerUuid: string): Promise<Sale[]> {
-        return db.sales.where('customerUuid').equals(customerUuid).sortBy('createdAt');
-    }
-    
-    async findUnpaidByCustomerUuid(customerUuid: string): Promise<Sale[]> {
-        return db.sales.where({ customerUuid }).and(s => s.paymentStatus !== 'paid').sortBy('createdAt');
     }
 
     async filterSales(filters: { query?: string, from?: Date, to?: Date, status?: 'all' | 'paid' | 'partial' | 'unpaid' }): Promise<Sale[]> {
@@ -129,17 +117,14 @@ class SalesService {
                 throw new Error("Vente non trouvée.");
             }
 
-            // Delete the sale
             await db.sales.delete(sale.id);
 
-            // Restore stock
             for (const item of sale.items) {
                 if (item.productUuid) {
                     await inventoryService.adjustStock(item.productUuid, item.quantity, 'cancellation', sale.uuid);
                 }
             }
 
-            // Update customer status
             if (sale.customerUuid) {
                 await customerService.recalculateCustomerStatus(sale.customerUuid);
             }

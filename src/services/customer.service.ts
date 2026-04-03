@@ -1,4 +1,3 @@
-
 'use client';
 import { v4 as uuidv4 } from 'uuid';
 import type { Customer, Sale, ImportAnalysis, Payment, ProductReturn } from '@/lib/types';
@@ -25,7 +24,6 @@ class CustomerService {
             if(filters.status === 'overdue') collection = collection.filter(c => c.debtStatus === 'overdue');
             if(filters.status === 'over_limit') collection = collection.filter(c => c.isOverLimit === true);
             if(filters.status === 'is_bread_client') collection = collection.filter(c => c.isBreadClient === true);
-            if(filters.status === 'is_manual_bread_client') collection = collection.filter(c => c.bread_type_recurrence === 'aucun');
         }
         
         let customers = await collection.toArray();
@@ -38,7 +36,6 @@ class CustomerService {
             );
         }
 
-        // Sorting Logic
         if (filters.sortBy) {
             const [field, order] = filters.sortBy.split('_');
             const isAsc = order === 'asc';
