@@ -306,7 +306,7 @@ export default function NewStockIntakePage() {
                     <Card className="rounded-[2.5rem] bg-card/40 backdrop-blur-3xl border-white/5 overflow-hidden shadow-2xl">
                         <CardHeader className="bg-muted/20 p-8 border-b border-white/5 flex flex-row items-center justify-between">
                             <div>
-                                <CardTitle className="text-xl font-black tracking-tighter">Manifestه des Marchandises</CardTitle>
+                                <CardTitle className="text-xl font-black tracking-tighter">Manifeste des Marchandises</CardTitle>
                                 <CardDescription className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">{items.length} positions identifiées</CardDescription>
                             </div>
                             <div className="w-full max-w-xs">
@@ -353,9 +353,9 @@ export default function NewStockIntakePage() {
                                                         <Input type="number" step="0.1" className="h-10 w-24 text-right font-bold rounded-xl bg-background/50 border-none shadow-inner ml-auto" value={item.purchasePrice || ''} onChange={handleItemChange.bind(null, item.id, 'purchasePrice')} />
                                                     </td>
                                                     <td className="p-6 text-right">
-                                                        <div className="flex flex-col items-end">
-                                                            <span className="font-black text-primary tracking-tighter text-sm">{landingCost.toFixed(1)}</span>
-                                                            {shippingCost > 0 && <span className="text-[8px] font-black text-primary/40 uppercase tracking-tighter">Inclus</span>}
+                                                        <div className="flex items-center justify-end gap-2 text-primary font-black text-sm tracking-tighter">
+                                                            {landingCost.toFixed(1)}
+                                                            <span className="text-[8px] opacity-40">DA</span>
                                                         </div>
                                                     </td>
                                                     <td className="p-6">
@@ -373,7 +373,7 @@ export default function NewStockIntakePage() {
                                                             )}
                                                         </div>
                                                     </td>
-                                                    <td className="p-6">
+                                                    <td className="p-6 text-right">
                                                         <Button variant="ghost" size="icon" className="h-9 w-9 text-muted-foreground/20 hover:text-destructive hover:bg-destructive/10 rounded-xl transition-all" onClick={() => handleRemoveItem(item.id)}><Trash2 className="h-4 w-4" /></Button>
                                                     </td>
                                                 </tr>
@@ -384,7 +384,7 @@ export default function NewStockIntakePage() {
                                                 <td colSpan={6} className="p-24 text-center">
                                                     <div className="flex flex-col items-center gap-4 opacity-20">
                                                         <Landmark className="h-16 w-16" />
-                                                        <p className="text-[10px] font-black uppercase tracking-[0.4em]">Le manifestه est vide</p>
+                                                        <p className="text-[10px] font-black uppercase tracking-[0.4em]">Le manifeste est vide</p>
                                                     </div>
                                                 </td>
                                             </tr>
@@ -398,21 +398,21 @@ export default function NewStockIntakePage() {
                                     <div className="p-6 rounded-[2rem] bg-black/20 border border-white/5 space-y-4">
                                         <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-primary/60">Analyse de Rentabilité</h4>
                                         <div className="flex justify-between items-end border-b border-white/5 pb-4">
-                                            <span className="text-xs font-bold text-muted-foreground">Logistique (DA) :</span>
+                                            <span className="text-xs font-bold text-muted-foreground">Logistique (Répartition) :</span>
                                             <span className="text-xl font-black text-primary">{(shippingFactor * 100).toFixed(2)}%</span>
                                         </div>
                                         <p className="text-[9px] text-muted-foreground/50 leading-relaxed italic">
-                                            Calcul automatique du surcoût logistique réparti.
+                                            Le coût logistique est réparti proportionnellement sur chaque article.
                                         </p>
                                     </div>
 
                                     <div className="space-y-4">
                                         <div className="flex justify-between items-center text-xs font-bold text-muted-foreground px-2">
-                                            <span className="uppercase tracking-widest opacity-50">Marchandise Pure</span>
+                                            <span className="uppercase tracking-widest opacity-50">Marchandise</span>
                                             <span className="font-mono">{formatCurrency(itemsTotalValue)}</span>
                                         </div>
                                         <div className="flex justify-between items-center text-xs font-bold text-primary px-2">
-                                            <span className="uppercase tracking-widest opacity-50">Logistique Totale</span>
+                                            <span className="uppercase tracking-widest opacity-50">Transport</span>
                                             <span className="font-mono">+ {formatCurrency(shippingCost)}</span>
                                         </div>
                                         <div className="h-px bg-white/10 my-2" />
