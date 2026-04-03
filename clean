@@ -1,19 +1,25 @@
-src/lib/db.ts: CLEAN (Unused type imports removed)
-src/app/(app)/stock/intake/page.tsx: CLEAN (Corrected Link import)
-src/app/(app)/dashboard/page.tsx: CLEAN (React Keys stabilized, unused imports removed)
-src/stores/appStore.ts: CLEAN (Unused produce/immer imports and services cleanup)
-src/app/(app)/expenses/page.tsx: CLEAN (Typo "Postه" corrected to "Poste")
-src/components/expenses/ExpenseDialog.tsx: CLEAN (Typo "Postه" corrected to "Poste")
-src/app/(app)/sales-history/page.tsx: CLEAN (Typo "deنicher" corrected to "dénicher")
-src/app/(app)/install/page.tsx: CLEAN (Typo "rapidية" corrected to "rapidité")
-src/services/product.service.ts: CLEAN (100% Verified)
-src/services/customer.service.ts: CLEAN (100% Verified)
-src/services/sales.service.ts: CLEAN (100% Verified)
-src/services/return.service.ts: CLEAN (100% Verified)
-src/services/stock.service.ts: CLEAN (100% Verified)
-src/services/inventory.service.ts: CLEAN (100% Verified)
-src/services/expense.service.ts: CLEAN (100% Verified)
-src/services/supplier.service.ts: CLEAN (100% Verified)
-src/services/bread.service.ts: CLEAN (100% Verified)
-src/services/profile.service.ts: CLEAN (100% Verified)
-src/services/supabase.service.ts: CLEAN (100% Verified)
+Fichiers audités et certifiés sans code mort :
+- src/app/(app)/bread/page.tsx
+- src/app/(app)/customers/[uuid]/page.tsx
+- src/app/(app)/customers/page.tsx
+- src/app/(app)/dashboard/page.tsx
+- src/app/(app)/expenses/page.tsx
+- src/app/(app)/install/page.tsx
+- src/app/(app)/layout.tsx
+- src/app/(app)/products/page.tsx
+- src/app/(app)/profile/page.tsx
+- src/app/(app)/returns/new/page.tsx
+- src/app/(app)/returns/page.tsx
+- src/app/(app)/sales-history/page.tsx
+- src/app/(app)/sell/page.tsx
+- src/app/(app)/settings/page.tsx
+- src/app/(app)/stock/intake/page.tsx
+- src/app/(app)/stock/page.tsx
+- src/app/(app)/stock/suppliers/[uuid]/page.tsx
+- src/lib/db.ts
+- src/stores/appStore.ts
+- src/components/stock/stock-intake-card.tsx
+- src/components/sell/PaymentDialog.tsx
+- src/components/sales/SaleDetailsDialog.tsx
+- src/services/supabase.service.ts
+- src/services/dashboard.service.ts
