@@ -53,13 +53,11 @@ export interface SaleItem {
     quantity: number;
 }
 
-// Represents an item in the live shopping cart
 export interface CartItem extends Product {
     cartQuantity: number;
     flash?: boolean; // For UI animation
 }
 
-// Represents a single shopping cart session
 export interface Cart {
     id: string;
     name: string;
@@ -116,6 +114,10 @@ export interface CompanyProfile {
     goldPricePerGram?: number;
     prix_pain?: number;
     updatedAt?: Date;
+    // Supabase Sync Settings
+    supabase_url?: string;
+    supabase_key?: string;
+    last_sync_at?: Date;
 }
 
 export interface StockIntakeItem {
@@ -144,10 +146,10 @@ export interface StockIntake {
         productName: string;
         quantityReceived: number;
         quantityDamaged: number;
-        purchasePrice: number; // Base purchase price
-        landingCost: number; // Purchase price + share of shipping
+        purchasePrice: number; 
+        landingCost: number; 
     }[];
-    totalValue: number; // Total items value + shipping
+    totalValue: number; 
     createdAt?: Date;
     updatedAt?: Date;
 }
@@ -157,7 +159,7 @@ export interface ReturnItem {
     productUuid: string | null;
     productName: string;
     quantity: number;
-    price: number; // The price at which it was sold
+    price: number; 
     purchasePrice: number;
     wasRestocked: boolean;
 }
@@ -195,10 +197,10 @@ export interface InventoryLog {
     id?: number;
     uuid: string;
     productUuid: string;
-    change: number; // e.g., -2 for sale, +50 for stock intake
+    change: number; 
     newQuantity: number;
     reason: InventoryLogReason;
-    relatedUuid?: string; // UUID of the sale, return, intake, etc.
+    relatedUuid?: string; 
     createdAt: Date;
 }
 
@@ -210,7 +212,7 @@ export interface Supplier {
     phone?: string;
     email?: string;
     address?: string;
-    balance: number; // Solde de la dette envers le fournisseur
+    balance: number; 
     createdAt?: Date;
     updatedAt?: Date;
 }
@@ -226,14 +228,12 @@ export interface SupplierPayment {
     createdAt?: Date;
 }
 
-// =================== Bread Types ===================
-
 export interface BreadOrder {
     id?: number;
     uuid: string;
-    customerUuid: string | null; // Nullable for external names
-    customName?: string; // Name for non-registered customers
-    date: string; // YYYY-MM-DD
+    customerUuid: string | null; 
+    customName?: string; 
+    date: string; 
     quantite: number;
     quantite_origine?: number;
     est_paye: boolean;
@@ -262,8 +262,6 @@ export interface ProductImportAnalysis {
     errorRows: any[];
     totalRows: number;
 }
-
-// =================== Dashboard Types ===================
 
 export interface RecentSale extends Pick<Sale, 'uuid' | 'invoiceNumber' | 'total' | 'createdAt'> {
     customerName: string;

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -31,11 +32,19 @@ import {
     Users2, 
     ShoppingCart, 
     X, 
-    Info 
+    Info,
+    Cloud,
+    RefreshCw,
+    UploadCloud,
+    DownloadCloud
 } from "lucide-react";
 import { db } from "@/lib/db";
 import { toast } from "sonner";
 import { ConfirmAlertDialog } from "@/components/ui/ConfirmAlertDialog";
+import { useAppStore, useAppActions } from '@/stores/appStore';
+import { format } from 'date-fns';
+import { fr } from 'date-fns/locale';
+import { cn } from '@/lib/utils';
 
 export default function SettingsPage() {
     const [stats, setStats] = useState({
@@ -48,6 +57,9 @@ export default function SettingsPage() {
     const [envInfo, setEnvInfo] = useState<{ os: string, browser: string } | null>(null);
     const [isResetConfirmOpen, setIsResetConfirmOpen] = useState(false);
     const [isMounted, setIsMounted] = useState(false);
+
+    const { companyProfile, isSyncing } = useAppStore();
+    const { performCloudSync } = useAppActions();
 
     useEffect(() => {
         setIsMounted(true);
@@ -110,6 +122,8 @@ export default function SettingsPage() {
 
     if (!isMounted) return null;
 
+    const isSupabaseConfigured = companyProfile?.supabase_url && companyProfile?.supabase_key;
+
     return (
         <div className="p-6 sm:p-10 space-y-12 max-w-[1800px] mx-auto pb-32 animate-in fade-in duration-1000">
             <PageHeader 
@@ -119,6 +133,83 @@ export default function SettingsPage() {
 
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
                 <div className="lg:col-span-8 space-y-10">
+                    
+                    {/* Cloud Sync Card */}
+                    <Card className="luxury-card rounded-[2.5rem] border-white/5 bg-card/40 backdrop-blur-3xl overflow-hidden">
+                        <CardHeader className="bg-primary/5 border-b border-white/5 p-8">
+                            <div className="flex items-center gap-4">
+                                <div className="p-3.5 rounded-2xl bg-primary text-primary-foreground shadow-2xl shadow-primary/20">
+                                    <Cloud className="h-6 w-6" />
+                                </div>
+                                <div>
+                                    <CardTitle className="text-2xl font-black tracking-tighter">Synchronisation Cloud (Supabase)</CardTitle>
+                                    <CardDescription className="text-[10px] font-black uppercase tracking-[0.3em] text-primary/50">Sauvegarde et Continuité multi-appareils</CardDescription>
+                                </div>
+                            </div>
+                        </CardHeader>
+                        <CardContent className="p-10 space-y-10">
+                            {!isSupabaseConfigured ? (
+                                <div className="p-8 bg-amber-500/5 rounded-[2.5rem] border border-dashed border-amber-500/20 text-center">
+                                    <p className="text-sm font-bold text-amber-600 mb-4">Configuration Requise</p>
+                                    <p className="text-xs text-muted-foreground mb-6 max-w-md mx-auto">
+                                        Veuillez renseigner votre URL et Clé Supabase dans votre profil pour activer les capacités de synchronisation Cloud.
+                                    </p>
+                                    <Button variant="outline" className="rounded-xl border-amber-500/20 text-amber-600 hover:bg-amber-500/10 h-12" asChild>
+                                        <a href="/profile">Configurer Supabase</a>
+                                    </Button>
+                                </div>
+                            ) : (
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
+                                    <div className="p-8 bg-muted/20 rounded-[2.5rem] border border-white/5 space-y-6 group hover:bg-muted/30 transition-all">
+                                        <div className="flex items-center gap-3 text-primary">
+                                            <UploadCloud className="h-5 w-5" />
+                                            <span className="text-[10px] font-black uppercase tracking-[0.3em]">Pousser (Push)</span>
+                                        </div>
+                                        <p className="text-[11px] text-muted-foreground font-medium leading-relaxed">
+                                            Envoie toutes vos données locales vers le Cloud. Écrase les versions plus anciennes sur Supabase.
+                                        </p>
+                                        <Button 
+                                            onClick={() => performCloudSync('push')} 
+                                            disabled={isSyncing}
+                                            className="w-full rounded-2xl h-14 font-black text-[10px] uppercase tracking-widest shadow-xl shadow-primary/20 transition-all active:scale-95 gap-3"
+                                        >
+                                            {isSyncing ? <RefreshCw className="h-4 w-4 animate-spin"/> : <UploadCloud className="h-4 w-4" />}
+                                            Sauvegarder vers Cloud
+                                        </Button>
+                                    </div>
+
+                                    <div className="p-8 bg-muted/20 rounded-[2.5rem] border border-white/5 space-y-6 group hover:bg-muted/30 transition-all">
+                                        <div className="flex items-center gap-3 text-emerald-500">
+                                            <DownloadCloud className="h-5 w-5" />
+                                            <span className="text-[10px] font-black uppercase tracking-[0.3em]">Récupérer (Pull)</span>
+                                        </div>
+                                        <p className="text-[11px] text-muted-foreground font-medium leading-relaxed">
+                                            Télécharge les données du Cloud vers ce terminal. Fusionne avec les données locales existantes.
+                                        </p>
+                                        <Button 
+                                            onClick={() => performCloudSync('pull')} 
+                                            variant="outline"
+                                            disabled={isSyncing}
+                                            className="w-full rounded-2xl h-14 font-black text-[10px] uppercase tracking-widest border-emerald-500/20 bg-emerald-500/5 text-emerald-500 hover:bg-emerald-500/10 transition-all active:scale-95 gap-3"
+                                        >
+                                            {isSyncing ? <RefreshCw className="h-4 w-4 animate-spin"/> : <DownloadCloud className="h-4 w-4" />}
+                                            Restaurer depuis Cloud
+                                        </Button>
+                                    </div>
+                                </div>
+                            )}
+
+                            {companyProfile?.last_sync_at && (
+                                <div className="flex items-center justify-center gap-3 px-6 py-3 bg-primary/5 rounded-2xl border border-primary/10 w-fit mx-auto">
+                                    <Activity className="h-3 w-3 text-primary" />
+                                    <span className="text-[10px] font-black text-primary uppercase tracking-widest">
+                                        Dernière synchronisation réussie : {format(new Date(companyProfile.last_sync_at), 'd MMMM yyyy, HH:mm', { locale: fr })}
+                                    </span>
+                                </div>
+                            )}
+                        </CardContent>
+                    </Card>
+
                     <Card className="luxury-card rounded-[2.5rem] border-white/5 bg-card/40 backdrop-blur-3xl overflow-hidden">
                         <CardHeader className="bg-muted/20 border-b border-white/5 p-8">
                             <div className="flex items-center gap-4">
@@ -239,8 +330,8 @@ export default function SettingsPage() {
                             </div>
                             
                             <div className="space-y-5 text-[11px] font-medium text-muted-foreground/60 leading-relaxed italic px-2">
-                                <p>iPOS est une application "Client-Side Only" de nouvelle génération. Vos données commerciales ne transitent par aucun serveur externe.</p>
-                                <p>L'utilisation de la technologie IndexedDB garantit une rapidité d'exécution maximale et une confidentialité souveraine.</p>
+                                <p>iPOS est une application "Client-Side Only" de nouvelle génération. Vos données commerciales ne transitent par aucun serveur externe par défaut.</p>
+                                <p>L'utilisation de la technologie Supabase permet désormais une sauvegarde optionnelle dans le Cloud de manière sécurisée.</p>
                             </div>
                         </CardContent>
                         <CardFooter className="pt-0 pb-10 px-10">
@@ -248,7 +339,7 @@ export default function SettingsPage() {
                                 <div className="w-full h-px bg-white/5" />
                                 <div className="flex items-center justify-between w-full text-[10px] font-black uppercase tracking-[0.3em] opacity-20">
                                     <span className="flex items-center gap-2"><Shield className="h-3 w-3" /> Statut Sécurité</span>
-                                    <span className="text-emerald-500">Chiffré Local</span>
+                                    <span className="text-emerald-500">Option Cloud Activable</span>
                                 </div>
                             </div>
                         </CardFooter>
@@ -263,7 +354,7 @@ export default function SettingsPage() {
                         </CardHeader>
                         <CardContent className="p-8 space-y-6">
                             <p className="text-[10px] font-bold text-destructive/60 leading-relaxed text-center italic px-2 uppercase tracking-widest">
-                                Les actions ci-dessous sont irréversibles et entraînent la perte totale de vos données locales non sauvegardées.
+                                Les actions ci-dessous sont irréversible et entraînent la perte totale de vos données locales non sauvegardées.
                             </p>
                             <Button 
                                 variant="outline" 
@@ -301,7 +392,7 @@ export default function SettingsPage() {
                             <ShieldAlert className="h-6 w-6 text-destructive shrink-0" />
                             <div className="space-y-1">
                                 <p className="text-xs font-black text-destructive uppercase tracking-tight leading-tight">Attention Critique</p>
-                                <p className="text-[10px] text-destructive/70 leading-relaxed font-medium">Aucun retour en arrière n'est possible sans un fichier de sauvegarde (.json) externe.</p>
+                                <p className="text-[10px] text-destructive/70 leading-relaxed font-medium">Aucun retour en arrière n'est possible sans un fichier de sauvegarde (.json) ou une synchronisation Cloud préalable.</p>
                             </div>
                         </div>
                     </div>

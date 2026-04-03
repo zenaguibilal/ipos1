@@ -1,3 +1,4 @@
+
 import { create } from 'zustand';
 import type { CompanyProfile, ReturnItem, StockIntakeItem } from '@/lib/types';
 import { toast } from 'sonner';
@@ -11,12 +12,16 @@ import { inventoryService } from '@/services/inventory.service';
 import { supplierService } from '@/services/supplier.service';
 import { productService } from '@/services/product.service';
 import { customerService } from '@/services/customer.service';
+import { supabaseSyncService } from '@/services/supabase.service';
 
 // Main State Interface
 interface AppState {
     companyProfile: CompanyProfile | null;
     isCompanyProfileLoading: boolean;
     
+    isSyncing: boolean;
+    lastSyncDate: Date | null;
+
     productViewMode: 'grid' | 'list';
     stockViewMode: 'grid' | 'list';
     returnsViewMode: 'grid' | 'list';
@@ -27,6 +32,9 @@ interface AppState {
 interface AppActions {
     fetchCompanyProfile: () => Promise<void>;
     updateCompanyProfile: (profileData: Partial<CompanyProfile>) => Promise<void>;
+    
+    performCloudSync: (mode: 'push' | 'pull') => Promise<void>;
+
     processReturn: (returnData: {
         originalSaleUuid: string,
         items: ReturnItem[],
@@ -53,6 +61,8 @@ interface AppActions {
 const initialState: Omit<AppState, 'actions'> = {
     companyProfile: null,
     isCompanyProfileLoading: true,
+    isSyncing: false,
+    lastSyncDate: null,
     productViewMode: 'grid',
     stockViewMode: 'grid',
     returnsViewMode: 'grid',
@@ -61,7 +71,7 @@ const initialState: Omit<AppState, 'actions'> = {
 // Store Implementation
 export const useAppStore = create<AppState>()(
     persist(
-        (set) => ({
+        (set, get) => ({
             ...initialState,
             actions: {
                 fetchCompanyProfile: async () => {
@@ -78,6 +88,31 @@ export const useAppStore = create<AppState>()(
                 updateCompanyProfile: async (profileData) => {
                     const updatedProfile = await companyProfileService.updateProfile(profileData);
                     set({ companyProfile: updatedProfile });
+                },
+                performCloudSync: async (mode) => {
+                    const profile = get().companyProfile;
+                    if (!profile?.supabase_url || !profile?.supabase_key) {
+                        toast.error("Configuration Supabase manquante.");
+                        return;
+                    }
+
+                    set({ isSyncing: true });
+                    try {
+                        if (mode === 'push') {
+                            await supabaseSyncService.pushAllData(profile.supabase_url, profile.supabase_key);
+                            toast.success("Données poussées vers le Cloud avec succès.");
+                        } else {
+                            await supabaseSyncService.pullAllData(profile.supabase_url, profile.supabase_key);
+                            toast.success("Données récupérées du Cloud avec succès.");
+                        }
+                        const now = new Date();
+                        await companyProfileService.updateProfile({ last_sync_at: now });
+                        set({ lastSyncDate: now, companyProfile: { ...profile, last_sync_at: now } });
+                    } catch (error: any) {
+                        toast.error("Échec de la synchronisation.", { description: error.message });
+                    } finally {
+                        set({ isSyncing: false });
+                    }
                 },
                 processReturn: async (returnData) => {
                      try {

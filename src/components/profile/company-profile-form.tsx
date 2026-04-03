@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -8,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import type { CompanyProfile } from '@/lib/types';
 import { Skeleton } from '../ui/skeleton';
-import { Loader2, Building, MapPin, Phone, Mail, Wheat, Coins, FileText, CheckCircle2, RotateCcw, Hash } from 'lucide-react';
+import { Loader2, Building, MapPin, Phone, Mail, Wheat, Coins, FileText, CheckCircle2, RotateCcw, Hash, Cloud, Key } from 'lucide-react';
 import { useAppStore } from '@/stores/appStore';
 
 export function CompanyProfileForm() {
@@ -49,6 +50,8 @@ export function CompanyProfileForm() {
                 rcNumber: formState.rcNumber || undefined,
                 goldPricePerGram: formState.goldPricePerGram ? Number(formState.goldPricePerGram) : undefined,
                 prix_pain: formState.prix_pain ? Number(formState.prix_pain) : undefined,
+                supabase_url: formState.supabase_url || undefined,
+                supabase_key: formState.supabase_key || undefined,
             });
             toast.success('Profil Elite mis à jour.');
         } catch (err) {
@@ -137,6 +140,32 @@ export function CompanyProfileForm() {
                             <div className="space-y-4">
                                 <Label htmlFor="country" className="text-[10px] font-black uppercase tracking-[0.2em] ml-1 opacity-40">Pays</Label>
                                 <Input id="country" value={formState.country || ''} onChange={handleInputChange} className="h-16 rounded-[1.5rem] bg-black/20 border-none shadow-inner px-6" placeholder="Algérie" disabled={isSaving}/>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Cloud Sync Section */}
+                <div className="space-y-10 pt-16 border-t border-white/5 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-50">
+                    <SectionTitle title="Connectivité Cloud (Supabase)" icon={Cloud} />
+                    <div className="grid grid-cols-1 gap-10">
+                        <div className="p-6 bg-primary/5 rounded-[2rem] border border-primary/10 mb-4">
+                            <p className="text-xs text-muted-foreground leading-relaxed italic">
+                                Connectez votre propre instance Supabase pour activer la synchronisation multi-terminaux. Assurez-vous que vos tables correspondent au schéma iPOS.
+                            </p>
+                        </div>
+                        <div className="space-y-4">
+                            <Label htmlFor="supabase_url" className="text-[10px] font-black uppercase tracking-[0.2em] ml-1 opacity-40">URL du projet Supabase</Label>
+                            <div className="relative">
+                                <Cloud className="absolute left-6 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground opacity-20" />
+                                <Input id="supabase_url" value={formState.supabase_url || ''} onChange={handleInputChange} className="pl-16 h-16 rounded-[1.5rem] bg-black/20 border-none shadow-inner font-mono text-sm" placeholder="https://xxxx.supabase.co" disabled={isSaving} />
+                            </div>
+                        </div>
+                        <div className="space-y-4">
+                            <Label htmlFor="supabase_key" className="text-[10px] font-black uppercase tracking-[0.2em] ml-1 opacity-40">Clé API (Anon Key)</Label>
+                            <div className="relative">
+                                <Key className="absolute left-6 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground opacity-20" />
+                                <Input id="supabase_key" type="password" value={formState.supabase_key || ''} onChange={handleInputChange} className="pl-16 h-16 rounded-[1.5rem] bg-black/20 border-none shadow-inner font-mono text-sm" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." disabled={isSaving} />
                             </div>
                         </div>
                     </div>
