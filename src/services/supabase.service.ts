@@ -37,7 +37,8 @@ class SupabaseSyncService {
             if (!supabase) return false;
             
             const { error } = await supabase.from('company_profile').select('uuid').limit(1);
-            if (error && error.code !== 'PGRST116') { // Ignore "no rows found" error
+            // Ignore error if it's just "no rows found", but error code PGRST116 means exactly that.
+            if (error && error.code !== 'PGRST116') { 
                 console.error("Supabase connection error:", error);
                 return false;
             }
@@ -58,7 +59,7 @@ class SupabaseSyncService {
             const records = await item.table.toArray();
             if (records.length === 0) continue;
 
-            // Préparation des données : on retire l'ID local auto-incrémenté pour laisser Supabase gérer
+            // Préparation des données : on retire l'ID local auto-incrémenté pour laisser Supabase gérer par UUID
             const dataToSync = records.map((r: any) => {
                 const { id, ...rest } = r;
                 return rest;
@@ -92,11 +93,11 @@ class SupabaseSyncService {
                         const localRecord = await item.table.where('uuid').equals(remoteRecord.uuid).first();
                         
                         if (localRecord) {
-                            // Mise à jour de l'existant en conservant l'ID Dexie local
+                            // Mise à jour de l'existant en conservant l'ID Dexie local pour la stabilité de l'index
                             const { id } = localRecord;
                             await item.table.update(id, remoteRecord);
                         } else {
-                            // Nouvel enregistrement venant du cloud
+                            // Nouvel enregistrement venant du cloud : Dexie générera un nouvel ID local (id)
                             await item.table.add(remoteRecord);
                         }
                     }

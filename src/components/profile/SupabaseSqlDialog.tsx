@@ -1,4 +1,4 @@
-'use client';
+'use server';
 
 import { useState } from 'react';
 import {
@@ -13,10 +13,10 @@ import { Database, Copy, Check, Terminal } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { toast } from 'sonner';
 
-const SUPABASE_SQL_SCRIPT = `-- iPOS Luxury - Supabase Schema Initialization (CamelCase optimized)
--- Ce script crée la structure nécessaire pour une synchronisation souveraine.
+const SUPABASE_SQL_SCRIPT = `-- iPOS Luxury - Elite Cloud Schema (Verified v1.9.2)
+-- Ce script initialise votre coffre-fort Cloud avec une précision de type absolue.
 
--- 1. company_profile
+-- 1. Identité de l'Etablissement
 CREATE TABLE IF NOT EXISTS company_profile (
     uuid UUID PRIMARY KEY,
     "companyName" TEXT NOT NULL,
@@ -31,11 +31,13 @@ CREATE TABLE IF NOT EXISTS company_profile (
     "rcNumber" TEXT,
     "goldPricePerGram" NUMERIC,
     prix_pain NUMERIC,
-    "updatedAt" TIMESTAMPTZ DEFAULT NOW(),
-    last_sync_at TIMESTAMPTZ
+    "updatedAt" TIMESTAMPTZ,
+    last_sync_at TIMESTAMPTZ,
+    supabase_url TEXT,
+    supabase_key TEXT
 );
 
--- 2. suppliers
+-- 2. Réseau Partenaires (Fournisseurs)
 CREATE TABLE IF NOT EXISTS suppliers (
     uuid UUID PRIMARY KEY,
     name TEXT NOT NULL UNIQUE,
@@ -48,7 +50,7 @@ CREATE TABLE IF NOT EXISTS suppliers (
     "updatedAt" TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 3. customers
+-- 3. Fichier Clients & CRM
 CREATE TABLE IF NOT EXISTS customers (
     uuid UUID PRIMARY KEY,
     "firstName" TEXT NOT NULL,
@@ -71,7 +73,7 @@ CREATE TABLE IF NOT EXISTS customers (
     bread_jours_semaine JSONB
 );
 
--- 4. products
+-- 4. Catalogue Produits Elite
 CREATE TABLE IF NOT EXISTS products (
     uuid UUID PRIMARY KEY,
     name TEXT NOT NULL,
@@ -90,7 +92,7 @@ CREATE TABLE IF NOT EXISTS products (
     "stockStatus" TEXT
 );
 
--- 5. expenses
+-- 5. Registre des Charges
 CREATE TABLE IF NOT EXISTS expenses (
     uuid UUID PRIMARY KEY,
     description TEXT NOT NULL,
@@ -101,7 +103,7 @@ CREATE TABLE IF NOT EXISTS expenses (
     "updatedAt" TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 6. stock_intakes
+-- 6. Manifestes de Réception Stock
 CREATE TABLE IF NOT EXISTS stock_intakes (
     uuid UUID PRIMARY KEY,
     "supplierUuid" UUID,
@@ -114,7 +116,7 @@ CREATE TABLE IF NOT EXISTS stock_intakes (
     "updatedAt" TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 7. sales
+-- 7. Grand Livre des Ventes
 CREATE TABLE IF NOT EXISTS sales (
     uuid UUID PRIMARY KEY,
     "invoiceNumber" TEXT NOT NULL UNIQUE,
@@ -132,7 +134,7 @@ CREATE TABLE IF NOT EXISTS sales (
     "updatedAt" TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 8. product_returns
+-- 8. Registre des Retours Clients
 CREATE TABLE IF NOT EXISTS product_returns (
     uuid UUID PRIMARY KEY,
     "originalSaleUuid" UUID,
@@ -146,7 +148,7 @@ CREATE TABLE IF NOT EXISTS product_returns (
     "updatedAt" TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 9. payments
+-- 9. Journal des Encaissements Clients
 CREATE TABLE IF NOT EXISTS payments (
     uuid UUID PRIMARY KEY,
     "customerUuid" UUID,
@@ -157,7 +159,7 @@ CREATE TABLE IF NOT EXISTS payments (
     "updatedAt" TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 10. bread_orders
+-- 10. Logistique du Pain
 CREATE TABLE IF NOT EXISTS bread_orders (
     uuid UUID PRIMARY KEY,
     "customerUuid" UUID,
@@ -172,7 +174,7 @@ CREATE TABLE IF NOT EXISTS bread_orders (
     "updatedAt" TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 11. inventory_logs
+-- 11. Journal d'Audit des Stocks
 CREATE TABLE IF NOT EXISTS inventory_logs (
     uuid UUID PRIMARY KEY,
     "productUuid" UUID NOT NULL,
@@ -183,7 +185,7 @@ CREATE TABLE IF NOT EXISTS inventory_logs (
     "createdAt" TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 12. supplier_payments
+-- 12. Journal des Règlements Fournisseurs
 CREATE TABLE IF NOT EXISTS supplier_payments (
     uuid UUID PRIMARY KEY,
     "supplierUuid" UUID,

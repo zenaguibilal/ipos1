@@ -14,7 +14,7 @@ Chaque fichier listé ci-dessous a fait l'objet d'une vérification approfondie 
 - [x] `src/services/inventory.service.ts` : Audit de traçabilité validé.
 - [x] `src/services/product.service.ts` : Analyse d'importation certifiée.
 - [x] `src/services/dashboard.service.ts` : Algorithmes de rentabilité optimisés.
-- [x] `src/services/supabase.service.ts` : Moteur de synchronisation certifié.
+- [x] `src/services/supabase.service.ts` : **VÉRIFIÉ** (Moteur de synchronisation souverain certifié).
 
 ### Gestion d'État (Zustand)
 - [x] `src/stores/appStore.ts` : Purgé des dépendances inutilisées.
