@@ -34,13 +34,14 @@ interface ComboboxProps {
     value: string;
     placeholder: string;
     searchPlaceholder: string;
-    notFoundMessage: string;
+    notFoundMessage: React.ReactNode;
     onSearchChange?: (search: string) => void;
     id?: string;
+    className?: string;
 }
 
 
-export const Combobox = React.forwardRef<HTMLButtonElement, ComboboxProps>(({ options, onSelect, value, placeholder, searchPlaceholder, notFoundMessage, onSearchChange, id }, ref) => {
+export const Combobox = React.forwardRef<HTMLButtonElement, ComboboxProps>(({ options, onSelect, value, placeholder, searchPlaceholder, notFoundMessage, onSearchChange, id, className }, ref) => {
   const [open, setOpen] = React.useState(false)
   const selectedOption = React.useMemo(() => options.find(o => o.value === value), [options, value]);
   
@@ -53,57 +54,76 @@ export const Combobox = React.forwardRef<HTMLButtonElement, ComboboxProps>(({ op
           variant="outline"
           role="combobox"
           aria-expanded={open}
-          className="w-full justify-between h-auto py-2"
+          className={cn("w-full justify-between h-auto py-3 px-6 rounded-2xl bg-black/20 border-none shadow-inner group hover:bg-black/30 transition-all", className)}
         >
-            <div className="flex items-center gap-3 overflow-hidden text-left flex-grow">
+            <div className="flex items-center gap-4 overflow-hidden text-left flex-grow">
                 {/* Icon */}
                 <div className="flex-shrink-0">
                     {selectedOption?.value === 'walk-in' || !selectedOption ? (
-                        <UserX className="h-5 w-5 text-muted-foreground" />
+                        <div className="p-2 rounded-xl bg-muted/50 text-muted-foreground group-hover:text-primary transition-colors">
+                            <UserX className="h-5 w-5" />
+                        </div>
                     ) : (
-                        <User className="h-5 w-5 text-primary" />
+                        <div className="p-2 rounded-xl bg-primary/10 text-primary shadow-sm">
+                            <User className="h-5 w-5" />
+                        </div>
                     )}
                 </div>
                 {/* Text content */}
                 <div className="flex-grow truncate">
                   {selectedOption ? (
-                    <>
-                      <p className="font-medium truncate">{selectedOption.label}</p>
-                      {selectedOption.subLabel && <p className={cn("text-xs font-medium truncate", selectedOption.subLabelClassName || 'text-muted-foreground')}>{selectedOption.subLabel}</p>}
-                    </>
+                    <div className="flex flex-col -space-y-0.5">
+                      <p className="font-black text-sm truncate tracking-tight">{selectedOption.label}</p>
+                      {selectedOption.subLabel && (
+                        <p className={cn("text-[9px] font-black uppercase tracking-[0.1em] truncate opacity-60", selectedOption.subLabelClassName)}>
+                            {selectedOption.subLabel}
+                        </p>
+                      )}
+                    </div>
                   ) : (
-                    <p className="font-medium">{placeholder}</p> 
+                    <p className="font-bold text-muted-foreground/40 text-sm">{placeholder}</p> 
                   )}
                 </div>
             </div>
-          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-20 group-hover:opacity-100 transition-opacity" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
+      <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0 rounded-3xl border-white/5 bg-card/95 backdrop-blur-3xl shadow-2xl overflow-hidden">
         <Command>
-          <CommandInput placeholder={searchPlaceholder} onValueChange={onSearchChange} />
-           <CommandList>
-            <CommandEmpty>{notFoundMessage}</CommandEmpty>
-            <CommandGroup>
+          <CommandInput placeholder={searchPlaceholder} onValueChange={onSearchChange} className="h-14 border-none bg-transparent" />
+           <CommandList className="custom-scrollbar">
+            <CommandEmpty className="p-4">
+                {notFoundMessage}
+            </CommandEmpty>
+            <CommandGroup className="p-2">
               {options.map((option) => (
                 <CommandItem
                   key={option.value}
                   value={option.value}
                   disabled={option.disabled}
                   onSelect={(currentValue) => {
-                    onSelect(currentValue === value ? "" : currentValue)
-                    setOpen(false)
+                    // Logic: match by value if possible, cmdk returns value lowercase
+                    const found = options.find(o => o.value.toLowerCase() === currentValue.toLowerCase());
+                    onSelect(found ? found.value : currentValue);
+                    setOpen(false);
                   }}
+                  className="rounded-xl p-3 cursor-pointer transition-all aria-selected:bg-primary/10 aria-selected:text-primary mb-1 last:mb-0"
                 >
-                  <Check
-                    className={cn(
-                      "mr-2 h-4 w-4",
-                      value === option.value ? "opacity-100" : "opacity-0"
-                    )}
-                  />
-                  <div>
-                    <p>{option.label}</p>
-                    {option.subLabel && <p className={cn("text-xs", option.subLabelClassName || 'text-muted-foreground')}>{option.subLabel}</p>}
+                  <div className="flex items-center w-full gap-3">
+                    <div className={cn(
+                        "h-8 w-8 rounded-full flex items-center justify-center border transition-colors",
+                        value === option.value ? "bg-primary border-primary text-primary-foreground" : "bg-muted/20 border-white/5 text-muted-foreground"
+                    )}>
+                        {value === option.value ? <Check className="h-4 w-4" /> : <User className="h-4 w-4" />}
+                    </div>
+                    <div className="flex-grow flex flex-col -space-y-0.5">
+                        <p className="font-black text-sm tracking-tight">{option.label}</p>
+                        {option.subLabel && (
+                            <p className={cn("text-[10px] font-bold uppercase tracking-widest", option.subLabelClassName || 'text-muted-foreground opacity-40')}>
+                                {option.subLabel}
+                            </p>
+                        )}
+                    </div>
                   </div>
                 </CommandItem>
               ))}
