@@ -1,3 +1,4 @@
+
 import Dexie, { type EntityTable } from 'dexie';
 import type { Product, Customer, Sale, Expense, Supplier, SupplierPayment, StockIntake, ProductReturn, Payment, BreadOrder, CompanyProfile, InventoryLog } from './types';
 

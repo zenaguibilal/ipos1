@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
@@ -518,7 +519,7 @@ export default function SalesHistoryPage() {
                     <div className="min-h-[600px] animate-in fade-in slide-in-from-bottom-4 duration-1000">
                         {isLoading ? (
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-                                {[...Array(6)].map((_, i) => <Skeleton key={i} className="h-56 w-full rounded-[2.5rem] bg-card/40 animate-pulse" />)}
+                                {[...Array(6)].map((_, i) => <Skeleton key={`skel-sales-${i}`} className="h-56 w-full rounded-[2.5rem] bg-card/40 animate-pulse" />)}
                             </div>
                         ) : sales.length > 0 ? (
                             viewMode === 'list' ? (

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -176,7 +177,7 @@ const RecentActivity = ({ sales, returns, isLoading }: { sales: RecentSale[], re
         <CardContent className="p-6 space-y-4 max-h-[400px] overflow-y-auto custom-scrollbar">
              {isLoading ? (
                 <div className="space-y-4">
-                    {[...Array(5)].map((_, i) => <Skeleton key={`recent-skel-${i}`} className="h-20 w-full rounded-3xl bg-muted/10" />)}
+                    {[...Array(5)].map((_, i) => <Skeleton key={`skel-recent-${i}`} className="h-20 w-full rounded-3xl bg-muted/10" />)}
                 </div>
             ) : (
                 <div className="space-y-3">
@@ -259,7 +260,7 @@ const QuickNav = () => (
             </div>
         </Link>
         <Link href="/customers" className="group">
-            <div className="p-6 rounded-[2.5rem] bg-card border border-white/5 flex items-center justify-between group-hover:scale-[1.05] group-hover:rotate-1 group-hover:border-primary/30 transition-all duration-500 shadow-2xl">
+            <div className="p-6 rounded-[2.5rem] bg-card border border-white/5 flex items-center justify-between group-hover:scale-[1.05] group-hover:border-primary/30 transition-all duration-500 shadow-2xl">
                 <div className="flex items-center gap-4 text-muted-foreground group-hover:text-primary transition-colors">
                     <div className="p-3 rounded-2xl bg-muted/50 group-hover:bg-primary/10 transition-colors shadow-inner">
                         <Users className="h-6 w-6" />
@@ -347,7 +348,7 @@ export default function DashboardPage() {
                     <CardContent className="p-8">
                         {isLoading ? (
                             <div className="space-y-6">
-                                {[...Array(5)].map((_, i) => <Skeleton key={`prod-skel-${i}`} className="h-16 w-full rounded-2xl bg-muted/10" />)}
+                                {[...Array(5)].map((_, i) => <Skeleton key={`skel-prod-${i}`} className="h-16 w-full rounded-2xl bg-muted/10" />)}
                             </div>
                         ) : (
                             <div className="space-y-6">
@@ -383,7 +384,7 @@ export default function DashboardPage() {
                     <CardContent className="p-8">
                         {isLoading ? (
                             <div className="space-y-6">
-                                {[...Array(5)].map((_, i) => <Skeleton key={`cust-skel-${i}`} className="h-16 w-full rounded-2xl bg-muted/10" />)}
+                                {[...Array(5)].map((_, i) => <Skeleton key={`skel-cust-${i}`} className="h-16 w-full rounded-2xl bg-muted/10" />)}
                             </div>
                         ) : (
                             <div className="space-y-6">
@@ -415,7 +416,7 @@ export default function DashboardPage() {
                     <CardContent className="p-8">
                         {isLoading ? (
                             <div className="space-y-6">
-                                {[...Array(5)].map((_, i) => <Skeleton key={`alert-skel-${i}`} className="h-16 w-full rounded-2xl bg-muted/10" />)}
+                                {[...Array(5)].map((_, i) => <Skeleton key={`skel-alert-${i}`} className="h-16 w-full rounded-2xl bg-muted/10" />)}
                             </div>
                         ) : (
                             <div className="space-y-8">

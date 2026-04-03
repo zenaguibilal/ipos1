@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
@@ -414,7 +415,7 @@ export default function ExpensesPage() {
                     </CardHeader>
                     <CardContent className="p-8 h-[350px]">
                         {isLoading ? (
-                            <Skeleton className="h-full w-full rounded-[2rem]" />
+                            <Skeleton className="h-full w-full rounded-[2rem] bg-card/40" />
                         ) : stats.chartData.length > 0 ? (
                             <ResponsiveContainer width="100%" height="100%">
                                 <RechartsBarChart data={stats.chartData} layout="vertical" margin={{ left: 40, right: 40, top: 10, bottom: 10 }}>
@@ -551,7 +552,7 @@ export default function ExpensesPage() {
             <div className="min-h-[600px] animate-in fade-in slide-in-from-bottom-4 duration-1000">
                {isLoading ? (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-                        {[...Array(6)].map((_, i) => <Skeleton key={i} className="h-56 w-full rounded-[2.5rem] bg-card/40 animate-pulse" />)}
+                        {[...Array(6)].map((_, i) => <Skeleton key={`skel-exp-${i}`} className="h-56 w-full rounded-[2.5rem] bg-card/40 animate-pulse" />)}
                     </div>
                ) : expenses.length === 0 ? (
                     <EmptyState
