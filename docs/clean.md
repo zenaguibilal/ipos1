@@ -17,7 +17,7 @@ Chaque fichier listé ci-dessous a fait l'objet d'une vérification approfondie 
 - [x] `src/services/supabase.service.ts` : **VÉRIFIÉ** (Moteur de synchronisation souverain certifié).
 
 ### Gestion d'État (Zustand)
-- [x] `src/stores/appStore.ts` : Purgé des dépendances inutilisées.
+- [x] `src/stores/appStore.ts` : **OPTIMISÉ** (Logique de synchronisation Cloud vérifiée).
 - [x] `src/stores/cartStore.ts` : Logique de transaction validée.
 
 ### Pages & Vues Principales

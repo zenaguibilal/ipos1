@@ -85,25 +85,35 @@ export const useAppStore = create<AppState>()(
                     set({ companyProfile: updatedProfile });
                 },
                 performCloudSync: async (mode) => {
-                    const profile = get().companyProfile;
-                    if (!profile?.supabase_url || !profile?.supabase_key) {
+                    const currentProfile = get().companyProfile;
+                    if (!currentProfile?.supabase_url || !currentProfile?.supabase_key) {
                         toast.error("Configuration Cloud manquante.");
                         return;
                     }
 
                     set({ isSyncing: true });
                     try {
-                        if (mode === 'push') {
-                            await supabaseSyncService.pushAllData(profile.supabase_url, profile.supabase_key);
-                            toast.success("Synchronisation ascendante (Push) réussie.");
-                        } else {
-                            await supabaseSyncService.pullAllData(profile.supabase_url, profile.supabase_key);
-                            toast.success("Synchronisation descendante (Pull) réussie.");
-                        }
                         const now = new Date();
-                        await companyProfileService.updateProfile({ last_sync_at: now });
-                        set({ lastSyncDate: now, companyProfile: { ...profile, last_sync_at: now } });
+                        
+                        if (mode === 'push') {
+                            // On met à jour l'horodatage localement avant le push pour qu'il soit envoyé au cloud
+                            const updatedProfile = await companyProfileService.updateProfile({ last_sync_at: now });
+                            set({ companyProfile: updatedProfile, lastSyncDate: now });
+                            
+                            await supabaseSyncService.pushAllData(currentProfile.supabase_url, currentProfile.supabase_key);
+                            toast.success("Sauvegarde Cloud (Push) réussie.");
+                        } else {
+                            await supabaseSyncService.pullAllData(currentProfile.supabase_url, currentProfile.supabase_key);
+                            
+                            // Après le pull, on rafraîchit le profil local et on marque la date de sync
+                            const refreshedProfile = await companyProfileService.getProfile();
+                            await companyProfileService.updateProfile({ last_sync_at: now });
+                            
+                            set({ companyProfile: refreshedProfile, lastSyncDate: now });
+                            toast.success("Restauration Cloud (Pull) réussie.");
+                        }
                     } catch (error: any) {
+                        console.error("Sync Error:", error);
                         toast.error("Échec de la synchronisation.", { description: error.message });
                     } finally {
                         set({ isSyncing: false });
