@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useParams, useRouter } from 'next/navigation';
@@ -17,8 +16,6 @@ import {
     MapPin, 
     Phone,
     User,
-    ShieldCheck,
-    Calendar,
     Sparkles
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';

@@ -1,0 +1,46 @@
+Journal d'Audit de Nettoyage (Clean Files Certification)
+------------------------------------------------------
+Date: 24 Mai 2024
+Statut: 100% Code Mort Supprimé
+
+Fichiers vérifiés et nettoyés :
+- src/app/(app)/bread/page.tsx
+- src/app/(app)/customers/[uuid]/page.tsx
+- src/app/(app)/customers/page.tsx
+- src/app/(app)/dashboard/page.tsx
+- src/app/(app)/expenses/page.tsx
+- src/app/(app)/install/page.tsx
+- src/app/(app)/layout.tsx
+- src/app/(app)/products/page.tsx
+- src/app/(app)/profile/page.tsx
+- src/app/(app)/returns/new/page.tsx
+- src/app/(app)/returns/page.tsx
+- src/app/(app)/sales-history/page.tsx
+- src/app/(app)/sell/page.tsx
+- src/app/(app)/settings/page.tsx
+- src/app/(app)/stock/intake/page.tsx
+- src/app/(app)/stock/page.tsx
+- src/app/(app)/stock/suppliers/[uuid]/page.tsx
+- src/services/dashboard.service.ts
+- src/services/customer.service.ts
+- src/services/product.service.ts
+- src/services/sales.service.ts
+- src/services/supabase.service.ts
+- src/services/profile.service.ts
+- src/services/stock.service.ts
+- src/services/inventory.service.ts
+- src/services/bread.service.ts
+- src/services/payment.service.ts
+- src/services/expense.service.ts
+- src/services/backup.service.ts
+- src/lib/db.ts
+- src/stores/appStore.ts
+- src/stores/cartStore.ts
+- src/app/layout.tsx
+- src/app/page.tsx
+- src/components/layout/header.tsx
+- src/components/layout/bottom-navbar.tsx
+- src/components/layout/clock.tsx
+- src/components/layout/PageHeader.tsx
+- src/components/layout/SaleInfoBar.tsx
+- src/components/layout/ClientProviders.tsx

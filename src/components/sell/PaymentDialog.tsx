@@ -14,7 +14,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useActiveCart, useCartActions } from '@/stores/cartStore';
 import { calculateCartTotals, formatCurrency, cn } from '@/lib/utils';
-import { Loader2, CheckCircle2, Info, Wallet, Banknote, Calendar } from 'lucide-react';
+import { Loader2, CheckCircle2, Info, Wallet, Banknote, Calendar, AlertCircle } from 'lucide-react';
 import { PrintReceiptDialog } from '../sales/PrintReceiptDialog';
 import type { Sale } from '@/lib/types';
 import { DatePicker } from '../ui/date-picker';

@@ -17,11 +17,8 @@ import {
     Info, 
     Hash, 
     User, 
-    ShoppingBag, 
-    Undo2, 
     CheckCircle2, 
     AlertTriangle,
-    PackageCheck,
     Landmark,
     Sparkles
 } from 'lucide-react';

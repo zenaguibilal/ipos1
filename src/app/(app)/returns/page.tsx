@@ -17,8 +17,7 @@ import {
     RefreshCw, 
     FilterX, 
     Trash2, 
-    X,
-    Sparkles
+    X
 } from 'lucide-react';
 import { DateRangePicker } from '@/components/ui/date-range-picker';
 import { useDateRange } from '@/hooks/useDateRange';

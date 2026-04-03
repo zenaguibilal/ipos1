@@ -13,14 +13,11 @@ import {
     CheckCircle2, 
     Zap, 
     ShieldCheck,
-    Globe,
-    ArrowRight,
     Trophy,
     Star,
     LayoutDashboard,
     Sparkles
 } from "lucide-react";
-import { cn } from "@/lib/utils";
 import Link from 'next/link';
 
 export default function InstallPWAPage() {
