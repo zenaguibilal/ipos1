@@ -80,7 +80,7 @@ export const useAppStore = create<AppState>()(
                         const profile = await companyProfileService.getProfile();
                         set({ companyProfile: profile });
                     } catch (error: any) {
-                        toast.error("Impossible de charger le profil.", { description: error.message });
+                        toast.error("Impossible de charger le profil.");
                     } finally {
                         set({ isCompanyProfileLoading: false });
                     }
@@ -130,7 +130,7 @@ export const useAppStore = create<AppState>()(
                         toast.success("Retour de marchandise validé.");
                         return true;
                     } catch (error: any) {
-                        toast.error("Échec du traitement du retour.", { description: error.message });
+                        toast.error("Échec du traitement du retour.");
                         return false;
                     }
                 },
@@ -203,7 +203,7 @@ export const useAppStore = create<AppState>()(
                         toast.success("Réception de stock enregistrée.");
                         return true;
                     } catch (error: any) {
-                        toast.error("Échec de la réception de stock.", { description: error.message });
+                        toast.error("Échec de la réception de stock.");
                         return false;
                     }
                 },

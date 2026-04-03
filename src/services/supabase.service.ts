@@ -44,7 +44,7 @@ class SupabaseSyncService {
         const records = await dexieTable.toArray();
         if (records.length === 0) return;
 
-        // Préparation des données (suppression de l'ID auto-incrémenté local)
+        // Préparation des données (suppression de l'ID auto-incrémenté local pour Supabase)
         const dataToSync = records.map((r: any) => {
             const { id, ...rest } = r;
             return rest;
@@ -83,6 +83,7 @@ class SupabaseSyncService {
                     for (const remoteRecord of data) {
                         const localRecord = await dexieTable.where('uuid').equals(remoteRecord.uuid).first();
                         if (localRecord) {
+                            // On conserve l'ID local mais on met à jour le reste
                             await dexieTable.update(localRecord.id, remoteRecord);
                         } else {
                             // Dexie gérera l'ID auto-incrémenté local
