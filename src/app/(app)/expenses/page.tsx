@@ -40,7 +40,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { DateRangePicker } from '@/components/ui/date-range-picker';
 import { useDateRange } from '@/hooks/useDateRange';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { formatCurrency, cn } from '@/lib/utils';
 import { PageHeader } from '@/components/layout/PageHeader';
@@ -422,7 +422,7 @@ export default function ExpensesPage() {
                                     <YAxis 
                                         dataKey="name" 
                                         type="category" 
-                                        tick={{ fontSize: 10, fontWeight: '900', fill: 'hsl(var(--muted-foreground))' }}
+                                        tick={{ fontSize: 10, fontWeights: '900', fill: 'hsl(var(--muted-foreground))' }}
                                         width={100}
                                         axisLine={false}
                                         tickLine={false}
