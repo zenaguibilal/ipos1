@@ -21,7 +21,7 @@ import type { Sale } from '@/lib/types';
 import { formatCurrency, safeToDate } from '@/lib/utils';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { Hash, User, Calendar, Receipt, Package, Banknote, X, Info, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Hash, User, Calendar, Receipt, Package, Banknote, X, Info, CheckCircle2, AlertCircle, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export function SaleDetailsDialog({
