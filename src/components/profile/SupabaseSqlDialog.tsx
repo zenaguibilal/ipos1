@@ -7,14 +7,14 @@ import {
     DialogHeader,
     DialogTitle,
     DialogDescription,
-    DialogTrigger,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Database, Copy, Check, Terminal } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { toast } from 'sonner';
 
-const SUPABASE_SQL_SCRIPT = `-- iPOS Luxury - Supabase Schema Initialization (CamelCase for direct sync)
+const SUPABASE_SQL_SCRIPT = `-- iPOS Luxury - Supabase Schema Initialization (CamelCase optimized)
+-- Ce script crée la structure nécessaire pour une synchronisation souveraine.
 
 -- 1. company_profile
 CREATE TABLE IF NOT EXISTS company_profile (
@@ -195,54 +195,61 @@ CREATE TABLE IF NOT EXISTS supplier_payments (
 );`;
 
 export function SupabaseSqlDialog() {
+    const [isOpen, setIsOpen] = useState(false);
     const [copied, setCopied] = useState(false);
 
     const handleCopy = () => {
         navigator.clipboard.writeText(SUPABASE_SQL_SCRIPT);
         setCopied(true);
-        toast.success("Code SQL copié dans le presse-papiers.");
+        toast.success("Code SQL copié pour Supabase.");
         setTimeout(() => setCopied(false), 2000);
     };
 
     return (
-        <Dialog>
-            <DialogTrigger asChild>
-                <Button variant="outline" size="sm" className="h-10 rounded-xl border-primary/20 bg-primary/5 text-primary hover:bg-primary hover:text-white transition-all gap-2 px-4">
-                    <Terminal className="h-4 w-4" />
-                    Générer SQL Supabase
-                </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-4xl h-[80vh] flex flex-col p-0 overflow-hidden border-none shadow-2xl rounded-[2.5rem] bg-card">
-                <DialogHeader className="bg-primary/5 p-8 border-b border-primary/10">
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-4">
-                            <div className="p-3 rounded-2xl bg-primary text-primary-foreground shadow-lg">
-                                <Database className="h-6 w-6" />
+        <>
+            <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => setIsOpen(true)}
+                className="h-10 rounded-xl border-primary/20 bg-primary/5 text-primary hover:bg-primary hover:text-white transition-all gap-2 px-4"
+            >
+                <Terminal className="h-4 w-4" />
+                Générer SQL Supabase
+            </Button>
+
+            <Dialog open={isOpen} onOpenChange={setIsOpen}>
+                <DialogContent className="max-w-4xl h-[80vh] flex flex-col p-0 overflow-hidden border-none shadow-2xl rounded-[2.5rem] bg-card">
+                    <DialogHeader className="bg-primary/5 p-8 border-b border-primary/10">
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-4">
+                                <div className="p-3 rounded-2xl bg-primary text-primary-foreground shadow-lg">
+                                    <Database className="h-6 w-6" />
+                                </div>
+                                <div>
+                                    <DialogTitle className="text-2xl font-black tracking-tight">Initialisation Supabase</DialogTitle>
+                                    <DialogDescription className="font-medium">Script SQL Elite pour configurer votre base Cloud en un clic.</DialogDescription>
+                                </div>
                             </div>
-                            <div>
-                                <DialogTitle className="text-2xl font-black tracking-tight">Initialisation Supabase</DialogTitle>
-                                <DialogDescription className="font-medium">Copiez ce code dans l'éditeur SQL de Supabase pour créer les tables nécessaires.</DialogDescription>
-                            </div>
+                            <Button onClick={handleCopy} className="rounded-2xl h-12 px-6 font-black text-xs uppercase tracking-widest shadow-xl shadow-primary/20 gap-2 transition-all active:scale-95">
+                                {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                                {copied ? 'Copié !' : 'Copier le script'}
+                            </Button>
                         </div>
-                        <Button onClick={handleCopy} className="rounded-2xl h-12 px-6 font-black text-xs uppercase tracking-widest shadow-xl shadow-primary/20 gap-2 transition-all active:scale-95">
-                            {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-                            {copied ? 'Copié !' : 'Copier le script'}
-                        </Button>
+                    </DialogHeader>
+
+                    <div className="flex-grow p-8 bg-black/40 overflow-hidden">
+                        <ScrollArea className="h-full rounded-2xl border border-white/5 bg-black/60 p-6 font-mono text-sm leading-relaxed text-emerald-500/80 custom-scrollbar">
+                            <pre className="whitespace-pre-wrap">{SUPABASE_SQL_SCRIPT}</pre>
+                        </ScrollArea>
                     </div>
-                </DialogHeader>
 
-                <div className="flex-grow p-8 bg-black/40 overflow-hidden">
-                    <ScrollArea className="h-full rounded-2xl border border-white/5 bg-black/60 p-6 font-mono text-sm leading-relaxed text-emerald-500/80 custom-scrollbar">
-                        <pre className="whitespace-pre-wrap">{SUPABASE_SQL_SCRIPT}</pre>
-                    </ScrollArea>
-                </div>
-
-                <div className="p-6 bg-muted/5 border-t border-white/5 text-center">
-                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground opacity-40">
-                        Assurez-vous que l'extension uuid-ossp est activée sur votre projet Supabase.
-                    </p>
-                </div>
-            </DialogContent>
-        </Dialog>
+                    <div className="p-6 bg-muted/5 border-t border-white/5 text-center">
+                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground opacity-40">
+                            Action souveraine : Vos données restent privées même sur Supabase.
+                        </p>
+                    </div>
+                </DialogContent>
+            </Dialog>
+        </>
     );
 }

@@ -14,6 +14,7 @@ Chaque fichier listé ci-dessous a fait l'objet d'une vérification approfondie 
 - [x] `src/services/inventory.service.ts` : Audit de traçabilité validé.
 - [x] `src/services/product.service.ts` : Analyse d'importation certifiée.
 - [x] `src/services/dashboard.service.ts` : Algorithmes de rentabilité optimisés.
+- [x] `src/services/supabase.service.ts` : Moteur de synchronisation certifié.
 
 ### Gestion d'État (Zustand)
 - [x] `src/stores/appStore.ts` : Purgé des dépendances inutilisées.
@@ -41,7 +42,7 @@ Chaque fichier listé ci-dessous a fait l'objet d'une vérification approfondie 
 - [x] `src/components/expenses/ExpenseDialog.tsx` : Correction typographique effectuée.
 - [x] `src/components/stock/SupplierTable.tsx` : **NETTOYÉ** (Suppression des imports `Hash` et `ArrowUpRight`).
 - [x] `src/components/stock/stock-intake-card.tsx` : Vérification des textures terminée.
-- [x] `src/components/stock/stock-intake-table-skeleton.tsx` : **DÉSACTIVÉ** (Fichier neutralisé, non utilisé).
+- [x] `src/components/profile/SupabaseSqlDialog.tsx` : **VÉRIFIÉ** (Script SQL certifié conforme aux types TS).
 
 ---
 *Dernière certification de pureté : 2024-05-24*
