@@ -13,7 +13,6 @@ import {
     Zap, 
     ShieldCheck, 
     Trophy, 
-    Star, 
     LayoutDashboard, 
     Sparkles 
 } from "lucide-react";
@@ -217,7 +216,7 @@ export default function InstallPWAPage() {
 
                                 <div className="flex gap-6 group">
                                     <div className="h-14 w-12 rounded-2xl bg-amber-500/10 flex items-center justify-center text-amber-500 shadow-inner shrink-0 group-hover:scale-110 transition-transform">
-                                        <Star className="h-7 w-7" />
+                                        <Zap className="h-7 w-7" />
                                     </div>
                                     <div>
                                         <h4 className="text-sm font-black uppercase tracking-widest">Souveraineté</h4>

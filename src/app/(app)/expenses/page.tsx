@@ -8,7 +8,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { 
     Plus, 
-    Filter, 
     FileUp, 
     Search, 
     RefreshCw, 
@@ -20,10 +19,10 @@ import {
     Trash2,
     X,
     Printer,
-    BarChart,
     SortAsc,
     Sparkles,
-    TrendingDown
+    TrendingDown,
+    Filter
 } from 'lucide-react';
 import { ExpenseCard } from '@/components/expenses/ExpenseCard';
 import ExpenseDialog from '@/components/expenses/ExpenseDialog';
@@ -379,7 +378,7 @@ export default function ExpensesPage() {
                 <StatCard 
                     title="Charge Journalière" 
                     value={formatCurrency(stats.dailyAverage)} 
-                    icon={BarChart} 
+                    icon={TrendingDown} 
                     colorClass="bg-primary/10 text-primary"
                     subtitle="Moyenne sur la période"
                 />

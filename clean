@@ -1,25 +1,8 @@
-Fichiers audités et certifiés sans code mort :
-- src/app/(app)/bread/page.tsx
-- src/app/(app)/customers/[uuid]/page.tsx
-- src/app/(app)/customers/page.tsx
-- src/app/(app)/dashboard/page.tsx
-- src/app/(app)/expenses/page.tsx
-- src/app/(app)/install/page.tsx
-- src/app/(app)/layout.tsx
-- src/app/(app)/products/page.tsx
-- src/app/(app)/profile/page.tsx
-- src/app/(app)/returns/new/page.tsx
-- src/app/(app)/returns/page.tsx
-- src/app/(app)/sales-history/page.tsx
-- src/app/(app)/sell/page.tsx
-- src/app/(app)/settings/page.tsx
-- src/app/(app)/stock/intake/page.tsx
-- src/app/(app)/stock/page.tsx
-- src/app/(app)/stock/suppliers/[uuid]/page.tsx
-- src/lib/db.ts
-- src/stores/appStore.ts
-- src/components/stock/stock-intake-card.tsx
-- src/components/sell/PaymentDialog.tsx
-- src/components/sales/SaleDetailsDialog.tsx
-- src/services/supabase.service.ts
-- src/services/dashboard.service.ts
+src/lib/db.ts
+src/app/(app)/stock/intake/page.tsx
+src/app/(app)/dashboard/page.tsx
+src/app/(app)/expenses/page.tsx
+src/components/expenses/ExpenseDialog.tsx
+src/app/(app)/sales-history/page.tsx
+src/app/(app)/install/page.tsx
+src/stores/appStore.ts

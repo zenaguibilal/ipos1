@@ -18,7 +18,6 @@ import {
     Clock, 
     FileUp, 
     Banknote, 
-    Percent,
     TrendingUp,
     Trash2,
     X,
@@ -371,7 +370,7 @@ export default function SalesHistoryPage() {
 
                             <div className="p-4 rounded-2xl bg-amber-500/5 border border-amber-500/10 flex justify-between items-center group hover:bg-amber-500/10 transition-all duration-500">
                                 <div className="flex items-center gap-3">
-                                    <div className="p-2 rounded-xl bg-amber-500/10 text-amber-600"><Percent className="h-3.5 w-3.5" /></div>
+                                    <div className="p-2 rounded-xl bg-amber-500/10 text-amber-600"><RefreshCw className="h-3.5 w-3.5" /></div>
                                     <span className="text-[10px] font-black uppercase tracking-widest text-amber-600/70">Remises Accordées</span>
                                 </div>
                                 <span className="font-black text-sm text-amber-600">{formatCurrency(stats.discount)}</span>

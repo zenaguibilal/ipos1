@@ -9,7 +9,6 @@ import {
     Trash2, 
     AlertTriangle, 
     ChevronsUpDown, 
-    Plus, 
     Truck, 
     BadgeCheck, 
     Loader2,
@@ -250,7 +249,7 @@ export default function NewStockIntakePage() {
                                         <CommandList>
                                             <CommandEmpty>
                                                 <Button variant="link" className="w-full text-xs" onClick={handleSupplierCreate}>
-                                                    <Plus className="mr-2 h-4 w-4" /> Créer "{supplierSearch}"
+                                                    Créer "{supplierSearch}"
                                                 </Button>
                                             </CommandEmpty>
                                             <CommandGroup>
