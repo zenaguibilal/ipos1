@@ -17,12 +17,11 @@ interface StockIntakeCardProps {
     onCancelIntake: (intake: StockIntake) => void;
 }
 
-export const StockIntakeCard = React.memo<StockIntakeCardProps>(({ intake, supplierName, onViewDetails, onCancelIntake }) => {
+const StockIntakeCardComponent = ({ intake, supplierName, onViewDetails, onCancelIntake }: StockIntakeCardProps) => {
     const name = supplierName || 'Partenaire Inconnu';
 
     return (
         <Card className="luxury-card group flex flex-col justify-between transition-all duration-500 bg-card/40 backdrop-blur-xl border-white/5 relative overflow-hidden rounded-[2.5rem]">
-            {/* Background Accent */}
             <div className="absolute -right-4 -top-4 opacity-[0.02] group-hover:opacity-10 transition-opacity duration-700 pointer-events-none">
                 <Archive className="h-32 w-32 rotate-12" />
             </div>
@@ -94,5 +93,6 @@ export const StockIntakeCard = React.memo<StockIntakeCardProps>(({ intake, suppl
             </CardFooter>
         </Card>
     );
-});
-StockIntakeCard.displayName = 'StockIntakeCard';
+};
+
+export const StockIntakeCard = React.memo(StockIntakeCardComponent);

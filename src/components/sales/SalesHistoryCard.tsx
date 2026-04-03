@@ -44,7 +44,6 @@ const SalesHistoryCardComponent = ({
                 isSelected ? "ring-2 ring-primary border-primary/30 shadow-2xl scale-[1.02]" : "hover:bg-primary/5"
             )}
         >
-            {/* Background Decor */}
             <div className="absolute -right-4 -top-4 opacity-[0.02] group-hover:opacity-10 transition-opacity duration-700 pointer-events-none">
                 <Receipt className="h-32 w-32 rotate-12" />
             </div>
@@ -127,6 +126,6 @@ const SalesHistoryCardComponent = ({
             </CardFooter>
         </Card>
     );
-}
+};
 
 export const SalesHistoryCard = React.memo(SalesHistoryCardComponent);

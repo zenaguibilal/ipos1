@@ -28,12 +28,10 @@ const ExpenseCardComponent = ({ expense, onEdit, onDelete, isSelected, onToggleS
                 isSelected ? "ring-2 ring-primary border-primary/30 shadow-2xl scale-[1.02]" : "hover:bg-primary/5"
             )}
         >
-            {/* Background Decor */}
             <div className="absolute -right-4 -top-4 opacity-[0.02] group-hover:opacity-10 transition-opacity duration-700 pointer-events-none">
                 <Banknote className="h-32 w-32 rotate-12" />
             </div>
 
-            {/* Action Menu & Checkbox */}
             <div className="absolute top-4 right-4 z-10 flex gap-2 items-center">
                 <div onClick={(e) => e.stopPropagation()} className="p-1.5 bg-background/80 backdrop-blur-md rounded-xl border border-white/5 shadow-sm">
                     <Checkbox
@@ -85,7 +83,7 @@ const ExpenseCardComponent = ({ expense, onEdit, onDelete, isSelected, onToggleS
             </CardContent>
 
             <CardFooter className="p-6 pt-4 border-t border-white/5 bg-muted/5 flex items-center justify-between relative z-10">
-                <div className="space-y-0.5">
+                 <div className="space-y-0.5">
                     <p className="text-[9px] font-black text-muted-foreground/40 uppercase tracking-widest">Décaissement Flux</p>
                     <p className="text-3xl font-black text-destructive tracking-tighter leading-none">{formatCurrency(expense.amount)}</p>
                 </div>

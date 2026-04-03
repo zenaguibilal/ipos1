@@ -40,7 +40,7 @@ const DebtStatusIcon = ({ status }: { status: Customer['debtStatus']}) => {
     }
 };
 
-export const CustomerCard = React.memo(({ customer, onEdit, onDelete, isSelected, onToggleSelection }: CustomerCardProps) => {
+const CustomerCardComponent = ({ customer, onEdit, onDelete, isSelected, onToggleSelection }: CustomerCardProps) => {
     const [isMounted, setIsMounted] = useState(false);
     
     const balance = customer.outstandingBalance || 0;
@@ -63,7 +63,6 @@ export const CustomerCard = React.memo(({ customer, onEdit, onDelete, isSelected
             "luxury-card group flex flex-col transition-all duration-500 bg-card/40 backdrop-blur-xl border-white/5 relative overflow-hidden rounded-[2.5rem] cursor-pointer",
             isSelected ? "ring-2 ring-primary border-primary/30 shadow-2xl scale-[1.02]" : "hover:bg-primary/5"
         )}>
-            {/* Background Texture Effect */}
             <div className="absolute -right-4 -top-4 opacity-[0.02] group-hover:opacity-10 transition-opacity duration-700 pointer-events-none">
                 <User className="h-32 w-32 rotate-12" />
             </div>
@@ -173,5 +172,6 @@ export const CustomerCard = React.memo(({ customer, onEdit, onDelete, isSelected
             </CardFooter>
         </Card>
     );
-});
-CustomerCard.displayName = 'CustomerCard';
+};
+
+export const CustomerCard = React.memo(CustomerCardComponent);
