@@ -5,7 +5,7 @@ import { useDebounce } from '@/hooks/useDebounce';
 import type { StockIntake, Supplier, InventoryLog } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Search, Plus, Archive, LayoutGrid, List, History, ArrowUpDown, RefreshCw, Building, Wallet, Trash2, UserPlus } from 'lucide-react';
+import { Search, Plus, Archive, LayoutGrid, List, History, ArrowUpDown, RefreshCw, Building, Wallet, UserPlus } from 'lucide-react';
 import { DateRangePicker } from '@/components/ui/date-range-picker';
 import { useDateRange } from '@/hooks/useDateRange';
 import { StockIntakeCard } from '@/components/stock/stock-intake-card';
@@ -210,7 +210,6 @@ export default function StockPage() {
                 )}
             </div>
 
-            {/* Navigation Glass-Tabs */}
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 bg-card/20 p-2 rounded-[2.5rem] border border-white/5 backdrop-blur-xl">
                 <div className="flex items-center gap-2 p-1.5 bg-black/20 rounded-[2rem] border border-white/5 shadow-inner">
                     <button 

@@ -14,7 +14,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useActiveCart, useCartActions } from '@/stores/cartStore';
 import { calculateCartTotals, formatCurrency, cn } from '@/lib/utils';
-import { Loader2, CheckCircle2, Info, Wallet, Banknote, Calendar, AlertCircle } from 'lucide-react';
+import { Loader2, CheckCircle2, Info, Wallet, Banknote, Calendar } from 'lucide-react';
 import { PrintReceiptDialog } from '../sales/PrintReceiptDialog';
 import type { Sale } from '@/lib/types';
 import { DatePicker } from '../ui/date-picker';
@@ -40,7 +40,7 @@ export function PaymentDialog({ isOpen, onOpenChange }: { isOpen: boolean, onOpe
 
     useEffect(() => {
         if (isOpen && isMounted) {
-            setAmountPaid(total); // Default to paying the full amount
+            setAmountPaid(total);
             setIsLoading(false);
             setLastSale(null);
             if (cart?.customerUuid) {
@@ -88,14 +88,12 @@ export function PaymentDialog({ isOpen, onOpenChange }: { isOpen: boolean, onOpe
                     </div>
 
                     <div className="p-6 space-y-6">
-                        {/* Big Total Display */}
                         <div className="text-center p-6 bg-muted/30 rounded-3xl border border-border/50 relative overflow-hidden">
                             <Label className="text-muted-foreground uppercase text-[10px] font-black tracking-widest mb-2 block relative z-10">Total à Payer</Label>
                             <p className="text-5xl font-black text-primary tracking-tighter relative z-10">{formatCurrency(total)}</p>
                             <Wallet className="absolute -right-4 -bottom-4 h-24 w-24 text-primary/5 rotate-12" />
                         </div>
 
-                        {/* Input Grid */}
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                              <div className="space-y-2">
                                 <Label htmlFor="amount-paid" className="flex items-center gap-2 text-xs font-bold text-muted-foreground ml-1">
@@ -130,7 +128,6 @@ export function PaymentDialog({ isOpen, onOpenChange }: { isOpen: boolean, onOpe
                             </div>
                         </div>
 
-                        {/* Credit Sale Warning & Date Picker */}
                         {isCreditSale && (
                             <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-2xl space-y-4 animate-in fade-in slide-in-from-top-2">
                                 <div className="flex items-start gap-3">
@@ -167,7 +164,7 @@ export function PaymentDialog({ isOpen, onOpenChange }: { isOpen: boolean, onOpe
                             disabled={isLoading || amountPaid < 0} 
                             className="flex-1 rounded-2xl h-12 font-bold shadow-lg shadow-primary/20 transition-all active:scale-95"
                         >
-                            {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <CheckCircle2 className="mr-2 h-5 w-5" />}
+                            {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle2 className="mr-2 h-5 w-5" />}
                             Valider [Enter]
                         </Button>
                     </div>

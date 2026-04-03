@@ -5,7 +5,7 @@ import type { ProductReturn, Customer } from '@/lib/types';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { MoreHorizontal, FileText, Trash2, Hash, Clock, User, ChevronRight } from 'lucide-react';
+import { MoreHorizontal, FileText, Trash2, Hash, Clock, User } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { safeToDate, formatCurrency, cn } from '@/lib/utils';
@@ -29,7 +29,7 @@ export function ReturnTable({ returns, customerMap, selectedReturns, onToggleSel
                         <TableHead className="w-[60px] px-6">
                            <Checkbox
                                 checked={returns.length > 0 && selectedReturns.size === returns.length}
-                                onCheckedChange={() => {}} // Controlled by parent
+                                onCheckedChange={() => {}}
                                 className="border-primary data-[state=checked]:bg-primary"
                             />
                         </TableHead>

@@ -5,7 +5,7 @@ import type { Sale, Customer } from '@/lib/types';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { MoreHorizontal, FileText, Trash2, Printer, CheckCircle, AlertCircle, Clock, Hash, User, ChevronRight } from 'lucide-react';
+import { MoreHorizontal, FileText, Trash2, Printer, CheckCircle, AlertCircle, Clock, Hash, User } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { safeToDate, formatCurrency, cn } from '@/lib/utils';
@@ -45,7 +45,7 @@ export function SalesHistoryTable({
                         <TableHead className="w-[60px] px-6">
                            <Checkbox
                                 checked={sales.length > 0 && selectedSales.size === sales.length}
-                                onCheckedChange={() => {}} // Controlled by parent
+                                onCheckedChange={() => {}}
                                 className="border-primary data-[state=checked]:bg-primary"
                             />
                         </TableHead>

@@ -1,14 +1,13 @@
-
 'use client';
 
 import type { StockIntake, Supplier } from '@/lib/types';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { MoreHorizontal, FileText, Trash2, Hash, Calendar, Building, ShoppingBag, ChevronRight } from 'lucide-react';
+import { MoreHorizontal, FileText, Trash2, Hash, Calendar, Building, ShoppingBag } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { formatCurrency, safeToDate, cn } from '@/lib/utils';
+import { formatCurrency, safeToDate } from '@/lib/utils';
 
 interface StockIntakeTableProps {
     intakes: StockIntake[];

@@ -2,10 +2,10 @@
 
 import React from 'react';
 import type { Sale } from '@/lib/types';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { MoreHorizontal, FileText, Trash2, CheckCircle, AlertCircle, Clock, Hash, Tag, Receipt, ChevronRight } from 'lucide-react';
+import { MoreHorizontal, FileText, Trash2, CheckCircle, AlertCircle, Clock, Hash, Receipt, ChevronRight } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { safeToDate, formatCurrency, cn } from '@/lib/utils';
@@ -95,7 +95,6 @@ const SalesHistoryCardComponent = ({
 
             <CardContent className="p-6 py-4 space-y-5 relative z-10">
                 <div className="flex items-center justify-between text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground/60 border-b border-white/5 pb-2">
-                    <span className="flex items-center gap-1.5"><Tag className="h-3 w-3 opacity-50"/> Détails Flux</span>
                     <span className="text-foreground">Recu: {formatCurrency(sale.amountPaid)}</span>
                 </div>
                 <div className="grid grid-cols-2 gap-4">

@@ -5,7 +5,7 @@ import type { ProductReturn } from '@/lib/types';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { MoreHorizontal, FileText, Trash2, Clock, Hash, User, PackageOpen, Banknote, Undo2, ChevronRight } from 'lucide-react';
+import { MoreHorizontal, FileText, Trash2, Clock, Hash, Undo2, ChevronRight } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { safeToDate, formatCurrency, cn } from '@/lib/utils';

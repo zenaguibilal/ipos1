@@ -1,4 +1,3 @@
-
 'use client';
 
 import React from 'react';
@@ -6,10 +5,10 @@ import type { StockIntake } from '@/lib/types';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { MoreHorizontal, FileText, Trash2, Calendar, Hash, Building, ShoppingBag } from 'lucide-react';
+import { MoreHorizontal, FileText, Trash2, Calendar, Hash, Building, ShoppingBag, Archive } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { safeToDate, formatCurrency, cn } from '@/lib/utils';
+import { safeToDate, formatCurrency } from '@/lib/utils';
 
 interface StockIntakeCardProps {
     intake: StockIntake;

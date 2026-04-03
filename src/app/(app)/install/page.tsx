@@ -10,13 +10,12 @@ import {
     Download, 
     Share, 
     PlusSquare, 
-    CheckCircle2, 
     Zap, 
-    ShieldCheck,
-    Trophy,
-    Star,
-    LayoutDashboard,
-    Sparkles
+    ShieldCheck, 
+    Trophy, 
+    Star, 
+    LayoutDashboard, 
+    Sparkles 
 } from "lucide-react";
 import Link from 'next/link';
 
@@ -28,16 +27,13 @@ export default function InstallPWAPage() {
 
     useEffect(() => {
         setIsMounted(true);
-        // Detect if already installed
         if (window.matchMedia('(display-mode: standalone)').matches) {
             setIsInstalled(true);
         }
 
-        // Detect Platform
         const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
         setPlatform(isIOS ? 'ios' : 'other');
 
-        // Capture install prompt
         const handleBeforeInstallPrompt = (e: Event) => {
             e.preventDefault();
             setDeferredPrompt(e);
@@ -104,7 +100,6 @@ export default function InstallPWAPage() {
                 </div>
             ) : (
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
-                    {/* Main Configuration Card */}
                     <div className="lg:col-span-8 space-y-10">
                         <Card className="rounded-[3rem] border-white/5 shadow-2xl bg-card/40 backdrop-blur-3xl overflow-hidden">
                             <CardHeader className="bg-primary/5 p-10 border-b border-white/5">
@@ -182,7 +177,6 @@ export default function InstallPWAPage() {
                             </CardContent>
                         </Card>
 
-                        {/* PC/Mac Tip */}
                         <div className="flex items-center gap-8 p-10 bg-muted/20 rounded-[3rem] border border-white/5 group hover:bg-muted/30 transition-all duration-700">
                             <div className="h-20 w-20 rounded-[1.5rem] bg-background flex items-center justify-center shadow-inner shrink-0 group-hover:scale-110 transition-transform duration-500">
                                 <Monitor className="h-10 w-10 text-primary opacity-40 group-hover:opacity-100 transition-opacity" />
@@ -196,7 +190,6 @@ export default function InstallPWAPage() {
                         </div>
                     </div>
 
-                    {/* Features Sidebar */}
                     <div className="lg:col-span-4 space-y-8">
                         <div className="p-10 bg-card/40 backdrop-blur-2xl rounded-[3rem] shadow-2xl border border-white/5 space-y-10">
                             <h3 className="text-xs font-black uppercase tracking-[0.3em] text-center border-b border-white/5 pb-8 opacity-40 italic">Privilèges iPOS Zen</h3>
@@ -245,7 +238,6 @@ export default function InstallPWAPage() {
                 </div>
             )}
 
-            {/* Tech Footer */}
             <div className="p-12 bg-muted/20 rounded-[4rem] border border-white/5 flex flex-col md:flex-row items-center gap-12 animate-in fade-in duration-1000 delay-300">
                 <div className="h-28 w-28 rounded-[2.5rem] bg-background flex items-center justify-center shadow-2xl border border-white/5 shrink-0 group">
                     <Smartphone className="h-14 w-14 text-primary opacity-20 group-hover:opacity-100 transition-opacity duration-700" />
