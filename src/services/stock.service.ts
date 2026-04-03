@@ -52,7 +52,6 @@ class StockService {
                 throw new Error("Réception de stock non trouvée.");
             }
 
-            // Revert product quantities
             for (const item of intake.items) {
                 if (item.productUuid) {
                     const quantityToRevert = item.quantityReceived - item.quantityDamaged;
@@ -60,12 +59,10 @@ class StockService {
                 }
             }
 
-            // Revert supplier balance
             if (intake.supplierUuid && intake.totalValue > 0) {
                 await supplierService.updateSupplierBalance(intake.supplierUuid, -intake.totalValue);
             }
 
-            // Delete the intake record
             await db.stock_intakes.delete(intake.id);
         });
     }

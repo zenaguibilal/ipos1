@@ -195,7 +195,6 @@ export default function ExpensesPage() {
             .map(([name, value]) => ({ name, value }))
             .sort((a, b) => b.value - a.value);
 
-        // Calculate days in period for average
         const days = dateRange?.from && dateRange?.to 
             ? Math.max(1, differenceInDays(dateRange.to, dateRange.from) + 1)
             : 1;

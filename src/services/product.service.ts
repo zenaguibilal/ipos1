@@ -8,17 +8,23 @@ import { calculateStockStatus } from '@/lib/utils';
 import { inventoryService } from './inventory.service';
 import Papa from 'papaparse';
 import { supplierService } from './supplier.service';
-import type Dexie from 'dexie';
 
 class ProductService {
 
     async getProducts(options?: { sortBy?: string }): Promise<Product[]> {
+        const results = await db.products.toArray();
         if (options?.sortBy) {
             const [field, order] = options.sortBy.split('_');
-            const results = await db.products.orderBy(field).toArray();
-            return order === 'desc' ? results.reverse() : results;
+            const isAsc = order === 'asc';
+            results.sort((a: any, b: any) => {
+                const valA = a[field];
+                const valB = b[field];
+                if (valA < valB) return isAsc ? -1 : 1;
+                if (valA > valB) return isAsc ? 1 : -1;
+                return 0;
+            });
         }
-        return db.products.toArray();
+        return results;
     }
     
     async getProductsByUuids(uuids: string[]): Promise<Product[]> {
@@ -33,39 +39,23 @@ class ProductService {
         stockStatus?: 'all' | 'in_stock' | 'low_stock' | 'out_of_stock' | 'expiring_soon' | 'expired';
         sortBy?: string;
     }): Promise<Product[]> {
-        let collection: Dexie.Collection<Product, number>;
         const now = new Date();
         const thirtyDaysFromNow = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
 
-        if (filters.stockStatus === 'expired') {
-            collection = db.products.where('dateExpiration').below(now);
-        } else if (filters.stockStatus === 'expiring_soon') {
-            collection = db.products.where('dateExpiration').between(now, thirtyDaysFromNow, true, true);
-        } else if (filters.stockStatus && ['in_stock', 'low_stock', 'out_of_stock'].includes(filters.stockStatus)) {
-            collection = db.products.where('stockStatus').equals(filters.stockStatus);
-        } else if (filters.category && filters.category !== 'all') {
-            collection = db.products.where('category').equals(filters.category);
-        } else if (filters.supplierUuid && filters.supplierUuid !== 'all') {
-            collection = db.products.where('supplierUuid').equals(filters.supplierUuid);
-        } else {
-            collection = db.products.toCollection();
-        }
+        let products: Product[] = [];
 
-        let products = await collection.toArray();
-        
-        if (filters.category && filters.category !== 'all') {
-            products = products.filter(p => p.category === filters.category);
-        }
-        if (filters.supplierUuid && filters.supplierUuid !== 'all') {
-            products = products.filter(p => p.supplierUuid === filters.supplierUuid);
-        }
-        if (filters.stockStatus && ['in_stock', 'low_stock', 'out_of_stock'].includes(filters.stockStatus)) {
-            products = products.filter(p => p.stockStatus === filters.stockStatus);
-        }
         if (filters.stockStatus === 'expired') {
-             products = products.filter(p => p.dateExpiration ? new Date(p.dateExpiration) < now : false);
+            products = await db.products.where('dateExpiration').below(now).toArray();
         } else if (filters.stockStatus === 'expiring_soon') {
-            products = products.filter(p => p.dateExpiration ? (new Date(p.dateExpiration) >= now && new Date(p.dateExpiration) <= thirtyDaysFromNow) : false);
+            products = await db.products.where('dateExpiration').between(now, thirtyDaysFromNow, true, true).toArray();
+        } else if (filters.stockStatus && ['in_stock', 'low_stock', 'out_of_stock'].includes(filters.stockStatus)) {
+            products = await db.products.where('stockStatus').equals(filters.stockStatus).toArray();
+        } else if (filters.category && filters.category !== 'all') {
+            products = await db.products.where('category').equals(filters.category).toArray();
+        } else if (filters.supplierUuid && filters.supplierUuid !== 'all') {
+            products = await db.products.where('supplierUuid').equals(filters.supplierUuid).toArray();
+        } else {
+            products = await db.products.toArray();
         }
 
         if (filters.query) {
@@ -175,7 +165,7 @@ class ProductService {
         return this.addProduct({
             ...rest,
             name: `${name} (Copie)`,
-            quantity: 0, // Stock resets for duplication
+            quantity: 0, 
         } as any);
     }
 

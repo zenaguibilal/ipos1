@@ -97,7 +97,6 @@ export const useAppStore = create<AppState>()(
                         const now = new Date();
                         
                         if (mode === 'push') {
-                            // On met à jour l'horodatage localement avant le push pour qu'il soit envoyé au cloud
                             const updatedProfile = await companyProfileService.updateProfile({ last_sync_at: now });
                             set({ companyProfile: updatedProfile, lastSyncDate: now });
                             
@@ -106,7 +105,6 @@ export const useAppStore = create<AppState>()(
                         } else {
                             await supabaseSyncService.pullAllData(currentProfile.supabase_url, currentProfile.supabase_key);
                             
-                            // Après le pull, on rafraîchit le profil local et on marque la date de sync
                             const refreshedProfile = await companyProfileService.getProfile();
                             await companyProfileService.updateProfile({ last_sync_at: now });
                             

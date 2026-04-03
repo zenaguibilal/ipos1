@@ -26,8 +26,6 @@ class ReturnService {
 
         if (filters.query) {
             const lowerQuery = filters.query.toLowerCase();
-            // This requires fetching customer names if we want to filter by them.
-            // For now, only filter by invoice number.
             returns = returns.filter(r => r.originalInvoiceNumber.toLowerCase().includes(lowerQuery));
         }
         
