@@ -6,7 +6,7 @@ import { useActiveCart, useCartActions } from '@/stores/cartStore';
 import { customerService } from '@/services/customer.service';
 import type { Customer } from '@/lib/types';
 import { calculateCartTotals, formatCurrency } from '@/lib/utils';
-import { User, HandCoins, Trash2, ChevronRight, Receipt, Sparkles } from 'lucide-react';
+import { User, HandCoins, Trash2, ChevronRight, Receipt } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -85,7 +85,7 @@ export function SaleInfoBar() {
                         
                         {/* Section 2: Core Financials (Elite Dashboard Focus) */}
                         <div className="flex items-center gap-8 bg-black/40 px-10 py-2 rounded-full border border-white/5 shadow-2xl relative overflow-hidden group">
-                            <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 opacity-0 group-hover:opacity-100 transition-opacity duration-1000" />
+                            <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 opacity-0 group-hover:opacity-10 transition-opacity duration-1000" />
                             
                             <div className="text-center relative z-10">
                                 <p className="text-[9px] font-black uppercase text-muted-foreground/40 tracking-[0.3em] mb-0.5">Total à Encaisser</p>

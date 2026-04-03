@@ -35,9 +35,11 @@ Chaque fichier listé ci-dessous a fait l'objet d'une vérification approfondie 
 - [x] `src/components/layout/header.tsx` : Navigation Elite validée.
 - [x] `src/components/layout/SaleInfoBar.tsx` : **OPTIMISÉ** (Design Luxury finalisé, suppression imports inutilisés).
 - [x] `src/components/sell/ProductSearch.tsx` : Moteur de recherche optimisé.
+- [x] `src/components/sell/CustomerCombobox.tsx` : Intégration CRM Express certifiée.
 - [x] `src/components/sell/PaymentDialog.tsx` : **CORRIGÉ** (Ajout import `AlertCircle` manquant).
 - [x] `src/components/sales/SaleDetailsDialog.tsx` : **CORRIGÉ** (Ajout import `AlertCircle` manquant).
 - [x] `src/components/expenses/ExpenseDialog.tsx` : Correction typographique "Poste".
+- [x] `src/components/stock/SupplierTable.tsx` : **NETTOYÉ** (Suppression des imports `Hash` et `ArrowUpRight`).
 - [x] `src/components/stock/stock-intake-card.tsx` : Vérification des textures terminée.
 - [x] `src/components/stock/stock-intake-table-skeleton.tsx` : **DÉSACTIVÉ** (Fichier neutralisé, non utilisé).
 
