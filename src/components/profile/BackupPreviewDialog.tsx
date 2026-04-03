@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import {
     Dialog,
     DialogContent,
@@ -24,7 +24,8 @@ import {
     Search,
     ChevronRight,
     Save,
-    Trash2
+    Trash2,
+    Loader2
 } from 'lucide-react';
 import { backupService } from '@/services/backup.service';
 import { toast } from 'sonner';
@@ -45,6 +46,11 @@ export function BackupPreviewDialog({ isOpen, onOpenChange, initialData }: Backu
     const [searchQuery, setSearchQuery] = useState('');
     const [isRestoring, setIsRestoring] = useState(false);
 
+    // Sync state when initialData changes (new file selected)
+    useEffect(() => {
+        setData(initialData);
+    }, [initialData]);
+
     const categories = [
         { id: 'products', label: 'Produits', icon: Package, count: data.products?.length || 0 },
         { id: 'customers', label: 'Clients', icon: Users2, count: data.customers?.length || 0 },
@@ -56,18 +62,22 @@ export function BackupPreviewDialog({ isOpen, onOpenChange, initialData }: Backu
     const handleUpdateField = useCallback((category: string, index: number, field: string, value: any) => {
         setData(prev => {
             const newData = { ...prev };
-            const table = [...newData[category]];
-            table[index] = { ...table[index], [field]: value };
-            newData[category] = table;
-            return newData;
+            const table = [...(newData[category] || [])];
+            if (table[index]) {
+                table[index] = { ...table[index], [field]: value };
+                newData[category] = table;
+            }
+            return { ...newData };
         });
     }, []);
 
     const handleRemoveRow = useCallback((category: string, index: number) => {
         setData(prev => {
             const newData = { ...prev };
-            newData[category] = newData[category].filter((_, i) => i !== index);
-            return newData;
+            if (newData[category]) {
+                newData[category] = newData[category].filter((_, i) => i !== index);
+            }
+            return { ...newData };
         });
     }, []);
 
@@ -85,9 +95,9 @@ export function BackupPreviewDialog({ isOpen, onOpenChange, initialData }: Backu
         setIsRestoring(true);
         try {
             await backupService.restoreBackup(data);
-            toast.success("Système restauré avec succès.");
+            toast.success("Système restauré souverainement.");
             onOpenChange(false);
-            setTimeout(() => window.location.reload(), 1500);
+            setTimeout(() => window.location.reload(), 1000);
         } catch (error: any) {
             toast.error("Échec de la restauration", { description: error.message });
         } finally {
@@ -105,26 +115,26 @@ export function BackupPreviewDialog({ isOpen, onOpenChange, initialData }: Backu
                                 <Database className="h-6 w-6" />
                             </div>
                             <div>
-                                <DialogTitle className="text-2xl font-black tracking-tighter">Aperçu du Manifeste Souverain</DialogTitle>
-                                <DialogDescription className="text-[10px] font-black uppercase tracking-[0.3em] text-primary/50">Vérifiez et éditez les données avant injection</DialogDescription>
+                                <DialogTitle className="text-2xl font-black tracking-tighter">Manifeste Souverain</DialogTitle>
+                                <DialogDescription className="text-[10px] font-black uppercase tracking-[0.3em] text-primary/50">Inspection et édition avant déploiement</DialogDescription>
                             </div>
                         </div>
                         <div className="flex gap-3 w-full sm:w-auto">
                             <Button variant="ghost" onClick={() => onOpenChange(false)} className="rounded-2xl h-12 px-6 font-black text-xs uppercase tracking-widest" disabled={isRestoring}>
-                                Annuler
+                                Abandonner
                             </Button>
                             <Button onClick={handleRestore} disabled={isRestoring} className="flex-1 sm:flex-none h-12 px-10 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-primary/20 gap-3">
                                 {isRestoring ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-                                Restaurer le Système
+                                Valider la Restauration
                             </Button>
                         </div>
                     </div>
                 </DialogHeader>
 
                 <div className="flex-grow flex flex-col lg:flex-row overflow-hidden">
-                    {/* Sidebar: Categories */}
+                    {/* Sidebar: Navigation */}
                     <div className="w-full lg:w-72 bg-muted/20 border-r border-white/5 p-6 space-y-2">
-                        <p className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground/40 mb-6 px-4">Sections de l'Archive</p>
+                        <p className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground/40 mb-6 px-4">Segments de Données</p>
                         {categories.map(cat => (
                             <button
                                 key={cat.id}
@@ -150,10 +160,10 @@ export function BackupPreviewDialog({ isOpen, onOpenChange, initialData }: Backu
                         <div className="mt-10 p-6 bg-amber-500/5 rounded-[2rem] border border-dashed border-amber-500/20">
                             <div className="flex items-center gap-2 text-amber-600 mb-3">
                                 <AlertTriangle className="h-4 w-4" />
-                                <span className="text-[10px] font-black uppercase">Attention</span>
+                                <span className="text-[10px] font-black uppercase">Sécurité</span>
                             </div>
                             <p className="text-[9px] text-muted-foreground font-medium leading-relaxed">
-                                Les modifications effectuées ici ne sont pas permanentes tant que la restauration n'est pas validée.
+                                Les modifications effectuées ici seront injectées en base de données. L'historique des ventes est protégé.
                             </p>
                         </div>
                     </div>
@@ -164,7 +174,7 @@ export function BackupPreviewDialog({ isOpen, onOpenChange, initialData }: Backu
                             <div className="relative flex-grow max-w-xl">
                                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground opacity-30" />
                                 <Input 
-                                    placeholder="Rechercher dans cette section..."
+                                    placeholder="Localiser une entrée dans ce segment..."
                                     className="pl-11 h-12 rounded-xl bg-black/20 border-none shadow-inner font-bold"
                                     value={searchQuery}
                                     onChange={e => setSearchQuery(e.target.value)}
@@ -181,7 +191,6 @@ export function BackupPreviewDialog({ isOpen, onOpenChange, initialData }: Backu
                                                 <TableHead className="font-black text-[10px] uppercase">Désignation</TableHead>
                                                 <TableHead className="font-black text-[10px] uppercase">Rayon</TableHead>
                                                 <TableHead className="text-right font-black text-[10px] uppercase">P.U Vente</TableHead>
-                                                <TableHead className="text-right font-black text-[10px] uppercase">P.U Achat</TableHead>
                                                 <TableHead className="text-center font-black text-[10px] uppercase">Stock</TableHead>
                                                 <TableHead className="w-12"></TableHead>
                                             </TableRow>
@@ -211,14 +220,6 @@ export function BackupPreviewDialog({ isOpen, onOpenChange, initialData }: Backu
                                                             className="h-10 bg-transparent border-none text-right font-black text-primary p-0"
                                                         />
                                                     </TableCell>
-                                                    <TableCell className="text-right">
-                                                        <Input 
-                                                            type="number"
-                                                            value={p.purchasePrice} 
-                                                            onChange={e => handleUpdateField('products', idx, 'purchasePrice', Number(e.target.value))}
-                                                            className="h-10 bg-transparent border-none text-right text-muted-foreground p-0"
-                                                        />
-                                                    </TableCell>
                                                     <TableCell className="text-center">
                                                         <Input 
                                                             type="number"
@@ -242,9 +243,8 @@ export function BackupPreviewDialog({ isOpen, onOpenChange, initialData }: Backu
                                     <Table>
                                         <TableHeader className="bg-muted/30">
                                             <TableRow className="border-white/5">
-                                                <TableHead className="font-black text-[10px] uppercase">Prénom</TableHead>
-                                                <TableHead className="font-black text-[10px] uppercase">Nom</TableHead>
-                                                <TableHead className="font-black text-[10px] uppercase">Mobile</TableHead>
+                                                <TableHead className="font-black text-[10px] uppercase">Identité Client</TableHead>
+                                                <TableHead className="font-black text-[10px] uppercase">Téléphone</TableHead>
                                                 <TableHead className="text-right font-black text-[10px] uppercase">Solde Du</TableHead>
                                                 <TableHead className="w-12"></TableHead>
                                             </TableRow>
@@ -252,25 +252,25 @@ export function BackupPreviewDialog({ isOpen, onOpenChange, initialData }: Backu
                                         <TableBody>
                                             {filteredData.map((c: any, idx: number) => (
                                                 <TableRow key={c.uuid || idx} className="border-white/5 group hover:bg-white/5">
-                                                    <TableCell>
-                                                        <Input 
-                                                            value={c.firstName} 
-                                                            onChange={e => handleUpdateField('customers', idx, 'firstName', e.target.value)}
-                                                            className="h-10 bg-transparent border-none font-bold shadow-none p-0"
-                                                        />
-                                                    </TableCell>
-                                                    <TableCell>
-                                                        <Input 
-                                                            value={c.lastName} 
-                                                            onChange={e => handleUpdateField('customers', idx, 'lastName', e.target.value)}
-                                                            className="h-10 bg-transparent border-none font-bold shadow-none p-0"
-                                                        />
+                                                    <TableCell className="p-4">
+                                                        <div className="flex gap-2">
+                                                            <Input 
+                                                                value={c.firstName} 
+                                                                onChange={e => handleUpdateField('customers', idx, 'firstName', e.target.value)}
+                                                                className="h-10 bg-transparent border-none font-bold shadow-none p-0"
+                                                            />
+                                                            <Input 
+                                                                value={c.lastName} 
+                                                                onChange={e => handleUpdateField('customers', idx, 'lastName', e.target.value)}
+                                                                className="h-10 bg-transparent border-none font-bold shadow-none p-0"
+                                                            />
+                                                        </div>
                                                     </TableCell>
                                                     <TableCell>
                                                         <Input 
                                                             value={c.phone || ''} 
                                                             onChange={e => handleUpdateField('customers', idx, 'phone', e.target.value)}
-                                                            className="h-10 bg-transparent border-none text-muted-foreground p-0"
+                                                            className="h-10 bg-transparent border-none text-muted-foreground p-0 font-mono"
                                                         />
                                                     </TableCell>
                                                     <TableCell className="text-right font-black text-destructive">
@@ -287,22 +287,109 @@ export function BackupPreviewDialog({ isOpen, onOpenChange, initialData }: Backu
                                     </Table>
                                 )}
 
-                                {activeCategory !== 'products' && activeCategory !== 'customers' && (
+                                {activeCategory === 'suppliers' && (
+                                    <Table>
+                                        <TableHeader className="bg-muted/30">
+                                            <TableRow className="border-white/5">
+                                                <TableHead className="font-black text-[10px] uppercase">Établissement</TableHead>
+                                                <TableHead className="font-black text-[10px] uppercase">Responsable</TableHead>
+                                                <TableHead className="text-right font-black text-[10px] uppercase">Solde</TableHead>
+                                                <TableHead className="w-12"></TableHead>
+                                            </TableRow>
+                                        </TableHeader>
+                                        <TableBody>
+                                            {filteredData.map((s: any, idx: number) => (
+                                                <TableRow key={s.uuid || idx} className="border-white/5 group hover:bg-white/5">
+                                                    <TableCell className="p-4">
+                                                        <Input 
+                                                            value={s.name} 
+                                                            onChange={e => handleUpdateField('suppliers', idx, 'name', e.target.value)}
+                                                            className="h-10 bg-transparent border-none font-black shadow-none p-0"
+                                                        />
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        <Input 
+                                                            value={s.contactPerson || ''} 
+                                                            onChange={e => handleUpdateField('suppliers', idx, 'contactPerson', e.target.value)}
+                                                            className="h-10 bg-transparent border-none text-muted-foreground p-0"
+                                                        />
+                                                    </TableCell>
+                                                    <TableCell className="text-right font-black text-destructive">
+                                                        {formatCurrency(s.balance || 0)}
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        <Button variant="ghost" size="icon" onClick={() => handleRemoveRow('suppliers', idx)} className="text-destructive/20 hover:text-destructive hover:bg-destructive/10 rounded-xl transition-all">
+                                                            <Trash2 className="h-4 w-4" />
+                                                        </Button>
+                                                    </TableCell>
+                                                </TableRow>
+                                            ))}
+                                        </TableBody>
+                                    </Table>
+                                )}
+
+                                {activeCategory === 'expenses' && (
+                                    <Table>
+                                        <TableHeader className="bg-muted/30">
+                                            <TableRow className="border-white/5">
+                                                <TableHead className="font-black text-[10px] uppercase">Désignation</TableHead>
+                                                <TableHead className="font-black text-[10px] uppercase">Poste</TableHead>
+                                                <TableHead className="text-right font-black text-[10px] uppercase">Montant</TableHead>
+                                                <TableHead className="w-12"></TableHead>
+                                            </TableRow>
+                                        </TableHeader>
+                                        <TableBody>
+                                            {filteredData.map((e: any, idx: number) => (
+                                                <TableRow key={e.uuid || idx} className="border-white/5 group hover:bg-white/5">
+                                                    <TableCell className="p-4">
+                                                        <Input 
+                                                            value={e.description} 
+                                                            onChange={val => handleUpdateField('expenses', idx, 'description', val.target.value)}
+                                                            className="h-10 bg-transparent border-none font-bold shadow-none p-0"
+                                                        />
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        <Input 
+                                                            value={e.category || ''} 
+                                                            onChange={val => handleUpdateField('expenses', idx, 'category', val.target.value)}
+                                                            className="h-10 bg-transparent border-none text-xs text-muted-foreground p-0"
+                                                        />
+                                                    </TableCell>
+                                                    <TableCell className="text-right font-black text-destructive">
+                                                        <Input 
+                                                            type="number"
+                                                            value={e.amount} 
+                                                            onChange={val => handleUpdateField('expenses', idx, 'amount', Number(val.target.value))}
+                                                            className="h-10 bg-transparent border-none text-right font-black p-0 shadow-none"
+                                                        />
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        <Button variant="ghost" size="icon" onClick={() => handleRemoveRow('expenses', idx)} className="text-destructive/20 hover:text-destructive hover:bg-destructive/10 rounded-xl transition-all">
+                                                            <Trash2 className="h-4 w-4" />
+                                                        </Button>
+                                                    </TableCell>
+                                                </TableRow>
+                                            ))}
+                                        </TableBody>
+                                    </Table>
+                                )}
+
+                                {activeCategory === 'others' && (
                                     <div className="space-y-4">
                                         <div className="p-10 rounded-[2.5rem] bg-muted/10 border border-dashed border-white/5 text-center flex flex-col items-center gap-4 opacity-40">
                                             <Archive className="h-12 w-12" />
                                             <div>
-                                                <p className="text-sm font-bold">Inspection Historique</p>
-                                                <p className="text-[10px] font-black uppercase tracking-widest mt-1">Ces données sont consultables mais protégées contre l'édition directe pour garantir l'intégrité comptable.</p>
+                                                <p className="text-sm font-bold">Flux de Transactions</p>
+                                                <p className="text-[10px] font-black uppercase tracking-widest mt-1">Ces données (Ventes, Logs) sont protégées en lecture seule pour garantir l'intégrité comptable.</p>
                                             </div>
                                         </div>
-                                        {filteredData.slice(0, 50).map((item: any, i: number) => (
-                                            <div key={i} className="p-4 rounded-2xl bg-black/20 border border-white/5 font-mono text-[10px] text-muted-foreground/60 break-all">
+                                        {filteredData.slice(0, 100).map((item: any, i: number) => (
+                                            <div key={i} className="p-4 rounded-2xl bg-black/20 border border-white/5 font-mono text-[9px] text-muted-foreground/60 break-all group hover:text-primary transition-colors">
                                                 {JSON.stringify(item)}
                                             </div>
                                         ))}
-                                        {filteredData.length > 50 && (
-                                            <p className="text-center text-[9px] font-black text-muted-foreground/20 uppercase tracking-[0.4em] py-4">... {filteredData.length - 50} entrées additionnelles ...</p>
+                                        {filteredData.length > 100 && (
+                                            <p className="text-center text-[9px] font-black text-muted-foreground/20 uppercase tracking-[0.4em] py-4">... +{filteredData.length - 100} flux additionnels ...</p>
                                         )}
                                     </div>
                                 )}
@@ -312,8 +399,8 @@ export function BackupPreviewDialog({ isOpen, onOpenChange, initialData }: Backu
                 </div>
 
                 <DialogFooter className="bg-black/40 p-8 border-t border-white/5 flex justify-between items-center text-[9px] text-muted-foreground font-black uppercase tracking-[0.3em] opacity-30">
-                    <span>Certifié local-first</span>
-                    <span className="flex items-center gap-2"><CheckCircle2 className="h-3 w-3" /> Intégrité Vérifiée</span>
+                    <span className="flex items-center gap-2 italic"><CheckCircle2 className="h-3 w-3" /> Certifié Souverain</span>
+                    <span>iPOS Luxury Elite Manifest Engine</span>
                 </DialogFooter>
             </DialogContent>
         </Dialog>

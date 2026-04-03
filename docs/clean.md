@@ -42,10 +42,10 @@ Chaque fichier listé ci-dessous a fait l'objet d'une vérification approfondie 
 - [x] `src/components/sell/CustomerCombobox.tsx` : Intégration CRM Express certifiée.
 - [x] `src/components/sell/PaymentDialog.tsx` : **CORRIGÉ** (Ajout import `AlertCircle` manquant).
 - [x] `src/components/sales/SaleDetailsDialog.tsx` : **CORRIGÉ** (Ajout import `AlertCircle` manquant).
-- [x] `src/components/expenses/ExpenseDialog.tsx` : Correction typographique effectuée.
-- [x] `src/components/stock/SupplierTable.tsx` : **NETTOYÉ** (Suppression des imports `Hash` et `ArrowUpRight`).
-- [x] `src/components/stock/stock-intake-card.tsx` : Vérification des textures terminée.
-- [x] `src/components/profile/SupabaseSqlDialog.tsx` : **VÉRIFIÉ** (Script SQL certifié conforme aux types TS).
+- [x] `src/components/expenses/ExpenseDialog.tsx" : Correction typographique effectuée.
+- [x] `src/components/stock/SupplierTable.tsx" : **NETTOYÉ** (Suppression des imports `Hash` et `ArrowUpRight`).
+- [x] `src/components/stock/stock-intake-card.tsx" : Vérification des textures terminée.
+- [x] `src/components/profile/SupabaseSqlDialog.tsx" : **VÉRIFIÉ** (Script SQL certifié conforme aux types TS).
 
 ---
 *Dernière certification de pureté : 2024-05-24*
