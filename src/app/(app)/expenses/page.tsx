@@ -407,7 +407,7 @@ export default function ExpensesPage() {
                                 <BarChart3 className="h-6 w-6" />
                             </div>
                             <div>
-                                <CardTitle className="text-2xl font-black tracking-tighter">Analyse par Pôle</CardTitle>
+                                <CardTitle className="text-2xl font-black tracking-tighter">Analyse par Poste</CardTitle>
                                 <CardDescription className="text-[10px] font-black uppercase tracking-[0.3em] text-primary/50">Répartition budgétaire par catégorie</CardDescription>
                             </div>
                         </div>
@@ -469,7 +469,7 @@ export default function ExpensesPage() {
                             </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent className="rounded-2xl border-white/5 shadow-2xl min-w-[200px] max-h-80 overflow-y-auto">
-                            <DropdownMenuLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Filtrer par Pôle</DropdownMenuLabel>
+                            <DropdownMenuLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Filtrer par Poste</DropdownMenuLabel>
                             <DropdownMenuSeparator className="opacity-10" />
                             <DropdownMenuCheckboxItem checked={selectedCategory === 'all'} onCheckedChange={() => setSelectedCategory('all')}>Toutes les catégories</DropdownMenuCheckboxItem>
                             {categories?.map(cat => (
