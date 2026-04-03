@@ -1,25 +1,28 @@
-
 'use client';
 
 import { db } from '@/lib/db';
 import { getSupabaseClient } from '@/lib/supabase';
-import { toast } from 'sonner';
 
 class SupabaseSyncService {
     
     /**
-     * Tests connection to Supabase
+     * Tests connection to Supabase and checks if tables are accessible
      */
     async testConnection(url: string, key: string): Promise<boolean> {
-        const supabase = getSupabaseClient(url, key);
-        if (!supabase) return false;
-        
-        const { data, error } = await supabase.from('company_profile').select('count', { count: 'exact', head: true });
-        if (error && error.code !== 'PGRST116') { // Ignore missing table error for connection test
-            console.error("Supabase connection error:", error);
+        try {
+            const supabase = getSupabaseClient(url, key);
+            if (!supabase) return false;
+            
+            // Check connection by trying to reach the profile table
+            const { error } = await supabase.from('company_profile').select('uuid').limit(1);
+            if (error) {
+                console.error("Supabase connection error:", error);
+                return false;
+            }
+            return true;
+        } catch (e) {
             return false;
         }
-        return true;
     }
 
     /**
@@ -29,7 +32,7 @@ class SupabaseSyncService {
         const records = await dexieTable.toArray();
         if (records.length === 0) return;
 
-        // Strip internal auto-increment IDs before upserting
+        // Strip internal Dexie auto-increment IDs before upserting to Supabase
         const dataToSync = records.map((r: any) => {
             const { id, ...rest } = r;
             return rest;
@@ -73,8 +76,7 @@ class SupabaseSyncService {
     }
 
     /**
-     * Pulls data from Supabase and merges into IndexedDB
-     * Note: This is a simple merge, last write wins logic depends on Supabase timestamps
+     * Pulls data from Supabase and merges into IndexedDB using UUID as reference
      */
     async pullAllData(url: string, key: string): Promise<void> {
         const supabase = getSupabaseClient(url, key);
@@ -92,7 +94,20 @@ class SupabaseSyncService {
             
             if (data && data.length > 0) {
                 const dexieTable = (db as any)[tableName];
-                await dexieTable.bulkPut(data);
+                
+                // Transactional merge logic to avoid duplicates
+                await db.transaction('rw', dexieTable, async () => {
+                    for (const remoteRecord of data) {
+                        const localRecord = await dexieTable.where('uuid').equals(remoteRecord.uuid).first();
+                        if (localRecord) {
+                            // Update existing record using its local ID
+                            await dexieTable.update(localRecord.id, remoteRecord);
+                        } else {
+                            // Add new record (IndexedDB will generate a new local ID)
+                            await dexieTable.add(remoteRecord);
+                        }
+                    }
+                });
             }
         }
     }

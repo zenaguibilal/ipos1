@@ -1,4 +1,3 @@
-
 import { create } from 'zustand';
 import type { CompanyProfile, ReturnItem, StockIntakeItem } from '@/lib/types';
 import { toast } from 'sonner';
@@ -80,7 +79,7 @@ export const useAppStore = create<AppState>()(
                         const profile = await companyProfileService.getProfile();
                         set({ companyProfile: profile });
                     } catch (error: any) {
-                        toast.error("Impossible de charger le profil de l'entreprise.", { description: error.message });
+                        toast.error("Impossible de charger le profil.", { description: error.message });
                     } finally {
                         set({ isCompanyProfileLoading: false });
                     }
@@ -92,7 +91,7 @@ export const useAppStore = create<AppState>()(
                 performCloudSync: async (mode) => {
                     const profile = get().companyProfile;
                     if (!profile?.supabase_url || !profile?.supabase_key) {
-                        toast.error("Configuration Supabase manquante.");
+                        toast.error("Configuration Cloud manquante.");
                         return;
                     }
 
@@ -100,10 +99,10 @@ export const useAppStore = create<AppState>()(
                     try {
                         if (mode === 'push') {
                             await supabaseSyncService.pushAllData(profile.supabase_url, profile.supabase_key);
-                            toast.success("Données poussées vers le Cloud avec succès.");
+                            toast.success("Synchronisation ascendante (Push) réussie.");
                         } else {
                             await supabaseSyncService.pullAllData(profile.supabase_url, profile.supabase_key);
-                            toast.success("Données récupérées du Cloud avec succès.");
+                            toast.success("Synchronisation descendante (Pull) réussie.");
                         }
                         const now = new Date();
                         await companyProfileService.updateProfile({ last_sync_at: now });
@@ -127,7 +126,7 @@ export const useAppStore = create<AppState>()(
                                 await customerService.recalculateCustomerStatus(newReturn.customerUuid);
                             }
                         });
-                        toast.success("Retour de produit enregistré avec succès.");
+                        toast.success("Retour de marchandise validé.");
                         return true;
                     } catch (error: any) {
                         toast.error("Échec du traitement du retour.", { description: error.message });
@@ -139,7 +138,6 @@ export const useAppStore = create<AppState>()(
                          await db.transaction('rw', db.stock_intakes, db.products, db.suppliers, db.inventory_logs, async () => {
                             const supplier = await supplierService.findOrCreateSupplier(intakeData.supplierName, intakeData.supplierUuid);
             
-                            // Calculate shipping distribution factor
                             const itemsTotalValue = intakeData.items.reduce((sum, item) => sum + (item.quantity * item.purchasePrice), 0);
                             const shippingFactor = itemsTotalValue > 0 ? intakeData.shippingCost / itemsTotalValue : 0;
 
@@ -148,8 +146,6 @@ export const useAppStore = create<AppState>()(
                             
                             for (const item of intakeData.items) {
                                 let productUuid = item.productUuid;
-                                
-                                // Calculate landing cost for this item (Purchase Price + share of shipping)
                                 const landingCost = item.purchasePrice * (1 + shippingFactor);
 
                                 if (item.isNew) {
@@ -206,7 +202,7 @@ export const useAppStore = create<AppState>()(
                         toast.success("Réception de stock enregistrée.");
                         return true;
                     } catch (error: any) {
-                        toast.error("Échec du traitement de la réception de stock.", { description: error.message });
+                        toast.error("Échec de la réception de stock.", { description: error.message });
                         return false;
                     }
                 },
