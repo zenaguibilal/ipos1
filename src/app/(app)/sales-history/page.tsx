@@ -21,7 +21,9 @@ import {
     TrendingUp,
     ChevronRight,
     Sparkles,
-    Landmark
+    Landmark,
+    X,
+    Trash2
 } from 'lucide-react';
 import { DateRangePicker } from '@/components/ui/date-range-picker';
 import { useDateRange } from '@/hooks/useDateRange';

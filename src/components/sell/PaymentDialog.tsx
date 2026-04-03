@@ -14,7 +14,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useActiveCart, useCartActions } from '@/stores/cartStore';
 import { calculateCartTotals, formatCurrency, cn } from '@/lib/utils';
-import { Loader2, CheckCircle2, Info, Wallet, Banknote, Calendar } from 'lucide-react';
+import { Loader2, CheckCircle2, Info, Wallet, Banknote, Calendar, AlertCircle } from 'lucide-react';
 import { PrintReceiptDialog } from '../sales/PrintReceiptDialog';
 import type { Sale } from '@/lib/types';
 import { DatePicker } from '../ui/date-picker';
@@ -159,14 +159,21 @@ export function PaymentDialog({ isOpen, onOpenChange }: { isOpen: boolean, onOpe
                         >
                             Annuler
                         </Button>
-                        <Button 
-                            onClick={handleProcessSale} 
-                            disabled={isLoading || amountPaid < 0} 
-                            className="flex-1 rounded-2xl h-12 font-bold shadow-lg shadow-primary/20 transition-all active:scale-95"
-                        >
-                            {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle2 className="mr-2 h-5 w-5" />}
-                            Valider [Enter]
-                        </Button>
+                        <div className="flex-1 relative">
+                            {amountPaid < total && !cart.customerUuid && (
+                                <div className="absolute -top-10 left-0 w-full flex items-center gap-2 text-[10px] font-black text-destructive animate-pulse justify-center">
+                                    <AlertCircle className="h-3 w-3" /> Client requis pour crédit
+                                </div>
+                            )}
+                            <Button 
+                                onClick={handleProcessSale} 
+                                disabled={isLoading || amountPaid < 0 || (amountPaid < total && !cart.customerUuid)} 
+                                className="w-full rounded-2xl h-12 font-bold shadow-lg shadow-primary/20 transition-all active:scale-95"
+                            >
+                                {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle2 className="mr-2 h-5 w-5" />}
+                                Valider [Enter]
+                            </Button>
+                        </div>
                     </div>
                 </DialogContent>
             </Dialog>
