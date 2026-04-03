@@ -10,7 +10,6 @@ import { dashboardService } from '@/services/dashboard.service';
 import { toast } from 'sonner';
 import { 
     TrendingUp, 
-    TrendingDown, 
     Receipt, 
     Undo2, 
     Users, 
@@ -324,7 +323,7 @@ export default function DashboardPage() {
                 <StatCard title="Bénéfice Net" value={formatCurrency(data?.stats.netProfit ?? 0)} icon={Star} isLoading={isLoading} change={data?.stats.netProfitChange} />
                 <StatCard title="Panier Moyen" value={formatCurrency(data?.stats.averageBasket ?? 0)} icon={ShoppingCart} isLoading={isLoading} />
                 <StatCard title="Marge Nette" value={`${(data?.stats.profitMargin ?? 0).toFixed(1)}%`} icon={Percent} isLoading={isLoading} />
-                <StatCard title="Charges Totales" value={formatCurrency(data?.stats.totalExpenses ?? 0)} icon={TrendingDown} isLoading={isLoading} href="/expenses" change={data?.stats.totalExpensesChange} positiveIsGood={false} />
+                <StatCard title="Charges Totales" value={formatCurrency(data?.stats.totalExpenses ?? 0)} icon={TrendingUp} isLoading={isLoading} href="/expenses" change={data?.stats.totalExpensesChange} positiveIsGood={false} />
                 <StatCard title="Créances Clients" value={formatCurrency(data?.stats.totalOutstandingDebt ?? 0)} icon={CreditCard} isLoading={isLoading} href="/customers?status=has_debt" />
                 <StatCard title="Valeur Stock" value={formatCurrency(data?.stats.totalInventoryValue ?? 0)} icon={Archive} isLoading={isLoading} href="/products" />
                 <StatCard title="Vol. Ventes" value={String(data?.stats.saleCount ?? 0)} icon={Receipt} isLoading={isLoading} href="/sales-history" change={data?.stats.saleCountChange} />

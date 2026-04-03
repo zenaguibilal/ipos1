@@ -19,7 +19,6 @@ import {
     FileUp, 
     Banknote, 
     TrendingUp,
-    X,
     ChevronRight,
     Sparkles,
     Landmark
