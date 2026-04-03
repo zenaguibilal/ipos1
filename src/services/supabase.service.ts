@@ -3,10 +3,15 @@
 import { db } from '@/lib/db';
 import { getSupabaseClient } from '@/lib/supabase';
 
+/**
+ * Service de synchronisation souverain pour iPOS Luxury.
+ * Gère le transfert bidirectionnel des données entre IndexedDB et Supabase.
+ */
 class SupabaseSyncService {
     
     /**
-     * Ordonnancement strict des tables pour garantir l'intégrité référentielle
+     * Ordonnancement strict des tables pour garantir l'intégrité référentielle.
+     * On synchronise d'abord les entités racines (Profil, Fournisseurs) avant les transactions.
      */
     private readonly tableSyncOrder = [
         { name: 'company_profile', table: db.company_profile },
@@ -23,13 +28,16 @@ class SupabaseSyncService {
         { name: 'supplier_payments', table: db.supplier_payments },
     ];
 
+    /**
+     * Teste la validité des identifiants Supabase.
+     */
     async testConnection(url: string, key: string): Promise<boolean> {
         try {
             const supabase = getSupabaseClient(url, key);
             if (!supabase) return false;
             
             const { error } = await supabase.from('company_profile').select('uuid').limit(1);
-            if (error) {
+            if (error && error.code !== 'PGRST116') { // Ignore "no rows found" error
                 console.error("Supabase connection error:", error);
                 return false;
             }
@@ -39,34 +47,36 @@ class SupabaseSyncService {
         }
     }
 
-    private async syncTable(supabase: any, tableName: string, dexieTable: any) {
-        const records = await dexieTable.toArray();
-        if (records.length === 0) return;
-
-        // Préparation des données pour Supabase (on enlève l'ID local auto-incrémenté)
-        const dataToSync = records.map((r: any) => {
-            const { id, ...rest } = r;
-            return rest;
-        });
-
-        const { error } = await supabase
-            .from(tableName)
-            .upsert(dataToSync, { onConflict: 'uuid' });
-
-        if (error) {
-            throw new Error(`Échec Push [${tableName}]: ${error.message}`);
-        }
-    }
-
+    /**
+     * Pousse l'intégralité des données locales vers le cloud.
+     */
     async pushAllData(url: string, key: string): Promise<void> {
         const supabase = getSupabaseClient(url, key);
         if (!supabase) throw new Error("Supabase non configuré.");
 
         for (const item of this.tableSyncOrder) {
-            await this.syncTable(supabase, item.name, item.table);
+            const records = await item.table.toArray();
+            if (records.length === 0) continue;
+
+            // Préparation des données : on retire l'ID local auto-incrémenté pour laisser Supabase gérer
+            const dataToSync = records.map((r: any) => {
+                const { id, ...rest } = r;
+                return rest;
+            });
+
+            const { error } = await supabase
+                .from(item.name)
+                .upsert(dataToSync, { onConflict: 'uuid' });
+
+            if (error) {
+                throw new Error(`Échec Push [${item.name}]: ${error.message}`);
+            }
         }
     }
 
+    /**
+     * Récupère les données du cloud et fusionne avec la base locale.
+     */
     async pullAllData(url: string, key: string): Promise<void> {
         const supabase = getSupabaseClient(url, key);
         if (!supabase) throw new Error("Supabase non configuré.");
@@ -76,17 +86,18 @@ class SupabaseSyncService {
             if (error) throw new Error(`Échec Pull [${item.name}]: ${error.message}`);
             
             if (data && data.length > 0) {
-                const dexieTable = item.table;
-                
-                await db.transaction('rw', dexieTable, async () => {
+                await db.transaction('rw', item.table, async () => {
                     for (const remoteRecord of data) {
-                        const localRecord = await dexieTable.where('uuid').equals(remoteRecord.uuid).first();
+                        // On cherche si l'enregistrement existe déjà localement via son UUID
+                        const localRecord = await item.table.where('uuid').equals(remoteRecord.uuid).first();
+                        
                         if (localRecord) {
-                            // On conserve l'ID local mais on écrase le reste avec les données cloud
-                            await dexieTable.update(localRecord.id, remoteRecord);
+                            // Mise à jour de l'existant en conservant l'ID Dexie local
+                            const { id } = localRecord;
+                            await item.table.update(id, remoteRecord);
                         } else {
                             // Nouvel enregistrement venant du cloud
-                            await dexieTable.add(remoteRecord);
+                            await item.table.add(remoteRecord);
                         }
                     }
                 });

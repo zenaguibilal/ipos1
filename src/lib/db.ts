@@ -1,6 +1,10 @@
 import Dexie, { type EntityTable } from 'dexie';
 import type { Product, Customer, Sale, Expense, Supplier, SupplierPayment, StockIntake, ProductReturn, Payment, BreadOrder, CompanyProfile, InventoryLog } from './types';
 
+/**
+ * Configuration de la base de données locale IndexedDB via Dexie.js.
+ * Cette structure est optimisée pour la synchronisation cloud via UUID.
+ */
 class iPOSDatabase extends Dexie {
     products!: EntityTable<Product, 'id'>;
     customers!: EntityTable<Customer, 'id'>;

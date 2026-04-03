@@ -1,4 +1,3 @@
-
 import { create } from 'zustand';
 import type { CompanyProfile, ReturnItem, StockIntakeItem } from '@/lib/types';
 import { toast } from 'sonner';
@@ -14,7 +13,6 @@ import { productService } from '@/services/product.service';
 import { customerService } from '@/services/customer.service';
 import { supabaseSyncService } from '@/services/supabase.service';
 
-// Main State Interface
 interface AppState {
     companyProfile: CompanyProfile | null;
     isCompanyProfileLoading: boolean;
@@ -28,7 +26,6 @@ interface AppState {
     actions: AppActions;
 }
 
-// Actions Interface
 interface AppActions {
     fetchCompanyProfile: () => Promise<void>;
     updateCompanyProfile: (profileData: Partial<CompanyProfile>) => Promise<void>;
@@ -57,7 +54,6 @@ interface AppActions {
     setReturnsViewMode: (mode: 'grid' | 'list') => void;
 }
 
-// Initial State
 const initialState: Omit<AppState, 'actions'> = {
     companyProfile: null,
     isCompanyProfileLoading: true,
@@ -68,7 +64,6 @@ const initialState: Omit<AppState, 'actions'> = {
     returnsViewMode: 'grid',
 };
 
-// Store Implementation
 export const useAppStore = create<AppState>()(
     persist(
         (set, get) => ({
