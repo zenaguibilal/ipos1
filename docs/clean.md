@@ -17,13 +17,13 @@ Chaque fichier listé ci-dessous a fait l'objet d'une vérification approfondie 
 - [x] `src/app/(app)/stock/intake/page.tsx` : **CERTIFIÉ** (Import Link corrigé).
 - [x] `src/app/(app)/dashboard/page.tsx` : **OPTIMISÉ** (Clés React uniques stables).
 - [x] `src/app/(app)/sales-history/page.tsx` : **AUDITÉ** (Correction typographique "dénicher").
-- [x] `src/app/(app)/expenses/page.tsx` : Audit des postes de dépense.
-- [x] `src/app/(app)/install/page.tsx` : Vérification des étapes PWA.
+- [x] `src/app/(app)/expenses/page.tsx` : Audit des postes de dépense (Correction "Poste").
+- [x] `src/app/(app)/install/page.tsx` : Vérification des étapes PWA (Correction "rapidité").
 
 ### Composants UI
 - [x] `src/components/expenses/ExpenseDialog.tsx` : Audit typographique (Poste).
 - [x] `src/components/stock/stock-intake-card.tsx` : Vérification des rendus de texture.
 
 ---
-*Date de certification : 2024-05-22*
+*Date de certification : 2024-05-23*
 *Statut : Système Elite Stable*
