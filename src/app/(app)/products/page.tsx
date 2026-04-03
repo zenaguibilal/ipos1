@@ -63,10 +63,10 @@ const sortOptions: { [key: string]: string } = {
 
 export default function ProductsPage() {
     const searchParams = useSearchParams();
-    const { viewMode, setViewMode } = useAppStore(state => ({
-        viewMode: state.productViewMode,
-        setViewMode: state.actions.setProductViewMode,
-    }));
+    
+    // Turbo Selectors
+    const viewMode = useAppStore(state => state.productViewMode);
+    const setViewMode = useAppStore(state => state.actions.setProductViewMode);
 
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedCategory, setSelectedCategory] = useState<string>('all');
