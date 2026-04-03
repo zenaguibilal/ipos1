@@ -31,6 +31,7 @@ Chaque fichier listé ci-dessous a fait l'objet d'une vérification approfondie 
 - [x] `src/app/(app)/stock/intake/page.tsx` : **CORRIGÉ** (Correction import `Link` et nettoyage icônes).
 - [x] `src/app/(app)/bread/page.tsx` : Logistique journalière certifiée.
 - [x] `src/app/(app)/install/page.tsx` : Guide PWA certifié.
+- [x] `src/app/(app)/settings/page.tsx` : **OPTIMISÉ** (Ajout section Sauvegarde Cloud Élite & Diagnostic).
 
 ### Composants UI & Dialogues
 - [x] `src/components/layout/header.tsx` : Navigation Elite validée.

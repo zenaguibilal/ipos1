@@ -1,7 +1,6 @@
-
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { PageHeader } from "@/components/layout/PageHeader";
 import { DataManagementCard } from "@/components/profile/DataManagementCard";
 import { 
@@ -36,7 +35,9 @@ import {
     Cloud,
     RefreshCw,
     UploadCloud,
-    DownloadCloud
+    DownloadCloud,
+    CheckCircle2,
+    AlertCircle
 } from "lucide-react";
 import { db } from "@/lib/db";
 import { toast } from "sonner";
@@ -45,6 +46,7 @@ import { useAppStore, useAppActions } from '@/stores/appStore';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
+import { supabaseSyncService } from '@/services/supabase.service';
 
 export default function SettingsPage() {
     const [stats, setStats] = useState({
@@ -57,6 +59,10 @@ export default function SettingsPage() {
     const [envInfo, setEnvInfo] = useState<{ os: string, browser: string } | null>(null);
     const [isResetConfirmOpen, setIsResetConfirmOpen] = useState(false);
     const [isMounted, setIsMounted] = useState(false);
+    
+    // Cloud Connection Diagnostic State
+    const [isTestingConnection, setIsTestingConnection] = useState(false);
+    const [connectionStatus, setConnectionStatus] = useState<'idle' | 'success' | 'error'>('idle');
 
     const { companyProfile, isSyncing } = useAppStore();
     const { performCloudSync } = useAppActions();
@@ -106,6 +112,24 @@ export default function SettingsPage() {
         setEnvInfo({ os, browser });
     }, []);
 
+    const testCloudConnection = async () => {
+        if (!companyProfile?.supabase_url || !companyProfile?.supabase_key) {
+            toast.error("Veuillez configurer Supabase dans votre profil.");
+            return;
+        }
+        setIsTestingConnection(true);
+        try {
+            const isValid = await supabaseSyncService.testConnection(companyProfile.supabase_url, companyProfile.supabase_key);
+            setConnectionStatus(isValid ? 'success' : 'error');
+            if (isValid) toast.success("Connexion au Cloud Saphir établie.");
+            else toast.error("Échec de connexion au Cloud Saphir.");
+        } catch (e) {
+            setConnectionStatus('error');
+        } finally {
+            setIsTestingConnection(false);
+        }
+    };
+
     const handleFullReset = async () => {
         try {
             await db.transaction('rw', db.tables, async () => {
@@ -134,76 +158,110 @@ export default function SettingsPage() {
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
                 <div className="lg:col-span-8 space-y-10">
                     
-                    {/* Cloud Sync Card */}
-                    <Card className="luxury-card rounded-[2.5rem] border-white/5 bg-card/40 backdrop-blur-3xl overflow-hidden">
+                    {/* Elite Cloud Backup Section */}
+                    <Card className="luxury-card rounded-[2.5rem] border-white/5 bg-card/40 backdrop-blur-3xl overflow-hidden shadow-2xl">
                         <CardHeader className="bg-primary/5 border-b border-white/5 p-8">
-                            <div className="flex items-center gap-4">
-                                <div className="p-3.5 rounded-2xl bg-primary text-primary-foreground shadow-2xl shadow-primary/20">
-                                    <Cloud className="h-6 w-6" />
+                            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
+                                <div className="flex items-center gap-4">
+                                    <div className="p-3.5 rounded-2xl bg-primary text-primary-foreground shadow-2xl shadow-primary/20">
+                                        <Cloud className="h-6 w-6" />
+                                    </div>
+                                    <div>
+                                        <CardTitle className="text-2xl font-black tracking-tighter">Sauvegarde Cloud Élite</CardTitle>
+                                        <CardDescription className="text-[10px] font-black uppercase tracking-[0.3em] text-primary/50">Infrastructure Saphir (Supabase)</CardDescription>
+                                    </div>
                                 </div>
-                                <div>
-                                    <CardTitle className="text-2xl font-black tracking-tighter">Synchronisation Cloud (Supabase)</CardTitle>
-                                    <CardDescription className="text-[10px] font-black uppercase tracking-[0.3em] text-primary/50">Sauvegarde et Continuité multi-appareils</CardDescription>
-                                </div>
+                                <Button 
+                                    variant="outline" 
+                                    onClick={testCloudConnection}
+                                    disabled={!isSupabaseConfigured || isTestingConnection}
+                                    className="rounded-xl h-10 px-6 font-black text-[10px] uppercase tracking-widest border-primary/20 hover:bg-primary/10 transition-all gap-2"
+                                >
+                                    {isTestingConnection ? <RefreshCw className="h-3.5 w-3.5 animate-spin" /> : <Activity className="h-3.5 w-3.5" />}
+                                    Tester Diagnostic
+                                </Button>
                             </div>
                         </CardHeader>
                         <CardContent className="p-10 space-y-10">
                             {!isSupabaseConfigured ? (
                                 <div className="p-8 bg-amber-500/5 rounded-[2.5rem] border border-dashed border-amber-500/20 text-center">
-                                    <p className="text-sm font-bold text-amber-600 mb-4">Configuration Requise</p>
-                                    <p className="text-xs text-muted-foreground mb-6 max-w-md mx-auto">
-                                        Veuillez renseigner votre URL et Clé Supabase dans votre profil pour activer les capacités de synchronisation Cloud.
+                                    <div className="p-4 rounded-full bg-amber-500/10 w-fit mx-auto mb-4">
+                                        <AlertCircle className="h-8 w-8 text-amber-600" />
+                                    </div>
+                                    <p className="text-sm font-bold text-amber-600 mb-2 uppercase tracking-tighter">Configuration Requise</p>
+                                    <p className="text-xs text-muted-foreground mb-6 max-w-md mx-auto leading-relaxed">
+                                        Lien Cloud non détecté. Veuillez renseigner votre URL et Clé Supabase dans votre profil pour activer les capacités de sauvegarde souveraine.
                                     </p>
-                                    <Button variant="outline" className="rounded-xl border-amber-500/20 text-amber-600 hover:bg-amber-500/10 h-12" asChild>
-                                        <a href="/profile">Configurer Supabase</a>
+                                    <Button variant="outline" className="rounded-2xl border-amber-500/20 text-amber-600 hover:bg-amber-500/10 h-12 px-8 font-black text-[10px] uppercase tracking-widest" asChild>
+                                        <a href="/profile">Aller au Profil Elite</a>
                                     </Button>
                                 </div>
                             ) : (
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
-                                    <div className="p-8 bg-muted/20 rounded-[2.5rem] border border-white/5 space-y-6 group hover:bg-muted/30 transition-all">
-                                        <div className="flex items-center gap-3 text-primary">
-                                            <UploadCloud className="h-5 w-5" />
-                                            <span className="text-[10px] font-black uppercase tracking-[0.3em]">Pousser (Push)</span>
+                                <>
+                                    {connectionStatus !== 'idle' && (
+                                        <div className={cn(
+                                            "p-4 rounded-2xl flex items-center gap-3 animate-in zoom-in-95 duration-300",
+                                            connectionStatus === 'success' ? "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20" : "bg-destructive/10 text-destructive border border-destructive/20"
+                                        )}>
+                                            {connectionStatus === 'success' ? <CheckCircle2 className="h-4 w-4" /> : <X className="h-4 w-4" />}
+                                            <span className="text-[10px] font-black uppercase tracking-widest">
+                                                {connectionStatus === 'success' ? "Canal Saphir Opérationnel" : "Erreur de poignée de main Cloud"}
+                                            </span>
                                         </div>
-                                        <p className="text-[11px] text-muted-foreground font-medium leading-relaxed">
-                                            Envoie toutes vos données locales vers le Cloud. Écrase les versions plus anciennes sur Supabase.
-                                        </p>
-                                        <Button 
-                                            onClick={() => performCloudSync('push')} 
-                                            disabled={isSyncing}
-                                            className="w-full rounded-2xl h-14 font-black text-[10px] uppercase tracking-widest shadow-xl shadow-primary/20 transition-all active:scale-95 gap-3"
-                                        >
-                                            {isSyncing ? <RefreshCw className="h-4 w-4 animate-spin"/> : <UploadCloud className="h-4 w-4" />}
-                                            Sauvegarder vers Cloud
-                                        </Button>
-                                    </div>
+                                    )}
 
-                                    <div className="p-8 bg-muted/20 rounded-[2.5rem] border border-white/5 space-y-6 group hover:bg-muted/30 transition-all">
-                                        <div className="flex items-center gap-3 text-emerald-500">
-                                            <DownloadCloud className="h-5 w-5" />
-                                            <span className="text-[10px] font-black uppercase tracking-[0.3em]">Récupérer (Pull)</span>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
+                                        <div className="p-8 bg-muted/20 rounded-[2.5rem] border border-white/5 space-y-6 group hover:bg-muted/30 transition-all relative overflow-hidden">
+                                            <UploadCloud className="absolute -right-4 -top-4 h-24 w-24 opacity-[0.02] group-hover:opacity-10 transition-opacity" />
+                                            <div className="flex items-center gap-3 text-primary">
+                                                <div className="p-2.5 rounded-xl bg-primary/10 shadow-inner">
+                                                    <UploadCloud className="h-5 w-5" />
+                                                </div>
+                                                <span className="text-[10px] font-black uppercase tracking-[0.3em]">Backup (Push)</span>
+                                            </div>
+                                            <p className="text-[11px] text-muted-foreground font-medium leading-relaxed">
+                                                Téléverse l'intégralité de votre cache local vers le coffre-fort Cloud. Écrase les archives obsolètes.
+                                            </p>
+                                            <Button 
+                                                onClick={() => performCloudSync('push')} 
+                                                disabled={isSyncing}
+                                                className="w-full rounded-2xl h-14 font-black text-[10px] uppercase tracking-widest shadow-xl shadow-primary/20 transition-all active:scale-95 gap-3"
+                                            >
+                                                {isSyncing ? <RefreshCw className="h-4 w-4 animate-spin"/> : <Zap className="h-4 w-4" />}
+                                                Déclencher Sauvegarde
+                                            </Button>
                                         </div>
-                                        <p className="text-[11px] text-muted-foreground font-medium leading-relaxed">
-                                            Télécharge les données du Cloud vers ce terminal. Fusionne avec les données locales existantes.
-                                        </p>
-                                        <Button 
-                                            onClick={() => performCloudSync('pull')} 
-                                            variant="outline"
-                                            disabled={isSyncing}
-                                            className="w-full rounded-2xl h-14 font-black text-[10px] uppercase tracking-widest border-emerald-500/20 bg-emerald-500/5 text-emerald-500 hover:bg-emerald-500/10 transition-all active:scale-95 gap-3"
-                                        >
-                                            {isSyncing ? <RefreshCw className="h-4 w-4 animate-spin"/> : <DownloadCloud className="h-4 w-4" />}
-                                            Restaurer depuis Cloud
-                                        </Button>
+
+                                        <div className="p-8 bg-muted/20 rounded-[2.5rem] border border-white/5 space-y-6 group hover:bg-muted/30 transition-all relative overflow-hidden">
+                                            <DownloadCloud className="absolute -right-4 -top-4 h-24 w-24 opacity-[0.02] group-hover:opacity-10 transition-opacity" />
+                                            <div className="flex items-center gap-3 text-emerald-500">
+                                                <div className="p-2.5 rounded-xl bg-emerald-500/10 shadow-inner">
+                                                    <DownloadCloud className="h-5 w-5" />
+                                                </div>
+                                                <span className="text-[10px] font-black uppercase tracking-[0.3em]">Restauration (Pull)</span>
+                                            </div>
+                                            <p className="text-[11px] text-muted-foreground font-medium leading-relaxed">
+                                                Récupère vos actifs depuis le Cloud pour synchroniser ce terminal. Fusionne avec les données locales.
+                                            </p>
+                                            <Button 
+                                                onClick={() => performCloudSync('pull')} 
+                                                variant="outline"
+                                                disabled={isSyncing}
+                                                className="w-full rounded-2xl h-14 font-black text-[10px] uppercase tracking-widest border-emerald-500/20 bg-emerald-500/5 text-emerald-500 hover:bg-emerald-500/10 transition-all active:scale-95 gap-3"
+                                            >
+                                                {isSyncing ? <RefreshCw className="h-4 w-4 animate-spin"/> : <DownloadCloud className="h-4 w-4" />}
+                                                Restaurer Données
+                                            </Button>
+                                        </div>
                                     </div>
-                                </div>
+                                </>
                             )}
 
                             {companyProfile?.last_sync_at && (
                                 <div className="flex items-center justify-center gap-3 px-6 py-3 bg-primary/5 rounded-2xl border border-primary/10 w-fit mx-auto">
-                                    <Activity className="h-3 w-3 text-primary" />
+                                    <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
                                     <span className="text-[10px] font-black text-primary uppercase tracking-widest">
-                                        Dernière synchronisation réussie : {format(new Date(companyProfile.last_sync_at), 'd MMMM yyyy, HH:mm', { locale: fr })}
+                                        Dernière intégrité Cloud : {format(new Date(companyProfile.last_sync_at), 'd MMMM yyyy, HH:mm', { locale: fr })}
                                     </span>
                                 </div>
                             )}
