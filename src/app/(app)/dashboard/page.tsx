@@ -20,10 +20,8 @@ import {
     ArrowUpRight, 
     ArrowDownRight,
     ShoppingCart,
-    PlusCircle,
     Wallet,
     Percent,
-    ArrowRight,
     Sparkles
 } from 'lucide-react';
 import { formatCurrency, safeToDate, cn } from '@/lib/utils';
@@ -272,9 +270,9 @@ export default function DashboardPage() {
                         </CardTitle>
                     </CardHeader>
                     <CardContent className="p-8 space-y-6">
-                        {isLoading ? [...Array(5)].map((_, i) => <Skeleton key={i} className="h-16 w-full rounded-2xl bg-muted/10" />) : 
+                        {isLoading ? [...Array(5)].map((_, i) => <Skeleton key={`skel-prod-${i}`} className="h-16 w-full rounded-2xl bg-muted/10" />) : 
                             data?.topProducts.map((p, i) => (
-                                <div key={`top-prod-${p.productUuid}`} className="flex items-center gap-5 group">
+                                <div key={`prod-list-${p.productUuid}`} className="flex items-center gap-5 group">
                                     <span className="text-2xl font-black text-muted-foreground/20 w-8">0{i + 1}</span>
                                     <div className="flex-grow">
                                         <p className="font-black text-sm group-hover:text-primary transition-colors">{p.name}</p>
@@ -295,9 +293,9 @@ export default function DashboardPage() {
                         </CardTitle>
                     </CardHeader>
                     <CardContent className="p-8 space-y-6">
-                        {isLoading ? [...Array(5)].map((_, i) => <Skeleton key={i} className="h-16 w-full rounded-2xl bg-muted/10" />) : 
+                        {isLoading ? [...Array(5)].map((_, i) => <Skeleton key={`skel-cust-${i}`} className="h-16 w-full rounded-2xl bg-muted/10" />) : 
                             data?.topCustomers.map((c, i) => (
-                                <Link href={`/customers/${c.customerUuid}`} key={`top-cust-${c.customerUuid}`} className="flex items-center gap-5 group">
+                                <Link href={`/customers/${c.customerUuid}`} key={`cust-list-${c.customerUuid}`} className="flex items-center gap-5 group">
                                     <div className="h-12 w-12 rounded-[1.25rem] bg-muted/50 flex items-center justify-center font-black text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary transition-all">
                                         {c.name.substring(0, 1)}
                                     </div>
@@ -320,9 +318,9 @@ export default function DashboardPage() {
                         </CardTitle>
                     </CardHeader>
                     <CardContent className="p-8 space-y-8">
-                        {isLoading ? [...Array(5)].map((_, i) => <Skeleton key={i} className="h-16 w-full rounded-2xl bg-muted/10" />) : 
+                        {isLoading ? [...Array(5)].map((_, i) => <Skeleton key={`skel-stock-${i}`} className="h-16 w-full rounded-2xl bg-muted/10" />) : 
                             data?.lowStockProducts.map(p => (
-                                <div key={`low-stock-${p.uuid}`} className="space-y-3">
+                                <div key={`stock-list-${p.uuid}`} className="space-y-3">
                                     <div className="flex justify-between items-center text-[10px] font-black uppercase">
                                         <span className="truncate pr-4">{p.name}</span>
                                         <span className="text-amber-500">{p.quantity} / {p.minStockLevel}</span>

@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useMemo } from 'react';
@@ -6,12 +5,13 @@ import type { Product } from '@/lib/types';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { MoreHorizontal, Edit, Trash2, CalendarClock, Package, AlertTriangle, Info, Tag, Copy, History, ShoppingBag } from 'lucide-react';
+import { MoreHorizontal, Edit, Trash2, CalendarClock, Package, Info, Tag, Copy, History, ShoppingBag, ChevronRight } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { cn, formatCurrency } from '@/lib/utils';
 import { Checkbox } from '../ui/checkbox';
 import { differenceInDays } from 'date-fns';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import Link from 'next/link';
 
 interface ProductCardProps {
     product: Product;

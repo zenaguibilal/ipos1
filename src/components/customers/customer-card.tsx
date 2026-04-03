@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -6,8 +5,7 @@ import type { Customer } from '@/lib/types';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { MoreHorizontal, Edit, Trash2, FileText, Phone, BellRing, ShieldCheck, Calendar, Hourglass, User, ChevronRight, Wheat, MessageCircle, Landmark } from 'lucide-react';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { MoreHorizontal, Edit, Trash2, FileText, Phone, BellRing, ShieldCheck, Calendar, Hourglass, User, ChevronRight, Wheat, MessageCircle } from 'lucide-react';
 import Link from 'next/link';
 import { formatCurrency, cn } from '@/lib/utils';
 import { Progress } from '../ui/progress';

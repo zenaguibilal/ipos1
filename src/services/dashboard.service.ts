@@ -7,6 +7,7 @@ import { db } from '@/lib/db';
 class DashboardService {
     /**
      * Calcule les données du tableau de bord avec une complexité algorithmique optimisée (O(n)).
+     * Effectue tous les calculs financiers et analytiques en une seule passe sur les données.
      */
     async getDashboardData(from: Date, to: Date): Promise<DashboardData> {
         try {
@@ -42,14 +43,14 @@ class DashboardService {
                 else prevExpenses.push(e);
             }
 
-            // 5. Calcul des indicateurs financiers et analytiques (Passe unique)
+            // 5. Calcul des indicateurs financiers et analytiques (Passe unique Turbo)
             let totalRevenue = 0;
             let totalCOGS = 0;
             const productSales = new Map<string, { quantitySold: number, revenueGenerated: number }>();
             const customerSpending = new Map<string, number>();
             const salesByDayMap = new Map<string, { total: number, profit: number }>();
 
-            // Initialisation de la carte temporelle
+            // Initialisation de la carte temporelle pour le graphique
             eachDayOfInterval({ start: from, end: to }).forEach(day => {
                 salesByDayMap.set(format(day, 'yyyy-MM-dd'), { total: 0, profit: 0 });
             });
@@ -86,7 +87,7 @@ class DashboardService {
                 }
             });
 
-            // 6. Calcul des statistiques de comparaison
+            // 6. Calcul des statistiques de comparaison (Evolution)
             const totalExpenses = currentExpenses.reduce((sum, e) => sum + Number(e.amount), 0);
             const netProfit = totalRevenue - totalCOGS - totalExpenses;
             
@@ -97,20 +98,30 @@ class DashboardService {
 
             const calculateChange = (curr: number, prev: number) => (prev === 0 ? (curr > 0 ? 100 : 0) : ((curr - prev) / prev) * 100);
 
-            // 7. Agrégation des rankings
+            // 7. Agrégation des rankings (Top 5)
             const topProducts = Array.from(productSales.entries())
                 .sort((a, b) => b[1].revenueGenerated - a[1].revenueGenerated)
                 .slice(0, 5)
                 .map(([uuid, stats]) => {
                     const p = allProducts.find(prod => prod.uuid === uuid);
-                    return { productUuid: uuid, name: p?.name || 'Inconnu', quantitySold: stats.quantitySold, revenueGenerated: stats.revenueGenerated, category: p?.category };
+                    return { 
+                        productUuid: uuid, 
+                        name: p?.name || 'Inconnu', 
+                        quantitySold: stats.quantitySold, 
+                        revenueGenerated: stats.revenueGenerated, 
+                        category: p?.category 
+                    };
                 });
 
             const customerMap = new Map(customers.map(c => [c.uuid, `${c.firstName} ${c.lastName}`]));
             const topCustomers: TopCustomer[] = Array.from(customerSpending.entries())
                 .sort((a, b) => b[1] - a[1])
                 .slice(0, 5)
-                .map(([uuid, spent]) => ({ customerUuid: uuid, name: customerMap.get(uuid) || 'Client Inconnu', totalSpent: spent }));
+                .map(([uuid, spent]) => ({ 
+                    customerUuid: uuid, 
+                    name: customerMap.get(uuid) || 'Client Inconnu', 
+                    totalSpent: spent 
+                }));
 
             const lowStockProducts = allProducts
                 .filter(p => Number(p.quantity) > 0 && Number(p.quantity) <= Number(p.minStockLevel))
@@ -119,7 +130,10 @@ class DashboardService {
 
             return {
                 stats: {
-                    totalRevenue, totalExpenses, netProfit, saleCount: currentSales.length,
+                    totalRevenue, 
+                    totalExpenses, 
+                    netProfit, 
+                    saleCount: currentSales.length,
                     totalOutstandingDebt: customers.reduce((sum, c) => sum + Number(c.outstandingBalance), 0),
                     totalInventoryValue: allProducts.reduce((sum, p) => sum + (Number(p.quantity) * Number(p.purchasePrice)), 0),
                     averageBasket: currentSales.length > 0 ? totalRevenue / currentSales.length : 0,
@@ -131,14 +145,22 @@ class DashboardService {
                 },
                 salesByDay: Array.from(salesByDayMap.entries()).map(([date, v]) => ({ date, ...v })),
                 recentSales: currentSales.sort((a, b) => new Date(b.createdAt!).getTime() - new Date(a.createdAt!).getTime()).slice(0, 5).map(s => ({
-                    uuid: s.uuid, invoiceNumber: s.invoiceNumber, total: Number(s.total), createdAt: s.createdAt,
+                    uuid: s.uuid, 
+                    invoiceNumber: s.invoiceNumber, 
+                    total: Number(s.total), 
+                    createdAt: s.createdAt,
                     customerName: s.customerUuid ? customerMap.get(s.customerUuid) || 'Inconnu' : 'Client de passage'
                 })),
                 recentReturns: returns.slice(0, 5).map(r => ({
-                    uuid: r.uuid, originalInvoiceNumber: r.originalInvoiceNumber, totalReturnValue: Number(r.totalReturnValue), createdAt: r.createdAt,
+                    uuid: r.uuid, 
+                    originalInvoiceNumber: r.originalInvoiceNumber, 
+                    totalReturnValue: Number(r.totalReturnValue), 
+                    createdAt: r.createdAt,
                     customerName: r.customerUuid ? customerMap.get(r.customerUuid) || 'Inconnu' : 'Client de passage'
                 })),
-                topProducts, topCustomers, lowStockProducts,
+                topProducts, 
+                topCustomers, 
+                lowStockProducts,
             };
         } catch (error) {
             console.error("Dashboard Service Error:", error);

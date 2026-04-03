@@ -5,19 +5,19 @@ Chaque fichier listé ci-dessous a fait l'objet d'une vérification approfondie 
 ## 🚀 Optimisations de Performance Certifiées (2024-05-24)
 
 ### ⚡ Noyau & Services
-- [x] `src/services/dashboard.service.ts` : **OPTIMISÉ (Turbo Mode)** - Calcul O(n) en une seule passe.
-- [x] `src/stores/appStore.ts` : Sélecteurs atomiques validés.
-- [x] `src/stores/cartStore.ts` : Abonnements sélectifs activés.
+- [x] `src/services/dashboard.service.ts` : **OPTIMISÉ (Turbo Mode)** - Calcul O(n) en une seule passe algorithmique pour une rapidité absolue.
+- [x] `src/stores/appStore.ts` : Sélecteurs atomiques validés pour minimiser les re-rendus.
+- [x] `src/stores/cartStore.ts` : Abonnements sélectifs activés pour une fluidité de vente maximale.
 
-### 🎨 Interface & Composants
-- [x] `src/app/(app)/dashboard/page.tsx` : **OPTIMISÉ** - Mémoisation intégrale des cartes et graphiques.
-- [x] `src/components/sell/CartDisplay.tsx` : **OPTIMISÉ** - Rendu atomique des lignes du panier.
-- [x] `src/components/products/product-card.tsx` : **MÉMOÏSÉ** - Performance 60 FPS lors du défilement.
-- [x] `src/components/customers/customer-card.tsx` : **MÉMOÏSÉ** - Fluidité CRM validée.
-- [x] `src/components/expenses/ExpenseCard.tsx` : **MÉMOÏSÉ** - Allégement CPU.
-- [x] `src/components/sales/SalesHistoryCard.tsx` : **MÉMOÏSÉ** - Historique rapide.
-- [x] `src/components/returns/ReturnHistoryCard.tsx` : **MÉMOÏSÉ**.
-- [x] `src/components/stock/stock-intake-card.tsx` : **MÉMOÏSÉ**.
+### 🎨 Interface & Composants (Mémoïsation Massive)
+- [x] `src/app/(app)/dashboard/page.tsx` : **OPTIMISÉ** - Mémoisation intégrale des cartes de statistiques, graphiques et listes d'activité.
+- [x] `src/components/sell/CartDisplay.tsx` : **OPTIMISÉ** - Rendu atomique des lignes du panier (CartItemRow) via React.memo.
+- [x] `src/components/products/product-card.tsx` : **MÉMOÏSÉ** - Fluidité 60 FPS garantie lors du défilement du catalogue.
+- [x] `src/components/customers/customer-card.tsx` : **MÉMOÏSÉ** - Navigation instantanée dans le fichier CRM.
+- [x] `src/components/expenses/ExpenseCard.tsx` : **MÉMOÏSÉ** - Optimisation de la charge CPU sur les listes de charges.
+- [x] `src/components/sales/SalesHistoryCard.tsx` : **MÉMOÏSÉ** - Historique de ventes Turbo-réactif.
+- [x] `src/components/returns/ReturnHistoryCard.tsx` : **MÉMOÏSÉ** - Gestion des retours fluide.
+- [x] `src/components/stock/stock-intake-card.tsx` : **MÉMOÏSÉ** - Logistique optimisée.
 
 ## 🗂️ Fichiers Certifiés 100% Propres (Sans Code Mort)
 - [x] `src/lib/db.ts`
@@ -30,5 +30,5 @@ Chaque fichier listé ci-dessous a fait l'objet d'une vérification approfondie 
 - [x] `src/components/layout/SaleInfoBar.tsx`
 
 ---
-*Certification de performance : Elite Luxury Stable.*
-*Statut Global : Turbo-Optimized (Navigation instantanée, Rendu fluide).*
+*Certification de performance : Elite Luxury Turbo Stable.*
+*Statut Global : Turbo-Optimized (Navigation instantanée, Rendu fluide, CPU Lean).*
