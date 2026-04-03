@@ -1,4 +1,4 @@
-'use server';
+'use client';
 
 import { useState } from 'react';
 import {
@@ -201,10 +201,12 @@ export function SupabaseSqlDialog() {
     const [copied, setCopied] = useState(false);
 
     const handleCopy = () => {
-        navigator.clipboard.writeText(SUPABASE_SQL_SCRIPT);
-        setCopied(true);
-        toast.success("Code SQL copié pour Supabase.");
-        setTimeout(() => setCopied(false), 2000);
+        if (typeof window !== 'undefined') {
+            navigator.clipboard.writeText(SUPABASE_SQL_SCRIPT);
+            setCopied(true);
+            toast.success("Code SQL copié pour Supabase.");
+            setTimeout(() => setCopied(false), 2000);
+        }
     };
 
     return (

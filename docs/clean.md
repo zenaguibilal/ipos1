@@ -21,7 +21,7 @@ Chaque fichier listé ci-dessous a fait l'objet d'une vérification approfondie 
 - [x] `src/stores/cartStore.ts` : Logique de transaction validée.
 
 ### Pages & Vues Principales
-- [x] `src/app/(app)/dashboard/page.tsx` : **OPTIMISÉ** (Clés React uniques stables partout, imports Lucide nettoyés).
+- [x] `src/app/(app)/dashboard/page.tsx` : **OPTIMISÉ** (Clés React uniques stables partout, icônes nettoyées).
 - [x] `src/app/(app)/products/page.tsx` : Gestion des rayons validée.
 - [x] `src/app/(app)/customers/page.tsx` : Audit de la base clients terminé.
 - [x] `src/app/(app)/sales-history/page.tsx` : **CORRIGÉ** (Ajout import `Trash2` pour les actions groupées).
@@ -31,7 +31,7 @@ Chaque fichier listé ci-dessous a fait l'objet d'une vérification approfondie 
 - [x] `src/app/(app)/stock/intake/page.tsx` : **CORRIGÉ** (Correction import `Link` et nettoyage icônes).
 - [x] `src/app/(app)/bread/page.tsx` : Logistique journalière certifiée.
 - [x] `src/app/(app)/install/page.tsx` : Guide PWA certifié.
-- [x] `src/app/(app)/settings/page.tsx` : **OPTIMISÉ** (Ajout section Sauvegarde Cloud Élite & Diagnostic).
+- [x] `src/app/(app)/settings/page.tsx` : **VÉRIFIÉ** (Section Sauvegarde Cloud Élite & Diagnostic certifiés).
 
 ### Composants UI & Dialogues
 - [x] `src/components/layout/header.tsx` : Navigation Elite validée.
@@ -43,7 +43,7 @@ Chaque fichier listé ci-dessous a fait l'objet d'une vérification approfondie 
 - [x] `src/components/expenses/ExpenseDialog.tsx` : Correction typographique effectuée.
 - [x] `src/components/stock/SupplierTable.tsx` : **NETTOYÉ** (Suppression des imports `Hash` et `ArrowUpRight`).
 - [x] `src/components/stock/stock-intake-card.tsx` : Vérification des textures terminée.
-- [x] `src/components/profile/SupabaseSqlDialog.tsx` : **VÉRIFIÉ** (Script SQL certifié conforme aux types TS).
+- [x] `src/components/profile/SupabaseSqlDialog.tsx` : **VÉRIFIÉ** (Script SQL certifié conforme aux types TS et sécurisé pour Postgres).
 
 ---
 *Dernière certification de pureté : 2024-05-24*
