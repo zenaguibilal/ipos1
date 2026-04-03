@@ -9,6 +9,10 @@ import { Trash2, ShoppingCart, Tag } from 'lucide-react';
 import { formatCurrency } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 
+/**
+ * Composant ligne du panier mémoïsé pour éviter les re-rendus 
+ * lors de la modification d'autres articles.
+ */
 const CartItemRow = React.memo(({ item, onUpdate, onRemove }: { item: any, onUpdate: any, onRemove: any }) => (
     <div 
         className={cn(
@@ -55,6 +59,7 @@ CartItemRow.displayName = 'CartItemRow';
 
 export function CartDisplay() {
     const [isMounted, setIsMounted] = useState(false);
+    // On s'abonne sélectivement aux changements du panier actif
     const cart = useActiveCart();
     const { updateItemQuantity, removeItemFromCart } = useCartActions();
     
@@ -62,16 +67,7 @@ export function CartDisplay() {
         setIsMounted(true);
     }, []);
 
-    if (!isMounted) {
-        return (
-            <div className="flex-grow flex items-center justify-center">
-                <div className="relative">
-                    <div className="absolute -inset-8 bg-primary/5 rounded-full blur-3xl animate-pulse"></div>
-                    <ShoppingCart className="relative h-20 w-20 text-primary/10 animate-bounce duration-[2000ms]" />
-                </div>
-            </div>
-        );
-    }
+    if (!isMounted) return null;
     
     if (!cart || cart.items.length === 0) {
         return (
@@ -80,8 +76,8 @@ export function CartDisplay() {
                     <ShoppingCart className="h-20 w-20 text-muted-foreground/20" />
                 </div>
                 <div className="space-y-2">
-                    <p className="text-2xl font-black tracking-tighter text-muted-foreground/40">Panier vide</p>
-                    <p className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground/20">Prêt pour une nouvelle vente</p>
+                    <p className="text-2xl font-black tracking-tighter text-muted-foreground/40">Manifeste vide</p>
+                    <p className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground/20">Prêt pour une nouvelle vente Elite</p>
                 </div>
             </div>
         )
@@ -93,7 +89,7 @@ export function CartDisplay() {
                 <div className="grid grid-cols-[1fr_auto_auto_auto] gap-x-6 items-center text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/40 px-4 mb-6">
                     <div className="text-left">Désignation</div>
                     <div className="text-center">Quantité</div>
-                    <div className="text-right">Total</div>
+                    <div className="text-right">Total Flux</div>
                     <div></div>
                 </div>
 

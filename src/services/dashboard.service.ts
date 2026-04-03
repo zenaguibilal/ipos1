@@ -5,14 +5,17 @@ import { eachDayOfInterval, format, startOfDay } from 'date-fns';
 import { db } from '@/lib/db';
 
 class DashboardService {
+    /**
+     * Calcule les données du tableau de bord avec une complexité algorithmique optimisée (O(n)).
+     */
     async getDashboardData(from: Date, to: Date): Promise<DashboardData> {
         try {
-            // 1. Calculate duration for comparison
+            // 1. Définition des périodes pour la comparaison
             const duration = to.getTime() - from.getTime();
             const prevTo = new Date(from.getTime() - 1);
             const prevFrom = new Date(prevTo.getTime() - duration);
 
-            // 2. Parallel fetch for all core entities
+            // 2. Chargement parallèle des données brutes (Optimisation entrées/sorties)
             const [allSales, allExpenses, returns, customers, allProducts] = await Promise.all([
                 db.sales.where('createdAt').between(prevFrom, to, true, true).toArray(),
                 db.expenses.where('expenseDate').between(prevFrom, to, true, true).toArray(),
@@ -21,10 +24,10 @@ class DashboardService {
                 db.products.toArray(),
             ]);
 
-            // 3. Pre-process product map for COGS calculation
+            // 3. Indexation des produits pour un accès O(1) lors du calcul du COGS
             const productPurchaseMap = new Map(allProducts.map(p => [p.uuid, Number(p.purchasePrice)]));
 
-            // 4. Split data efficiently
+            // 4. Segmentation des flux (Actuel vs Précédent) en un seul parcours
             const currentSales = [];
             const prevSales = [];
             for (const s of allSales) {
@@ -39,14 +42,14 @@ class DashboardService {
                 else prevExpenses.push(e);
             }
 
-            // 5. Calculate Revenue & COGS in a single pass for current period
+            // 5. Calcul des indicateurs financiers et analytiques (Passe unique)
             let totalRevenue = 0;
             let totalCOGS = 0;
             const productSales = new Map<string, { quantitySold: number, revenueGenerated: number }>();
             const customerSpending = new Map<string, number>();
             const salesByDayMap = new Map<string, { total: number, profit: number }>();
 
-            // Initialize daily map
+            // Initialisation de la carte temporelle
             eachDayOfInterval({ start: from, end: to }).forEach(day => {
                 salesByDayMap.set(format(day, 'yyyy-MM-dd'), { total: 0, profit: 0 });
             });
@@ -75,18 +78,17 @@ class DashboardService {
                     customerSpending.set(sale.customerUuid, (customerSpending.get(sale.customerUuid) || 0) + Number(sale.total));
                 }
 
-                const day = format(startOfDay(sale.createdAt!), 'yyyy-MM-dd');
-                const daily = salesByDayMap.get(day);
+                const dayKey = format(startOfDay(sale.createdAt!), 'yyyy-MM-dd');
+                const daily = salesByDayMap.get(dayKey);
                 if (daily) {
                     daily.total += Number(sale.total);
                     daily.profit += saleGrossProfit;
                 }
             });
 
-            // 6. Stats for Current vs Prev
+            // 6. Calcul des statistiques de comparaison
             const totalExpenses = currentExpenses.reduce((sum, e) => sum + Number(e.amount), 0);
             const netProfit = totalRevenue - totalCOGS - totalExpenses;
-            const saleCount = currentSales.length;
             
             const prevTotalRevenue = prevSales.reduce((sum, s) => sum + Number(s.total), 0);
             const prevTotalExpenses = prevExpenses.reduce((sum, e) => sum + Number(e.amount), 0);
@@ -95,7 +97,7 @@ class DashboardService {
 
             const calculateChange = (curr: number, prev: number) => (prev === 0 ? (curr > 0 ? 100 : 0) : ((curr - prev) / prev) * 100);
 
-            // 7. Rankings
+            // 7. Agrégation des rankings
             const topProducts = Array.from(productSales.entries())
                 .sort((a, b) => b[1].revenueGenerated - a[1].revenueGenerated)
                 .slice(0, 5)
@@ -117,15 +119,15 @@ class DashboardService {
 
             return {
                 stats: {
-                    totalRevenue, totalExpenses, netProfit, saleCount,
+                    totalRevenue, totalExpenses, netProfit, saleCount: currentSales.length,
                     totalOutstandingDebt: customers.reduce((sum, c) => sum + Number(c.outstandingBalance), 0),
                     totalInventoryValue: allProducts.reduce((sum, p) => sum + (Number(p.quantity) * Number(p.purchasePrice)), 0),
-                    averageBasket: saleCount > 0 ? totalRevenue / saleCount : 0,
+                    averageBasket: currentSales.length > 0 ? totalRevenue / currentSales.length : 0,
                     profitMargin: totalRevenue > 0 ? (netProfit / totalRevenue) * 100 : 0,
                     totalRevenueChange: calculateChange(totalRevenue, prevTotalRevenue),
                     netProfitChange: calculateChange(netProfit, prevNetProfit),
                     totalExpensesChange: calculateChange(totalExpenses, prevTotalExpenses),
-                    saleCountChange: calculateChange(saleCount, prevSales.length),
+                    saleCountChange: calculateChange(currentSales.length, prevSales.length),
                 },
                 salesByDay: Array.from(salesByDayMap.entries()).map(([date, v]) => ({ date, ...v })),
                 recentSales: currentSales.sort((a, b) => new Date(b.createdAt!).getTime() - new Date(a.createdAt!).getTime()).slice(0, 5).map(s => ({
@@ -139,7 +141,7 @@ class DashboardService {
                 topProducts, topCustomers, lowStockProducts,
             };
         } catch (error) {
-            console.error("Dashboard error:", error);
+            console.error("Dashboard Service Error:", error);
             throw error;
         }
     }
