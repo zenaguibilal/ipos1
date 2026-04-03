@@ -422,7 +422,7 @@ export default function ExpensesPage() {
                                     <YAxis 
                                         dataKey="name" 
                                         type="category" 
-                                        tick={{ fontSize: 10, fontWeights: '900', fill: 'hsl(var(--muted-foreground))' }}
+                                        tick={{ fontSize: 10, fontWeight: '900', fill: 'hsl(var(--muted-foreground))' }}
                                         width={100}
                                         axisLine={false}
                                         tickLine={false}
