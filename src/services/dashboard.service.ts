@@ -1,19 +1,18 @@
-
 'use client';
 
-import type { DashboardData, Sale, Product, Customer, Expense, ProductReturn, TopCustomer } from '@/lib/types';
+import type { DashboardData, TopCustomer } from '@/lib/types';
 import { eachDayOfInterval, format, startOfDay } from 'date-fns';
 import { db } from '@/lib/db';
 
 class DashboardService {
     async getDashboardData(from: Date, to: Date): Promise<DashboardData> {
         try {
-            // 1. Calculate previous period dates
+            // 1. Calculate duration for comparison
             const duration = to.getTime() - from.getTime();
             const prevTo = new Date(from.getTime() - 1);
             const prevFrom = new Date(prevTo.getTime() - duration);
 
-            // 2. Fetch all data needed in an extended range
+            // 2. Parallel fetch for all core entities
             const [allSales, allExpenses, returns, customers, allProducts] = await Promise.all([
                 db.sales.where('createdAt').between(prevFrom, to, true, true).toArray(),
                 db.expenses.where('expenseDate').between(prevFrom, to, true, true).toArray(),
@@ -22,173 +21,125 @@ class DashboardService {
                 db.products.toArray(),
             ]);
 
-            // 3. Split data into current and previous periods
-            const currentSales = allSales.filter(s => new Date(s.createdAt!) >= from);
-            const prevSales = allSales.filter(s => new Date(s.createdAt!) < from);
+            // 3. Pre-process product map for COGS calculation
+            const productPurchaseMap = new Map(allProducts.map(p => [p.uuid, Number(p.purchasePrice)]));
 
-            const currentExpenses = allExpenses.filter(e => new Date(e.expenseDate) >= from);
-            const prevExpenses = allExpenses.filter(e => new Date(e.expenseDate) < from);
+            // 4. Split data efficiently
+            const currentSales = [];
+            const prevSales = [];
+            for (const s of allSales) {
+                if (new Date(s.createdAt!) >= from) currentSales.push(s);
+                else prevSales.push(s);
+            }
 
+            const currentExpenses = [];
+            const prevExpenses = [];
+            for (const e of allExpenses) {
+                if (new Date(e.expenseDate) >= from) currentExpenses.push(e);
+                else prevExpenses.push(e);
+            }
 
-            // 4. Calculate stats for CURRENT period
-            const totalRevenue = currentSales.reduce((sum, sale) => sum + Number(sale.total), 0);
-            const totalExpenses = currentExpenses.reduce((sum, expense) => sum + Number(expense.amount), 0);
-            const saleCount = currentSales.length;
-            const totalCOGS = currentSales.reduce((sum, sale) => sum + sale.items.reduce((acc, item) => acc + (Number(item.purchasePrice) * Number(item.quantity)), 0), 0);
-            const netProfit = totalRevenue - totalCOGS - totalExpenses;
-            
-            const averageBasket = saleCount > 0 ? totalRevenue / saleCount : 0;
-            const profitMargin = totalRevenue > 0 ? (netProfit / totalRevenue) * 100 : 0;
-
-            // 5. Calculate stats for PREVIOUS period
-            const prevTotalRevenue = prevSales.reduce((sum, sale) => sum + Number(sale.total), 0);
-            const prevTotalExpenses = prevExpenses.reduce((sum, expense) => sum + Number(expense.amount), 0);
-            const prevSaleCount = prevSales.length;
-            const prevTotalCOGS = prevSales.reduce((sum, sale) => sum + sale.items.reduce((acc, item) => acc + (Number(item.purchasePrice) * Number(item.quantity)), 0), 0);
-            const prevNetProfit = prevTotalRevenue - prevTotalCOGS - prevTotalExpenses;
-
-            // 6. Calculate percentage changes
-            const calculateChange = (current: number, previous: number): number | undefined => {
-                if (previous === 0) {
-                    return current > 0 ? Infinity : 0;
-                }
-                return ((current - previous) / previous) * 100;
-            };
-            
-            const totalRevenueChange = calculateChange(totalRevenue, prevTotalRevenue);
-            const netProfitChange = calculateChange(netProfit, prevNetProfit);
-            const totalExpensesChange = calculateChange(totalExpenses, prevTotalExpenses);
-            const saleCountChange = calculateChange(saleCount, prevSaleCount);
-
-            const totalOutstandingDebt = customers.reduce((sum, c) => sum + Number(c.outstandingBalance), 0);
-            const totalInventoryValue = allProducts.reduce((sum, p) => sum + (Number(p.quantity) * Number(p.purchasePrice)), 0);
-
-
-            // --- Process data for charts and lists (for current period only) ---
-
-            const customerMap = new Map(customers.map(c => [c.uuid, `${c.firstName} ${c.lastName}`]));
-            const defaultCustomerName = 'Client de passage';
-
+            // 5. Calculate Revenue & COGS in a single pass for current period
+            let totalRevenue = 0;
+            let totalCOGS = 0;
+            const productSales = new Map<string, { quantitySold: number, revenueGenerated: number }>();
+            const customerSpending = new Map<string, number>();
             const salesByDayMap = new Map<string, { total: number, profit: number }>();
-            const interval = eachDayOfInterval({ start: from, end: to });
-            interval.forEach(day => {
+
+            // Initialize daily map
+            eachDayOfInterval({ start: from, end: to }).forEach(day => {
                 salesByDayMap.set(format(day, 'yyyy-MM-dd'), { total: 0, profit: 0 });
             });
 
             currentSales.forEach(sale => {
-                const day = format(startOfDay(sale.createdAt!), 'yyyy-MM-dd');
-                const saleCOGS = sale.items.reduce((acc, item) => acc + (Number(item.purchasePrice) * Number(item.quantity)), 0);
+                totalRevenue += Number(sale.total);
+                let saleCOGS = 0;
+                
+                sale.items.forEach(item => {
+                    const qty = Number(item.quantity);
+                    const purchasePrice = Number(item.purchasePrice) || productPurchaseMap.get(item.productUuid || '') || 0;
+                    saleCOGS += purchasePrice * qty;
+
+                    if (item.productUuid) {
+                        const current = productSales.get(item.productUuid) || { quantitySold: 0, revenueGenerated: 0 };
+                        current.quantitySold += qty;
+                        current.revenueGenerated += (Number(item.price) * qty);
+                        productSales.set(item.productUuid, current);
+                    }
+                });
+
+                totalCOGS += saleCOGS;
                 const saleGrossProfit = Number(sale.total) - saleCOGS;
 
-                if (salesByDayMap.has(day)) {
-                    const current = salesByDayMap.get(day)!;
-                    salesByDayMap.set(day, {
-                        total: current.total + Number(sale.total),
-                        profit: current.profit + saleGrossProfit,
-                    });
+                if (sale.customerUuid) {
+                    customerSpending.set(sale.customerUuid, (customerSpending.get(sale.customerUuid) || 0) + Number(sale.total));
+                }
+
+                const day = format(startOfDay(sale.createdAt!), 'yyyy-MM-dd');
+                const daily = salesByDayMap.get(day);
+                if (daily) {
+                    daily.total += Number(sale.total);
+                    daily.profit += saleGrossProfit;
                 }
             });
 
-            const salesByDay = Array.from(salesByDayMap.entries())
-                .map(([date, values]) => ({ date, ...values }))
-                .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+            // 6. Stats for Current vs Prev
+            const totalExpenses = currentExpenses.reduce((sum, e) => sum + Number(e.amount), 0);
+            const netProfit = totalRevenue - totalCOGS - totalExpenses;
+            const saleCount = currentSales.length;
+            
+            const prevTotalRevenue = prevSales.reduce((sum, s) => sum + Number(s.total), 0);
+            const prevTotalExpenses = prevExpenses.reduce((sum, e) => sum + Number(e.amount), 0);
+            const prevTotalCOGS = prevSales.reduce((sum, sale) => sum + sale.items.reduce((acc, item) => acc + (Number(item.purchasePrice) * Number(item.quantity)), 0), 0);
+            const prevNetProfit = prevTotalRevenue - prevTotalCOGS - prevTotalExpenses;
 
-            const productSales = new Map<string, { quantitySold: number, revenueGenerated: number }>();
-            currentSales.forEach(sale => {
-                sale.items.forEach(item => {
-                    if (!item.productUuid) return;
-                    const current = productSales.get(item.productUuid) || { quantitySold: 0, revenueGenerated: 0 };
-                    current.quantitySold += Number(item.quantity);
-                    const itemSubtotal = Number(item.price) * Number(item.quantity);
-                    const itemRevenue = Number(sale.subtotal) > 0 ? (itemSubtotal / Number(sale.subtotal)) * Number(sale.total) : itemSubtotal;
-                    current.revenueGenerated += itemRevenue;
-                    productSales.set(item.productUuid, current);
-                });
-            });
+            const calculateChange = (curr: number, prev: number) => (prev === 0 ? (curr > 0 ? 100 : 0) : ((curr - prev) / prev) * 100);
 
-            const topProductsData = Array.from(productSales.entries())
+            // 7. Rankings
+            const topProducts = Array.from(productSales.entries())
                 .sort((a, b) => b[1].revenueGenerated - a[1].revenueGenerated)
-                .slice(0, 5);
+                .slice(0, 5)
+                .map(([uuid, stats]) => {
+                    const p = allProducts.find(prod => prod.uuid === uuid);
+                    return { productUuid: uuid, name: p?.name || 'Inconnu', quantitySold: stats.quantitySold, revenueGenerated: stats.revenueGenerated, category: p?.category };
+                });
 
-            const topProducts = topProductsData.map(([uuid, stats]) => {
-                const product = allProducts.find(p => p.uuid === uuid);
-                return {
-                    productUuid: uuid,
-                    name: product?.name || 'Produit Inconnu',
-                    quantitySold: stats.quantitySold,
-                    revenueGenerated: stats.revenueGenerated,
-                    category: product?.category,
-                };
-            });
-            
-            const customerSpending = new Map<string, number>();
-            currentSales.forEach(sale => {
-                if (!sale.customerUuid) return;
-                const currentSpending = customerSpending.get(sale.customerUuid) || 0;
-                customerSpending.set(sale.customerUuid, currentSpending + Number(sale.total));
-            });
-
-            const topCustomersData = Array.from(customerSpending.entries())
+            const customerMap = new Map(customers.map(c => [c.uuid, `${c.firstName} ${c.lastName}`]));
+            const topCustomers: TopCustomer[] = Array.from(customerSpending.entries())
                 .sort((a, b) => b[1] - a[1])
-                .slice(0, 5);
-            
-            const topCustomers: TopCustomer[] = topCustomersData.map(([uuid, totalSpent]) => ({
-                customerUuid: uuid,
-                name: customerMap.get(uuid) || 'Client Inconnu',
-                totalSpent,
-            }));
+                .slice(0, 5)
+                .map(([uuid, spent]) => ({ customerUuid: uuid, name: customerMap.get(uuid) || 'Client Inconnu', totalSpent: spent }));
 
             const lowStockProducts = allProducts
                 .filter(p => Number(p.quantity) > 0 && Number(p.quantity) <= Number(p.minStockLevel))
                 .sort((a, b) => Number(a.quantity) - Number(b.quantity))
                 .slice(0, 5);
-                
-            const recentSales = currentSales
-                .sort((a, b) => new Date(b.createdAt!).getTime() - new Date(a.createdAt!).getTime())
-                .slice(0, 5)
-                .map(sale => ({
-                    uuid: sale.uuid,
-                    invoiceNumber: sale.invoiceNumber,
-                    total: Number(sale.total),
-                    createdAt: sale.createdAt,
-                    customerName: sale.customerUuid ? customerMap.get(sale.customerUuid) || 'Client Inconnu' : defaultCustomerName,
-                }));
 
-            const recentReturns = returns
-                .sort((a, b) => new Date(b.createdAt!).getTime() - new Date(a.createdAt!).getTime())
-                .slice(0, 5)
-                .map(pr => ({
-                    uuid: pr.uuid,
-                    originalInvoiceNumber: pr.originalInvoiceNumber,
-                    totalReturnValue: Number(pr.totalReturnValue),
-                    createdAt: pr.createdAt,
-                    customerName: pr.customerUuid ? customerMap.get(pr.customerUuid) || 'Client Inconnu' : defaultCustomerName,
-                }));
-                
             return {
                 stats: {
-                    totalRevenue,
-                    totalExpenses,
-                    netProfit,
-                    saleCount,
-                    totalOutstandingDebt,
-                    totalInventoryValue,
-                    averageBasket,
-                    profitMargin,
-                    totalRevenueChange,
-                    netProfitChange,
-                    totalExpensesChange,
-                    saleCountChange,
+                    totalRevenue, totalExpenses, netProfit, saleCount,
+                    totalOutstandingDebt: customers.reduce((sum, c) => sum + Number(c.outstandingBalance), 0),
+                    totalInventoryValue: allProducts.reduce((sum, p) => sum + (Number(p.quantity) * Number(p.purchasePrice)), 0),
+                    averageBasket: saleCount > 0 ? totalRevenue / saleCount : 0,
+                    profitMargin: totalRevenue > 0 ? (netProfit / totalRevenue) * 100 : 0,
+                    totalRevenueChange: calculateChange(totalRevenue, prevTotalRevenue),
+                    netProfitChange: calculateChange(netProfit, prevNetProfit),
+                    totalExpensesChange: calculateChange(totalExpenses, prevTotalExpenses),
+                    saleCountChange: calculateChange(saleCount, prevSales.length),
                 },
-                salesByDay,
-                recentSales,
-                recentReturns,
-                topProducts,
-                topCustomers,
-                lowStockProducts,
+                salesByDay: Array.from(salesByDayMap.entries()).map(([date, v]) => ({ date, ...v })),
+                recentSales: currentSales.sort((a, b) => new Date(b.createdAt!).getTime() - new Date(a.createdAt!).getTime()).slice(0, 5).map(s => ({
+                    uuid: s.uuid, invoiceNumber: s.invoiceNumber, total: Number(s.total), createdAt: s.createdAt,
+                    customerName: s.customerUuid ? customerMap.get(s.customerUuid) || 'Inconnu' : 'Client de passage'
+                })),
+                recentReturns: returns.slice(0, 5).map(r => ({
+                    uuid: r.uuid, originalInvoiceNumber: r.originalInvoiceNumber, totalReturnValue: Number(r.totalReturnValue), createdAt: r.createdAt,
+                    customerName: r.customerUuid ? customerMap.get(r.customerUuid) || 'Inconnu' : 'Client de passage'
+                })),
+                topProducts, topCustomers, lowStockProducts,
             };
         } catch (error) {
-            console.error("Error fetching dashboard data:", error);
+            console.error("Dashboard error:", error);
             throw error;
         }
     }

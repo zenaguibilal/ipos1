@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { DateRangePicker } from '@/components/ui/date-range-picker';
@@ -35,7 +35,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
 
-const StatCard = ({ title, value, icon: Icon, change, isLoading, href, positiveIsGood = true, suffix }: { title: string, value: string, icon: React.ElementType, change?: number, isLoading: boolean, href?: string, positiveIsGood?: boolean, suffix?: string }) => {
+const StatCard = React.memo(({ title, value, icon: Icon, change, isLoading, href, positiveIsGood = true, suffix }: { title: string, value: string, icon: React.ElementType, change?: number, isLoading: boolean, href?: string, positiveIsGood?: boolean, suffix?: string }) => {
     const isPositive = change !== undefined && change >= 0;
     const isGood = positiveIsGood ? isPositive : !isPositive;
 
@@ -81,9 +81,10 @@ const StatCard = ({ title, value, icon: Icon, change, isLoading, href, positiveI
     }
 
     return cardContent;
-};
+});
+StatCard.displayName = 'StatCard';
 
-const SalesChart = ({ data, isLoading }: { data: SalesByDay[], isLoading: boolean }) => (
+const SalesChart = React.memo(({ data, isLoading }: { data: SalesByDay[], isLoading: boolean }) => (
     <Card className="luxury-card lg:col-span-2 bg-card/40 backdrop-blur-3xl border-white/5 overflow-hidden rounded-[2.5rem]">
         <CardHeader className="bg-muted/20 border-b border-white/5 p-8">
             <div className="flex items-center justify-between">
@@ -157,16 +158,17 @@ const SalesChart = ({ data, isLoading }: { data: SalesByDay[], isLoading: boolea
                         itemStyle={{ fontSize: '12px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '0.05em' }}
                         formatter={(value: number, name: string) => [formatCurrency(value), name === 'total' ? "Ventes Totales" : 'Bénéfice Net']}
                     />
-                    <Area type="monotone" dataKey="total" name="total" stroke="hsl(var(--chart-primary))" strokeWidth={5} fillOpacity={1} fill="url(#colorRevenue)" />
-                    <Area type="monotone" dataKey="profit" name="profit" stroke="hsl(var(--chart-quaternary))" strokeWidth={3} strokeDasharray="10 10" fillOpacity={1} fill="url(#colorProfit)" />
+                    <Area type="monotone" dataKey="total" name="total" stroke="hsl(var(--chart-primary))" strokeWidth={5} fillOpacity={1} fill="url(#colorRevenue)" isAnimationActive={false} />
+                    <Area type="monotone" dataKey="profit" name="profit" stroke="hsl(var(--chart-quaternary))" strokeWidth={3} strokeDasharray="10 10" fillOpacity={1} fill="url(#colorProfit)" isAnimationActive={false} />
                 </AreaChart>
             </ResponsiveContainer>
              )}
         </CardContent>
     </Card>
-);
+));
+SalesChart.displayName = 'SalesChart';
 
-const RecentActivity = ({ sales, returns, isLoading }: { sales: RecentSale[], returns: RecentReturn[], isLoading: boolean }) => (
+const RecentActivity = React.memo(({ sales, returns, isLoading }: { sales: RecentSale[], returns: RecentReturn[], isLoading: boolean }) => (
     <Card className="luxury-card bg-card/40 backdrop-blur-3xl border-white/5 overflow-hidden rounded-[2.5rem]">
         <CardHeader className="bg-muted/20 border-b border-white/5 p-8">
             <CardTitle className="text-2xl font-black tracking-tighter">Flux en Temps Réel</CardTitle>
@@ -220,9 +222,10 @@ const RecentActivity = ({ sales, returns, isLoading }: { sales: RecentSale[], re
              )}
         </CardContent>
     </Card>
-);
+));
+RecentActivity.displayName = 'RecentActivity';
 
-const QuickNav = () => (
+const QuickNav = React.memo(() => (
     <div className="grid grid-cols-2 sm:grid-cols-4 gap-6">
         <Link href="/sell" className="group">
             <div className="p-6 rounded-[2.5rem] bg-primary text-primary-foreground shadow-2xl shadow-primary/20 flex items-center justify-between group-hover:scale-[1.05] group-hover:-rotate-1 transition-all duration-500">
@@ -269,7 +272,8 @@ const QuickNav = () => (
             </div>
         </Link>
     </div>
-);
+));
+QuickNav.displayName = 'QuickNav';
 
 export default function DashboardPage() {
     const { dateRange, setDate, isMounted } = useDateRange(29);

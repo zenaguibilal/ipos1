@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useActiveCart, useCartActions } from "@/stores/cartStore";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,6 +8,50 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Trash2, ShoppingCart, Tag } from 'lucide-react';
 import { formatCurrency } from "@/lib/utils";
 import { cn } from "@/lib/utils";
+
+const CartItemRow = React.memo(({ item, onUpdate, onRemove }: { item: any, onUpdate: any, onRemove: any }) => (
+    <div 
+        className={cn(
+            "grid grid-cols-[1fr_auto_auto_auto] gap-x-6 items-center p-4 rounded-[1.5rem] bg-muted/20 border border-white/5 transition-all duration-500 hover:bg-muted/40 group",
+            item.flash && 'animate-flash ring-2 ring-primary/30'
+        )}
+    >
+        <div className="flex-grow min-w-0">
+            <div className="flex items-center gap-2 mb-1">
+                <p className="font-black text-sm tracking-tight truncate group-hover:text-primary transition-colors">{item.name}</p>
+                {item.uuid.startsWith('custom-') && <Tag className="h-3 w-3 text-amber-500 opacity-50" />}
+            </div>
+            <p className="text-[10px] font-bold text-muted-foreground/50">{formatCurrency(item.price)} <span className="mx-1 opacity-30">/</span> {item.unite || 'pcs'}</p>
+        </div>
+        
+        <div className="flex flex-col items-center gap-1">
+            <Input
+                type="number"
+                value={item.cartQuantity}
+                onChange={(e) => onUpdate(item.uuid, parseInt(e.target.value) || 0)}
+                className="w-20 text-center h-10 rounded-xl bg-background/50 border-none shadow-inner font-black text-primary"
+                min="0"
+            />
+            {item.cartQuantity >= item.quantity && !item.uuid.startsWith('custom-') && (
+                <span className="text-[8px] font-black text-destructive uppercase">Stock Max</span>
+            )}
+        </div>
+
+        <div className="w-24 text-right">
+            <p className="font-black text-base tracking-tighter text-foreground">{formatCurrency(item.price * item.cartQuantity)}</p>
+        </div>
+
+        <Button 
+            variant="ghost" 
+            size="icon" 
+            className="text-muted-foreground/20 hover:text-destructive hover:bg-destructive/10 h-10 w-10 rounded-xl transition-all opacity-0 group-hover:opacity-100"
+            onClick={() => onRemove(item.uuid)}
+        >
+            <Trash2 className="h-4 w-4" />
+        </Button>
+    </div>
+));
+CartItemRow.displayName = 'CartItemRow';
 
 export function CartDisplay() {
     const [isMounted, setIsMounted] = useState(false);
@@ -55,47 +99,12 @@ export function CartDisplay() {
 
                 <div className="space-y-3">
                     {cart.items.map(item => (
-                        <div 
+                        <CartItemRow 
                             key={item.uuid} 
-                            className={cn(
-                                "grid grid-cols-[1fr_auto_auto_auto] gap-x-6 items-center p-4 rounded-[1.5rem] bg-muted/20 border border-white/5 transition-all duration-500 hover:bg-muted/40 group",
-                                item.flash && 'animate-flash ring-2 ring-primary/30'
-                            )}
-                        >
-                            <div className="flex-grow min-w-0">
-                                <div className="flex items-center gap-2 mb-1">
-                                    <p className="font-black text-sm tracking-tight truncate group-hover:text-primary transition-colors">{item.name}</p>
-                                    {item.uuid.startsWith('custom-') && <Tag className="h-3 w-3 text-amber-500 opacity-50" />}
-                                </div>
-                                <p className="text-[10px] font-bold text-muted-foreground/50">{formatCurrency(item.price)} <span className="mx-1 opacity-30">/</span> {item.unite || 'pcs'}</p>
-                            </div>
-                            
-                            <div className="flex flex-col items-center gap-1">
-                                <Input
-                                    type="number"
-                                    value={item.cartQuantity}
-                                    onChange={(e) => updateItemQuantity(item.uuid, parseInt(e.target.value) || 0)}
-                                    className="w-20 text-center h-10 rounded-xl bg-background/50 border-none shadow-inner font-black text-primary"
-                                    min="0"
-                                />
-                                {item.cartQuantity >= item.quantity && !item.uuid.startsWith('custom-') && (
-                                    <span className="text-[8px] font-black text-destructive uppercase">Stock Max</span>
-                                )}
-                            </div>
-
-                            <div className="w-24 text-right">
-                                <p className="font-black text-base tracking-tighter text-foreground">{formatCurrency(item.price * item.cartQuantity)}</p>
-                            </div>
-
-                            <Button 
-                                variant="ghost" 
-                                size="icon" 
-                                className="text-muted-foreground/20 hover:text-destructive hover:bg-destructive/10 h-10 w-10 rounded-xl transition-all opacity-0 group-hover:opacity-100"
-                                onClick={() => removeItemFromCart(item.uuid)}
-                            >
-                                <Trash2 className="h-4 w-4" />
-                            </Button>
-                        </div>
+                            item={item} 
+                            onUpdate={updateItemQuantity} 
+                            onRemove={removeItemFromCart} 
+                        />
                     ))}
                 </div>
             </div>
