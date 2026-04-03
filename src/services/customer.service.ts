@@ -1,3 +1,4 @@
+
 'use client';
 import { v4 as uuidv4 } from 'uuid';
 import type { Customer, Sale, ImportAnalysis, Payment, ProductReturn } from '@/lib/types';
@@ -334,7 +335,7 @@ class CustomerService {
             updatedAt: now,
         }));
         
-        await db.transaction('rw', db.customers, async () => {
+        await db.transaction('rw', [db.customers], async () => {
             if (toAdd.length > 0) await db.customers.bulkAdd(toAdd);
             if (toUpdate.length > 0) await db.customers.bulkPut(toUpdate);
         });

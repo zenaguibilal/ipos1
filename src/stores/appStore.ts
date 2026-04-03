@@ -1,3 +1,4 @@
+
 import { create } from 'zustand';
 import type { CompanyProfile, ReturnItem, StockIntakeItem } from '@/lib/types';
 import { toast } from 'sonner';
@@ -121,7 +122,7 @@ export const useAppStore = create<AppState>()(
                 },
                 processReturn: async (returnData) => {
                      try {
-                        await db.transaction('rw', db.product_returns, db.products, db.customers, db.inventory_logs, async () => {
+                        await db.transaction('rw', [db.product_returns, db.products, db.customers, db.inventory_logs], async () => {
                             const newReturn = await returnService.addReturn(returnData);
                             for (const item of newReturn.items) {
                                 if (item.wasRestocked && item.productUuid) {
@@ -141,7 +142,7 @@ export const useAppStore = create<AppState>()(
                 },
                 processStockIntake: async (intakeData) => {
                     try {
-                         await db.transaction('rw', db.stock_intakes, db.products, db.suppliers, db.inventory_logs, async () => {
+                         await db.transaction('rw', [db.stock_intakes, db.products, db.suppliers, db.inventory_logs], async () => {
                             const supplier = await supplierService.findOrCreateSupplier(intakeData.supplierName, intakeData.supplierUuid);
             
                             const itemsTotalValue = intakeData.items.reduce((sum, item) => sum + (item.quantity * item.purchasePrice), 0);

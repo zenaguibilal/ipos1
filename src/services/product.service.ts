@@ -13,15 +13,12 @@ import type Dexie from 'dexie';
 class ProductService {
 
     async getProducts(options?: { sortBy?: string }): Promise<Product[]> {
-        let collection = db.products.toCollection();
         if (options?.sortBy) {
             const [field, order] = options.sortBy.split('_');
-            collection = collection.sortBy(field);
-            if (order === 'desc') {
-                collection = collection.reverse();
-            }
+            const results = await db.products.orderBy(field).toArray();
+            return order === 'desc' ? results.reverse() : results;
         }
-        return collection.toArray();
+        return db.products.toArray();
     }
     
     async getProductsByUuids(uuids: string[]): Promise<Product[]> {
@@ -290,7 +287,7 @@ class ProductService {
             dateMajPrix: now,
             stockStatus: calculateStockStatus(p.quantity, p.minStockLevel),
         }));
-        await db.transaction('rw', db.products, async () => {
+        await db.transaction('rw', [db.products], async () => {
             if (toAdd.length > 0) await db.products.bulkAdd(toAdd);
             if (toUpdate.length > 0) await db.products.bulkPut(toUpdate);
         });
