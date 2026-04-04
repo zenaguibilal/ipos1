@@ -21,20 +21,29 @@ import {
     Users2, 
     Archive, 
     Coins, 
-    AlertTriangle, 
     Search,
     Save,
     Trash2,
     Loader2,
-    CheckSquare,
-    Square,
-    Eye
+    Eye,
+    RotateCcw,
+    Link as LinkIcon,
+    ChevronDown
 } from 'lucide-react';
 import { backupService } from '@/services/backup.service';
 import { toast } from 'sonner';
-import { cn, formatCurrency } from '@/lib/utils';
+import { cn } from '@/lib/utils';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Checkbox } from '@/components/ui/checkbox';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface BackupPreviewDialogProps {
     isOpen: boolean;
@@ -44,36 +53,91 @@ interface BackupPreviewDialogProps {
 
 type Category = 'products' | 'customers' | 'suppliers' | 'expenses' | 'sales' | 'inventory_logs' | 'payments' | 'bread_orders' | 'company_profile';
 
+// Définition des champs officiels par table pour le mapping
+const APP_FIELDS: Record<string, { label: string, key: string }[]> = {
+    products: [
+        { label: 'Désignation', key: 'name' },
+        { label: 'Catégorie', key: 'category' },
+        { label: 'Prix Vente', key: 'price' },
+        { label: 'Prix Achat', key: 'purchasePrice' },
+        { label: 'Stock', key: 'quantity' },
+        { label: 'Stock Min', key: 'minStockLevel' },
+        { label: 'Unité', key: 'unite' },
+        { label: 'Expiration', key: 'dateExpiration' },
+    ],
+    customers: [
+        { label: 'Prénom', key: 'firstName' },
+        { label: 'Nom', key: 'lastName' },
+        { label: 'Téléphone', key: 'phone' },
+        { label: 'Adresse', key: 'address' },
+        { label: 'Jour Règlement', key: 'settlementDay' },
+        { label: 'Limite Crédit', key: 'creditLimit' },
+        { label: 'Solde Initial', key: 'outstandingBalance' },
+    ],
+    suppliers: [
+        { label: 'Nom', key: 'name' },
+        { label: 'Contact', key: 'contactPerson' },
+        { label: 'Téléphone', key: 'phone' },
+        { label: 'Email', key: 'email' },
+        { label: 'Solde', key: 'balance' },
+    ],
+    expenses: [
+        { label: 'Description', key: 'description' },
+        { label: 'Poste', key: 'category' },
+        { label: 'Montant', key: 'amount' },
+        { label: 'Date', key: 'expenseDate' },
+    ],
+    sales: [
+        { label: 'N° Facture', key: 'invoiceNumber' },
+        { label: 'Total', key: 'total' },
+        { label: 'Reçu', key: 'amountPaid' },
+        { label: 'Statut', key: 'paymentStatus' },
+    ]
+};
+
 export function BackupPreviewDialog({ isOpen, onOpenChange, initialData }: BackupPreviewDialogProps) {
     const [data, setData] = useState<Record<string, any[]>>(initialData);
     const [activeCategory, setActiveCategory] = useState<Category>('products');
     const [searchQuery, setSearchQuery] = useState('');
     const [isRestoring, setIsRestoring] = useState(false);
 
-    // Selection States: Initialize with all tables available in data
     const [selectedTables, setSelectedTables] = useState<Set<string>>(new Set());
     const [selectedColumns, setSelectedColumns] = useState<Record<string, Set<string>>>({});
+    
+    // État du mapping : Record<TableId, Record<SourceColumn, AppPropertyKey>>
+    const [columnMapping, setColumnMapping] = useState<Record<string, Record<string, string>>>({});
 
+    // Initialisation et Auto-Mapping (Smart Match)
     useEffect(() => {
         if (isOpen && initialData) {
             setData(initialData);
             const tables = new Set<string>();
             const cols: Record<string, Set<string>> = {};
+            const mappings: Record<string, Record<string, string>> = {};
             
-            Object.keys(initialData).forEach(table => {
-                if (initialData[table] && initialData[table].length > 0) {
-                    tables.add(table);
-                    // Pre-select all columns by default except internal IDs
-                    cols[table] = new Set(Object.keys(initialData[table][0]).filter(k => k !== 'id'));
-                } else if (initialData[table]) {
-                    // Even empty tables can be selected
-                    tables.add(table);
-                    cols[table] = new Set();
+            Object.keys(initialData).forEach(tableId => {
+                if (initialData[tableId]) {
+                    tables.add(tableId);
+                    const sourceCols = initialData[tableId].length > 0 ? Object.keys(initialData[tableId][0]) : [];
+                    cols[tableId] = new Set(sourceCols.filter(k => k !== 'id'));
+                    
+                    // Logique Auto-Mapping
+                    mappings[tableId] = {};
+                    const appProps = APP_FIELDS[tableId] || [];
+                    
+                    sourceCols.forEach(sCol => {
+                        const match = appProps.find(p => 
+                            p.key.toLowerCase() === sCol.toLowerCase() || 
+                            p.label.toLowerCase() === sCol.toLowerCase()
+                        );
+                        if (match) mappings[tableId][sCol] = match.key;
+                    });
                 }
             });
             
             setSelectedTables(tables);
             setSelectedColumns(cols);
+            setColumnMapping(mappings);
         }
     }, [initialData, isOpen]);
 
@@ -98,6 +162,16 @@ export function BackupPreviewDialog({ isOpen, onOpenChange, initialData }: Backu
         if (nextCols.has(column)) nextCols.delete(column);
         else nextCols.add(column);
         setSelectedColumns(prev => ({ ...prev, [tableId]: nextCols }));
+    };
+
+    const handleUpdateMapping = (sourceCol: string, appKey: string) => {
+        setColumnMapping(prev => ({
+            ...prev,
+            [activeCategory]: {
+                ...(prev[activeCategory] || {}),
+                [sourceCol]: appKey
+            }
+        }));
     };
 
     const handleUpdateField = useCallback((category: string, index: number, field: string, value: any) => {
@@ -126,28 +200,37 @@ export function BackupPreviewDialog({ isOpen, onOpenChange, initialData }: Backu
         setIsRestoring(true);
         try {
             const finalManifest: Record<string, any[]> = {};
-            selectedTables.forEach(table => {
-                const tableData = data[table] || [];
-                const tableCols = selectedColumns[table];
+            
+            selectedTables.forEach(tableId => {
+                const tableData = data[tableId] || [];
+                const tableCols = selectedColumns[tableId];
+                const mappings = columnMapping[tableId] || {};
+                
                 if (!tableCols) return;
 
-                finalManifest[table] = tableData
+                finalManifest[tableId] = tableData
                     .filter((record: any) => !record._removed)
                     .map(record => {
-                        const filteredRecord: any = { uuid: record.uuid }; 
-                        tableCols.forEach(col => {
-                            if (col !== 'uuid') filteredRecord[col] = record[col];
+                        const transformed: any = { uuid: record.uuid || uuidv4() }; 
+                        
+                        // On injecte les données basées sur le mapping
+                        Object.keys(record).forEach(sourceKey => {
+                            if (tableCols.has(sourceKey) && sourceKey !== 'uuid' && sourceKey !== 'id') {
+                                const targetKey = mappings[sourceKey] || sourceKey;
+                                transformed[targetKey] = record[sourceKey];
+                            }
                         });
-                        return filteredRecord;
+                        
+                        return transformed;
                     });
             });
 
             await backupService.restoreBackup(finalManifest);
-            toast.success("Restauration Elite terminée.");
+            toast.success("Déploiement Elite terminé avec succès.");
             onOpenChange(false);
             setTimeout(() => window.location.reload(), 1000);
         } catch (error: any) {
-            toast.error("Échec de la restauration", { description: error.message });
+            toast.error("Échec de l'injection", { description: error.message });
         } finally {
             setIsRestoring(false);
         }
@@ -167,8 +250,8 @@ export function BackupPreviewDialog({ isOpen, onOpenChange, initialData }: Backu
                                 <Database className="h-6 w-6" />
                             </div>
                             <div>
-                                <DialogTitle className="text-2xl font-black tracking-tighter">Déploiement Sélectif Elite</DialogTitle>
-                                <DialogDescription className="text-[10px] font-black uppercase tracking-[0.3em] text-primary/50">Configurez les segments et propriétés stratégiques avant réintégration</DialogDescription>
+                                <DialogTitle className="text-2xl font-black tracking-tighter">Déploiement Sélectif & Mapping</DialogTitle>
+                                <DialogDescription className="text-[10px] font-black uppercase tracking-[0.3em] text-primary/50">Liez les colonnes de votre fichier aux champs de l'application</DialogDescription>
                             </div>
                         </div>
                         <div className="flex gap-3 w-full sm:w-auto">
@@ -177,7 +260,7 @@ export function BackupPreviewDialog({ isOpen, onOpenChange, initialData }: Backu
                             </Button>
                             <Button type="button" onClick={handleRestore} disabled={isRestoring || selectedTables.size === 0} className="flex-1 sm:flex-none h-12 px-10 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-primary/20 gap-3">
                                 {isRestoring ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-                                Confirmer Restauration
+                                Valider & Injecter
                             </Button>
                         </div>
                     </div>
@@ -220,7 +303,7 @@ export function BackupPreviewDialog({ isOpen, onOpenChange, initialData }: Backu
                             <div className="mt-10 p-6 bg-primary/5 rounded-[2rem] border border-dashed border-primary/20 animate-in fade-in slide-in-from-bottom-2 duration-500">
                                 <div className="flex items-center gap-2 text-primary mb-4">
                                     <Eye className="h-4 w-4" />
-                                    <span className="text-[10px] font-black uppercase tracking-widest">Colonnes Actives</span>
+                                    <span className="text-[10px] font-black uppercase tracking-widest">Surveillance Colonnes</span>
                                 </div>
                                 <div className="space-y-3">
                                     {availableCols.map(col => (
@@ -241,7 +324,7 @@ export function BackupPreviewDialog({ isOpen, onOpenChange, initialData }: Backu
                         )}
                     </div>
 
-                    {/* Data Editor */}
+                    {/* Data Editor & Mapper */}
                     <div className="flex-grow flex flex-col min-w-0 bg-black/20">
                         <div className="p-6 border-b border-white/5 bg-card/20 flex gap-4">
                             <div className="relative flex-grow max-w-xl">
@@ -259,7 +342,7 @@ export function BackupPreviewDialog({ isOpen, onOpenChange, initialData }: Backu
                             <div className="p-8">
                                 {!selectedTables.has(activeCategory) ? (
                                     <div className="h-full py-40 flex flex-col items-center justify-center text-center space-y-4 opacity-20">
-                                        <Square className="h-16 w-16" />
+                                        <X className="h-16 w-16" />
                                         <p className="text-[10px] font-black uppercase tracking-[0.4em]">Segment exclu du déploiement</p>
                                     </div>
                                 ) : filteredData.length === 0 ? (
@@ -272,15 +355,57 @@ export function BackupPreviewDialog({ isOpen, onOpenChange, initialData }: Backu
                                         <Table>
                                             <TableHeader className="bg-muted/30">
                                                 <TableRow className="border-white/5">
-                                                    {availableCols.map(col => (
-                                                        <TableHead key={col} className={cn(
-                                                            "font-black text-[9px] uppercase tracking-widest p-4 transition-opacity",
-                                                            !selectedColumns[activeCategory]?.has(col) && "opacity-20"
-                                                        )}>
-                                                            {col}
-                                                        </TableHead>
-                                                    ))}
-                                                    <TableHead className="w-12"></TableHead>
+                                                    {availableCols.map(col => {
+                                                        const isExcluded = !selectedColumns[activeCategory]?.has(col);
+                                                        const mappedKey = columnMapping[activeCategory]?.[col];
+                                                        const appProp = APP_FIELDS[activeCategory]?.find(p => p.key === mappedKey);
+
+                                                        return (
+                                                            <TableHead key={col} className={cn(
+                                                                "min-w-[180px] p-0 border-r border-white/5 last:border-r-0 transition-opacity",
+                                                                isExcluded && "opacity-20"
+                                                            )}>
+                                                                <div className="flex flex-col">
+                                                                    {/* Header Source */}
+                                                                    <div className="p-4 bg-muted/20 font-mono text-[10px] font-black text-muted-foreground/60 uppercase truncate">
+                                                                        {col}
+                                                                    </div>
+                                                                    {/* Mapping Selector */}
+                                                                    <div className="p-2 bg-black/20">
+                                                                        <DropdownMenu>
+                                                                            <DropdownMenuTrigger asChild>
+                                                                                <button className={cn(
+                                                                                    "w-full flex items-center justify-between px-3 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all",
+                                                                                    mappedKey ? "bg-primary/10 text-primary border border-primary/20" : "bg-muted/20 text-muted-foreground/40"
+                                                                                )}>
+                                                                                    <div className="flex items-center gap-2">
+                                                                                        <LinkIcon className="h-3 w-3" />
+                                                                                        {appProp?.label || 'Lier champ...'}
+                                                                                    </div>
+                                                                                    <ChevronDown className="h-3 w-3 opacity-30" />
+                                                                                </button>
+                                                                            </DropdownMenuTrigger>
+                                                                            <DropdownMenuContent className="w-56 rounded-2xl border-white/5 bg-card/95 backdrop-blur-xl shadow-2xl">
+                                                                                <DropdownMenuLabel className="text-[9px] font-black uppercase tracking-widest text-muted-foreground p-3">Destination App</DropdownMenuLabel>
+                                                                                <DropdownMenuSeparator className="opacity-10" />
+                                                                                <DropdownMenuRadioGroup value={mappedKey} onValueChange={(val) => handleUpdateMapping(col, val)}>
+                                                                                    {APP_FIELDS[activeCategory]?.map(p => (
+                                                                                        <DropdownMenuRadioItem key={p.key} value={p.key} className="text-[10px] font-bold p-3 rounded-xl cursor-pointer">
+                                                                                            {p.label} <span className="ml-2 opacity-20 font-mono">({p.key})</span>
+                                                                                        </DropdownMenuRadioItem>
+                                                                                    ))}
+                                                                                    <DropdownMenuRadioItem value="" className="text-[10px] font-bold p-3 rounded-xl text-destructive">
+                                                                                        Délier
+                                                                                    </DropdownMenuRadioItem>
+                                                                                </DropdownMenuRadioGroup>
+                                                                            </DropdownMenuContent>
+                                                                        </DropdownMenu>
+                                                                    </div>
+                                                                </div>
+                                                            </TableHead>
+                                                        )
+                                                    })}
+                                                    <TableHead className="w-12 bg-muted/20"></TableHead>
                                                 </TableRow>
                                             </TableHeader>
                                             <TableBody>
@@ -291,7 +416,7 @@ export function BackupPreviewDialog({ isOpen, onOpenChange, initialData }: Backu
                                                     )}>
                                                         {availableCols.map(col => (
                                                             <TableCell key={col} className={cn(
-                                                                "p-2 transition-opacity",
+                                                                "p-2 border-r border-white/5 last:border-r-0 transition-opacity",
                                                                 !selectedColumns[activeCategory]?.has(col) && "opacity-20 grayscale pointer-events-none"
                                                             )}>
                                                                 <Input 
@@ -302,7 +427,7 @@ export function BackupPreviewDialog({ isOpen, onOpenChange, initialData }: Backu
                                                                 />
                                                             </TableCell>
                                                         ))}
-                                                        <TableCell>
+                                                        <TableCell className="p-2">
                                                             <Button 
                                                                 type="button"
                                                                 variant="ghost" 
@@ -337,5 +462,5 @@ export function BackupPreviewDialog({ isOpen, onOpenChange, initialData }: Backu
     );
 }
 
-// Additional import missing in previous version
-import { RotateCcw } from 'lucide-react';
+// Helper pour générer des UUID si manquants lors de l'import manuel
+import { v4 as uuidv4 } from 'uuid';
