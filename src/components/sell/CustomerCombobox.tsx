@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useEffect, useCallback } from 'react';
@@ -91,6 +92,7 @@ export function CustomerCombobox() {
                 placeholder="Identifier le client [F4]..."
                 searchPlaceholder="Rechercher par nom ou mobile..."
                 onSearchChange={setSearchQuery}
+                shouldFilter={false}
                 notFoundMessage={
                     <div className="flex flex-col items-center gap-4 py-4">
                         <div className="p-4 rounded-full bg-muted/20 border border-dashed border-white/5">

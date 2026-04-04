@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -38,10 +39,11 @@ interface ComboboxProps {
     onSearchChange?: (search: string) => void;
     id?: string;
     className?: string;
+    shouldFilter?: boolean;
 }
 
 
-export const Combobox = React.forwardRef<HTMLButtonElement, ComboboxProps>(({ options, onSelect, value, placeholder, searchPlaceholder, notFoundMessage, onSearchChange, id, className }, ref) => {
+export const Combobox = React.forwardRef<HTMLButtonElement, ComboboxProps>(({ options, onSelect, value, placeholder, searchPlaceholder, notFoundMessage, onSearchChange, id, className, shouldFilter }, ref) => {
   const [open, setOpen] = React.useState(false)
   const selectedOption = React.useMemo(() => options.find(o => o.value === value), [options, value]);
   
@@ -89,7 +91,7 @@ export const Combobox = React.forwardRef<HTMLButtonElement, ComboboxProps>(({ op
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0 rounded-3xl border-white/5 bg-card/95 backdrop-blur-3xl shadow-2xl overflow-hidden">
-        <Command>
+        <Command shouldFilter={shouldFilter ?? (onSearchChange ? false : true)}>
           <CommandInput placeholder={searchPlaceholder} onValueChange={onSearchChange} className="h-14 border-none bg-transparent" />
            <CommandList className="custom-scrollbar">
             <CommandEmpty className="p-4">
