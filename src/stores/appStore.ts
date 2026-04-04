@@ -31,6 +31,7 @@ interface AppActions {
     updateCompanyProfile: (profileData: Partial<CompanyProfile>) => Promise<void>;
     
     performCloudSync: (mode: 'push' | 'pull') => Promise<void>;
+    performBackgroundSync: () => Promise<void>;
 
     processReturn: (returnData: {
         originalSaleUuid: string,
@@ -115,6 +116,25 @@ export const useAppStore = create<AppState>()(
                         toast.error("Échec de la synchronisation.", { description: error.message });
                     } finally {
                         set({ isSyncing: false });
+                    }
+                },
+                performBackgroundSync: async () => {
+                    const state = get();
+                    const currentProfile = state.companyProfile;
+                    
+                    // Silent push if configured and not already syncing
+                    if (!currentProfile?.supabase_url || !currentProfile?.supabase_key || state.isSyncing) {
+                        return;
+                    }
+
+                    try {
+                        const now = new Date();
+                        await supabaseSyncService.pushAllData(currentProfile.supabase_url, currentProfile.supabase_key);
+                        const updatedProfile = await companyProfileService.updateProfile({ last_sync_at: now });
+                        set({ companyProfile: updatedProfile, lastSyncDate: now });
+                        console.log("iPOS Luxury: Auto-sync complete.");
+                    } catch (error) {
+                        console.error("iPOS Luxury: Background sync failed.", error);
                     }
                 },
                 processReturn: async (returnData) => {
