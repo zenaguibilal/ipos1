@@ -34,7 +34,6 @@ class BackupService {
 
     /**
      * Valide et analyse une archive avant aperçu.
-     * Plus flexible : initialise les segments manquants à vide.
      */
     async validateAndParseBackup(file: File): Promise<Record<string, any[]>> {
         try {
@@ -42,7 +41,6 @@ class BackupService {
             const data = JSON.parse(text);
             
             // On s'assure que toutes les tables attendues existent au moins en tant qu'entrées (même vides)
-            // pour éviter les crashs de l'interface d'aperçu.
             const allTableNames = db.tables.map(t => t.name);
             allTableNames.forEach(tableName => {
                 if (!data[tableName]) {
@@ -61,7 +59,12 @@ class BackupService {
      */
     async restoreBackup(data: Record<string, any[]>): Promise<void> {
         try {
-            const tablesToRestore = Object.keys(data);
+            // CRITICAL FIX: Only restore tables that exist in the current database schema
+            const availableTables = new Set(db.tables.map(t => t.name));
+            const tablesToRestore = Object.keys(data).filter(t => availableTables.has(t));
+            
+            if (tablesToRestore.length === 0) return;
+
             const dexieTables = tablesToRestore.map(t => db.table(t));
 
             await db.transaction('rw', dexieTables, async () => {
@@ -70,7 +73,7 @@ class BackupService {
                     const records = data[tableName];
 
                     if (records && Array.isArray(records)) {
-                        // Purge de la table existante avant injection pour garantir l'intégrité de la sélection
+                        // Purge de la table existante avant injection
                         await table.clear();
                         
                         // Nettoyage des IDs locaux pour éviter les collisions

@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useCallback, useEffect } from 'react';
@@ -28,9 +27,15 @@ import {
     Eye,
     RotateCcw,
     Link as LinkIcon,
-    ChevronDown
+    ChevronDown,
+    History,
+    HandCoins,
+    Undo2,
+    Wheat,
+    Building
 } from 'lucide-react';
 import { backupService } from '@/services/backup.service';
+import { db } from '@/lib/db';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -52,7 +57,7 @@ interface BackupPreviewDialogProps {
     initialData: Record<string, any[]>;
 }
 
-type Category = 'products' | 'customers' | 'suppliers' | 'expenses' | 'sales' | 'inventory_logs' | 'payments' | 'bread_orders' | 'company_profile';
+type Category = 'products' | 'customers' | 'suppliers' | 'expenses' | 'sales' | 'inventory_logs' | 'payments' | 'bread_orders' | 'company_profile' | 'stock_intakes' | 'product_returns' | 'supplier_payments';
 
 const APP_FIELDS: Record<string, { label: string, key: string }[]> = {
     products: [
@@ -92,7 +97,24 @@ const APP_FIELDS: Record<string, { label: string, key: string }[]> = {
         { label: 'Total', key: 'total' },
         { label: 'Reçu', key: 'amountPaid' },
         { label: 'Statut', key: 'paymentStatus' },
-    ]
+    ],
+    stock_intakes: [
+        { label: 'N° Facture', key: 'invoiceNumber' },
+        { label: 'Date', key: 'invoiceDate' },
+        { label: 'Transport', key: 'shippingCost' },
+        { label: 'Total', key: 'totalValue' },
+    ],
+    payments: [
+        { label: 'Montant', key: 'amount' },
+        { label: 'Date', key: 'paymentDate' },
+        { label: 'Note', key: 'notes' },
+    ],
+    product_returns: [
+        { label: 'N° Facture Origine', key: 'originalInvoiceNumber' },
+        { label: 'Valeur Retour', key: 'totalReturnValue' },
+        { label: 'Remboursé', key: 'amountRefunded' },
+        { label: 'Notes', key: 'notes' },
+    ],
 };
 
 export function BackupPreviewDialog({ isOpen, onOpenChange, initialData }: BackupPreviewDialogProps) {
@@ -112,7 +134,12 @@ export function BackupPreviewDialog({ isOpen, onOpenChange, initialData }: Backu
             const cols: Record<string, Set<string>> = {};
             const mappings: Record<string, Record<string, string>> = {};
             
+            // Get known table names from db.tables to prevent "Table not found" crashes
+            const knownTables = new Set(db.tables.map(t => t.name));
+
             Object.keys(initialData).forEach(tableId => {
+                if (!knownTables.has(tableId)) return; // CRITICAL FIX: Skip unknown tables from source file
+
                 let tableContent = initialData[tableId];
                 
                 // Assure que chaque segment est un tableau
@@ -132,7 +159,9 @@ export function BackupPreviewDialog({ isOpen, onOpenChange, initialData }: Backu
                     sourceCols.forEach(sCol => {
                         const match = appProps.find(p => 
                             p.key.toLowerCase() === sCol.toLowerCase() || 
-                            p.label.toLowerCase() === sCol.toLowerCase()
+                            p.label.toLowerCase() === sCol.toLowerCase() ||
+                            (sCol.toLowerCase() === 'sellingprice' && p.key === 'price') ||
+                            (sCol.toLowerCase() === 'purchaseprice' && p.key === 'purchasePrice')
                         );
                         if (match) mappings[tableId][sCol] = match.key;
                     });
@@ -149,11 +178,15 @@ export function BackupPreviewDialog({ isOpen, onOpenChange, initialData }: Backu
     const categories = [
         { id: 'products', label: 'Catalogue', icon: Package, count: data.products?.length || 0 },
         { id: 'customers', label: 'Clients', icon: Users2, count: data.customers?.length || 0 },
-        { id: 'suppliers', label: 'Partenaires', icon: Archive, count: data.suppliers?.length || 0 },
+        { id: 'suppliers', label: 'Partenaires', icon: Building, count: data.suppliers?.length || 0 },
+        { id: 'stock_intakes', label: 'Réceptions', icon: Archive, count: data.stock_intakes?.length || 0 },
+        { id: 'sales', label: 'Ventes', icon: History, count: data.sales?.length || 0 },
+        { id: 'payments', label: 'Paiements', icon: HandCoins, count: data.payments?.length || 0 },
         { id: 'expenses', label: 'Charges', icon: Coins, count: data.expenses?.length || 0 },
-        { id: 'sales', label: 'Ventes', icon: Archive, count: data.sales?.length || 0 },
+        { id: 'product_returns', label: 'Retours', icon: Undo2, count: data.product_returns?.length || 0 },
+        { id: 'bread_orders', label: 'Pain', icon: Wheat, count: data.bread_orders?.length || 0 },
         { id: 'company_profile', label: 'Identité', icon: Database, count: data.company_profile?.length || 0 },
-    ];
+    ].filter(cat => data[cat.id]);
 
     const toggleTable = (tableId: string) => {
         const next = new Set(selectedTables);
