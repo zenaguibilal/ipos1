@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useMemo } from 'react';
@@ -6,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Undo2, Banknote, PackageOpen, Coins } from 'lucide-react';
 import { formatCurrency, cn } from '@/lib/utils';
-import { useLiveQuery } from 'dexie-react-hook';
+import { useLiveQuery } from '@/hooks/useLiveQuery';
 import { db } from '@/lib/db';
 
 const StatCard = ({ title, value, icon: Icon, colorClass, subtitle }: { title: string, value: string, icon: any, colorClass: string, subtitle?: string }) => (
@@ -25,7 +24,7 @@ const StatCard = ({ title, value, icon: Icon, colorClass, subtitle }: { title: s
 );
 
 export function ReturnStats({ isLoading: externalLoading }: { isLoading?: boolean }) {
-  // Live query for returns table to update stats instantly
+  // Live query for returns table to update stats instantly using the internal hook
   const returns = useLiveQuery(() => db.product_returns.toArray());
 
   const stats = useMemo(() => {
