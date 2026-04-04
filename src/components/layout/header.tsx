@@ -17,6 +17,8 @@ import {
   Download,
   Coins,
   BellRing,
+  Cloud,
+  RefreshCw,
 } from 'lucide-react';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
@@ -28,6 +30,9 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn } from '@/lib/utils';
+import { useAppStore } from '@/stores/appStore';
+import { format } from 'date-fns';
+import { fr } from 'date-fns/locale';
 
 const allNavLinks = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -45,6 +50,12 @@ const allNavLinks = [
 
 export function AppHeader() {
   const pathname = usePathname();
+  const { companyProfile, isSyncing } = useAppStore(state => ({
+      companyProfile: state.companyProfile,
+      isSyncing: state.isSyncing
+  }));
+
+  const lastSync = companyProfile?.last_sync_at;
 
   return (
     <header className="flex h-20 items-center gap-4 bg-background/60 backdrop-blur-3xl px-6 sm:px-10 print-hide sticky top-0 z-40 border-b border-white/5">
@@ -55,7 +66,6 @@ export function AppHeader() {
                   className="flex items-center gap-3 group"
               >
                   <div className="relative">
-                    {/* Premium Glow Effect */}
                     <div className="absolute -inset-3 bg-primary/20 rounded-full blur-xl opacity-0 group-hover:opacity-10 transition-all duration-700 scale-50 group-hover:scale-100" />
                     <div className="relative h-10 w-10 flex items-center justify-center bg-black/40 rounded-xl border border-white/5 shadow-2xl group-hover:border-primary/30 transition-colors">
                         <Image 
@@ -114,10 +124,36 @@ export function AppHeader() {
 
 
         <div className="flex-1 flex justify-end">
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-6">
+                {/* Sync Status Badge */}
+                <div className="hidden md:flex flex-col items-end -space-y-1">
+                    {isSyncing ? (
+                        <div className="flex items-center gap-2 text-primary animate-pulse">
+                            <RefreshCw className="h-3 w-3 animate-spin" />
+                            <span className="text-[9px] font-black uppercase tracking-widest">Synchronisation...</span>
+                        </div>
+                    ) : lastSync ? (
+                        <div className="flex flex-col items-end">
+                            <div className="flex items-center gap-1.5 text-emerald-500/60">
+                                <Cloud className="h-3 w-3" />
+                                <span className="text-[8px] font-black uppercase tracking-widest">Cloud Saphir OK</span>
+                            </div>
+                            <span className="text-[9px] font-bold text-muted-foreground/40 uppercase tracking-tighter">
+                                {format(new Date(lastSync), 'HH:mm', { locale: fr })}
+                            </span>
+                        </div>
+                    ) : (
+                        <div className="flex items-center gap-1.5 text-muted-foreground/20">
+                            <Cloud className="h-3 w-3" />
+                            <span className="text-[8px] font-black uppercase tracking-widest">Non synchronisé</span>
+                        </div>
+                    )}
+                </div>
+
                 <div className="hidden xl:block">
                     <Clock />
                 </div>
+                
                 <div className="flex items-center gap-1.5 bg-muted/30 p-1.5 rounded-2xl border border-white/5 shadow-inner">
                     <TooltipProvider>
                         <Tooltip delayDuration={0}>
