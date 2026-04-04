@@ -23,7 +23,7 @@ const ExpenseCardComponent = ({ expense, onEdit, onDelete, isSelected, onToggleS
     
     const handleCardClick = (e: React.MouseEvent) => {
         const target = e.target as HTMLElement;
-        if (target.closest('button') || target.closest('[role="menuitem"]') || target.closest('[role="checkbox"]')) {
+        if (target.closest('button') || target.closest('[role="menuitem"]') || target.closest('[role="checkbox"]') || target.closest('.action-area')) {
             return;
         }
         onToggleSelection();
@@ -41,7 +41,7 @@ const ExpenseCardComponent = ({ expense, onEdit, onDelete, isSelected, onToggleS
                 <Banknote className="h-32 w-32 rotate-12" />
             </div>
 
-            <div className="absolute top-4 right-4 z-10 flex gap-2 items-center" onClick={(e) => e.stopPropagation()}>
+            <div className="absolute top-4 right-4 z-10 flex gap-2 items-center action-area">
                 <div className="p-1.5 bg-background/80 backdrop-blur-md rounded-xl border border-white/5 shadow-sm">
                     <Checkbox
                         checked={isSelected}
@@ -60,10 +60,10 @@ const ExpenseCardComponent = ({ expense, onEdit, onDelete, isSelected, onToggleS
                         </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="rounded-2xl border-none shadow-2xl bg-card">
-                        <DropdownMenuItem onClick={() => onEdit(expense)} className="rounded-xl p-3">
+                        <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onEdit(expense); }} className="rounded-xl p-3">
                             <Edit className="mr-2 h-4 w-4" /> Modifier
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => onDelete(expense)} className="text-destructive focus:text-destructive rounded-xl p-3">
+                        <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onDelete(expense); }} className="text-destructive focus:text-destructive rounded-xl p-3">
                             <Trash2 className="mr-2 h-4 w-4" /> Supprimer
                         </DropdownMenuItem>
                     </DropdownMenuContent>

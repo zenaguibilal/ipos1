@@ -61,8 +61,8 @@ const CustomerCardComponent = ({ customer, onEdit, onDelete, isSelected, onToggl
 
     const handleCardClick = (e: React.MouseEvent) => {
         const target = e.target as HTMLElement;
-        // Strict button/menu check to prevent interference
-        if (target.closest('button') || target.closest('[role="menuitem"]') || target.closest('[role="checkbox"]')) {
+        // Avoid card click when clicking on specific action elements or containers
+        if (target.closest('button') || target.closest('[role="menuitem"]') || target.closest('[role="checkbox"]') || target.closest('.action-area')) {
             return;
         }
         
@@ -85,7 +85,7 @@ const CustomerCardComponent = ({ customer, onEdit, onDelete, isSelected, onToggl
                 <User className="h-32 w-32 rotate-12" />
             </div>
 
-            <div className="absolute top-4 right-4 z-10 flex gap-2 items-center" onClick={(e) => e.stopPropagation()}>
+            <div className="absolute top-4 right-4 z-10 flex gap-2 items-center action-area">
                 <div className="p-1.5 bg-background/80 backdrop-blur-md rounded-xl border border-white/5 shadow-sm">
                     <Checkbox
                         checked={isSelected}
@@ -110,14 +110,14 @@ const CustomerCardComponent = ({ customer, onEdit, onDelete, isSelected, onToggl
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="rounded-2xl border-none shadow-2xl bg-card">
                         <DropdownMenuItem asChild className="rounded-xl p-3">
-                            <Link href={`/customers/${customer.uuid}`}>
+                            <Link href={`/customers/${customer.uuid}`} onClick={(e) => e.stopPropagation()}>
                                 <FileText className="mr-2 h-4 w-4" /> Voir le dossier
                             </Link>
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => onEdit(customer)} className="rounded-xl p-3">
+                        <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onEdit(customer); }} className="rounded-xl p-3">
                             <Edit className="mr-2 h-4 w-4" /> Modifier
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => onDelete(customer)} className="text-destructive focus:text-destructive rounded-xl p-3">
+                        <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onDelete(customer); }} className="text-destructive focus:text-destructive rounded-xl p-3">
                             <Trash2 className="mr-2 h-4 w-4" /> Supprimer
                         </DropdownMenuItem>
                     </DropdownMenuContent>

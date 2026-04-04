@@ -38,7 +38,7 @@ const SalesHistoryCardComponent = ({
 
     const handleCardClick = (e: React.MouseEvent) => {
         const target = e.target as HTMLElement;
-        if (target.closest('button') || target.closest('[role="menuitem"]') || target.closest('[role="checkbox"]')) {
+        if (target.closest('button') || target.closest('[role="menuitem"]') || target.closest('[role="checkbox"]') || target.closest('.action-area')) {
             return;
         }
         onToggleSelection();
@@ -56,7 +56,7 @@ const SalesHistoryCardComponent = ({
                 <Receipt className="h-32 w-32 rotate-12" />
             </div>
 
-            <div className="absolute top-4 right-4 z-10 flex gap-2 items-center" onClick={(e) => e.stopPropagation()}>
+            <div className="absolute top-4 right-4 z-10 flex gap-2 items-center action-area">
                 <div className="p-1.5 bg-background/80 backdrop-blur-md rounded-xl border border-white/5 shadow-sm">
                     <Checkbox
                         checked={isSelected}
@@ -66,15 +66,15 @@ const SalesHistoryCardComponent = ({
                 </div>
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                        <Button variant="secondary" size="icon" className="h-9 w-9 bg-background/80 backdrop-blur-md border-white/5 shadow-xl rounded-xl transition-all">
+                        <Button variant="secondary" size="icon" className="h-9 w-9 bg-background/80 backdrop-blur-md border-white/5 shadow-xl rounded-xl transition-transform active:scale-95">
                             <MoreHorizontal className="h-5 w-5" />
                         </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="rounded-2xl border-none shadow-2xl bg-card">
-                        <DropdownMenuItem onClick={() => onViewDetails(sale)} className="rounded-xl p-3">
+                        <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onViewDetails(sale); }} className="rounded-xl p-3">
                             <FileText className="mr-2 h-4 w-4" /> Examiner détails
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => onCancelSale(sale)} className="text-destructive focus:text-destructive rounded-xl p-3">
+                        <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onCancelSale(sale); }} className="text-destructive focus:text-destructive rounded-xl p-3">
                             <Trash2 className="mr-2 h-4 w-4" /> Annuler la vente
                         </DropdownMenuItem>
                     </DropdownMenuContent>

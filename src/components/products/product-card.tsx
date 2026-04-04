@@ -42,7 +42,7 @@ const ProductCardComponent = ({ product, onEdit, onDuplicate, onHistory, onDelet
 
     const handleCardClick = (e: React.MouseEvent) => {
         const target = e.target as HTMLElement;
-        if (target.closest('button') || target.closest('[role="menuitem"]') || target.closest('[role="checkbox"]')) {
+        if (target.closest('button') || target.closest('[role="menuitem"]') || target.closest('[role="checkbox"]') || target.closest('.action-area')) {
             return;
         }
 
@@ -65,7 +65,7 @@ const ProductCardComponent = ({ product, onEdit, onDuplicate, onHistory, onDelet
                 <ShoppingBag className="h-32 w-32 rotate-12" />
             </div>
 
-            <div className="absolute top-4 right-4 z-10 flex gap-2 items-center" onClick={(e) => e.stopPropagation()}>
+            <div className="absolute top-4 right-4 z-10 flex gap-2 items-center action-area">
                 <div className="p-1.5 bg-background/80 backdrop-blur-md rounded-xl border border-white/5 shadow-sm">
                     <Checkbox
                         checked={isSelected}
@@ -84,10 +84,10 @@ const ProductCardComponent = ({ product, onEdit, onDuplicate, onHistory, onDelet
                         </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="rounded-2xl border-none shadow-2xl bg-card">
-                        <DropdownMenuItem onClick={() => onEdit(product)} className="rounded-xl p-3"><Edit className="mr-2 h-4 w-4" /> Modifier</DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => onDuplicate(product)} className="rounded-xl p-3"><Copy className="mr-2 h-4 w-4" /> Dupliquer</DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => onHistory(product)} className="rounded-xl p-3"><History className="mr-2 h-4 w-4" /> Historique</DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => onDelete(product)} className="text-destructive focus:text-destructive rounded-xl p-3"><Trash2 className="mr-2 h-4 w-4" /> Supprimer</DropdownMenuItem>
+                        <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onEdit(product); }} className="rounded-xl p-3"><Edit className="mr-2 h-4 w-4" /> Modifier</DropdownMenuItem>
+                        <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onDuplicate(product); }} className="rounded-xl p-3"><Copy className="mr-2 h-4 w-4" /> Dupliquer</DropdownMenuItem>
+                        <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onHistory(product); }} className="rounded-xl p-3"><History className="mr-2 h-4 w-4" /> Historique</DropdownMenuItem>
+                        <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onDelete(product); }} className="text-destructive focus:text-destructive rounded-xl p-3"><Trash2 className="mr-2 h-4 w-4" /> Supprimer</DropdownMenuItem>
                     </DropdownMenuContent>
                 </DropdownMenu>
             </div>

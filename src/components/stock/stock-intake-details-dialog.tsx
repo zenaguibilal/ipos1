@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useRef } from 'react';
@@ -69,9 +68,9 @@ const PrintableIntake = React.forwardRef<HTMLDivElement, { intake: StockIntake, 
                         <tr key={index} className="border-b border-gray-300">
                             <td className="py-3 px-2 font-medium">{item.productName}</td>
                             <td className="py-3 px-2 text-center">{item.quantityReceived}</td>
-                            <td className="py-3 px-2 text-right">{item.purchasePrice.toFixed(2)}</td>
-                            <td className="py-3 px-2 text-right">{(item.landingCost || item.purchasePrice).toFixed(2)}</td>
-                            <td className="py-3 px-2 text-right font-bold">{(item.quantityReceived * item.purchasePrice).toFixed(2)}</td>
+                            <td className="py-3 px-2 text-right">{Number(item.purchasePrice || 0).toFixed(2)}</td>
+                            <td className="py-3 px-2 text-right">{Number(item.landingCost || item.purchasePrice || 0).toFixed(2)}</td>
+                            <td className="py-3 px-2 text-right font-bold">{(Number(item.quantityReceived || 0) * Number(item.purchasePrice || 0)).toFixed(2)}</td>
                         </tr>
                     ))}
                 </tbody>
