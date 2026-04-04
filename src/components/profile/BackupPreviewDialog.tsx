@@ -44,6 +44,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { v4 as uuidv4 } from 'uuid';
 
 interface BackupPreviewDialogProps {
     isOpen: boolean;
@@ -53,7 +54,6 @@ interface BackupPreviewDialogProps {
 
 type Category = 'products' | 'customers' | 'suppliers' | 'expenses' | 'sales' | 'inventory_logs' | 'payments' | 'bread_orders' | 'company_profile';
 
-// Définition des champs officiels par table pour le mapping
 const APP_FIELDS: Record<string, { label: string, key: string }[]> = {
     products: [
         { label: 'Désignation', key: 'name' },
@@ -103,25 +103,29 @@ export function BackupPreviewDialog({ isOpen, onOpenChange, initialData }: Backu
 
     const [selectedTables, setSelectedTables] = useState<Set<string>>(new Set());
     const [selectedColumns, setSelectedColumns] = useState<Record<string, Set<string>>>({});
-    
-    // État du mapping : Record<TableId, Record<SourceColumn, AppPropertyKey>>
     const [columnMapping, setColumnMapping] = useState<Record<string, Record<string, string>>>({});
 
-    // Initialisation et Auto-Mapping (Smart Match)
     useEffect(() => {
         if (isOpen && initialData) {
-            setData(initialData);
+            const sanitizedData: Record<string, any[]> = {};
             const tables = new Set<string>();
             const cols: Record<string, Set<string>> = {};
             const mappings: Record<string, Record<string, string>> = {};
             
             Object.keys(initialData).forEach(tableId => {
-                if (initialData[tableId]) {
+                let tableContent = initialData[tableId];
+                
+                // Assure que chaque segment est un tableau
+                if (tableContent && !Array.isArray(tableContent)) {
+                    tableContent = [tableContent];
+                }
+                
+                if (tableContent && Array.isArray(tableContent)) {
+                    sanitizedData[tableId] = tableContent;
                     tables.add(tableId);
-                    const sourceCols = initialData[tableId].length > 0 ? Object.keys(initialData[tableId][0]) : [];
-                    cols[tableId] = new Set(sourceCols.filter(k => k !== 'id'));
+                    const sourceCols = tableContent.length > 0 ? Object.keys(tableContent[0]) : [];
+                    cols[tableId] = new Set(sourceCols.filter(k => k !== 'id' && k !== 'uuid' && k !== '_removed'));
                     
-                    // Logique Auto-Mapping
                     mappings[tableId] = {};
                     const appProps = APP_FIELDS[tableId] || [];
                     
@@ -135,6 +139,7 @@ export function BackupPreviewDialog({ isOpen, onOpenChange, initialData }: Backu
                 }
             });
             
+            setData(sanitizedData);
             setSelectedTables(tables);
             setSelectedColumns(cols);
             setColumnMapping(mappings);
@@ -202,7 +207,9 @@ export function BackupPreviewDialog({ isOpen, onOpenChange, initialData }: Backu
             const finalManifest: Record<string, any[]> = {};
             
             selectedTables.forEach(tableId => {
-                const tableData = data[tableId] || [];
+                const tableData = data[tableId];
+                if (!tableData || !Array.isArray(tableData)) return;
+
                 const tableCols = selectedColumns[tableId];
                 const mappings = columnMapping[tableId] || {};
                 
@@ -213,9 +220,8 @@ export function BackupPreviewDialog({ isOpen, onOpenChange, initialData }: Backu
                     .map(record => {
                         const transformed: any = { uuid: record.uuid || uuidv4() }; 
                         
-                        // On injecte les données basées sur le mapping
                         Object.keys(record).forEach(sourceKey => {
-                            if (tableCols.has(sourceKey) && sourceKey !== 'uuid' && sourceKey !== 'id') {
+                            if (tableCols.has(sourceKey) && sourceKey !== 'uuid' && sourceKey !== 'id' && sourceKey !== '_removed') {
                                 const targetKey = mappings[sourceKey] || sourceKey;
                                 transformed[targetKey] = record[sourceKey];
                             }
@@ -366,11 +372,9 @@ export function BackupPreviewDialog({ isOpen, onOpenChange, initialData }: Backu
                                                                 isExcluded && "opacity-20"
                                                             )}>
                                                                 <div className="flex flex-col">
-                                                                    {/* Header Source */}
                                                                     <div className="p-4 bg-muted/20 font-mono text-[10px] font-black text-muted-foreground/60 uppercase truncate">
                                                                         {col}
                                                                     </div>
-                                                                    {/* Mapping Selector */}
                                                                     <div className="p-2 bg-black/20">
                                                                         <DropdownMenu>
                                                                             <DropdownMenuTrigger asChild>
@@ -461,6 +465,3 @@ export function BackupPreviewDialog({ isOpen, onOpenChange, initialData }: Backu
         </Dialog>
     );
 }
-
-// Helper pour générer des UUID si manquants lors de l'import manuel
-import { v4 as uuidv4 } from 'uuid';
