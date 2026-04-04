@@ -65,7 +65,7 @@ export const useCartStore = create<CartState>()(
             actions: {
                 getActiveCart: () => {
                     const { carts, activeCartId } = get();
-                    return carts.find(c => c.id === activeCartId) || carts[0] || null;
+                    return carts.find((c: Cart) => c.id === activeCartId) || carts[0] || null;
                 },
                 createCart: (name) => {
                     const newId = uuidv4();
@@ -74,36 +74,36 @@ export const useCartStore = create<CartState>()(
                         name: name || `Vente ${get().carts.length + 1}`,
                         ...defaultCart,
                     };
-                    set(produce(state => {
+                    set(produce((state: CartState) => {
                         state.carts.push(newCart);
                         state.activeCartId = newId;
                     }));
                     return newId;
                 },
                 deleteCart: (cartId) => {
-                    set(produce(state => {
+                    set(produce((state: CartState) => {
                         if (state.carts.length <= 1) {
                             // Don't delete last cart, just reset it
-                            const cart = state.carts.find(c => c.id === cartId);
+                            const cart = state.carts.find((c: Cart) => c.id === cartId);
                             if (cart) {
                                 Object.assign(cart, { ...defaultCart, name: 'Vente 1' });
                             }
                             return;
                         }
-                        state.carts = state.carts.filter(c => c.id !== cartId);
+                        state.carts = state.carts.filter((c: Cart) => c.id !== cartId);
                         if (state.activeCartId === cartId) {
                             state.activeCartId = state.carts[0]?.id || null;
                         }
                     }));
                 },
                 selectCart: (cartId) => {
-                    if (get().carts.find(c => c.id === cartId)) {
+                    if (get().carts.find((c: Cart) => c.id === cartId)) {
                         set({ activeCartId: cartId });
                     }
                 },
                 renameCart: (cartId, newName) => {
-                    set(produce(state => {
-                        const cart = state.carts.find(c => c.id === cartId);
+                    set(produce((state: CartState) => {
+                        const cart = state.carts.find((c: Cart) => c.id === cartId);
                         if (cart) {
                             cart.name = newName;
                         }
@@ -111,7 +111,7 @@ export const useCartStore = create<CartState>()(
                 },
                 addItemToCart: (product, quantity = 1) => {
                     const { activeCartId, carts } = get();
-                    const cart = carts.find(c => c.id === activeCartId);
+                    const cart = carts.find((c: Cart) => c.id === activeCartId);
                     if (!cart) return;
 
                     const existingItem = cart.items.find(item => item.uuid === product.uuid);
@@ -129,8 +129,8 @@ export const useCartStore = create<CartState>()(
                         }
                     }
                     
-                    set(produce(state => {
-                        const cart = state.carts.find(c => c.id === state.activeCartId);
+                    set(produce((state: CartState) => {
+                        const cart = state.carts.find((c: Cart) => c.id === state.activeCartId);
                         if (!cart) return;
 
                         const existingItem = cart.items.find(item => item.uuid === product.uuid);
@@ -143,8 +143,8 @@ export const useCartStore = create<CartState>()(
                     }));
 
                     setTimeout(() => {
-                        set(produce(state => {
-                            const cart = state.carts.find(c => c.id === state.activeCartId);
+                        set(produce((state: CartState) => {
+                            const cart = state.carts.find((c: Cart) => c.id === state.activeCartId);
                             if (cart) {
                                 const item = cart.items.find(i => i.uuid === product.uuid);
                                 if (item) item.flash = false;
@@ -153,16 +153,16 @@ export const useCartStore = create<CartState>()(
                     }, 500);
                 },
                 removeItemFromCart: (productUuid) => {
-                    set(produce(state => {
-                         const cart = state.carts.find(c => c.id === state.activeCartId);
+                    set(produce((state: CartState) => {
+                         const cart = state.carts.find((c: Cart) => c.id === state.activeCartId);
                         if (cart) {
                             cart.items = cart.items.filter(item => item.uuid !== productUuid);
                         }
                     }));
                 },
                 updateItemQuantity: (productUuid, newQuantity) => {
-                    set(produce(state => {
-                        const cart = state.carts.find(c => c.id === state.activeCartId);
+                    set(produce((state: CartState) => {
+                        const cart = state.carts.find((c: Cart) => c.id === state.activeCartId);
                         if (cart) {
                             const item = cart.items.find(item => item.uuid === productUuid);
                             if (item) {
@@ -186,32 +186,32 @@ export const useCartStore = create<CartState>()(
                     }));
                 },
                 setCustomer: (customerUuid) => {
-                    set(produce(state => {
-                        const cart = state.carts.find(c => c.id === state.activeCartId);
+                    set(produce((state: CartState) => {
+                        const cart = state.carts.find((c: Cart) => c.id === state.activeCartId);
                         if (cart) {
                             cart.customerUuid = customerUuid;
                         }
                     }));
                 },
                 setDiscount: (type, value) => {
-                     set(produce(state => {
-                        const cart = state.carts.find(c => c.id === state.activeCartId);
+                     set(produce((state: CartState) => {
+                        const cart = state.carts.find((c: Cart) => c.id === state.activeCartId);
                         if (cart) {
                             cart.discount = { type, value: Math.max(0, value) };
                         }
                     }));
                 },
                 clearCart: () => {
-                     set(produce(state => {
-                        const cart = state.carts.find(c => c.id === state.activeCartId);
+                     set(produce((state: CartState) => {
+                        const cart = state.carts.find((c: Cart) => c.id === state.activeCartId);
                         if (cart) {
                             cart.items = [];
                         }
                     }));
                 },
                 resetCart: () => {
-                     set(produce(state => {
-                        const cart = state.carts.find(c => c.id === state.activeCartId);
+                     set(produce((state: CartState) => {
+                        const cart = state.carts.find((c: Cart) => c.id === state.activeCartId);
                         if (cart) {
                             const oldId = cart.id;
                             const oldName = cart.name;
@@ -221,7 +221,7 @@ export const useCartStore = create<CartState>()(
                     }));
                 },
                 processSale: async (amountPaid, dueDate) => {
-                    const { getActiveCart, resetCart, deleteCart } = get().actions;
+                    const { getActiveCart, resetCart } = get().actions;
                     const activeCart = getActiveCart();
                     
                     if (!activeCart || activeCart.items.length === 0) {
@@ -275,5 +275,5 @@ export const useCartActions = () => useCartStore((state) => state.actions);
 export const useActiveCart = () => {
     const carts = useCartStore(state => state.carts);
     const activeCartId = useCartStore(state => state.activeCartId);
-    return carts.find(c => c.id === activeCartId) || carts[0] || null;
+    return carts.find((c: Cart) => c.id === activeCartId) || carts[0] || null;
 }
