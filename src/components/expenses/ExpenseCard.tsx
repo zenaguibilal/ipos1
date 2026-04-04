@@ -41,8 +41,13 @@ const ExpenseCardComponent = ({ expense, onEdit, onDelete, isSelected, onToggleS
                     />
                 </div>
                 <DropdownMenu>
-                    <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                        <Button variant="secondary" size="icon" className="h-9 w-9 bg-background/80 backdrop-blur-md border-white/5 shadow-xl rounded-xl transition-all">
+                    <DropdownMenuTrigger asChild>
+                        <Button 
+                            variant="secondary" 
+                            size="icon" 
+                            className="h-9 w-9 bg-background/80 backdrop-blur-md border-white/5 shadow-xl rounded-xl transition-all"
+                            onClick={(e) => e.stopPropagation()}
+                        >
                             <MoreHorizontal className="h-5 w-5" />
                         </Button>
                     </DropdownMenuTrigger>

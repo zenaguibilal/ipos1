@@ -58,11 +58,19 @@ const CustomerCardComponent = ({ customer, onEdit, onDelete, isSelected, onToggl
         window.open(`https://wa.me/${customer.phone}?text=${message}`, '_blank');
     };
 
+    const handleCardClick = (e: React.MouseEvent) => {
+        if ((e.target as HTMLElement).closest('[role="checkbox"]') || (e.target as HTMLElement).closest('button')) return;
+        onEdit(customer);
+    };
+
     return (
-        <Card className={cn(
-            "luxury-card group flex flex-col transition-all duration-500 bg-card/40 backdrop-blur-xl border-white/5 relative overflow-hidden rounded-[2.5rem] cursor-pointer",
-            isSelected ? "ring-2 ring-primary border-primary/30 shadow-2xl scale-[1.02]" : "hover:bg-primary/5"
-        )}>
+        <Card 
+            onClick={handleCardClick}
+            className={cn(
+                "luxury-card group flex flex-col transition-all duration-500 bg-card/40 backdrop-blur-xl border-white/5 relative overflow-hidden rounded-[2.5rem] cursor-pointer",
+                isSelected ? "ring-2 ring-primary border-primary/30 shadow-2xl scale-[1.02]" : "hover:bg-primary/5"
+            )}
+        >
             <div className="absolute -right-4 -top-4 opacity-[0.02] group-hover:opacity-10 transition-opacity duration-700 pointer-events-none">
                 <User className="h-32 w-32 rotate-12" />
             </div>
@@ -81,8 +89,13 @@ const CustomerCardComponent = ({ customer, onEdit, onDelete, isSelected, onToggl
                     </Button>
                 )}
                 <DropdownMenu>
-                    <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                        <Button variant="secondary" size="icon" className="h-9 w-9 bg-background/80 backdrop-blur-md border-white/5 shadow-xl rounded-xl transition-all">
+                    <DropdownMenuTrigger asChild>
+                        <Button 
+                            variant="secondary" 
+                            size="icon" 
+                            className="h-9 w-9 bg-background/80 backdrop-blur-md border-white/5 shadow-xl rounded-xl transition-all"
+                            onClick={(e) => e.stopPropagation()}
+                        >
                             <MoreHorizontal className="h-5 w-5" />
                         </Button>
                     </DropdownMenuTrigger>
