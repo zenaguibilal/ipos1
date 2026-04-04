@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useCallback, useEffect } from 'react';
@@ -41,7 +42,7 @@ interface BackupPreviewDialogProps {
     initialData: Record<string, any[]>;
 }
 
-type Category = 'products' | 'customers' | 'suppliers' | 'expenses' | 'sales' | 'inventory_logs' | 'payments' | 'bread_orders';
+type Category = 'products' | 'customers' | 'suppliers' | 'expenses' | 'sales' | 'inventory_logs' | 'payments' | 'bread_orders' | 'company_profile';
 
 export function BackupPreviewDialog({ isOpen, onOpenChange, initialData }: BackupPreviewDialogProps) {
     const [data, setData] = useState<Record<string, any[]>>(initialData);
@@ -49,32 +50,40 @@ export function BackupPreviewDialog({ isOpen, onOpenChange, initialData }: Backu
     const [searchQuery, setSearchQuery] = useState('');
     const [isRestoring, setIsRestoring] = useState(false);
 
-    // Selection States
-    const [selectedTables, setSelectedTables] = useState<Set<string>>(new Set(['products', 'customers', 'suppliers']));
+    // Selection States: Initialize with all tables available in data
+    const [selectedTables, setSelectedTables] = useState<Set<string>>(new Set());
     const [selectedColumns, setSelectedColumns] = useState<Record<string, Set<string>>>({});
 
     useEffect(() => {
         if (isOpen && initialData) {
             setData(initialData);
+            const tables = new Set<string>();
             const cols: Record<string, Set<string>> = {};
+            
             Object.keys(initialData).forEach(table => {
-                if (initialData[table].length > 0) {
-                    // Pre-select all columns by default
+                if (initialData[table] && initialData[table].length > 0) {
+                    tables.add(table);
+                    // Pre-select all columns by default except internal IDs
                     cols[table] = new Set(Object.keys(initialData[table][0]).filter(k => k !== 'id'));
+                } else if (initialData[table]) {
+                    // Even empty tables can be selected
+                    tables.add(table);
+                    cols[table] = new Set();
                 }
             });
+            
+            setSelectedTables(tables);
             setSelectedColumns(cols);
         }
     }, [initialData, isOpen]);
 
     const categories = [
-        { id: 'products', label: 'Produits', icon: Package, count: data.products?.length || 0 },
+        { id: 'products', label: 'Catalogue', icon: Package, count: data.products?.length || 0 },
         { id: 'customers', label: 'Clients', icon: Users2, count: data.customers?.length || 0 },
-        { id: 'suppliers', label: 'Fournisseurs', icon: Archive, count: data.suppliers?.length || 0 },
+        { id: 'suppliers', label: 'Partenaires', icon: Archive, count: data.suppliers?.length || 0 },
         { id: 'expenses', label: 'Charges', icon: Coins, count: data.expenses?.length || 0 },
         { id: 'sales', label: 'Ventes', icon: Archive, count: data.sales?.length || 0 },
-        { id: 'payments', label: 'Paiements', icon: Coins, count: data.payments?.length || 0 },
-        { id: 'bread_orders', label: 'Pain', icon: Database, count: data.bread_orders?.length || 0 },
+        { id: 'company_profile', label: 'Identité', icon: Database, count: data.company_profile?.length || 0 },
     ];
 
     const toggleTable = (tableId: string) => {
@@ -116,24 +125,25 @@ export function BackupPreviewDialog({ isOpen, onOpenChange, initialData }: Backu
     const handleRestore = async () => {
         setIsRestoring(true);
         try {
-            // Filter data based on selections
             const finalManifest: Record<string, any[]> = {};
             selectedTables.forEach(table => {
                 const tableData = data[table] || [];
                 const tableCols = selectedColumns[table];
                 if (!tableCols) return;
 
-                finalManifest[table] = tableData.map(record => {
-                    const filteredRecord: any = { uuid: record.uuid }; // UUID is always mandatory
-                    tableCols.forEach(col => {
-                        filteredRecord[col] = record[col];
+                finalManifest[table] = tableData
+                    .filter((record: any) => !record._removed)
+                    .map(record => {
+                        const filteredRecord: any = { uuid: record.uuid }; 
+                        tableCols.forEach(col => {
+                            if (col !== 'uuid') filteredRecord[col] = record[col];
+                        });
+                        return filteredRecord;
                     });
-                    return filteredRecord;
-                });
             });
 
             await backupService.restoreBackup(finalManifest);
-            toast.success("Système restauré souverainement.");
+            toast.success("Restauration Elite terminée.");
             onOpenChange(false);
             setTimeout(() => window.location.reload(), 1000);
         } catch (error: any) {
@@ -143,8 +153,9 @@ export function BackupPreviewDialog({ isOpen, onOpenChange, initialData }: Backu
         }
     };
 
-    const activeCols = Array.from(selectedColumns[activeCategory] || []);
-    const availableCols = data[activeCategory]?.length > 0 ? Object.keys(data[activeCategory][0]).filter(k => k !== 'id' && k !== 'uuid') : [];
+    const availableCols = data[activeCategory]?.length > 0 
+        ? Object.keys(data[activeCategory][0]).filter(k => k !== 'id' && k !== 'uuid' && k !== '_removed') 
+        : [];
 
     return (
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -156,26 +167,26 @@ export function BackupPreviewDialog({ isOpen, onOpenChange, initialData }: Backu
                                 <Database className="h-6 w-6" />
                             </div>
                             <div>
-                                <DialogTitle className="text-2xl font-black tracking-tighter">Filtre & Déploiement Elite</DialogTitle>
-                                <DialogDescription className="text-[10px] font-black uppercase tracking-[0.3em] text-primary/50">Sélectionnez les segments et colonnes stratégiques à réintégrer</DialogDescription>
+                                <DialogTitle className="text-2xl font-black tracking-tighter">Déploiement Sélectif Elite</DialogTitle>
+                                <DialogDescription className="text-[10px] font-black uppercase tracking-[0.3em] text-primary/50">Configurez les segments et propriétés stratégiques avant réintégration</DialogDescription>
                             </div>
                         </div>
                         <div className="flex gap-3 w-full sm:w-auto">
-                            <Button variant="ghost" onClick={() => onOpenChange(false)} className="rounded-2xl h-12 px-6 font-black text-xs uppercase tracking-widest" disabled={isRestoring}>
+                            <Button type="button" variant="ghost" onClick={() => onOpenChange(false)} className="rounded-2xl h-12 px-6 font-black text-xs uppercase tracking-widest" disabled={isRestoring}>
                                 Annuler
                             </Button>
-                            <Button onClick={handleRestore} disabled={isRestoring || selectedTables.size === 0} className="flex-1 sm:flex-none h-12 px-10 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-primary/20 gap-3">
+                            <Button type="button" onClick={handleRestore} disabled={isRestoring || selectedTables.size === 0} className="flex-1 sm:flex-none h-12 px-10 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-primary/20 gap-3">
                                 {isRestoring ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-                                Restaurer la Sélection
+                                Confirmer Restauration
                             </Button>
                         </div>
                     </div>
                 </DialogHeader>
 
                 <div className="flex-grow flex flex-col lg:flex-row overflow-hidden">
-                    {/* Sidebar: Navigation with Table Selection */}
+                    {/* Sidebar */}
                     <div className="w-full lg:w-80 bg-muted/20 border-r border-white/5 p-6 space-y-2 shrink-0 overflow-y-auto custom-scrollbar">
-                        <p className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground/40 mb-6 px-4">Sélecteur de Segments</p>
+                        <p className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground/40 mb-6 px-4">Segments du Manifeste</p>
                         {categories.map(cat => (
                             <div key={cat.id} className="flex items-center gap-2 group">
                                 <Checkbox 
@@ -184,6 +195,7 @@ export function BackupPreviewDialog({ isOpen, onOpenChange, initialData }: Backu
                                     className="h-5 w-5 border-primary data-[state=checked]:bg-primary rounded-lg"
                                 />
                                 <button
+                                    type="button"
                                     onClick={() => setActiveCategory(cat.id as Category)}
                                     className={cn(
                                         "flex-grow flex items-center justify-between p-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all duration-500",
@@ -204,36 +216,38 @@ export function BackupPreviewDialog({ isOpen, onOpenChange, initialData }: Backu
                             </div>
                         ))}
 
-                        <div className="mt-10 p-6 bg-primary/5 rounded-[2rem] border border-dashed border-primary/20">
-                            <div className="flex items-center gap-2 text-primary mb-3">
-                                <Eye className="h-4 w-4" />
-                                <span className="text-[10px] font-black uppercase">Configuration Colonnes</span>
+                        {availableCols.length > 0 && (
+                            <div className="mt-10 p-6 bg-primary/5 rounded-[2rem] border border-dashed border-primary/20 animate-in fade-in slide-in-from-bottom-2 duration-500">
+                                <div className="flex items-center gap-2 text-primary mb-4">
+                                    <Eye className="h-4 w-4" />
+                                    <span className="text-[10px] font-black uppercase tracking-widest">Colonnes Actives</span>
+                                </div>
+                                <div className="space-y-3">
+                                    {availableCols.map(col => (
+                                        <div key={col} className="flex items-center gap-3 group/col">
+                                            <Checkbox 
+                                                id={`col-${col}`}
+                                                checked={selectedColumns[activeCategory]?.has(col)}
+                                                onCheckedChange={() => toggleColumn(activeCategory, col)}
+                                                className="h-4 w-4 border-primary/40 data-[state=checked]:bg-primary"
+                                            />
+                                            <label htmlFor={`col-${col}`} className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground/60 group-hover/col:text-primary transition-colors cursor-pointer truncate">
+                                                {col}
+                                            </label>
+                                        </div>
+                                    ))}
+                                </div>
                             </div>
-                            <div className="space-y-3">
-                                {availableCols.map(col => (
-                                    <div key={col} className="flex items-center gap-3">
-                                        <Checkbox 
-                                            id={`col-${col}`}
-                                            checked={selectedColumns[activeCategory]?.has(col)}
-                                            onCheckedChange={() => toggleColumn(activeCategory, col)}
-                                            className="h-4 w-4 border-primary/40 data-[state=checked]:bg-primary"
-                                        />
-                                        <label htmlFor={`col-${col}`} className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground/60 cursor-pointer">
-                                            {col}
-                                        </label>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
+                        )}
                     </div>
 
-                    {/* Content: Global Editor */}
+                    {/* Data Editor */}
                     <div className="flex-grow flex flex-col min-w-0 bg-black/20">
                         <div className="p-6 border-b border-white/5 bg-card/20 flex gap-4">
                             <div className="relative flex-grow max-w-xl">
                                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground opacity-30" />
                                 <Input 
-                                    placeholder="Recherche dynamique dans ce segment..."
+                                    placeholder="Rechercher dans ce segment..."
                                     className="pl-11 h-12 rounded-xl bg-black/20 border-none shadow-inner font-bold"
                                     value={searchQuery}
                                     onChange={e => setSearchQuery(e.target.value)}
@@ -246,7 +260,12 @@ export function BackupPreviewDialog({ isOpen, onOpenChange, initialData }: Backu
                                 {!selectedTables.has(activeCategory) ? (
                                     <div className="h-full py-40 flex flex-col items-center justify-center text-center space-y-4 opacity-20">
                                         <Square className="h-16 w-16" />
-                                        <p className="text-[10px] font-black uppercase tracking-[0.4em]">Segment désactivé pour la restauration</p>
+                                        <p className="text-[10px] font-black uppercase tracking-[0.4em]">Segment exclu du déploiement</p>
+                                    </div>
+                                ) : filteredData.length === 0 ? (
+                                    <div className="h-full py-40 flex flex-col items-center justify-center text-center space-y-4 opacity-20">
+                                        <X className="h-16 w-16" />
+                                        <p className="text-[10px] font-black uppercase tracking-[0.4em]">Aucune donnée trouvée</p>
                                     </div>
                                 ) : (
                                     <div className="rounded-[2rem] border border-white/5 bg-black/40 overflow-hidden shadow-2xl">
@@ -266,7 +285,10 @@ export function BackupPreviewDialog({ isOpen, onOpenChange, initialData }: Backu
                                             </TableHeader>
                                             <TableBody>
                                                 {filteredData.map((item: any, idx: number) => (
-                                                    <TableRow key={item.uuid || idx} className="border-white/5 group hover:bg-white/5 transition-all">
+                                                    <TableRow key={item.uuid || idx} className={cn(
+                                                        "border-white/5 group hover:bg-white/5 transition-all",
+                                                        item._removed && "opacity-30 grayscale line-through"
+                                                    )}>
                                                         {availableCols.map(col => (
                                                             <TableCell key={col} className={cn(
                                                                 "p-2 transition-opacity",
@@ -275,13 +297,23 @@ export function BackupPreviewDialog({ isOpen, onOpenChange, initialData }: Backu
                                                                 <Input 
                                                                     value={item[col] ?? ''} 
                                                                     onChange={e => handleUpdateField(activeCategory, idx, col, e.target.value)} 
-                                                                    className="h-9 bg-transparent border-none focus-visible:ring-primary font-medium text-xs shadow-none p-2 min-w-[100px]" 
+                                                                    className="h-9 bg-transparent border-none focus-visible:ring-primary font-medium text-xs shadow-none p-2 min-w-[120px]" 
+                                                                    disabled={item._removed}
                                                                 />
                                                             </TableCell>
                                                         ))}
                                                         <TableCell>
-                                                            <Button variant="ghost" size="icon" onClick={() => handleUpdateField(activeCategory, idx, '_removed', true)} className="text-destructive/20 hover:text-destructive hover:bg-destructive/10 rounded-xl transition-all">
-                                                                <Trash2 className="h-4 w-4" />
+                                                            <Button 
+                                                                type="button"
+                                                                variant="ghost" 
+                                                                size="icon" 
+                                                                onClick={() => handleUpdateField(activeCategory, idx, '_removed', !item._removed)} 
+                                                                className={cn(
+                                                                    "rounded-xl transition-all",
+                                                                    item._removed ? "text-primary hover:bg-primary/10" : "text-destructive/20 hover:text-destructive hover:bg-destructive/10"
+                                                                )}
+                                                            >
+                                                                {item._removed ? <RotateCcw className="h-4 w-4" /> : <Trash2 className="h-4 w-4" />}
                                                             </Button>
                                                         </TableCell>
                                                     </TableRow>
@@ -297,10 +329,13 @@ export function BackupPreviewDialog({ isOpen, onOpenChange, initialData }: Backu
                 </div>
 
                 <DialogFooter className="bg-black/40 p-8 border-t border-white/5 flex justify-between items-center text-[9px] text-muted-foreground font-black uppercase tracking-[0.3em] opacity-30">
-                    <span className="flex items-center gap-2 italic"><CheckCircle2 className="h-3 w-3" /> Manifeste Prêt : {selectedTables.size} segments sélectionnés</span>
+                    <span className="flex items-center gap-2 italic"><CheckCircle2 className="h-3 w-3" /> Audit en cours : {selectedTables.size} segments surveillés</span>
                     <span>iPOS Luxury Elite Restore Engine v1.9.2</span>
                 </DialogFooter>
             </DialogContent>
         </Dialog>
     );
 }
+
+// Additional import missing in previous version
+import { RotateCcw } from 'lucide-react';

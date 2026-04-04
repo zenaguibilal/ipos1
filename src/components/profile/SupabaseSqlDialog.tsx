@@ -214,6 +214,7 @@ export function SupabaseSqlDialog() {
     return (
         <>
             <Button 
+                type="button"
                 variant="outline" 
                 size="sm" 
                 onClick={() => setIsOpen(true)}
