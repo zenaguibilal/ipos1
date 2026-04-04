@@ -223,6 +223,7 @@ class CustomerService {
         if (!customer?.id) throw new Error("Customer not found during recalculation.");
 
         const now = new Date();
+        const currentDayOfMonth = now.getDate();
 
         const [sales, payments, returns] = await Promise.all([
              db.sales.where('customerUuid').equals(customerUuid).toArray(),
@@ -241,9 +242,14 @@ class CustomerService {
 
         let debtStatus: Customer['debtStatus'] = 'none';
         if (newBalance > 0.01) {
-            const unpaidSales = sales.filter(s => s.paymentStatus !== 'paid');
-            const isOverdue = unpaidSales.some(s => s.dueDate && new Date(s.dueDate) < now);
-            debtStatus = isOverdue ? 'overdue' : 'due_soon';
+            // New Logic: Fixed monthly settlement day
+            if (customer.settlementDay && currentDayOfMonth > customer.settlementDay) {
+                debtStatus = 'overdue';
+            } else {
+                const unpaidSales = sales.filter(s => s.paymentStatus !== 'paid');
+                const isOverdueByInvoicedDate = unpaidSales.some(s => s.dueDate && new Date(s.dueDate) < now);
+                debtStatus = isOverdueByInvoicedDate ? 'overdue' : 'due_soon';
+            }
         }
 
         const customerUpdate: Partial<Customer> = {
@@ -295,6 +301,7 @@ class CustomerService {
                                 phone: row.phone || row.telephone,
                                 address: row.address || row.adresse,
                                 creditLimit: row.creditLimit ? parseFloat(row.creditLimit) : undefined,
+                                settlementDay: row.settlementDay ? parseInt(row.settlementDay) : undefined,
                                 outstandingBalance: row.outstandingBalance ? parseFloat(row.outstandingBalance) : undefined,
                             };
 

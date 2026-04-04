@@ -1,3 +1,4 @@
+
 'use client';
 
 import { v4 as uuidv4 } from 'uuid';
@@ -189,7 +190,7 @@ class ProductService {
         }
         const productsToDelete = await db.products.where('uuid').anyOf(uuids).toArray();
         const idsToDelete = productsToDelete.map(p => p.id!);
-        await db.products.bulkDelete(idsToDelete);
+        await db.customers.bulkDelete(idsToDelete);
     }
 
     async analyzeImport(file: File): Promise<ProductImportAnalysis> {
