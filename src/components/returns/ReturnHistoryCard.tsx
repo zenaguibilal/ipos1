@@ -29,11 +29,7 @@ const ReturnHistoryCardComponent = ({
     onCancelReturn 
 }: ReturnHistoryCardProps) => {
 
-    const handleCardClick = (e: React.MouseEvent) => {
-        const target = e.target as HTMLElement;
-        if (target.closest('button') || target.closest('[role="menuitem"]') || target.closest('[role="checkbox"]') || target.closest('.action-area')) {
-            return;
-        }
+    const handleCardClick = () => {
         onToggleSelection();
     };
 
@@ -49,8 +45,12 @@ const ReturnHistoryCardComponent = ({
                 <Undo2 className="h-32 w-32 rotate-12" />
             </div>
 
-            <div className="absolute top-4 right-4 z-10 flex gap-2 items-center action-area">
-                <div className="p-1.5 bg-background/80 backdrop-blur-md rounded-xl border border-white/5 shadow-sm">
+            {/* Actions isolated container */}
+            <div 
+                className="absolute top-4 right-4 z-10 flex gap-2 items-center"
+                onClick={(e) => e.stopPropagation()}
+            >
+                <div className="p-1.5 bg-background/80 backdrop-blur-md rounded-xl border border-white/5 shadow-sm flex items-center justify-center">
                     <Checkbox
                         checked={isSelected}
                         onCheckedChange={onToggleSelection}
@@ -64,10 +64,10 @@ const ReturnHistoryCardComponent = ({
                         </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="rounded-2xl border-none shadow-2xl bg-card">
-                        <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onViewDetails(productReturn); }} className="rounded-xl p-3">
+                        <DropdownMenuItem onClick={() => onViewDetails(productReturn)} className="rounded-xl p-3">
                             <FileText className="mr-2 h-4 w-4" /> Détails du retour
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onCancelReturn(productReturn); }} className="text-destructive focus:text-destructive rounded-xl p-3">
+                        <DropdownMenuItem onClick={() => onCancelReturn(productReturn)} className="text-destructive focus:text-destructive rounded-xl p-3">
                             <Trash2 className="mr-2 h-4 w-4" /> Annuler le retour
                         </DropdownMenuItem>
                     </DropdownMenuContent>

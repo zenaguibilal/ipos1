@@ -20,11 +20,7 @@ interface StockIntakeCardProps {
 const StockIntakeCardComponent = ({ intake, supplierName, onViewDetails, onCancelIntake }: StockIntakeCardProps) => {
     const name = supplierName || 'Partenaire Inconnu';
 
-    const handleCardClick = (e: React.MouseEvent) => {
-        const target = e.target as HTMLElement;
-        if (target.closest('button') || target.closest('[role="menuitem"]') || target.closest('.action-area')) {
-            return;
-        }
+    const handleCardClick = () => {
         onViewDetails(intake);
     };
 
@@ -34,7 +30,11 @@ const StockIntakeCardComponent = ({ intake, supplierName, onViewDetails, onCance
                 <Archive className="h-32 w-32 rotate-12" />
             </div>
 
-            <div className="absolute top-4 right-4 z-10 action-area">
+            {/* Actions isolated container */}
+            <div 
+                className="absolute top-4 right-4 z-10"
+                onClick={(e) => e.stopPropagation()}
+            >
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                         <Button variant="secondary" size="icon" className="h-9 w-9 bg-background/80 backdrop-blur-md border-white/5 shadow-xl rounded-xl transition-transform active:scale-95">
@@ -42,10 +42,10 @@ const StockIntakeCardComponent = ({ intake, supplierName, onViewDetails, onCance
                         </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="rounded-2xl border-none shadow-2xl bg-card">
-                        <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onViewDetails(intake); }} className="rounded-xl p-3">
+                        <DropdownMenuItem onClick={() => onViewDetails(intake)} className="rounded-xl p-3">
                             <FileText className="mr-2 h-4 w-4" /> Détails du bon
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onCancelIntake(intake); }} className="text-destructive focus:text-destructive rounded-xl p-3">
+                        <DropdownMenuItem onClick={() => onCancelIntake(intake)} className="text-destructive focus:text-destructive rounded-xl p-3">
                             <Trash2 className="mr-2 h-4 w-4" /> Annuler l'entrée
                         </DropdownMenuItem>
                     </DropdownMenuContent>

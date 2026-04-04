@@ -59,13 +59,7 @@ const CustomerCardComponent = ({ customer, onEdit, onDelete, isSelected, onToggl
         window.open(`https://wa.me/${customer.phone}?text=${message}`, '_blank');
     };
 
-    const handleCardClick = (e: React.MouseEvent) => {
-        const target = e.target as HTMLElement;
-        // Avoid card click when clicking on specific action elements or containers
-        if (target.closest('button') || target.closest('[role="menuitem"]') || target.closest('[role="checkbox"]') || target.closest('.action-area')) {
-            return;
-        }
-        
+    const handleCardClick = () => {
         if (isSelectionActive) {
             onToggleSelection();
         } else {
@@ -85,8 +79,12 @@ const CustomerCardComponent = ({ customer, onEdit, onDelete, isSelected, onToggl
                 <User className="h-32 w-32 rotate-12" />
             </div>
 
-            <div className="absolute top-4 right-4 z-10 flex gap-2 items-center action-area">
-                <div className="p-1.5 bg-background/80 backdrop-blur-md rounded-xl border border-white/5 shadow-sm">
+            {/* Actions isolated container */}
+            <div 
+                className="absolute top-4 right-4 z-10 flex gap-2 items-center"
+                onClick={(e) => e.stopPropagation()}
+            >
+                <div className="p-1.5 bg-background/80 backdrop-blur-md rounded-xl border border-white/5 shadow-sm flex items-center justify-center">
                     <Checkbox
                         checked={isSelected}
                         onCheckedChange={onToggleSelection}
@@ -110,14 +108,14 @@ const CustomerCardComponent = ({ customer, onEdit, onDelete, isSelected, onToggl
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="rounded-2xl border-none shadow-2xl bg-card">
                         <DropdownMenuItem asChild className="rounded-xl p-3">
-                            <Link href={`/customers/${customer.uuid}`} onClick={(e) => e.stopPropagation()}>
+                            <Link href={`/customers/${customer.uuid}`}>
                                 <FileText className="mr-2 h-4 w-4" /> Voir le dossier
                             </Link>
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onEdit(customer); }} className="rounded-xl p-3">
+                        <DropdownMenuItem onClick={() => onEdit(customer)} className="rounded-xl p-3">
                             <Edit className="mr-2 h-4 w-4" /> Modifier
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onDelete(customer); }} className="text-destructive focus:text-destructive rounded-xl p-3">
+                        <DropdownMenuItem onClick={() => onDelete(customer)} className="text-destructive focus:text-destructive rounded-xl p-3">
                             <Trash2 className="mr-2 h-4 w-4" /> Supprimer
                         </DropdownMenuItem>
                     </DropdownMenuContent>
@@ -187,7 +185,7 @@ const CustomerCardComponent = ({ customer, onEdit, onDelete, isSelected, onToggl
                     <span>{isMounted && customer.lastActivityDate ? formatDistanceToNow(new Date(customer.lastActivityDate), { addSuffix: true, locale: fr }) : 'Aucun flux'}</span>
                 </div>
                 <Button variant="ghost" size="sm" asChild className="h-9 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-primary/10 hover:text-primary transition-all px-4">
-                    <Link href={`/customers/${customer.uuid}`} onClick={(e) => e.stopPropagation()}>
+                    <Link href={`/customers/${customer.uuid}`}>
                         Dossier <ChevronRight className="ml-1 h-3 w-3 opacity-50" />
                     </Link>
                 </Button>
