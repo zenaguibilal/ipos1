@@ -40,7 +40,7 @@ export function SaleInfoBar() {
     }, [cart?.customerUuid]);
 
     useEffect(() => {
-        const hasItems = cart && cart.items.length > 0;
+        const hasItems = !!(cart && cart.items.length > 0);
         const isSellPage = pathname === '/sell';
         // The bar is visible on the sell page or if there are items in the cart globally.
         setIsVisible(isSellPage || hasItems);
