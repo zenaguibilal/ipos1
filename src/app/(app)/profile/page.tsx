@@ -4,8 +4,10 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/com
 import { CompanyProfileForm } from "@/components/profile/company-profile-form";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { useAppStore } from "@/stores/appStore";
-import { Building, MapPin, Phone, Globe, ShieldCheck, Share2, Sparkles, Star } from "lucide-react";
+import { Building, MapPin, Phone, Globe, ShieldCheck, Share2, Sparkles, Star, Cloud, Clock } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { format } from 'date-fns';
+import { fr } from 'date-fns/locale';
 
 export default function ProfilePage() {
     const { companyProfile, isCompanyProfileLoading } = useAppStore(state => ({
@@ -82,6 +84,17 @@ export default function ProfilePage() {
                                 <div className="flex items-center justify-center gap-2 text-emerald-500 font-black text-[10px] uppercase tracking-widest bg-emerald-500/10 px-4 py-3 rounded-2xl w-full border border-emerald-500/20 relative z-10">
                                     <ShieldCheck className="h-4 w-4" /> Actif & Protégé
                                 </div>
+                                
+                                {companyProfile?.last_sync_at && (
+                                    <div className="mt-4 pt-4 border-t border-emerald-500/10 w-full animate-in fade-in duration-700">
+                                        <p className="text-[8px] font-black uppercase tracking-[0.2em] text-muted-foreground/40 mb-1.5 flex items-center justify-center gap-1.5">
+                                            <Cloud className="h-2.5 w-2.5" /> Synchronisation Cloud
+                                        </p>
+                                        <p className="text-[9px] font-bold text-emerald-600/60 uppercase tracking-tighter">
+                                            {format(new Date(companyProfile.last_sync_at), 'd MMM yyyy, HH:mm', { locale: fr })}
+                                        </p>
+                                    </div>
+                                )}
                             </div>
                         </div>
                     </CardContent>

@@ -8,9 +8,11 @@ import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import type { CompanyProfile } from '@/lib/types';
 import { Skeleton } from '../ui/skeleton';
-import { Loader2, Building, MapPin, Phone, Mail, Wheat, Coins, FileText, CheckCircle2, RotateCcw, Hash, Cloud, Key } from 'lucide-react';
+import { Loader2, Building, MapPin, Phone, Mail, Wheat, Coins, FileText, CheckCircle2, RotateCcw, Hash, Cloud, Key, Clock } from 'lucide-react';
 import { useAppStore } from '@/stores/appStore';
 import { SupabaseSqlDialog } from './SupabaseSqlDialog';
+import { format } from 'date-fns';
+import { fr } from 'date-fns/locale';
 
 export function CompanyProfileForm() {
     const { companyProfile, isCompanyProfileLoading } = useAppStore(state => ({
@@ -252,12 +254,19 @@ export function CompanyProfileForm() {
             </CardContent>
             
             <CardFooter className="p-10 bg-black/40 border-t border-white/5 flex flex-col sm:flex-row items-center justify-between gap-10">
-                <div className="flex flex-col gap-2">
-                    <p className="text-[9px] text-muted-foreground font-black uppercase tracking-[0.3em] opacity-30 italic">Authentification en temps réel</p>
+                <div className="flex flex-col gap-3">
                     <div className="flex items-center gap-3">
                         <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
-                        <p className="text-[10px] font-black text-muted-foreground/60 uppercase">Dernier enregistrement : {formState.updatedAt ? new Date(formState.updatedAt).toLocaleString('fr-FR') : 'Initial'}</p>
+                        <p className="text-[10px] font-black text-muted-foreground/60 uppercase">Dernier enregistrement : {formState.updatedAt ? format(new Date(formState.updatedAt), 'd MMM yyyy, HH:mm', { locale: fr }) : 'Initial'}</p>
                     </div>
+                    {companyProfile?.last_sync_at && (
+                        <div className="flex items-center gap-3">
+                            <div className="p-1 rounded-md bg-primary/10">
+                                <Cloud className="h-2.5 w-2.5 text-primary" />
+                            </div>
+                            <p className="text-[10px] font-black text-primary/60 uppercase tracking-tighter">Synchronisation Cloud : {format(new Date(companyProfile.last_sync_at), 'd MMM yyyy, HH:mm', { locale: fr })}</p>
+                        </div>
+                    )}
                 </div>
                 <div className="flex gap-6 w-full sm:w-auto">
                     <Button type="button" variant="ghost" onClick={handleReset} className="h-16 px-10 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] gap-3" disabled={isSaving}>

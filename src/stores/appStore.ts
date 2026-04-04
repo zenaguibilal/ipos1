@@ -104,8 +104,8 @@ export const useAppStore = create<AppState>()(
                         } else {
                             await supabaseSyncService.pullAllData(currentProfile.supabase_url, currentProfile.supabase_key);
                             
-                            const refreshedProfile = await companyProfileService.getProfile();
-                            await companyProfileService.updateProfile({ last_sync_at: now });
+                            // Update and get the latest profile including the sync date marker
+                            const refreshedProfile = await companyProfileService.updateProfile({ last_sync_at: now });
                             
                             set({ companyProfile: refreshedProfile, lastSyncDate: now });
                             toast.success("Restauration Cloud (Pull) réussie.");
