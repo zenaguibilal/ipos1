@@ -1,16 +1,19 @@
+
 'use client';
 
 import { useMemo } from 'react';
 import type { BreadOrderWithCustomer } from '@/lib/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Package, Truck, Wallet, CheckCircle2, Clock, Sparkles, TrendingUp } from 'lucide-react';
+import { Package, Truck, Wallet } from 'lucide-react';
 import { Skeleton } from '../ui/skeleton';
 import { Progress } from '../ui/progress';
-import { cn, formatCurrency } from '@/lib/utils';
+import { cn } from '@/lib/utils';
+import { useLiveQuery } from '@/hooks/useLiveQuery';
+import { db } from '@/lib/db';
 
 interface BreadStatsProps {
-    orders?: BreadOrderWithCustomer[];
-    isLoading: boolean;
+    date: string;
+    isLoading?: boolean;
 }
 
 const StatCard = ({ title, value, icon: Icon, colorClass, subtitle, progress }: { title: string, value: string, icon: any, colorClass: string, subtitle?: string, progress?: number }) => (
@@ -37,7 +40,10 @@ const StatCard = ({ title, value, icon: Icon, colorClass, subtitle, progress }: 
     </Card>
 );
 
-export function BreadStats({ orders, isLoading }: BreadStatsProps) {
+export function BreadStats({ date, isLoading: externalLoading }: BreadStatsProps) {
+    // Live query for specific date bread orders to update stats instantly
+    const orders = useLiveQuery(() => db.bread_orders.where('date').equals(date).toArray(), [date]);
+
     const stats = useMemo(() => {
         if (!orders) return { totalQuantity: 0, deliveredQuantity: 0, paidQuantity: 0, unpaidQuantity: 0, totalOrders: 0 };
         return {
@@ -53,7 +59,7 @@ export function BreadStats({ orders, isLoading }: BreadStatsProps) {
         ? Math.round((stats.deliveredQuantity / stats.totalQuantity) * 100) 
         : 0;
 
-    if(isLoading) {
+    if (orders === undefined || externalLoading) {
         return (
             <div className="grid gap-6 grid-cols-1 md:grid-cols-3">
                 {[...Array(3)].map((_, i) => (

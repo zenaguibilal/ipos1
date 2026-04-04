@@ -1,13 +1,13 @@
+
 'use client';
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { DateRangePicker } from '@/components/ui/date-range-picker';
 import { useDateRange } from '@/hooks/useDateRange';
-import type { DashboardData, RecentSale, RecentReturn, SalesByDay } from '@/lib/types';
+import type { RecentSale, RecentReturn, SalesByDay } from '@/lib/types';
 import { dashboardService } from '@/services/dashboard.service';
-import { toast } from 'sonner';
 import { 
     TrendingUp, 
     Receipt, 
@@ -32,6 +32,7 @@ import { ResponsiveContainer, AreaChart, XAxis, YAxis, Tooltip, Area, CartesianG
 import { Skeleton } from '@/components/ui/skeleton';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
+import { useLiveQuery } from '@/hooks/useLiveQuery';
 
 // --- Composants mémoïsés pour une fluidité Elite (Turbo Optimized) ---
 
@@ -207,41 +208,23 @@ RecentActivity.displayName = 'RecentActivity';
 
 export default function DashboardPage() {
     const { dateRange, setDate, isMounted } = useDateRange(29);
-    const [data, setData] = useState<DashboardData | null>(null);
-    const [isLoading, setIsLoading] = useState(true);
     
-    const fetchData = useCallback(async (from: Date, to: Date) => {
-        setIsLoading(true);
-        try {
-            const dashboardData = await dashboardService.getDashboardData(from, to);
-            setData(dashboardData);
-        } catch (error: any) {
-            toast.error("Échec du chargement analytique.");
-        } finally {
-            setIsLoading(false);
-        }
-    }, []);
+    // Live query for instant statistical updates
+    const data = useLiveQuery(
+        async () => {
+            if (!isMounted || !dateRange?.from || !dateRange?.to) return null;
+            return await dashboardService.getDashboardData(dateRange.from, dateRange.to);
+        },
+        [isMounted, dateRange]
+    );
 
-    useEffect(() => {
-        if (isMounted && dateRange?.from && dateRange?.to) {
-            fetchData(dateRange.from, dateRange.to);
-        }
-    }, [dateRange, isMounted, fetchData]);
+    const isLoading = data === undefined || !isMounted;
 
     return (
         <div className="p-6 sm:p-10 space-y-12 max-w-[1800px] mx-auto animate-in fade-in duration-1000">
             <PageHeader title="Pilotage Elite" description="Analyse souveraine de rentabilité en temps réel">
                 <div className="flex items-center gap-4">
                     <DateRangePicker date={dateRange} setDate={setDate} />
-                    <Button 
-                        variant="outline" 
-                        size="icon" 
-                        className="rounded-2xl h-14 w-14 border-white/5 bg-card hover:bg-primary/10 transition-all"
-                        onClick={() => dateRange?.from && dateRange?.to && fetchData(dateRange.from, dateRange.to)}
-                        disabled={isLoading}
-                    >
-                        <RefreshCw className={cn("h-6 w-6 text-primary", isLoading && "animate-spin")} />
-                    </Button>
                 </div>
             </PageHeader>
 

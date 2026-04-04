@@ -5,9 +5,11 @@ import { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { Product } from '@/lib/types';
-import { Package, AlertTriangle, PackageX, CalendarClock, TrendingUp, Sparkles } from 'lucide-react';
+import { Package, AlertTriangle, PackageX, CalendarClock, TrendingUp } from 'lucide-react';
 import { differenceInDays } from 'date-fns';
 import { formatCurrency, cn } from '@/lib/utils';
+import { useLiveQuery } from '@/hooks/useLiveQuery';
+import { db } from '@/lib/db';
 
 const StatCard = ({ title, value, icon: Icon, colorClass, subtitle }: { title: string, value: string, icon: any, colorClass: string, subtitle?: string }) => (
     <Card className="luxury-card h-full bg-card/40 backdrop-blur-2xl border-white/5 rounded-[2rem] group overflow-hidden">
@@ -24,7 +26,10 @@ const StatCard = ({ title, value, icon: Icon, colorClass, subtitle }: { title: s
     </Card>
 );
 
-export const InventoryStats = ({ products, isLoading }: { products: Product[] | undefined, isLoading: boolean }) => {
+export const InventoryStats = ({ isLoading: externalLoading }: { isLoading?: boolean }) => {
+    // Live query for the products table to update stats instantly
+    const products = useLiveQuery(() => db.products.toArray());
+
     const stats = useMemo(() => {
         if (!products) return { total: 0, low: 0, out: 0, expiring: 0, totalValue: 0 };
         const now = new Date();
@@ -37,7 +42,7 @@ export const InventoryStats = ({ products, isLoading }: { products: Product[] | 
         };
     }, [products]);
 
-    if (isLoading) {
+    if (products === undefined || externalLoading) {
         return (
              <div className="grid gap-6 grid-cols-2 lg:grid-cols-5">
                 {[...Array(5)].map((_, i) => (

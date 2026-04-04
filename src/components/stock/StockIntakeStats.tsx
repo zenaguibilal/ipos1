@@ -4,14 +4,10 @@
 import { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import type { StockIntake } from '@/lib/types';
-import { Wallet, Archive, Building, TrendingUp, Sparkles } from 'lucide-react';
+import { Wallet, Archive, Building, TrendingUp } from 'lucide-react';
 import { formatCurrency, cn } from '@/lib/utils';
-
-interface StockIntakeStatsProps {
-    intakes: StockIntake[] | undefined;
-    isLoading: boolean;
-}
+import { useLiveQuery } from '@/hooks/useLiveQuery';
+import { db } from '@/lib/db';
 
 const StatCard = ({ title, value, icon: Icon, colorClass, subtitle }: { title: string, value: string, icon: any, colorClass: string, subtitle?: string }) => (
     <Card className="luxury-card h-full bg-card/40 backdrop-blur-2xl border-white/5 rounded-[2rem] group overflow-hidden">
@@ -28,7 +24,10 @@ const StatCard = ({ title, value, icon: Icon, colorClass, subtitle }: { title: s
     </Card>
 );
 
-export const StockIntakeStats = ({ intakes, isLoading }: StockIntakeStatsProps) => {
+export const StockIntakeStats = ({ isLoading: externalLoading }: { isLoading?: boolean }) => {
+    // Live query for stock intakes to update stats instantly
+    const intakes = useLiveQuery(() => db.stock_intakes.toArray());
+
     const stats = useMemo(() => {
         if (!intakes) return { totalValue: 0, intakeCount: 0, supplierCount: 0 };
         const supplierUuids = new Set(intakes.map(i => i.supplierUuid).filter(Boolean));
@@ -39,7 +38,7 @@ export const StockIntakeStats = ({ intakes, isLoading }: StockIntakeStatsProps) 
         };
     }, [intakes]);
 
-    if (isLoading) {
+    if (intakes === undefined || externalLoading) {
         return (
              <div className="grid gap-6 md:grid-cols-3">
                 {[...Array(3)].map((_, i) => (

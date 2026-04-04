@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -14,45 +15,50 @@ import type { BreadOrderWithCustomer } from '@/lib/types';
 import { breadService } from '@/services/bread.service';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { useLiveQuery } from '@/hooks/useLiveQuery';
+import { db } from '@/lib/db';
 
 export default function BreadPage() {
     const [currentDate, setCurrentDate] = useState<Date | null>(null);
     const [isMounted, setIsMounted] = useState(false);
-
-    const [orders, setOrders] = useState<BreadOrderWithCustomer[] | undefined>(undefined);
-    const [isGenerating, setIsGenerating] = useState(false);
 
     useEffect(() => {
         setIsMounted(true);
         setCurrentDate(new Date());
     }, []);
 
-    const fetchAndGenerateOrders = useCallback(async (date: string) => {
-        setIsGenerating(true);
-        try {
-            const generatedOrders = await breadService.generateAndGetOrdersForDate(date);
-            setOrders(generatedOrders);
-        } catch (error: any) {
-            toast.error("Erreur lors de la génération des commandes.");
-        } finally {
-            setIsGenerating(false);
+    const formattedDate = currentDate ? formatDateToYYYYMMDD(currentDate) : '';
+
+    // Generate orders if they don't exist for the selected date
+    const checkAndGenerate = useCallback(async (date: string) => {
+        if (!date) return;
+        const count = await db.bread_orders.where('date').equals(date).count();
+        if (count === 0) {
+            await breadService.generateAndGetOrdersForDate(date);
         }
     }, []);
 
     useEffect(() => {
-        if (isMounted && currentDate) {
-            fetchAndGenerateOrders(formatDateToYYYYMMDD(currentDate));
+        if (isMounted && formattedDate) {
+            checkAndGenerate(formattedDate);
         }
-    }, [currentDate, fetchAndGenerateOrders, isMounted]);
+    }, [isMounted, formattedDate, checkAndGenerate]);
 
+    // LIVE QUERY for orders to update the list in real-time
+    const orders = useLiveQuery(
+        async () => {
+            if (!isMounted || !formattedDate) return undefined;
+            return await breadService.generateAndGetOrdersForDate(formattedDate);
+        },
+        [isMounted, formattedDate]
+    );
 
     const handleDateChange = useCallback((days: number) => {
         setCurrentDate(prev => prev ? addDays(prev, days) : null);
     }, []);
 
-    const formattedDate = currentDate ? formatDateToYYYYMMDD(currentDate) : '';
     const isToday = isMounted && currentDate && formatDateToYYYYMMDD(new Date()) === formattedDate;
-    const isLoading = orders === undefined || isGenerating || !isMounted || !currentDate;
+    const isLoading = orders === undefined || !isMounted || !currentDate;
 
     return (
         <div className="p-6 sm:p-10 space-y-10 max-w-[1800px] mx-auto animate-in fade-in duration-1000">
@@ -94,7 +100,7 @@ export default function BreadPage() {
                     <Button 
                         variant="outline" 
                         size="icon" 
-                        onClick={() => formattedDate && fetchAndGenerateOrders(formattedDate)}
+                        onClick={() => formattedDate && checkAndGenerate(formattedDate)}
                         disabled={isLoading}
                         className="rounded-2xl h-14 w-14 border-white/5 bg-card hover:bg-primary/10 group transition-all duration-500"
                     >
@@ -104,10 +110,10 @@ export default function BreadPage() {
             </PageHeader>
 
             <div className="animate-in slide-in-from-top-4 duration-700">
-                <BreadStats orders={orders} isLoading={isLoading}/>
+                <BreadStats date={formattedDate} isLoading={isLoading}/>
             </div>
 
-            <div className="grid lg:grid-cols-12 gap-10 items-stretch flex-grow min-h-0">
+            <div className="grid lg:col-span-12 gap-10 items-stretch flex-grow min-h-0">
                 {/* Distribution View */}
                 <div className="lg:col-span-9 flex flex-col animate-in slide-in-from-left-4 duration-700 delay-200">
                     {isLoading ? (
@@ -122,14 +128,14 @@ export default function BreadPage() {
                         <BreadDayView 
                             orders={orders || []} 
                             currentDate={formattedDate}
-                            onOrdersChange={() => fetchAndGenerateOrders(formattedDate)}
+                            onOrdersChange={() => {}} // Now handled by LiveQuery
                         />
                     )}
                 </div>
 
                 {/* Subscribers Sidebar */}
                 <div className="lg:col-span-3 flex flex-col animate-in slide-in-from-right-4 duration-700 delay-300">
-                    <BreadClientList onListChange={() => formattedDate && fetchAndGenerateOrders(formattedDate)} />
+                    <BreadClientList onListChange={() => {}} />
                 </div>
             </div>
         </div>

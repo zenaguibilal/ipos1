@@ -1,11 +1,13 @@
+
 'use client';
 
 import { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Undo2, Banknote, PackageOpen, Coins, TrendingUp, Sparkles } from 'lucide-react';
-import type { ProductReturn } from '@/lib/types';
+import { Undo2, Banknote, PackageOpen, Coins } from 'lucide-react';
 import { formatCurrency, cn } from '@/lib/utils';
+import { useLiveQuery } from 'dexie-react-hook';
+import { db } from '@/lib/db';
 
 const StatCard = ({ title, value, icon: Icon, colorClass, subtitle }: { title: string, value: string, icon: any, colorClass: string, subtitle?: string }) => (
     <Card className="luxury-card h-full bg-card/40 backdrop-blur-2xl border-white/5 rounded-[2rem] group overflow-hidden">
@@ -22,7 +24,10 @@ const StatCard = ({ title, value, icon: Icon, colorClass, subtitle }: { title: s
     </Card>
 );
 
-export function ReturnStats({ returns, isLoading }: { returns: ProductReturn[] | undefined, isLoading: boolean }) {
+export function ReturnStats({ isLoading: externalLoading }: { isLoading?: boolean }) {
+  // Live query for returns table to update stats instantly
+  const returns = useLiveQuery(() => db.product_returns.toArray());
+
   const stats = useMemo(() => {
     if (!returns) return { count: 0, totalValue: 0, totalRefunded: 0, creditIssued: 0 };
     const totalValue = returns.reduce((sum, r) => sum + r.totalReturnValue, 0);
@@ -35,7 +40,7 @@ export function ReturnStats({ returns, isLoading }: { returns: ProductReturn[] |
     };
   }, [returns]);
 
-  if (isLoading) {
+  if (returns === undefined || externalLoading) {
     return (
       <div className="grid gap-6 grid-cols-2 lg:grid-cols-4">
         {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-32 w-full rounded-[2rem] bg-card/40" />)}

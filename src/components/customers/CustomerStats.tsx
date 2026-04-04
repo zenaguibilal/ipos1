@@ -3,11 +3,10 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Users, AlertTriangle, UserX, Landmark, TrendingUp, Sparkles } from 'lucide-react';
-import { useEffect, useState, useCallback } from 'react';
+import { Users, AlertTriangle, UserX, Landmark } from 'lucide-react';
 import { customerService } from '@/services/customer.service';
-import { toast } from 'sonner';
 import { formatCurrency, cn } from '@/lib/utils';
+import { useLiveQuery } from '@/hooks/useLiveQuery';
 
 const StatCard = ({ title, value, icon: Icon, colorClass, subtitle }: { title: string, value: string, icon: any, colorClass: string, subtitle?: string }) => (
     <Card className="luxury-card h-full bg-card/40 backdrop-blur-2xl border-white/5 rounded-[2rem] group overflow-hidden">
@@ -25,20 +24,7 @@ const StatCard = ({ title, value, icon: Icon, colorClass, subtitle }: { title: s
 );
 
 export function CustomerStats() {
-  const [stats, setStats] = useState<{ total: number; overdue: number; overLimit: number; totalOutstanding: number } | undefined>(undefined);
-
-  const fetchStats = useCallback(async () => {
-    try {
-        const data = await customerService.getStats();
-        setStats(data);
-    } catch (error) {
-        toast.error("Impossible de charger les statistiques.");
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchStats();
-  }, [fetchStats]);
+  const stats = useLiveQuery(() => customerService.getStats());
 
   if (stats === undefined) {
     return (

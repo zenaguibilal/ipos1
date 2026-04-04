@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useCallback, Suspense } from 'react';
@@ -15,12 +16,12 @@ import {
     Trash2, 
     Archive, 
     SortAsc, 
-    FileDown, 
     Package, 
     Loader2, 
     FileUp, 
     RefreshCw,
-    X
+    X,
+    FileDown
 } from 'lucide-react';
 import { ProductCard } from '@/components/products/product-card';
 import { ProductTable } from '@/components/products/product-table';
@@ -50,6 +51,8 @@ import { supplierService } from '@/services/supplier.service';
 import { useAppStore } from '@/stores/appStore';
 import { cn } from '@/lib/utils';
 import { Checkbox } from '@/components/ui/checkbox';
+import { useLiveQuery } from '@/hooks/useLiveQuery';
+import { db } from '@/lib/db';
 import Papa from 'papaparse';
 
 type StockStatus = 'all' | 'in_stock' | 'low_stock' | 'out_of_stock' | 'expiring_soon' | 'expired';
@@ -86,7 +89,18 @@ function ProductsContent() {
 
     const debouncedSearchQuery = useDebounce(searchQuery, 300);
 
-    const [products, setProducts] = useState<Product[] | undefined>(undefined);
+    // LIVE QUERY for products to keep the list updated in real-time
+    const products = useLiveQuery(
+        () => productService.filterProducts({ 
+            query: debouncedSearchQuery, 
+            category: selectedCategory, 
+            supplierUuid: selectedSupplier,
+            stockStatus, 
+            sortBy 
+        }),
+        [debouncedSearchQuery, selectedCategory, selectedSupplier, stockStatus, sortBy]
+    );
+
     const [categories, setCategories] = useState<string[] | undefined>(undefined);
     const [suppliers, setSuppliers] = useState<Supplier[] | undefined>(undefined);
     const [isRefreshing, setIsRefreshing] = useState(false);
@@ -104,29 +118,6 @@ function ProductsContent() {
         const queryFromUrl = searchParams.get('query');
         if (queryFromUrl) setSearchQuery(queryFromUrl);
     }, [searchParams]);
-
-    const fetchProducts = useCallback(async () => {
-        setIsRefreshing(true);
-        try {
-            const data = await productService.filterProducts({ 
-                query: debouncedSearchQuery, 
-                category: selectedCategory, 
-                supplierUuid: selectedSupplier,
-                stockStatus, 
-                sortBy 
-            });
-            setProducts(data);
-        } catch(error: any) {
-            toast.error("Impossible de charger les produits.");
-            setProducts([]);
-        } finally {
-            setIsRefreshing(false);
-        }
-    }, [debouncedSearchQuery, selectedCategory, selectedSupplier, stockStatus, sortBy]);
-
-    useEffect(() => {
-        fetchProducts();
-    }, [fetchProducts]);
 
     const fetchMeta = useCallback(async () => {
         try {
@@ -151,7 +142,6 @@ function ProductsContent() {
     }, [stockStatus, selectedCategory, selectedSupplier, debouncedSearchQuery]);
 
     const onDialogSuccess = () => {
-        fetchProducts();
         fetchMeta();
     }
 
@@ -164,11 +154,10 @@ function ProductsContent() {
         try {
             await productService.duplicateProduct(product.uuid);
             toast.success(`Produit "${product.name}" dupliqué.`);
-            fetchProducts();
         } catch (error: any) {
             toast.error("Échec de la duplication.");
         }
-    }, [fetchProducts]);
+    }, []);
 
     const handleViewHistory = useCallback((product: Product) => {
         setSelectedProduct(product);
@@ -268,7 +257,7 @@ function ProductsContent() {
                 </div>
             </PageHeader>
 
-            <InventoryStats products={products} isLoading={isLoading} />
+            <InventoryStats isLoading={isLoading} />
 
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 bg-card/20 p-2 rounded-[2.5rem] border border-white/5 backdrop-blur-xl">
                 <div className="relative group flex-grow max-w-xl px-4">
@@ -322,7 +311,7 @@ function ProductsContent() {
                         <Button variant={viewMode === 'list' ? 'secondary': 'ghost'} size="icon" className="rounded-xl h-10 w-10" onClick={() => setViewMode('list')}><List className="h-5 w-5"/></Button>
                     </div>
 
-                    <Button variant="outline" size="icon" className="h-12 w-12 rounded-2xl border-white/5 bg-card/40" onClick={fetchProducts} disabled={isRefreshing}>
+                    <Button variant="outline" size="icon" className="h-12 w-12 rounded-2xl border-white/5 bg-card/40" onClick={fetchMeta} disabled={isRefreshing}>
                         <RefreshCw className={cn("h-5 w-5 text-primary", isRefreshing && "animate-spin")} />
                     </Button>
                 </div>
@@ -390,9 +379,9 @@ function ProductsContent() {
             </div>
 
             <ProductDialog isOpen={isProductDialogOpen} onOpenChange={setIsProductDialogOpen} product={selectedProduct} categories={categories || []} suppliers={suppliers || []} onSuccess={onDialogSuccess} />
-            <DeleteProductDialog isOpen={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen} product={selectedProduct} onSuccess={fetchProducts} />
+            <DeleteProductDialog isOpen={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen} product={selectedProduct} onSuccess={fetchMeta} />
             <PrintLabelsDialog isOpen={isPrintDialogOpen} onOpenChange={setIsPrintDialogOpen} productUuids={Array.from(selectedProducts)} />
-            <DeleteMultipleProductsDialog isOpen={isBulkDeleteDialogOpen} onOpenChange={setIsBulkDeleteDialogOpen} productUuids={Array.from(selectedProducts)} onSuccess={() => { setSelectedProducts(new Set()); fetchProducts(); }} />
+            <DeleteMultipleProductsDialog isOpen={isBulkDeleteDialogOpen} onOpenChange={setIsBulkDeleteDialogOpen} productUuids={Array.from(selectedProducts)} onSuccess={() => { setSelectedProducts(new Set()); fetchMeta(); }} />
             <ProductImportPreviewDialog isOpen={isImportPreviewOpen} onOpenChange={setIsImportPreviewOpen} analysis={importAnalysis} onConfirm={handleConfirmImport} isImporting={isImporting} />
             <ProductHistoryDialog isOpen={isHistoryDialogOpen} onOpenChange={setIsHistoryDialogOpen} product={selectedProduct} />
         </div>
