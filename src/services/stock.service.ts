@@ -45,6 +45,7 @@ class StockService {
     }
 
     async processStockIntakeCancellation(intakeUuid: string): Promise<void> {
+        // Fix: Use array for tables in transaction
         await db.transaction('rw', [db.stock_intakes, db.products, db.suppliers, db.inventory_logs], async () => {
             const intake = await db.stock_intakes.where('uuid').equals(intakeUuid).first();
             if (!intake || !intake.id) {

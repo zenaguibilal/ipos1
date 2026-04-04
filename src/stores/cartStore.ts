@@ -138,7 +138,7 @@ export const useCartStore = create<CartState>()(
                             existingItem.cartQuantity += quantity;
                             existingItem.flash = true;
                         } else {
-                            cart.items.unshift({ ...product, cartQuantity: quantity, flash: true });
+                            cart.items.unshift({ ...product, cartQuantity: quantity, flash: true } as CartItem);
                         }
                     }));
 

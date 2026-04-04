@@ -139,6 +139,7 @@ export const useAppStore = create<AppState>()(
                 },
                 processReturn: async (returnData) => {
                      try {
+                        // Fix: Use array for tables in transaction
                         await db.transaction('rw', [db.product_returns, db.products, db.customers, db.inventory_logs], async () => {
                             const newReturn = await returnService.addReturn(returnData);
                             for (const item of newReturn.items) {
@@ -159,6 +160,7 @@ export const useAppStore = create<AppState>()(
                 },
                 processStockIntake: async (intakeData) => {
                     try {
+                         // Fix: Use array for tables in transaction
                          await db.transaction('rw', [db.stock_intakes, db.products, db.suppliers, db.inventory_logs], async () => {
                             const supplier = await supplierService.findOrCreateSupplier(intakeData.supplierName, intakeData.supplierUuid);
             

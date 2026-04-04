@@ -111,6 +111,7 @@ class SalesService {
     }
 
     async processSaleCancellation(uuid: string): Promise<void> {
+        // Fix: Use array for tables in transaction
         await db.transaction('rw', [db.sales, db.products, db.customers, db.inventory_logs], async () => {
             const sale = await this.getSaleByUuid(uuid);
             if (!sale || !sale.id) {

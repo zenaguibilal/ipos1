@@ -34,19 +34,21 @@ class BackupService {
 
     /**
      * Valide et analyse une archive avant aperçu.
+     * Plus flexible : initialise les segments manquants à vide.
      */
     async validateAndParseBackup(file: File): Promise<Record<string, any[]>> {
         try {
             const text = await file.text();
             const data = JSON.parse(text);
             
-            // Vérification des segments critiques pour la stabilité
-            const mandatorySegments = ['products', 'customers', 'company_profile'];
-            const missing = mandatorySegments.filter(s => !data[s]);
-            
-            if (missing.length > 0) {
-                throw new Error(`Segments critiques manquants: ${missing.join(', ')}`);
-            }
+            // On s'assure que toutes les tables attendues existent au moins en tant qu'entrées (même vides)
+            // pour éviter les crashs de l'interface d'aperçu.
+            const allTableNames = db.tables.map(t => t.name);
+            allTableNames.forEach(tableName => {
+                if (!data[tableName]) {
+                    data[tableName] = [];
+                }
+            });
             
             return data;
         } catch (error: any) {

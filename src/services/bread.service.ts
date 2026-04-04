@@ -115,6 +115,7 @@ class BreadService {
     }
 
     async convertBreadOrdersToSales(orderUuids: string[], breadPrice: number): Promise<void> {
+        // Fix: Use array for tables in transaction
         await db.transaction('rw', [db.bread_orders, db.sales, db.products, db.inventory_logs, db.customers, db.payments, db.product_returns], async () => {
             const orders = await db.bread_orders.where('uuid').anyOf(orderUuids).toArray();
             

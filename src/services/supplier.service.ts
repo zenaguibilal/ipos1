@@ -44,6 +44,7 @@ class SupplierService {
     }
 
     async processSupplierPayment(paymentData: Omit<SupplierPayment, 'uuid' | 'createdAt'>): Promise<void> {
+        // Fix: Use array for tables in transaction
         await db.transaction('rw', [db.suppliers, db.supplier_payments], async () => {
             const supplier = await this.getSupplierByUuid(paymentData.supplierUuid);
             if (!supplier || !supplier.id) throw new Error("Fournisseur non trouvé.");
