@@ -1,3 +1,4 @@
+
 'use client';
 import { v4 as uuidv4 } from 'uuid';
 import type { Customer, Sale, ImportAnalysis, Payment, ProductReturn } from '@/lib/types';
@@ -30,10 +31,11 @@ class CustomerService {
 
         if (filters.query) {
             const lowerQuery = filters.query.toLowerCase().trim();
-            customers = customers.filter(c => 
-                c.searchName?.toLowerCase().includes(lowerQuery) || 
-                c.phone?.includes(lowerQuery)
-            );
+            customers = customers.filter(c => {
+                const searchableName = (c.searchName || `${c.firstName} ${c.lastName}`).toLowerCase();
+                const searchablePhone = c.phone || '';
+                return searchableName.includes(lowerQuery) || searchablePhone.includes(lowerQuery);
+            });
         }
 
         if (filters.sortBy) {

@@ -47,6 +47,9 @@ export const Combobox = React.forwardRef<HTMLButtonElement, ComboboxProps>(({ op
   const [open, setOpen] = React.useState(false)
   const selectedOption = React.useMemo(() => options.find(o => o.value === value), [options, value]);
   
+  // Si onSearchChange est présent, on désactive le filtrage interne de cmdk par défaut sauf si spécifié autrement
+  const isInternalFilteringDisabled = shouldFilter === false || (onSearchChange !== undefined && shouldFilter === undefined);
+
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
@@ -87,11 +90,11 @@ export const Combobox = React.forwardRef<HTMLButtonElement, ComboboxProps>(({ op
                   )}
                 </div>
             </div>
-          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-20 group-hover:opacity-100 transition-opacity" />
+          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-20 group-hover:opacity-10 transition-opacity" />
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0 rounded-3xl border-white/5 bg-card/95 backdrop-blur-3xl shadow-2xl overflow-hidden">
-        <Command shouldFilter={shouldFilter ?? (onSearchChange ? false : true)}>
+        <Command shouldFilter={!isInternalFilteringDisabled}>
           <CommandInput placeholder={searchPlaceholder} onValueChange={onSearchChange} className="h-14 border-none bg-transparent" />
            <CommandList className="custom-scrollbar">
             <CommandEmpty className="p-4">
@@ -102,6 +105,7 @@ export const Combobox = React.forwardRef<HTMLButtonElement, ComboboxProps>(({ op
                 <CommandItem
                   key={option.value}
                   value={option.value}
+                  keywords={[option.label, option.subLabel || '']}
                   disabled={option.disabled}
                   onSelect={(currentValue) => {
                     // Logic: match by value if possible, cmdk returns value lowercase
