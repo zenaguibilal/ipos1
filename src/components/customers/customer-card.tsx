@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -59,7 +60,8 @@ const CustomerCardComponent = ({ customer, onEdit, onDelete, isSelected, onToggl
     };
 
     const handleCardClick = (e: React.MouseEvent) => {
-        if ((e.target as HTMLElement).closest('[role="checkbox"]') || (e.target as HTMLElement).closest('button')) return;
+        const target = e.target as HTMLElement;
+        if (target.closest('[role="checkbox"]') || target.closest('button')) return;
         onEdit(customer);
     };
 
@@ -105,10 +107,10 @@ const CustomerCardComponent = ({ customer, onEdit, onDelete, isSelected, onToggl
                                 <FileText className="mr-2 h-4 w-4" /> Voir le dossier
                             </Link>
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => onEdit(customer)} className="rounded-xl p-3">
+                        <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onEdit(customer); }} className="rounded-xl p-3">
                             <Edit className="mr-2 h-4 w-4" /> Modifier
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => onDelete(customer)} className="text-destructive focus:text-destructive rounded-xl p-3">
+                        <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onDelete(customer); }} className="text-destructive focus:text-destructive rounded-xl p-3">
                             <Trash2 className="mr-2 h-4 w-4" /> Supprimer
                         </DropdownMenuItem>
                     </DropdownMenuContent>

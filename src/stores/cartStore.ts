@@ -1,3 +1,4 @@
+
 import { create } from 'zustand';
 import { produce } from 'immer';
 import { persist, createJSONStorage } from 'zustand/middleware';
@@ -129,23 +130,23 @@ export const useCartStore = create<CartState>()(
                     }
                     
                     set(produce((state: CartState) => {
-                        const cart = state.carts.find((c: Cart) => c.id === state.activeCartId);
-                        if (!cart) return;
+                        const targetCart = state.carts.find((c: Cart) => c.id === state.activeCartId);
+                        if (!targetCart) return;
 
-                        const existingItem = cart.items.find(item => item.uuid === product.uuid);
+                        const existingItem = targetCart.items.find(item => item.uuid === product.uuid);
                         if (existingItem) {
                             existingItem.cartQuantity += quantity;
                             existingItem.flash = true;
                         } else {
-                            cart.items.unshift({ ...product, cartQuantity: quantity, flash: true } as CartItem);
+                            targetCart.items.unshift({ ...product, cartQuantity: quantity, flash: true } as CartItem);
                         }
                     }));
 
                     setTimeout(() => {
                         set(produce((state: CartState) => {
-                            const cart = state.carts.find((c: Cart) => c.id === state.activeCartId);
-                            if (cart) {
-                                const item = cart.items.find(i => i.uuid === product.uuid);
+                            const targetCart = state.carts.find((c: Cart) => c.id === state.activeCartId);
+                            if (targetCart) {
+                                const item = targetCart.items.find(i => i.uuid === product.uuid);
                                 if (item) item.flash = false;
                             }
                         }));

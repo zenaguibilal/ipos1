@@ -1,9 +1,11 @@
+
 'use client';
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { 
     Coins, 
     TrendingUp, 
@@ -15,7 +17,9 @@ import {
     CheckCircle2, 
     Info,
     Sparkles,
-    Archive
+    Archive,
+    Wallet,
+    Banknote
 } from 'lucide-react';
 import { zakatService } from '@/services/zakat.service';
 import { formatCurrency, cn } from '@/lib/utils';
@@ -27,7 +31,11 @@ import { Label } from '@/components/ui/label';
 export default function ZakatPage() {
     const [data, setData] = useState<any>(null);
     const [isLoading, setIsLoading] = useState(true);
-    const [useSalePrice, setUseSalePrice] = useState(false);
+    const [useSalePrice, setUseSalePrice] = useState(true);
+    
+    // Manual inputs for liquid assets not tracked by the app
+    const [cashInHand, setCashInHand] = useState<number>(0);
+    const [cashInBank, setCashInBank] = useState<number>(0);
 
     const fetchData = useCallback(async () => {
         setIsLoading(true);
@@ -49,12 +57,14 @@ export default function ZakatPage() {
         if (!data) return { base: 0, zakat: 0, isEligible: false };
         
         const inventory = useSalePrice ? data.inventoryValueSale : data.inventoryValueCost;
-        const base = (inventory + data.customerDebts) - data.supplierDebts;
+        // Zakat = (Cash + Inventory + Receivables) - Payables
+        const assets = inventory + data.customerDebts + cashInHand + cashInBank;
+        const base = assets - data.supplierDebts;
         const isEligible = base >= data.nisabThreshold;
         const zakat = isEligible ? base * 0.025 : 0;
 
-        return { base, zakat, isEligible };
-    }, [data, useSalePrice]);
+        return { assets, base, zakat, isEligible };
+    }, [data, useSalePrice, cashInHand, cashInBank]);
 
     if (isLoading && !data) {
         return (
@@ -71,8 +81,8 @@ export default function ZakatPage() {
     return (
         <div className="p-6 sm:p-10 space-y-10 max-w-[1400px] mx-auto animate-in fade-in duration-1000">
             <PageHeader 
-                title="Calculateur de Zakat" 
-                description="Évaluation spirituelle et financière de vos actifs commerciaux"
+                title="Bilan Spirituel Zakat" 
+                description="Évaluation de vos actifs commerciaux pour l'année lunaire"
             >
                 <Button 
                     variant="outline" 
@@ -137,8 +147,8 @@ export default function ZakatPage() {
 
             <div className="grid lg:grid-cols-12 gap-10">
                 {/* Main Calculation Card */}
-                <div className="lg:col-span-8">
-                    <Card className="rounded-[3rem] border-white/5 bg-card/40 backdrop-blur-3xl overflow-hidden shadow-2xl h-full">
+                <div className="lg:col-span-8 space-y-10">
+                    <Card className="rounded-[3rem] border-white/5 bg-card/40 backdrop-blur-3xl overflow-hidden shadow-2xl">
                         <CardHeader className="bg-primary/5 border-b border-white/5 p-10">
                             <div className="flex items-center gap-4">
                                 <div className="p-4 rounded-2xl bg-primary text-primary-foreground shadow-2xl shadow-primary/20">
@@ -197,7 +207,7 @@ export default function ZakatPage() {
                                             />
                                         </div>
                                         <p className="text-[9px] text-muted-foreground leading-relaxed italic">
-                                            La plupart des savants préconisent l'évaluation du stock au prix de vente actuel pour les commerçants.
+                                            La plupart des savants préconisent l'évaluation du stock au prix de vente actuel pour les commerçants actifs.
                                         </p>
                                     </div>
                                 </div>
@@ -213,11 +223,11 @@ export default function ZakatPage() {
                                         </li>
                                         <li className="flex gap-3">
                                             <div className="h-1.5 w-1.5 rounded-full bg-primary mt-1.5 shrink-0" />
-                                            <span>Vous devez avoir possédé ce capital pendant une année lunaire complète (Hawl).</span>
+                                            <span>Le seuil (Nissab) correspond à la valeur marchande de 85 grammes d'or pur.</span>
                                         </li>
                                         <li className="flex gap-3">
                                             <div className="h-1.5 w-1.5 rounded-full bg-primary mt-1.5 shrink-0" />
-                                            <span>Le seuil (Nissab) correspond à la valeur marchande de 85 grammes d'or pur.</span>
+                                            <span>Les dettes fournisseurs contractées pour l'achat du stock sont déductibles.</span>
                                         </li>
                                     </ul>
                                 </div>
@@ -226,8 +236,45 @@ export default function ZakatPage() {
                     </Card>
                 </div>
 
-                {/* Info Sidebar */}
+                {/* Manual Inputs Sidebar */}
                 <div className="lg:col-span-4 space-y-8">
+                    <Card className="rounded-[2.5rem] border-white/5 bg-card/40 backdrop-blur-3xl overflow-hidden shadow-xl">
+                        <CardHeader className="p-8 pb-4">
+                            <CardTitle className="text-sm font-black uppercase tracking-widest text-primary/60">Trésorerie Hors-Logiciel</CardTitle>
+                            <CardDescription className="text-[10px] uppercase font-bold opacity-40 tracking-widest mt-1">Argent non géré par iPOS</CardDescription>
+                        </CardHeader>
+                        <CardContent className="p-8 pt-0 space-y-6">
+                            <div className="space-y-4">
+                                <div className="space-y-2">
+                                    <Label className="text-[10px] font-black uppercase text-muted-foreground/60 ml-1">Argent en Caisse (Liquide)</Label>
+                                    <div className="relative group">
+                                        <Wallet className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/20 group-focus-within:text-primary transition-colors" />
+                                        <Input 
+                                            type="number" 
+                                            value={cashInHand || ''} 
+                                            onChange={(e) => setCashInHand(Number(e.target.value) || 0)}
+                                            className="pl-11 h-14 rounded-2xl bg-black/20 border-none shadow-inner font-black text-lg"
+                                            placeholder="0.0"
+                                        />
+                                    </div>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label className="text-[10px] font-black uppercase text-muted-foreground/60 ml-1">Solde Bancaire</Label>
+                                    <div className="relative group">
+                                        <Banknote className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/20 group-focus-within:text-primary transition-colors" />
+                                        <Input 
+                                            type="number" 
+                                            value={cashInBank || ''} 
+                                            onChange={(e) => setCashInBank(Number(e.target.value) || 0)}
+                                            className="pl-11 h-14 rounded-2xl bg-black/20 border-none shadow-inner font-black text-lg"
+                                            placeholder="0.0"
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+
                     <Card className="rounded-[2.5rem] border-white/5 bg-card/40 backdrop-blur-3xl overflow-hidden shadow-xl">
                         <CardHeader className="p-8 pb-4">
                             <CardTitle className="text-sm font-black uppercase tracking-widest text-primary/60">Configuration Nissab</CardTitle>
@@ -238,7 +285,7 @@ export default function ZakatPage() {
                                 <p className="text-3xl font-black text-amber-500 tracking-tighter">{formatCurrency(data.goldPrice)}/g</p>
                             </div>
                             <p className="text-[10px] text-muted-foreground/60 leading-relaxed italic text-center">
-                                Modifiez cette valeur dans votre <a href="/profile" className="text-primary font-black hover:underline">Profil Elite</a> pour ajuster le seuil du Nissab.
+                                Modifiez cette valeur dans votre <a href="/profile" className="text-primary font-black hover:underline">Profil Elite</a> pour ajuster le seuil.
                             </p>
                         </CardContent>
                     </Card>
@@ -247,7 +294,7 @@ export default function ZakatPage() {
                         <Sparkles className="absolute -right-4 -top-4 h-24 w-24 text-primary/5 group-hover:opacity-20 transition-opacity" />
                         <p className="text-[10px] font-black uppercase tracking-[0.3em] text-primary mb-4">Pureté Financière</p>
                         <p className="text-xs font-bold text-muted-foreground/60 leading-relaxed italic relative z-10">
-                            "Prélève de leurs biens une aumône par laquelle tu les purifies et les bénis." (Sourate At-Tawba, v.103)
+                            "Prélève de leurs biens une aumône par laquelle tu les purifies et les bénis."
                         </p>
                     </div>
                 </div>
