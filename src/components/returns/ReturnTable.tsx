@@ -21,6 +21,15 @@ interface ReturnTableProps {
 }
 
 export function ReturnTable({ returns, customerMap, selectedReturns, onToggleSelection, onViewDetails, onCancel }: ReturnTableProps) {
+    const handleSelectAll = () => {
+        const allUuids = returns.map(r => r.uuid);
+        if (selectedReturns.size === returns.length) {
+            allUuids.forEach(uuid => { if(selectedReturns.has(uuid)) onToggleSelection(uuid) });
+        } else {
+            allUuids.forEach(uuid => { if(!selectedReturns.has(uuid)) onToggleSelection(uuid) });
+        }
+    };
+
     return (
         <div className="rounded-[2.5rem] border border-white/5 bg-card/40 backdrop-blur-xl overflow-hidden shadow-2xl">
             <Table>
@@ -29,7 +38,7 @@ export function ReturnTable({ returns, customerMap, selectedReturns, onToggleSel
                         <TableHead className="w-[60px] px-6">
                            <Checkbox
                                 checked={returns.length > 0 && selectedReturns.size === returns.length}
-                                onCheckedChange={() => {}}
+                                onCheckedChange={handleSelectAll}
                                 className="border-primary data-[state=checked]:bg-primary"
                             />
                         </TableHead>

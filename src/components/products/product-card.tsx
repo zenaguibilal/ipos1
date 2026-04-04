@@ -21,9 +21,10 @@ interface ProductCardProps {
     onDelete: (product: Product) => void;
     isSelected: boolean;
     onToggleSelection: () => void;
+    isSelectionActive: boolean;
 }
 
-const ProductCardComponent = ({ product, onEdit, onDuplicate, onHistory, onDelete, isSelected, onToggleSelection }: ProductCardProps) => {
+const ProductCardComponent = ({ product, onEdit, onDuplicate, onHistory, onDelete, isSelected, onToggleSelection, isSelectionActive }: ProductCardProps) => {
 
     const expirationStatus = useMemo(() => {
         if (!product.dateExpiration) return null;
@@ -41,8 +42,15 @@ const ProductCardComponent = ({ product, onEdit, onDuplicate, onHistory, onDelet
     }, [product.dateMajPrix]);
 
     const handleCardClick = (e: React.MouseEvent) => {
-        if ((e.target as HTMLElement).closest('[role="checkbox"]') || (e.target as HTMLElement).closest('button')) return;
-        onEdit(product);
+        const target = e.target as HTMLElement;
+        if (target.closest('button')) return;
+
+        // If selection is already active or checkbox was target, toggle selection
+        if (isSelectionActive || target.closest('[role="checkbox"]')) {
+            onToggleSelection();
+        } else {
+            onEdit(product);
+        }
     };
 
     return (

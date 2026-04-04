@@ -37,6 +37,15 @@ export function SalesHistoryTable({
         unpaid: { text: 'Dette', icon: Clock, className: 'bg-destructive/10 text-destructive border-destructive/20' },
     };
 
+    const handleSelectAll = () => {
+        const allUuids = sales.map(s => s.uuid);
+        if (selectedSales.size === sales.length) {
+            allUuids.forEach(uuid => { if(selectedSales.has(uuid)) onToggleSelection(uuid) });
+        } else {
+            allUuids.forEach(uuid => { if(!selectedSales.has(uuid)) onToggleSelection(uuid) });
+        }
+    };
+
     return (
         <div className="rounded-[2.5rem] border border-white/5 bg-card/40 backdrop-blur-xl overflow-hidden shadow-2xl">
             <Table>
@@ -45,7 +54,7 @@ export function SalesHistoryTable({
                         <TableHead className="w-[60px] px-6">
                            <Checkbox
                                 checked={sales.length > 0 && selectedSales.size === sales.length}
-                                onCheckedChange={() => {}}
+                                onCheckedChange={handleSelectAll}
                                 className="border-primary data-[state=checked]:bg-primary"
                             />
                         </TableHead>

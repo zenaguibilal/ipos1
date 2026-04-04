@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -20,6 +19,7 @@ interface CustomerCardProps {
     onDelete: (customer: Customer) => void;
     isSelected: boolean;
     onToggleSelection: () => void;
+    isSelectionActive: boolean;
 }
 
 const DebtStatusIcon = ({ status }: { status: Customer['debtStatus']}) => {
@@ -41,7 +41,7 @@ const DebtStatusIcon = ({ status }: { status: Customer['debtStatus']}) => {
     }
 };
 
-const CustomerCardComponent = ({ customer, onEdit, onDelete, isSelected, onToggleSelection }: CustomerCardProps) => {
+const CustomerCardComponent = ({ customer, onEdit, onDelete, isSelected, onToggleSelection, isSelectionActive }: CustomerCardProps) => {
     const [isMounted, setIsMounted] = useState(false);
     
     const balance = customer.outstandingBalance || 0;
@@ -61,8 +61,14 @@ const CustomerCardComponent = ({ customer, onEdit, onDelete, isSelected, onToggl
 
     const handleCardClick = (e: React.MouseEvent) => {
         const target = e.target as HTMLElement;
-        if (target.closest('[role="checkbox"]') || target.closest('button')) return;
-        onEdit(customer);
+        if (target.closest('button')) return;
+        
+        // If selection mode is active or checkbox was target, toggle selection
+        if (isSelectionActive || target.closest('[role="checkbox"]')) {
+            onToggleSelection();
+        } else {
+            onEdit(customer);
+        }
     };
 
     return (

@@ -6,7 +6,7 @@ import { useDebounce } from '@/hooks/useDebounce';
 import type { Customer, ImportAnalysis } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Plus, Search, Users, FileDown, Loader2, FileUp, FilterX, RefreshCw, SortAsc, Printer, Wheat, Trash2 } from 'lucide-react';
+import { Plus, Search, Users, FileDown, Loader2, FileUp, FilterX, RefreshCw, SortAsc, Printer, Wheat, Trash2, X } from 'lucide-react';
 import { CustomerCard } from '@/components/customers/customer-card';
 import { CustomerDialog } from '@/components/customers/customer-dialog';
 import { DeleteCustomerDialog } from '@/components/customers/delete-customer-dialog';
@@ -85,7 +85,7 @@ function CustomersContent() {
 
     useEffect(() => {
         setSelectedCustomers(new Set());
-    }, [customers]);
+    }, [filterStatus, sortBy, debouncedSearchQuery]);
 
     const handleEditCustomer = useCallback((customer: Customer) => {
         setSelectedCustomer(customer);
@@ -124,7 +124,11 @@ function CustomersContent() {
             return;
         }
 
-        const csv = Papa.unparse(customers.map(c => ({
+        const dataToExport = selectedCustomers.size > 0 
+            ? customers.filter(c => selectedCustomers.has(c.uuid))
+            : customers;
+
+        const csv = Papa.unparse(dataToExport.map(c => ({
             Prénom: c.firstName,
             Nom: c.lastName,
             Téléphone: c.phone || '',
@@ -280,6 +284,7 @@ function CustomersContent() {
                         onDelete={handleDeleteCustomer}
                         isSelected={selectedCustomers.has(c.uuid)}
                         onToggleSelection={() => handleToggleSelection(c.uuid)}
+                        isSelectionActive={selectedCustomers.size > 0}
                     />
                 ))}
             </div>
@@ -390,22 +395,31 @@ function CustomersContent() {
             </div>
 
             {selectedCustomers.size > 0 && (
-                <div className="flex flex-col sm:flex-row gap-3 justify-between items-center bg-primary/10 border border-primary/20 rounded-2xl p-4 animate-in slide-in-from-top-2 shadow-inner">
-                    <div className="flex items-center gap-3">
-                        <Checkbox
-                            id="select-all-customers"
-                            checked={!isLoading && customers && customers.length > 0 && selectedCustomers.size === customers.length}
-                            onCheckedChange={handleToggleSelectAll}
-                            className="h-5 w-5 border-primary data-[state=checked]:bg-primary"
-                        />
-                        <label htmlFor="select-all-customers" className="text-xs font-black text-primary uppercase tracking-widest">
-                            {selectedCustomers.size} client(s) sélectionné(s)
-                        </label>
-                    </div>
-                    <div className="flex gap-2">
-                        <Button variant="destructive" onClick={() => setIsBulkDeleteDialogOpen(true)} className="rounded-xl shadow-lg shadow-destructive/20 font-bold">
-                            <Trash2 className="mr-2 h-4 w-4" /> Supprimer
-                        </Button>
+                <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 animate-in slide-in-from-bottom-10 duration-500">
+                    <div className="bg-card/80 backdrop-blur-3xl border-2 border-primary/20 shadow-2xl rounded-full px-8 py-4 flex items-center gap-10">
+                        <div className="flex items-center gap-4 pr-8 border-r border-white/10">
+                            <Checkbox
+                                id="select-all-customers"
+                                checked={!isLoading && customers && customers.length > 0 && selectedCustomers.size === customers.length}
+                                onCheckedChange={handleToggleSelectAll}
+                                className="h-5 w-5 border-primary data-[state=checked]:bg-primary"
+                            />
+                            <div className="flex flex-col">
+                                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Sélection Elite</span>
+                                <span className="text-xs font-black text-primary">{selectedCustomers.size} client(s)</span>
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-4">
+                            <Button variant="ghost" onClick={handleExportCsv} className="rounded-full h-12 px-6 font-black text-[10px] uppercase tracking-widest hover:bg-primary/10 hover:text-primary transition-all">
+                                <FileUp className="mr-2 h-4 w-4" /> Exporter (.csv)
+                            </Button>
+                            <Button variant="ghost" onClick={() => setIsBulkDeleteDialogOpen(true)} className="rounded-full h-12 px-6 font-black text-[10px] uppercase tracking-widest text-destructive hover:bg-destructive/10 transition-all">
+                                <Trash2 className="mr-2 h-4 w-4" /> Supprimer Dossiers
+                            </Button>
+                            <Button variant="ghost" size="icon" onClick={() => setSelectedCustomers(new Set())} className="rounded-full h-12 w-12 hover:bg-white/5 transition-all">
+                                <X className="h-4 w-4" />
+                            </Button>
+                        </div>
                     </div>
                 </div>
             )}

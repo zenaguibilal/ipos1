@@ -5,7 +5,7 @@ import { useDebounce } from '@/hooks/useDebounce';
 import type { StockIntake, Supplier, InventoryLog } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Search, Plus, Archive, LayoutGrid, List, History, ArrowUpDown, RefreshCw, Building, Wallet, UserPlus } from 'lucide-react';
+import { Search, Plus, Archive, LayoutGrid, List, History, ArrowUpDown, RefreshCw, Building, Wallet, UserPlus, Trash2, X, FileUp } from 'lucide-react';
 import { DateRangePicker } from '@/components/ui/date-range-picker';
 import { useDateRange } from '@/hooks/useDateRange';
 import { StockIntakeCard } from '@/components/stock/stock-intake-card';
@@ -29,6 +29,7 @@ import { SupplierPaymentDialog } from '@/components/stock/SupplierPaymentDialog'
 import { SupplierDialog } from '@/components/stock/SupplierDialog';
 import { ConfirmAlertDialog } from '@/components/ui/ConfirmAlertDialog';
 import { cn, formatCurrency } from '@/lib/utils';
+import Papa from 'papaparse';
 
 type StockTab = 'intakes' | 'logs' | 'suppliers';
 
@@ -45,6 +46,7 @@ export default function StockPage() {
     
     const [selectedIntake, setSelectedIntake] = useState<StockIntake | null>(null);
     const [selectedSupplier, setSelectedSupplier] = useState<Supplier | null>(null);
+    const [selectedSuppliers, setSelectedSuppliers] = useState<Set<string>>(new Set());
     
     const [isDetailsOpen, setIsDetailsOpen] = useState(false);
     const [isCancelOpen, setIsCancelOpen] = useState(false);
@@ -52,6 +54,7 @@ export default function StockPage() {
     const [isSupplierPayOpen, setIsSupplierPayOpen] = useState(false);
     const [isSupplierDialogOpen, setIsSupplierDialogOpen] = useState(false);
     const [isDeleteSupplierOpen, setIsDeleteSupplierOpen] = useState(false);
+    const [isBulkDeleteSupplierOpen, setIsBulkDeleteSupplierOpen] = useState(false);
     const [isRefreshing, setIsRefreshing] = useState(false);
 
     const [stockIntakes, setStockIntakes] = useState<StockIntake[] | undefined>(undefined);
@@ -107,6 +110,10 @@ export default function StockPage() {
         fetchData();
     }, [fetchData]);
 
+    useEffect(() => {
+        setSelectedSuppliers(new Set());
+    }, [activeTab, debouncedSearchQuery]);
+
 
     const handleViewDetails = useCallback((intake: StockIntake) => {
         setSelectedIntake(intake);
@@ -144,6 +151,60 @@ export default function StockPage() {
             toast.success(`Fournisseur "${selectedSupplier.name}" supprimé.`);
             fetchData();
         }
+    };
+
+    const handleToggleSupplierSelection = (uuid: string) => {
+        setSelectedSuppliers(prev => {
+            const next = new Set(prev);
+            if (next.has(uuid)) next.delete(uuid);
+            else next.add(uuid);
+            return next;
+        });
+    };
+
+    const handleToggleSelectAllSuppliers = () => {
+        if (!suppliers) return;
+        if (selectedSuppliers.size === suppliers.length) {
+            setSelectedSuppliers(new Set());
+        } else {
+            setSelectedSuppliers(new Set(suppliers.map(s => s.uuid)));
+        }
+    };
+
+    const handleBulkDeleteSuppliers = async () => {
+        const uuids = Array.from(selectedSuppliers);
+        try {
+            await supplierService.bulkDelete(uuids);
+            toast.success(`${uuids.length} fournisseur(s) supprimé(s).`);
+            setSelectedSuppliers(new Set());
+            fetchData();
+        } catch (e: any) {
+            toast.error("Échec de la suppression groupée.", { description: e.message });
+        }
+    };
+
+    const handleExportSuppliers = () => {
+        if (!suppliers) return;
+        const toExport = selectedSuppliers.size > 0 
+            ? suppliers.filter(s => selectedSuppliers.has(s.uuid))
+            : suppliers;
+
+        const csv = Papa.unparse(toExport.map(s => ({
+            Nom: s.name,
+            Contact: s.contactPerson || '',
+            Téléphone: s.phone || '',
+            Email: s.email || '',
+            Adresse: s.address || '',
+            Solde: s.balance
+        })));
+
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `ipos-fournisseurs-${new Date().toISOString().split('T')[0]}.csv`;
+        link.click();
+        toast.success("Exportation terminée.");
     };
 
     const totalSuppliersDebt = useMemo(() => {
@@ -273,6 +334,31 @@ export default function StockPage() {
                 </div>
             </div>
 
+            {/* Selection Action Bar for Suppliers */}
+            {activeTab === 'suppliers' && selectedSuppliers.size > 0 && (
+                <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 animate-in slide-in-from-bottom-10 duration-500">
+                    <div className="bg-card/80 backdrop-blur-3xl border-2 border-primary/20 shadow-2xl rounded-full px-8 py-4 flex items-center gap-10">
+                        <div className="flex items-center gap-4 pr-8 border-r border-white/10">
+                            <div className="h-10 w-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-black shadow-lg shadow-primary/20">
+                                {selectedSuppliers.size}
+                            </div>
+                            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Sélection Elite</span>
+                        </div>
+                        <div className="flex items-center gap-4">
+                            <Button variant="ghost" onClick={handleExportSuppliers} className="rounded-full h-12 px-6 font-black text-[10px] uppercase tracking-widest hover:bg-primary/10 hover:text-primary transition-all">
+                                <FileUp className="mr-2 h-4 w-4" /> Exporter (.csv)
+                            </Button>
+                            <Button variant="ghost" onClick={() => setIsBulkDeleteSupplierOpen(true)} className="rounded-full h-12 px-6 font-black text-[10px] uppercase tracking-widest text-destructive hover:bg-destructive/10 transition-all">
+                                <Trash2 className="mr-2 h-4 w-4" /> Révoquer Comptes
+                            </Button>
+                            <Button variant="ghost" size="icon" onClick={() => setSelectedSuppliers(new Set())} className="rounded-full h-12 w-12 hover:bg-white/5 transition-all">
+                                <X className="h-4 w-4" />
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             <div className="min-h-[500px] animate-in fade-in slide-in-from-bottom-4 duration-1000">
                 {isLoading ? (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -309,7 +395,17 @@ export default function StockPage() {
                         {activeTab === 'suppliers' && (
                             suppliers?.length === 0 ? (
                                 <EmptyState icon={Building} title="Aucun Partenaire" description="Commencez par ajouter votre premier fournisseur." />
-                            ) : <SupplierTable suppliers={suppliers!} onPay={handlePaySupplier} onEdit={handleEditSupplier} onDelete={handleDeleteSupplier} />
+                            ) : (
+                                <SupplierTable 
+                                    suppliers={suppliers!} 
+                                    onPay={handlePaySupplier} 
+                                    onEdit={handleEditSupplier} 
+                                    onDelete={handleDeleteSupplier} 
+                                    selectedSuppliers={selectedSuppliers}
+                                    onToggleSupplierSelection={handleToggleSupplierSelection}
+                                    onToggleSelectAll={handleToggleSelectAllSuppliers}
+                                />
+                            )
                         )}
                     </>
                 )}
@@ -320,7 +416,24 @@ export default function StockPage() {
             <StockAdjustmentDialog isOpen={isAdjustmentOpen} onOpenChange={setIsAdjustmentOpen} onSuccess={fetchData} />
             <SupplierPaymentDialog isOpen={isSupplierPayOpen} onOpenChange={setIsSupplierPayOpen} supplier={selectedSupplier} onSuccess={fetchData} />
             <SupplierDialog isOpen={isSupplierDialogOpen} onOpenChange={setIsSupplierDialogOpen} supplier={selectedSupplier} onSuccess={fetchData} />
-            <ConfirmAlertDialog isOpen={isDeleteSupplierOpen} onOpenChange={setIsDeleteSupplierOpen} title={`Révoquer le partenaire ${selectedSupplier?.name} ?`} description="Cette action est irréversible. Seuls les comptes sans factures actives et avec un solde nul peuvent être supprimés." onConfirm={performDeleteSupplier} confirmText="Confirmer Révocation" />
+            
+            <ConfirmAlertDialog 
+                isOpen={isDeleteSupplierOpen} 
+                onOpenChange={setIsDeleteSupplierOpen} 
+                title={`Révoquer le partenaire ${selectedSupplier?.name} ?`} 
+                description="Cette action est irréversible. Seuls les comptes sans factures actives et avec un solde nul peuvent être supprimés." 
+                onConfirm={performDeleteSupplier} 
+                confirmText="Confirmer Révocation" 
+            />
+
+            <ConfirmAlertDialog
+                isOpen={isBulkDeleteSupplierOpen}
+                onOpenChange={setIsBulkDeleteSupplierOpen}
+                title={`Révoquer ${selectedSuppliers.size} comptes partenaires ?`}
+                description="Seuls les comptes sans historique et avec un solde nul seront effectivement supprimés. Les autres seront ignorés pour préserver l'intégrité comptable."
+                onConfirm={handleBulkDeleteSuppliers}
+                confirmText="Confirmer Révocation Groupée"
+            />
         </div>
     );
 }

@@ -89,14 +89,20 @@ class SupplierService {
 
         const intakesCount = await db.stock_intakes.where('supplierUuid').equals(uuid).count();
         if (intakesCount > 0) {
-            throw new Error("Impossible de supprimer : ce fournisseur a des factures enregistrées.");
+            throw new Error(`Impossible de supprimer "${supplier.name}" : ce fournisseur a des factures enregistrées.`);
         }
 
         if (supplier.balance !== 0) {
-            throw new Error("Impossible de supprimer : le solde du fournisseur n'est pas nul.");
+            throw new Error(`Impossible de supprimer "${supplier.name}" : le solde du fournisseur n'est pas nul.`);
         }
 
         await db.suppliers.delete(supplier.id);
+    }
+
+    async bulkDelete(uuids: string[]): Promise<void> {
+        for (const uuid of uuids) {
+            await this.deleteSupplier(uuid);
+        }
     }
 }
 

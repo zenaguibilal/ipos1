@@ -1,4 +1,3 @@
-
 'use client';
 
 import type { Product, Supplier } from '@/lib/types';
@@ -70,7 +69,7 @@ export function ProductTable({ products, onEdit, onDuplicate, onHistory, onDelet
                         return (
                             <TableRow 
                                 key={productUuid} 
-                                onClick={() => onEdit(product)}
+                                onClick={() => onToggleProductSelection(productUuid)}
                                 className={cn(
                                     "group transition-all border-b border-white/5 cursor-pointer",
                                     isSelected ? "bg-primary/10" : "hover:bg-primary/5"

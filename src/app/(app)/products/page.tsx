@@ -19,7 +19,8 @@ import {
     Package, 
     Loader2, 
     FileUp, 
-    RefreshCw
+    RefreshCw,
+    X
 } from 'lucide-react';
 import { ProductCard } from '@/components/products/product-card';
 import { ProductTable } from '@/components/products/product-table';
@@ -48,6 +49,7 @@ import { productService } from '@/services/product.service';
 import { supplierService } from '@/services/supplier.service';
 import { useAppStore } from '@/stores/appStore';
 import { cn } from '@/lib/utils';
+import { Checkbox } from '@/components/ui/checkbox';
 import Papa from 'papaparse';
 
 type StockStatus = 'all' | 'in_stock' | 'low_stock' | 'out_of_stock' | 'expiring_soon' | 'expired';
@@ -146,7 +148,7 @@ function ProductsContent() {
     
     useEffect(() => {
         setSelectedProducts(new Set());
-    }, [products]);
+    }, [stockStatus, selectedCategory, selectedSupplier, debouncedSearchQuery]);
 
     const onDialogSuccess = () => {
         fetchProducts();
@@ -220,7 +222,11 @@ function ProductsContent() {
 
     const handleExportCsv = () => {
         if (!products || products.length === 0) return;
-        const csv = Papa.unparse(products.map(p => ({
+        const dataToExport = selectedProducts.size > 0 
+            ? products.filter(p => selectedProducts.has(p.uuid))
+            : products;
+
+        const csv = Papa.unparse(dataToExport.map(p => ({
             Désignation: p.name,
             Catégorie: p.category,
             Prix_Vente: p.price,
@@ -326,17 +332,29 @@ function ProductsContent() {
                 <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 animate-in slide-in-from-bottom-10 duration-500">
                     <div className="bg-card/80 backdrop-blur-3xl border-2 border-primary/20 shadow-2xl rounded-full px-8 py-4 flex items-center gap-10">
                         <div className="flex items-center gap-4 pr-8 border-r border-white/10">
-                            <div className="h-10 w-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-black shadow-lg shadow-primary/20">
-                                {selectedProducts.size}
+                            <Checkbox
+                                id="select-all-products"
+                                checked={!isLoading && products && products.length > 0 && selectedProducts.size === products.length}
+                                onCheckedChange={handleToggleSelectAll}
+                                className="h-5 w-5 border-primary data-[state=checked]:bg-primary"
+                            />
+                            <div className="flex flex-col">
+                                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Sélection Elite</span>
+                                <span className="text-xs font-black text-primary">{selectedProducts.size} produit(s)</span>
                             </div>
-                            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Sélection Elite</span>
                         </div>
                         <div className="flex items-center gap-4">
                             <Button variant="ghost" onClick={() => setIsPrintDialogOpen(true)} className="rounded-full h-12 px-6 font-black text-[10px] uppercase tracking-widest hover:bg-primary/10 hover:text-primary">
                                 <Printer className="mr-2 h-4 w-4" /> Étiquettes
                             </Button>
+                            <Button variant="ghost" onClick={handleExportCsv} className="rounded-full h-12 px-6 font-black text-[10px] uppercase tracking-widest hover:bg-primary/10 hover:text-primary">
+                                <FileUp className="mr-2 h-4 w-4" /> Exporter (.csv)
+                            </Button>
                             <Button variant="ghost" onClick={() => setIsBulkDeleteDialogOpen(true)} className="rounded-full h-12 px-6 font-black text-[10px] uppercase tracking-widest text-destructive hover:bg-destructive/10">
                                 <Trash2 className="mr-2 h-4 w-4" /> Supprimer
+                            </Button>
+                            <Button variant="ghost" size="icon" onClick={() => setSelectedProducts(new Set())} className="rounded-full h-12 w-12 hover:bg-white/5 transition-all">
+                                <X className="h-4 w-4" />
                             </Button>
                         </div>
                     </div>
@@ -352,7 +370,17 @@ function ProductsContent() {
                     viewMode === 'grid' ? (
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-8">
                             {products.map(p => (
-                                <ProductCard key={p.uuid} product={p} onEdit={handleEditProduct} onDuplicate={handleDuplicateProduct} onHistory={handleViewHistory} onDelete={() => { setSelectedProduct(p); setIsDeleteDialogOpen(true); }} isSelected={selectedProducts.has(p.uuid)} onToggleSelection={() => handleToggleSelection(p.uuid)} />
+                                <ProductCard 
+                                    key={p.uuid} 
+                                    product={p} 
+                                    onEdit={handleEditProduct} 
+                                    onDuplicate={handleDuplicateProduct} 
+                                    onHistory={handleViewHistory} 
+                                    onDelete={() => { setSelectedProduct(p); setIsDeleteDialogOpen(true); }} 
+                                    isSelected={selectedProducts.has(p.uuid)} 
+                                    onToggleSelection={() => handleToggleSelection(p.uuid)} 
+                                    isSelectionActive={selectedProducts.size > 0}
+                                />
                             ))}
                         </div>
                     ) : (
