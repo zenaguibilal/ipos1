@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -103,8 +104,11 @@ export function BreadOrderCard({ order, isSelected, onToggleSelection, onUpdate 
                 <Sparkles className="h-32 w-32 rotate-12" />
             </div>
 
-            {/* Actions Toolbar */}
-            <div className="absolute top-6 right-6 z-10 flex gap-3 items-center">
+            {/* Actions toolbar - Isolated Container */}
+            <div 
+                className="absolute top-6 right-6 z-10 flex gap-3 items-center"
+                onClick={(e) => e.stopPropagation()}
+            >
                 {!isPaid && (
                     <Button 
                         variant="ghost" 
@@ -174,7 +178,7 @@ export function BreadOrderCard({ order, isSelected, onToggleSelection, onUpdate 
                 </div>
 
                 {/* Compact Action Buttons */}
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-2 gap-3" onClick={(e) => e.stopPropagation()}>
                     <Button 
                         variant={isDelivered ? "secondary" : "outline"} 
                         size="lg"

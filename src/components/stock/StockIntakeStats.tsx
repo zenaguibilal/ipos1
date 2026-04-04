@@ -8,6 +8,12 @@ import { Wallet, Archive, Building, TrendingUp } from 'lucide-react';
 import { formatCurrency, cn } from '@/lib/utils';
 import { useLiveQuery } from '@/hooks/useLiveQuery';
 import { db } from '@/lib/db';
+import type { StockIntake } from '@/lib/types';
+
+interface StockIntakeStatsProps {
+    intakes?: StockIntake[];
+    isLoading?: boolean;
+}
 
 const StatCard = ({ title, value, icon: Icon, colorClass, subtitle }: { title: string, value: string, icon: any, colorClass: string, subtitle?: string }) => (
     <Card className="luxury-card h-full bg-card/40 backdrop-blur-2xl border-white/5 rounded-[2rem] group overflow-hidden">
@@ -24,15 +30,17 @@ const StatCard = ({ title, value, icon: Icon, colorClass, subtitle }: { title: s
     </Card>
 );
 
-export const StockIntakeStats = ({ isLoading: externalLoading }: { isLoading?: boolean }) => {
-    // Live query for stock intakes to update stats instantly
-    const intakes = useLiveQuery(() => db.stock_intakes.toArray());
+export const StockIntakeStats = ({ intakes: externalIntakes, isLoading: externalLoading }: StockIntakeStatsProps) => {
+    // Live query for stock intakes to update stats instantly using the internal hook
+    const liveIntakes = useLiveQuery(() => db.stock_intakes.toArray());
+    
+    const intakes = externalIntakes || liveIntakes;
 
     const stats = useMemo(() => {
         if (!intakes) return { totalValue: 0, intakeCount: 0, supplierCount: 0 };
         const supplierUuids = new Set(intakes.map(i => i.supplierUuid).filter(Boolean));
         return {
-            totalValue: intakes.reduce((sum, i) => sum + i.totalValue, 0),
+            totalValue: intakes.reduce((sum, i) => sum + (Number(i.totalValue) || 0), 0),
             intakeCount: intakes.length,
             supplierCount: supplierUuids.size,
         };
