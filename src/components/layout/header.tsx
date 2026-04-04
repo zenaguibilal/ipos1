@@ -15,6 +15,7 @@ import {
   ShoppingCart,
   Building,
   Download,
+  Coins,
 } from 'lucide-react';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
@@ -37,6 +38,7 @@ const allNavLinks = [
   { href: '/returns', label: 'Retours', icon: Undo2 },
   { href: '/expenses', label: 'Dépenses', icon: Wallet },
   { href: '/bread', label: 'Pain', icon: Wheat },
+  { href: '/zakat', label: 'Zakat', icon: Coins },
 ];
 
 export function AppHeader() {
@@ -52,7 +54,7 @@ export function AppHeader() {
               >
                   <div className="relative">
                     {/* Premium Glow Effect */}
-                    <div className="absolute -inset-3 bg-primary/20 rounded-full blur-xl opacity-0 group-hover:opacity-100 transition-all duration-700 scale-50 group-hover:scale-100" />
+                    <div className="absolute -inset-3 bg-primary/20 rounded-full blur-xl opacity-0 group-hover:opacity-10 transition-all duration-700 scale-50 group-hover:scale-100" />
                     <div className="relative h-10 w-10 flex items-center justify-center bg-black/40 rounded-xl border border-white/5 shadow-2xl group-hover:border-primary/30 transition-colors">
                         <Image 
                             src="/icon.svg" 
