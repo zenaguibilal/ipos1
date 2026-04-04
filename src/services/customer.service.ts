@@ -1,10 +1,9 @@
-
 'use client';
 import { v4 as uuidv4 } from 'uuid';
 import type { Customer, Sale, ImportAnalysis, Payment, ProductReturn } from '@/lib/types';
 import { db } from '@/lib/db';
 import Papa from 'papaparse';
-import { startOfMonth, subMonths, format } from 'date-fns';
+import { startOfMonth, subMonths, format, isSameMonth } from 'date-fns';
 import { fr } from 'date-fns/locale';
 
 class CustomerService {
@@ -224,6 +223,7 @@ class CustomerService {
 
         const now = new Date();
         const currentDayOfMonth = now.getDate();
+        const currentMonthStart = startOfMonth(now);
 
         const [sales, payments, returns] = await Promise.all([
              db.sales.where('customerUuid').equals(customerUuid).toArray(),
@@ -240,10 +240,13 @@ class CustomerService {
 
         const isOverLimit = customer.creditLimit != null && customer.creditLimit > 0 ? newBalance > customer.creditLimit : false;
 
+        // Check if a payment was made this month
+        const hasPaymentThisMonth = payments.some(p => new Date(p.paymentDate) >= currentMonthStart);
+
         let debtStatus: Customer['debtStatus'] = 'none';
         if (newBalance > 0.01) {
-            // New Logic: Fixed monthly settlement day
-            if (customer.settlementDay && currentDayOfMonth > customer.settlementDay) {
+            // Overdue if current day is past settlement day AND no payment made this month
+            if (customer.settlementDay && currentDayOfMonth > customer.settlementDay && !hasPaymentThisMonth) {
                 debtStatus = 'overdue';
             } else {
                 const unpaidSales = sales.filter(s => s.paymentStatus !== 'paid');
@@ -263,6 +266,29 @@ class CustomerService {
         
         await db.customers.update(customer.id, customerUpdate);
         return { ...customer, ...customerUpdate };
+    }
+
+    async getDebtAlerts(): Promise<Customer[]> {
+        const all = await this.getCustomers();
+        const now = new Date();
+        const currentDay = now.getDate();
+        const monthStart = startOfMonth(now);
+
+        // Filter for customers who are genuinely late
+        const alerts = [];
+        for (const c of all) {
+            if (c.outstandingBalance <= 0.01) continue;
+            
+            // Check if they have a payment this month
+            const payments = await db.payments.where('customerUuid').equals(c.uuid).toArray();
+            const hasPaidThisMonth = payments.some(p => new Date(p.paymentDate) >= monthStart);
+
+            if (c.settlementDay && currentDay > c.settlementDay && !hasPaidThisMonth) {
+                alerts.push(c);
+            }
+        }
+
+        return alerts.sort((a,b) => b.outstandingBalance - a.outstandingBalance);
     }
 
     async analyzeImport(file: File): Promise<ImportAnalysis> {
