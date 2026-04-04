@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useDebounce } from '@/hooks/useDebounce';
 import type { Product, Supplier, ProductImportAnalysis } from '@/lib/types';
@@ -61,7 +61,7 @@ const sortOptions: { [key: string]: string } = {
     'dateExpiration_asc': 'Expiration proche',
 };
 
-export default function ProductsPage() {
+function ProductsContent() {
     const searchParams = useSearchParams();
     
     // Turbo Selectors
@@ -379,5 +379,13 @@ function ProductGridSkeleton() {
                 <div key={i} className="h-[220px] rounded-[2.5rem] bg-card/40 border-white/5 animate-pulse" />
             ))}
         </div>
+    );
+}
+
+export default function ProductsPage() {
+    return (
+        <Suspense fallback={<div className="p-10 text-center text-[10px] font-black uppercase tracking-[0.4em] opacity-20 animate-pulse">Chargement du catalogue Elite...</div>}>
+            <ProductsContent />
+        </Suspense>
     );
 }

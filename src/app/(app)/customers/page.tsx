@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useDebounce } from '@/hooks/useDebounce';
 import type { Customer, ImportAnalysis } from '@/lib/types';
@@ -32,7 +32,7 @@ const sortOptions: { [key: string]: string } = {
     'outstandingBalance_desc': 'Plus endetté',
 };
 
-export default function CustomersPage() {
+function CustomersContent() {
     const searchParams = useSearchParams();
 
     const [searchQuery, setSearchQuery] = useState('');
@@ -447,5 +447,13 @@ export default function CustomersPage() {
                 isImporting={isImporting}
             />
         </div>
+    );
+}
+
+export default function CustomersPage() {
+    return (
+        <Suspense fallback={<div className="p-10 text-center text-[10px] font-black uppercase tracking-[0.4em] opacity-20 animate-pulse">Synchronisation du fichier clients...</div>}>
+            <CustomersContent />
+        </Suspense>
     );
 }
