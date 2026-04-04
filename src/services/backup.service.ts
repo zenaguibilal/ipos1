@@ -55,51 +55,40 @@ class BackupService {
     }
 
     /**
-     * Restaure les données dans IndexedDB après validation et édition manuelle dans l'aperçu.
+     * Restaure les données sélectionnées dans IndexedDB.
      */
     async restoreBackup(data: Record<string, any[]>): Promise<void> {
         try {
-            toast.info("Restauration souveraine initiée... Purge du cache local.");
+            const tablesToRestore = Object.keys(data);
+            const dexieTables = tablesToRestore.map(t => db.table(t));
 
-            await db.transaction('rw', db.tables, async () => {
-                // Étape 1 : Purge complète pour garantir l'intégrité du nouveau manifeste
-                for (const table of db.tables) {
-                    await table.clear();
-                }
+            await db.transaction('rw', dexieTables, async () => {
+                for (const tableName of tablesToRestore) {
+                    const table = db.table(tableName);
+                    const records = data[tableName];
 
-                // Étape 2 : Injection séquencée par dépendances
-                const restoreOrder = [
-                    'company_profile',
-                    'suppliers',
-                    'customers',
-                    'products',
-                    'expenses',
-                    'stock_intakes',
-                    'sales',
-                    'product_returns',
-                    'payments',
-                    'bread_orders',
-                    'inventory_logs',
-                    'supplier_payments'
-                ];
-
-                for (const segment of restoreOrder) {
-                    if (data[segment] && Array.isArray(data[segment]) && data[segment].length > 0) {
-                        // Réinjection propre sans les IDs locaux auto-incrémentés pour éviter les conflits
-                        const cleanData = data[segment].map(record => {
-                            const { id, ...rest } = record;
+                    if (records && Array.isArray(records)) {
+                        // Purge de la table existante avant injection pour garantir l'intégrité de la sélection
+                        await table.clear();
+                        
+                        // Nettoyage des IDs locaux pour éviter les collisions
+                        const cleanData = records.map(r => {
+                            const { id, ...rest } = r;
                             return rest;
                         });
-                        await db.table(segment).bulkAdd(cleanData);
+
+                        if (cleanData.length > 0) {
+                            await table.bulkAdd(cleanData);
+                        }
                     }
                 }
             });
 
-            toast.success("Manifeste déployé avec succès. Redémarrage du système.");
+            toast.success("Restauration sélective terminée.");
 
         } catch (error: any) {
             console.error("Restore failed:", error);
-            throw new Error("Échec critique du déploiement : " + error.message);
+            throw new Error("Échec critique de la restauration : " + error.message);
         }
     }
 }
