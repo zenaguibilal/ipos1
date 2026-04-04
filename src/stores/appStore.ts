@@ -105,7 +105,6 @@ export const useAppStore = create<AppState>()(
                         } else {
                             await supabaseSyncService.pullAllData(currentProfile.supabase_url, currentProfile.supabase_key);
                             
-                            // Update and get the latest profile including the sync date marker
                             const refreshedProfile = await companyProfileService.updateProfile({ last_sync_at: now });
                             
                             set({ companyProfile: refreshedProfile, lastSyncDate: now });
@@ -122,7 +121,6 @@ export const useAppStore = create<AppState>()(
                     const state = get();
                     const currentProfile = state.companyProfile;
                     
-                    // Silent push if configured and not already syncing
                     if (!currentProfile?.supabase_url || !currentProfile?.supabase_key || state.isSyncing) {
                         return;
                     }
@@ -139,7 +137,6 @@ export const useAppStore = create<AppState>()(
                 },
                 processReturn: async (returnData) => {
                      try {
-                        // Fix: Use array for tables in transaction
                         await db.transaction('rw', [db.product_returns, db.products, db.customers, db.inventory_logs], async () => {
                             const newReturn = await returnService.addReturn(returnData);
                             for (const item of newReturn.items) {
@@ -160,7 +157,6 @@ export const useAppStore = create<AppState>()(
                 },
                 processStockIntake: async (intakeData) => {
                     try {
-                         // Fix: Use array for tables in transaction
                          await db.transaction('rw', [db.stock_intakes, db.products, db.suppliers, db.inventory_logs], async () => {
                             const supplier = await supplierService.findOrCreateSupplier(intakeData.supplierName, intakeData.supplierUuid);
             

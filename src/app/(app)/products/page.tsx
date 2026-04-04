@@ -64,7 +64,6 @@ const sortOptions: { [key: string]: string } = {
 function ProductsContent() {
     const searchParams = useSearchParams();
     
-    // Turbo Selectors
     const viewMode = useAppStore(state => state.productViewMode);
     const setViewMode = useAppStore(state => state.actions.setProductViewMode);
 
@@ -276,7 +275,7 @@ function ProductsContent() {
                     />
                 </div>
                 
-                <div className="flex flex-wrap items-center gap-3 px-4">
+                <div className="flex wrap items-center gap-3 px-4">
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                             <Button variant="outline" className="h-12 rounded-xl border-white/5 bg-black/20 hover:bg-white/5 font-bold px-6">

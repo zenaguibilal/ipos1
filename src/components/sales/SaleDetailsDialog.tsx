@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -61,7 +60,6 @@ export function SaleDetailsDialog({
                 </DialogHeader>
 
                 <div className="p-8 space-y-8 max-h-[60vh] overflow-y-auto custom-scrollbar">
-                    {/* Header Info Grid */}
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                         <div className="p-4 rounded-2xl bg-muted/30 border border-border/50">
                             <p className="text-[10px] uppercase font-black text-muted-foreground tracking-widest mb-1 flex items-center gap-1.5">
@@ -123,7 +121,6 @@ export function SaleDetailsDialog({
                         </div>
                     </div>
 
-                    {/* Financial Summary */}
                     <div className="grid md:grid-cols-2 gap-8 pt-4">
                         <div className="space-y-4">
                             <div className="p-6 bg-muted/20 rounded-[2rem] border border-dashed border-white/10 space-y-4">

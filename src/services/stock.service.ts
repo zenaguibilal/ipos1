@@ -21,7 +21,8 @@ class StockService {
 
         if (filters.query) {
             const lowerQuery = filters.query.toLowerCase();
-            const supplierUuids = (await db.suppliers.filter(s => s.name.toLowerCase().includes(lowerQuery)).toArray()).map(s => s.uuid);
+            const suppliers = await db.suppliers.filter(s => s.name.toLowerCase().includes(lowerQuery)).toArray();
+            const supplierUuids = suppliers.map(s => s.uuid);
             intakes = intakes.filter(i => 
                 (i.invoiceNumber && i.invoiceNumber.toLowerCase().includes(lowerQuery)) ||
                 (i.supplierUuid && supplierUuids.includes(i.supplierUuid))
@@ -45,7 +46,6 @@ class StockService {
     }
 
     async processStockIntakeCancellation(intakeUuid: string): Promise<void> {
-        // Fix: Use array for tables in transaction
         await db.transaction('rw', [db.stock_intakes, db.products, db.suppliers, db.inventory_logs], async () => {
             const intake = await db.stock_intakes.where('uuid').equals(intakeUuid).first();
             if (!intake || !intake.id) {

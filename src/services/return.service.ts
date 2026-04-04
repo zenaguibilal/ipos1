@@ -65,7 +65,6 @@ class ReturnService {
     }
 
     async processReturnCancellation(uuid: string): Promise<void> {
-        // Fix: Use array for tables in transaction
         await db.transaction('rw', [db.product_returns, db.products, db.customers, db.inventory_logs], async () => {
             const productReturn = await this.getReturnByUuid(uuid);
             if (!productReturn || !productReturn.id) {

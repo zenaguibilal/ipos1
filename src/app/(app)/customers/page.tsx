@@ -50,7 +50,6 @@ function CustomersContent() {
     const [customers, setCustomers] = useState<Customer[] | undefined>(undefined);
     const isLoading = customers === undefined;
 
-    // States for CSV Import
     const [isImportPreviewOpen, setIsImportPreviewOpen] = useState(false);
     const [importAnalysis, setImportAnalysis] = useState<ImportAnalysis | null>(null);
     const [isAnalyzing, setIsAnalyzing] = useState(false);

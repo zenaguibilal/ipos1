@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
@@ -122,7 +121,6 @@ export default function ExpensesPage() {
                 filteredData = filteredData.filter(e => e.description.toLowerCase().includes(q));
             }
 
-            // Sorting logic
             filteredData.sort((a, b) => {
                 switch(sortBy) {
                     case 'amount_desc': return Number(b.amount) - Number(a.amount);

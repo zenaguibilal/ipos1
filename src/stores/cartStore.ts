@@ -1,4 +1,3 @@
-
 import { create } from 'zustand';
 import { produce } from 'immer';
 import { persist, createJSONStorage } from 'zustand/middleware';
@@ -84,7 +83,6 @@ export const useCartStore = create<CartState>()(
                 deleteCart: (cartId) => {
                     set(produce((state: CartState) => {
                         if (state.carts.length <= 1) {
-                            // Don't delete last cart, just reset it
                             const cart = state.carts.find((c: Cart) => c.id === cartId);
                             if (cart) {
                                 Object.assign(cart, { ...defaultCart, name: 'Vente 1' });
@@ -216,7 +214,6 @@ export const useCartStore = create<CartState>()(
                         if (cart) {
                             const oldId = cart.id;
                             const oldName = cart.name;
-                            // Reset active cart data
                             Object.assign(cart, { ...defaultCart, id: oldId, name: oldName });
                         }
                     }));
@@ -241,9 +238,6 @@ export const useCartStore = create<CartState>()(
                         });
                         
                         toast.success(`Vente #${sale.invoiceNumber} enregistrée.`);
-                        
-                        // After success, if it was a draft, we might want to delete it or just clear it.
-                        // For MVP, we just clear the active cart.
                         resetCart();
                         
                         if (activeCart.customerUuid) {
@@ -276,5 +270,5 @@ export const useCartActions = () => useCartStore((state) => state.actions);
 export const useActiveCart = () => {
     const carts = useCartStore(state => state.carts);
     const activeCartId = useCartStore(state => state.activeCartId);
-    return carts.find((c: Cart) => c.id === activeCartId) || carts[0] || null;
+    return carts.find((c: Cart) => c.id === activeCartId) || (carts && carts.length > 0 ? carts[0] : null);
 }

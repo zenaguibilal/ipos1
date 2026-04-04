@@ -33,7 +33,8 @@ class SalesService {
 
         if (filters.query) {
             const lowerQuery = filters.query.toLowerCase().trim();
-            const customerUuids = (await db.customers.filter(c => c.searchName!.toLowerCase().includes(lowerQuery)).toArray()).map(c => c.uuid);
+            const customers = await db.customers.filter(c => c.searchName!.toLowerCase().includes(lowerQuery)).toArray();
+            const customerUuids = customers.map(c => c.uuid);
 
             sales = sales.filter(s => 
                 s.invoiceNumber.toLowerCase().includes(lowerQuery) ||
@@ -91,9 +92,8 @@ class SalesService {
             dueDate: saleData.dueDate,
         };
         
-        const saleId = await db.transaction('rw', [db.sales, db.products, db.inventory_logs, db.customers, db.payments, db.product_returns], async () => {
-            const id = await db.sales.add(newSale);
-            newSale.id = id;
+        await db.transaction('rw', [db.sales, db.products, db.inventory_logs, db.customers, db.payments, db.product_returns], async () => {
+            await db.sales.add(newSale);
 
             for (const item of saleData.items) {
                 await inventoryService.adjustStock(item.uuid, -item.cartQuantity, 'sale', newSale.uuid);
@@ -102,16 +102,12 @@ class SalesService {
             if (newSale.customerUuid) {
                 await customerService.recalculateCustomerStatus(newSale.customerUuid);
             }
-            
-            return id;
         });
 
-        newSale.id = saleId;
         return newSale;
     }
 
     async processSaleCancellation(uuid: string): Promise<void> {
-        // Fix: Use array for tables in transaction
         await db.transaction('rw', [db.sales, db.products, db.customers, db.inventory_logs], async () => {
             const sale = await this.getSaleByUuid(uuid);
             if (!sale || !sale.id) {

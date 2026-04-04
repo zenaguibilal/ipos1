@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -12,13 +12,15 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 import { useActiveCart, useCartActions } from '@/stores/cartStore';
 import { calculateCartTotals, formatCurrency, cn } from '@/lib/utils';
-import { Loader2, CheckCircle2, Info, Wallet, Banknote, Calendar, AlertCircle } from 'lucide-react';
+import { Loader2, CheckCircle2, Info, Wallet, Banknote, Calendar, AlertCircle, ShieldAlert } from 'lucide-react';
 import { PrintReceiptDialog } from '../sales/PrintReceiptDialog';
-import type { Sale } from '@/lib/types';
+import type { Sale, Customer } from '@/lib/types';
 import { DatePicker } from '../ui/date-picker';
 import { addDays } from 'date-fns';
+import { customerService } from '@/services/customer.service';
 
 export function PaymentDialog({ isOpen, onOpenChange }: { isOpen: boolean, onOpenChange: (open: boolean) => void }) {
     const [isMounted, setIsMounted] = useState(false);
@@ -30,6 +32,9 @@ export function PaymentDialog({ isOpen, onOpenChange }: { isOpen: boolean, onOpe
     const [isLoading, setIsLoading] = useState(false);
     const [lastSale, setLastSale] = useState<Sale | null>(null);
     const [isReceiptOpen, setIsReceiptOpen] = useState(false);
+    
+    const [customer, setCustomer] = useState<Customer | null>(null);
+    const [approveOverLimit, setApproveOverLimit] = useState(false);
 
     const { total } = cart ? calculateCartTotals(cart) : { total: 0 };
     const change = amountPaid - total;
@@ -43,10 +48,14 @@ export function PaymentDialog({ isOpen, onOpenChange }: { isOpen: boolean, onOpe
             setAmountPaid(total);
             setIsLoading(false);
             setLastSale(null);
+            setApproveOverLimit(false);
+            
             if (cart?.customerUuid) {
                  setDueDate(addDays(new Date(), 30));
+                 customerService.getCustomerByUuid(cart.customerUuid).then(setCustomer);
             } else {
                  setDueDate(undefined);
+                 setCustomer(null);
             }
         }
     }, [isOpen, total, cart?.customerUuid, isMounted]);
@@ -63,9 +72,24 @@ export function PaymentDialog({ isOpen, onOpenChange }: { isOpen: boolean, onOpe
         setIsLoading(false);
     };
 
+    const projectedBalance = useMemo(() => {
+        if (!customer) return 0;
+        const creditAmount = Math.max(0, total - amountPaid);
+        return customer.outstandingBalance + creditAmount;
+    }, [customer, total, amountPaid]);
+
+    const isOverLimit = useMemo(() => {
+        if (!customer || !customer.creditLimit) return false;
+        return projectedBalance > customer.creditLimit;
+    }, [customer, projectedBalance]);
+
     if (!cart || !isMounted) return null;
 
     const isCreditSale = cart.customerUuid && amountPaid < total;
+    const canFinalize = !isLoading && amountPaid >= 0 && (
+        amountPaid >= total || 
+        (cart.customerUuid && (!isOverLimit || approveOverLimit))
+    );
     
     return (
         <>
@@ -87,7 +111,7 @@ export function PaymentDialog({ isOpen, onOpenChange }: { isOpen: boolean, onOpe
                         </DialogHeader>
                     </div>
 
-                    <div className="p-6 space-y-6">
+                    <div className="p-6 space-y-6 max-h-[70vh] overflow-y-auto custom-scrollbar">
                         <div className="text-center p-6 bg-muted/30 rounded-3xl border border-border/50 relative overflow-hidden">
                             <Label className="text-muted-foreground uppercase text-[10px] font-black tracking-widest mb-2 block relative z-10">Total à Payer</Label>
                             <p className="text-5xl font-black text-primary tracking-tighter relative z-10">{formatCurrency(total)}</p>
@@ -109,7 +133,7 @@ export function PaymentDialog({ isOpen, onOpenChange }: { isOpen: boolean, onOpe
                                         onChange={(e) => setAmountPaid(Number(e.target.value))}
                                         autoFocus
                                         onFocus={(e) => e.target.select()}
-                                        onKeyDown={(e) => { if(e.key === 'Enter') handleProcessSale() }}
+                                        onKeyDown={(e) => { if(e.key === 'Enter' && canFinalize) handleProcessSale() }}
                                     />
                                     <div className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground font-bold text-xs">DA</div>
                                 </div>
@@ -129,22 +153,45 @@ export function PaymentDialog({ isOpen, onOpenChange }: { isOpen: boolean, onOpe
                         </div>
 
                         {isCreditSale && (
-                            <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-2xl space-y-4 animate-in fade-in slide-in-from-top-2">
-                                <div className="flex items-start gap-3">
-                                    <div className="p-2 rounded-full bg-amber-500/20">
-                                        <Info className="h-4 w-4 text-amber-500" />
+                            <div className="space-y-4 animate-in fade-in slide-in-from-top-2">
+                                <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-2xl space-y-4">
+                                    <div className="flex items-start gap-3">
+                                        <div className="p-2 rounded-full bg-amber-500/20">
+                                            <Info className="h-4 w-4 text-amber-500" />
+                                        </div>
+                                        <div className="space-y-1">
+                                            <p className="text-sm font-bold text-amber-500">Vente à crédit</p>
+                                            <p className="text-xs text-amber-500/80 font-medium">Le solde de {formatCurrency(total - amountPaid)} sera ajouté à la dette.</p>
+                                        </div>
                                     </div>
-                                    <div className="space-y-1">
-                                        <p className="text-sm font-bold text-amber-500">Vente à crédit</p>
-                                        <p className="text-xs text-amber-500/80 font-medium">Le solde de {formatCurrency(total - amountPaid)} sera ajouté à la dette du client.</p>
+                                    
+                                    {isOverLimit && (
+                                        <div className="p-4 bg-destructive/10 border border-destructive/20 rounded-xl space-y-3">
+                                            <div className="flex items-center gap-2 text-destructive font-black text-[10px] uppercase">
+                                                <ShieldAlert className="h-4 w-4" /> Dépassement de plafond détecté
+                                            </div>
+                                            <p className="text-[10px] font-medium leading-relaxed">
+                                                Nouveau solde estimé : <span className="font-black">{formatCurrency(projectedBalance)}</span><br/>
+                                                Limite autorisée : <span className="font-black">{formatCurrency(customer?.creditLimit || 0)}</span>
+                                            </p>
+                                            <div className="flex items-center justify-between bg-black/20 p-3 rounded-lg">
+                                                <span className="text-[10px] font-black uppercase text-primary">Approuver le dépassement</span>
+                                                <Switch 
+                                                    checked={approveOverLimit} 
+                                                    onCheckedChange={setApproveOverLimit}
+                                                    className="data-[state=checked]:bg-primary"
+                                                />
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    <div className="space-y-2 pt-2 border-t border-amber-500/10">
+                                        <Label className="flex items-center gap-2 text-[10px] uppercase font-bold text-amber-500/70 ml-1">
+                                            <Calendar className="h-3 w-3" />
+                                            Échéance du crédit
+                                        </Label>
+                                        <DatePicker date={dueDate} setDate={setDueDate} />
                                     </div>
-                                </div>
-                                <div className="space-y-2 pt-2 border-t border-amber-500/10">
-                                    <Label className="flex items-center gap-2 text-[10px] uppercase font-bold text-amber-500/70 ml-1">
-                                        <Calendar className="h-3 w-3" />
-                                        Date d'échéance du crédit
-                                    </Label>
-                                    <DatePicker date={dueDate} setDate={setDueDate} />
                                 </div>
                             </div>
                         )}
@@ -165,9 +212,14 @@ export function PaymentDialog({ isOpen, onOpenChange }: { isOpen: boolean, onOpe
                                     <AlertCircle className="h-3 w-3" /> Client requis pour crédit
                                 </div>
                             )}
+                            {isOverLimit && !approveOverLimit && (
+                                <div className="absolute -top-10 left-0 w-full flex items-center gap-2 text-[10px] font-black text-destructive animate-pulse justify-center">
+                                    <ShieldAlert className="h-3 w-3" /> Approbation requise
+                                </div>
+                            )}
                             <Button 
                                 onClick={handleProcessSale} 
-                                disabled={isLoading || amountPaid < 0 || (amountPaid < total && !cart.customerUuid)} 
+                                disabled={!canFinalize} 
                                 className="w-full rounded-2xl h-12 font-bold shadow-lg shadow-primary/20 transition-all active:scale-95"
                             >
                                 {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle2 className="mr-2 h-5 w-5" />}
