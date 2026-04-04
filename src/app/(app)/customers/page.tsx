@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useCallback, useEffect, Suspense } from 'react';
@@ -6,8 +7,9 @@ import { useDebounce } from '@/hooks/useDebounce';
 import type { Customer, ImportAnalysis } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Plus, Search, Users, FileDown, Loader2, FileUp, FilterX, RefreshCw, SortAsc, Printer, Wheat, Trash2, X } from 'lucide-react';
+import { Plus, Search, Users, FileDown, Loader2, FileUp, FilterX, RefreshCw, SortAsc, Printer, Wheat, Trash2, X, LayoutGrid, List } from 'lucide-react';
 import { CustomerCard } from '@/components/customers/customer-card';
+import { CustomerTable } from '@/components/customers/CustomerTable';
 import { CustomerDialog } from '@/components/customers/customer-dialog';
 import { DeleteCustomerDialog } from '@/components/customers/delete-customer-dialog';
 import { DeleteMultipleCustomersDialog } from '@/components/customers/DeleteMultipleCustomersDialog';
@@ -22,6 +24,7 @@ import { ImportPreviewDialog } from '@/components/customers/import-preview-dialo
 import { cn, formatCurrency } from '@/lib/utils';
 import { Checkbox } from '@/components/ui/checkbox';
 import Papa from 'papaparse';
+import { useAppStore } from '@/stores/appStore';
 
 type FilterStatus = 'all' | 'has_debt' | 'overdue' | 'over_limit' | 'is_bread_client';
 
@@ -34,6 +37,10 @@ const sortOptions: { [key: string]: string } = {
 
 function CustomersContent() {
     const searchParams = useSearchParams();
+    const { viewMode, setViewMode } = useAppStore(state => ({
+        viewMode: state.customersViewMode,
+        setViewMode: state.actions.setCustomersViewMode,
+    }));
 
     const [searchQuery, setSearchQuery] = useState('');
     const [filterStatus, setFilterStatus] = useState<FilterStatus>('all');
@@ -248,14 +255,8 @@ function CustomersContent() {
 
     const isFiltered = searchQuery !== '' || filterStatus !== 'all' || sortBy !== 'createdAt_desc';
     
-    const renderSkeletons = () => (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {[...Array(8)].map((_, i) => <Card key={i} className="rounded-3xl border-none animate-pulse h-48 bg-card" />)}
-        </div>
-    );
-
     const renderContent = () => {
-        if (isLoading) return renderSkeletons();
+        if (isLoading) return <CustomerGridSkeleton />;
 
         if (!customers || customers.length === 0) {
             return (
@@ -274,7 +275,16 @@ function CustomersContent() {
             );
         }
         
-        return (
+        return viewMode === 'list' ? (
+            <CustomerTable 
+                customers={customers}
+                onEdit={handleEditCustomer}
+                onDelete={handleDeleteCustomer}
+                selectedCustomers={selectedCustomers}
+                onToggleSelection={handleToggleSelection}
+                onToggleSelectAll={handleToggleSelectAll}
+            />
+        ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                 {customers.map(c => (
                     <CustomerCard 
@@ -370,6 +380,25 @@ function CustomersContent() {
                         </DropdownMenuContent>
                     </DropdownMenu>
 
+                    <div className="flex items-center gap-1 p-1 bg-black/20 rounded-2xl border border-white/5 shadow-inner">
+                        <Button 
+                            variant={viewMode === 'grid' ? 'secondary': 'ghost'} 
+                            size="icon" 
+                            className="rounded-xl h-9 w-9" 
+                            onClick={() => setViewMode('grid')}
+                        >
+                            <LayoutGrid className="h-4 w-4"/>
+                        </Button>
+                        <Button 
+                            variant={viewMode === 'list' ? 'secondary': 'ghost'} 
+                            size="icon" 
+                            className="rounded-xl h-9 w-9" 
+                            onClick={() => setViewMode('list')}
+                        >
+                            <List className="h-4 w-4"/>
+                        </Button>
+                    </div>
+
                     {isFiltered && (
                         <Button 
                             variant="ghost" 
@@ -459,6 +488,14 @@ function CustomersContent() {
                 onConfirm={handleConfirmImport}
                 isImporting={isImporting}
             />
+        </div>
+    );
+}
+
+function CustomerGridSkeleton() {
+    return (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {[...Array(8)].map((_, i) => <Card key={i} className="rounded-3xl border-none animate-pulse h-48 bg-card" />)}
         </div>
     );
 }

@@ -24,6 +24,8 @@ interface AppState {
     productViewMode: 'grid' | 'list';
     stockViewMode: 'grid' | 'list';
     returnsViewMode: 'grid' | 'list';
+    customersViewMode: 'grid' | 'list';
+    expensesViewMode: 'grid' | 'list';
     actions: AppActions;
 }
 
@@ -54,6 +56,8 @@ interface AppActions {
     setProductViewMode: (mode: 'grid' | 'list') => void;
     setStockViewMode: (mode: 'grid' | 'list') => void;
     setReturnsViewMode: (mode: 'grid' | 'list') => void;
+    setCustomersViewMode: (mode: 'grid' | 'list') => void;
+    setExpensesViewMode: (mode: 'grid' | 'list') => void;
 }
 
 const initialState: Omit<AppState, 'actions'> = {
@@ -64,6 +68,8 @@ const initialState: Omit<AppState, 'actions'> = {
     productViewMode: 'grid',
     stockViewMode: 'grid',
     returnsViewMode: 'grid',
+    customersViewMode: 'grid',
+    expensesViewMode: 'list',
 };
 
 export const useAppStore = create<AppState>()(
@@ -232,6 +238,8 @@ export const useAppStore = create<AppState>()(
                 setProductViewMode: (mode) => set({ productViewMode: mode }),
                 setStockViewMode: (mode) => set({ stockViewMode: mode }),
                 setReturnsViewMode: (mode) => set({ returnsViewMode: mode }),
+                setCustomersViewMode: (mode) => set({ customersViewMode: mode }),
+                setExpensesViewMode: (mode) => set({ expensesViewMode: mode }),
             }
         }),
         {
@@ -241,6 +249,8 @@ export const useAppStore = create<AppState>()(
               productViewMode: state.productViewMode,
               stockViewMode: state.stockViewMode,
               returnsViewMode: state.returnsViewMode,
+              customersViewMode: state.customersViewMode,
+              expensesViewMode: state.expensesViewMode,
           }),
         }
     )

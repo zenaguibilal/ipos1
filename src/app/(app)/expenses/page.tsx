@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
@@ -22,9 +23,12 @@ import {
     SortAsc,
     Sparkles,
     TrendingDown,
-    Filter
+    Filter,
+    LayoutGrid,
+    List
 } from 'lucide-react';
 import { ExpenseCard } from '@/components/expenses/ExpenseCard';
+import { ExpenseTable } from '@/components/expenses/ExpenseTable';
 import ExpenseDialog from '@/components/expenses/ExpenseDialog';
 import DeleteExpenseDialog from '@/components/expenses/DeleteExpenseDialog';
 import { DeleteMultipleExpensesDialog } from '@/components/expenses/DeleteMultipleExpensesDialog';
@@ -83,6 +87,11 @@ const StatCard = ({ title, value, icon: Icon, colorClass, subtitle }: { title: s
 );
 
 export default function ExpensesPage() {
+    const { viewMode, setViewMode } = useAppStore(state => ({
+        viewMode: state.expensesViewMode,
+        setViewMode: state.actions.setExpensesViewMode,
+    }));
+
     const [selectedCategory, setSelectedCategory] = useState<string>('all');
     const [searchQuery, setSearchQuery] = useState('');
     const [sortBy, setSortBy] = useState('date_desc');
@@ -168,6 +177,15 @@ export default function ExpensesPage() {
             else newSet.add(uuid);
             return newSet;
         });
+    };
+
+    const handleToggleSelectAll = () => {
+        if (!expenses) return;
+        if (selectedExpenses.size === expenses.length) {
+            setSelectedExpenses(new Set());
+        } else {
+            setSelectedExpenses(new Set(expenses.map(e => e.uuid)));
+        }
     };
 
     const stats = useMemo(() => {
@@ -495,6 +513,25 @@ export default function ExpensesPage() {
 
                     <DateRangePicker date={dateRange} setDate={setDate} />
 
+                    <div className="flex items-center gap-1 p-1 bg-black/20 rounded-2xl border border-white/5 shadow-inner">
+                        <Button 
+                            variant={viewMode === 'grid' ? 'secondary': 'ghost'} 
+                            size="icon" 
+                            className="rounded-xl h-10 w-10" 
+                            onClick={() => setViewMode('grid')}
+                        >
+                            <LayoutGrid className="h-5 w-5"/>
+                        </Button>
+                        <Button 
+                            variant={viewMode === 'list' ? 'secondary': 'ghost'} 
+                            size="icon" 
+                            className="rounded-xl h-10 w-10" 
+                            onClick={() => setViewMode('list')}
+                        >
+                            <List className="h-5 w-5"/>
+                        </Button>
+                    </div>
+
                     {isFiltered && (
                         <Button 
                             variant="ghost" 
@@ -565,18 +602,29 @@ export default function ExpensesPage() {
                         )}
                     </EmptyState>
                ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-                        {expenses.map(e => (
-                            <ExpenseCard 
-                                key={e.uuid} 
-                                expense={e} 
-                                onEdit={handleEditExpense} 
-                                onDelete={handleDeleteExpense}
-                                isSelected={selectedExpenses.has(e.uuid)}
-                                onToggleSelection={() => handleToggleSelection(e.uuid)}
-                            />
-                        ))}
-                    </div>
+                    viewMode === 'list' ? (
+                        <ExpenseTable 
+                            expenses={expenses}
+                            onEdit={handleEditExpense}
+                            onDelete={handleDeleteExpense}
+                            selectedExpenses={selectedExpenses}
+                            onToggleSelection={handleToggleSelection}
+                            onToggleSelectAll={handleToggleSelectAll}
+                        />
+                    ) : (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+                            {expenses.map(e => (
+                                <ExpenseCard 
+                                    key={e.uuid} 
+                                    expense={e} 
+                                    onEdit={handleEditExpense} 
+                                    onDelete={handleDeleteExpense}
+                                    isSelected={selectedExpenses.has(e.uuid)}
+                                    onToggleSelection={() => handleToggleSelection(e.uuid)}
+                                />
+                            ))}
+                        </div>
+                    )
                )}
             </div>
             
