@@ -4,6 +4,7 @@ import { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Undo2, Banknote, PackageOpen, Coins } from 'lucide-react';
+import type { ProductReturn } from '@/lib/types';
 import { formatCurrency, cn } from '@/lib/utils';
 import { useLiveQuery } from '@/hooks/useLiveQuery';
 import { db } from '@/lib/db';
@@ -23,9 +24,11 @@ const StatCard = ({ title, value, icon: Icon, colorClass, subtitle }: { title: s
     </Card>
 );
 
-export function ReturnStats({ isLoading: externalLoading }: { isLoading?: boolean }) {
+export function ReturnStats({ returns: externalReturns, isLoading: externalLoading }: { returns?: ProductReturn[], isLoading?: boolean }) {
   // Live query for returns table to update stats instantly using the internal hook
-  const returns = useLiveQuery(() => db.product_returns.toArray());
+  const liveReturns = useLiveQuery(() => db.product_returns.toArray());
+  
+  const returns = externalReturns || liveReturns;
 
   const stats = useMemo(() => {
     if (!returns) return { count: 0, totalValue: 0, totalRefunded: 0, creditIssued: 0 };

@@ -40,7 +40,12 @@ const ProductCardComponent = ({ product, onEdit, onDuplicate, onHistory, onDelet
         return differenceInDays(new Date(), new Date(product.dateMajPrix)) > 30;
     }, [product.dateMajPrix]);
 
-    const handleCardClick = () => {
+    const handleCardClick = (e: React.MouseEvent) => {
+        const target = e.target as HTMLElement;
+        if (target.closest('button') || target.closest('input[type="checkbox"]') || target.closest('[role="menuitem"]')) {
+            return;
+        }
+
         if (isSelectionActive) {
             onToggleSelection();
         } else {

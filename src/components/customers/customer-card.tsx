@@ -59,7 +59,13 @@ const CustomerCardComponent = ({ customer, onEdit, onDelete, isSelected, onToggl
         window.open(`https://wa.me/${customer.phone}?text=${message}`, '_blank');
     };
 
-    const handleCardClick = () => {
+    const handleCardClick = (e: React.MouseEvent) => {
+        // Prevent trigger if clicking on buttons or checkboxes
+        const target = e.target as HTMLElement;
+        if (target.closest('button') || target.closest('input[type="checkbox"]') || target.closest('[role="menuitem"]')) {
+            return;
+        }
+
         if (isSelectionActive) {
             onToggleSelection();
         } else {
@@ -184,7 +190,7 @@ const CustomerCardComponent = ({ customer, onEdit, onDelete, isSelected, onToggl
                     <Calendar className="h-3 w-3 opacity-50" />
                     <span>{isMounted && customer.lastActivityDate ? formatDistanceToNow(new Date(customer.lastActivityDate), { addSuffix: true, locale: fr }) : 'Aucun flux'}</span>
                 </div>
-                <Button variant="ghost" size="sm" asChild className="h-9 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-primary/10 hover:text-primary transition-all px-4">
+                <Button variant="ghost" size="sm" asChild className="h-9 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-primary/10 hover:text-primary transition-all px-4" onClick={(e) => e.stopPropagation()}>
                     <Link href={`/customers/${customer.uuid}`}>
                         Dossier <ChevronRight className="ml-1 h-3 w-3 opacity-50" />
                     </Link>
