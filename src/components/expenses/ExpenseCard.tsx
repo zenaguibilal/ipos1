@@ -20,9 +20,18 @@ interface ExpenseCardProps {
 }
 
 const ExpenseCardComponent = ({ expense, onEdit, onDelete, isSelected, onToggleSelection }: ExpenseCardProps) => {
+    
+    const handleCardClick = (e: React.MouseEvent) => {
+        const target = e.target as HTMLElement;
+        if (target.closest('button') || target.closest('[role="menuitem"]') || target.closest('[role="checkbox"]')) {
+            return;
+        }
+        onToggleSelection();
+    };
+
     return (
         <Card 
-            onClick={onToggleSelection}
+            onClick={handleCardClick}
             className={cn(
                 "luxury-card group flex flex-col transition-all duration-500 bg-card/40 backdrop-blur-xl border-white/5 relative overflow-hidden rounded-[2.5rem] cursor-pointer",
                 isSelected ? "ring-2 ring-primary border-primary/30 shadow-2xl scale-[1.02]" : "hover:bg-primary/5"
@@ -32,8 +41,8 @@ const ExpenseCardComponent = ({ expense, onEdit, onDelete, isSelected, onToggleS
                 <Banknote className="h-32 w-32 rotate-12" />
             </div>
 
-            <div className="absolute top-4 right-4 z-10 flex gap-2 items-center">
-                <div onClick={(e) => e.stopPropagation()} className="p-1.5 bg-background/80 backdrop-blur-md rounded-xl border border-white/5 shadow-sm">
+            <div className="absolute top-4 right-4 z-10 flex gap-2 items-center" onClick={(e) => e.stopPropagation()}>
+                <div className="p-1.5 bg-background/80 backdrop-blur-md rounded-xl border border-white/5 shadow-sm">
                     <Checkbox
                         checked={isSelected}
                         onCheckedChange={onToggleSelection}
@@ -46,16 +55,15 @@ const ExpenseCardComponent = ({ expense, onEdit, onDelete, isSelected, onToggleS
                             variant="secondary" 
                             size="icon" 
                             className="h-9 w-9 bg-background/80 backdrop-blur-md border-white/5 shadow-xl rounded-xl transition-all"
-                            onClick={(e) => e.stopPropagation()}
                         >
                             <MoreHorizontal className="h-5 w-5" />
                         </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="rounded-2xl border-none shadow-2xl bg-card">
-                        <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onEdit(expense); }} className="rounded-xl p-3">
+                        <DropdownMenuItem onClick={() => onEdit(expense)} className="rounded-xl p-3">
                             <Edit className="mr-2 h-4 w-4" /> Modifier
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onDelete(expense); }} className="text-destructive focus:text-destructive rounded-xl p-3">
+                        <DropdownMenuItem onClick={() => onDelete(expense)} className="text-destructive focus:text-destructive rounded-xl p-3">
                             <Trash2 className="mr-2 h-4 w-4" /> Supprimer
                         </DropdownMenuItem>
                     </DropdownMenuContent>

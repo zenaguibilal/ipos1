@@ -11,7 +11,6 @@ import { cn, formatCurrency } from '@/lib/utils';
 import { Checkbox } from '../ui/checkbox';
 import { differenceInDays } from 'date-fns';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import Link from 'next/link';
 
 interface ProductCardProps {
     product: Product;
@@ -43,10 +42,11 @@ const ProductCardComponent = ({ product, onEdit, onDuplicate, onHistory, onDelet
 
     const handleCardClick = (e: React.MouseEvent) => {
         const target = e.target as HTMLElement;
-        if (target.closest('button')) return;
+        if (target.closest('button') || target.closest('[role="menuitem"]') || target.closest('[role="checkbox"]')) {
+            return;
+        }
 
-        // If selection is already active or checkbox was target, toggle selection
-        if (isSelectionActive || target.closest('[role="checkbox"]')) {
+        if (isSelectionActive) {
             onToggleSelection();
         } else {
             onEdit(product);
@@ -65,8 +65,8 @@ const ProductCardComponent = ({ product, onEdit, onDuplicate, onHistory, onDelet
                 <ShoppingBag className="h-32 w-32 rotate-12" />
             </div>
 
-            <div className="absolute top-4 right-4 z-10 flex gap-2 items-center">
-                <div onClick={(e) => e.stopPropagation()} className="p-1.5 bg-background/80 backdrop-blur-md rounded-xl border border-white/5 shadow-sm">
+            <div className="absolute top-4 right-4 z-10 flex gap-2 items-center" onClick={(e) => e.stopPropagation()}>
+                <div className="p-1.5 bg-background/80 backdrop-blur-md rounded-xl border border-white/5 shadow-sm">
                     <Checkbox
                         checked={isSelected}
                         onCheckedChange={onToggleSelection}
@@ -79,7 +79,6 @@ const ProductCardComponent = ({ product, onEdit, onDuplicate, onHistory, onDelet
                             variant="secondary" 
                             size="icon" 
                             className="h-9 w-9 bg-background/80 backdrop-blur-md border-white/5 shadow-xl rounded-xl transition-all"
-                            onClick={(e) => e.stopPropagation()}
                         >
                             <MoreHorizontal className="h-5 w-5" />
                         </Button>

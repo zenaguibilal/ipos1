@@ -20,13 +20,21 @@ interface StockIntakeCardProps {
 const StockIntakeCardComponent = ({ intake, supplierName, onViewDetails, onCancelIntake }: StockIntakeCardProps) => {
     const name = supplierName || 'Partenaire Inconnu';
 
+    const handleCardClick = (e: React.MouseEvent) => {
+        const target = e.target as HTMLElement;
+        if (target.closest('button') || target.closest('[role="menuitem"]')) {
+            return;
+        }
+        onViewDetails(intake);
+    };
+
     return (
-        <Card className="luxury-card group flex flex-col justify-between transition-all duration-500 bg-card/40 backdrop-blur-xl border-white/5 relative overflow-hidden rounded-[2.5rem]">
+        <Card onClick={handleCardClick} className="luxury-card group flex flex-col justify-between transition-all duration-500 bg-card/40 backdrop-blur-xl border-white/5 relative overflow-hidden rounded-[2.5rem] cursor-pointer">
             <div className="absolute -right-4 -top-4 opacity-[0.02] group-hover:opacity-10 transition-opacity duration-700 pointer-events-none">
                 <Archive className="h-32 w-32 rotate-12" />
             </div>
 
-            <div className="absolute top-4 right-4 z-10">
+            <div className="absolute top-4 right-4 z-10" onClick={(e) => e.stopPropagation()}>
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                         <Button variant="secondary" size="icon" className="h-9 w-9 bg-background/80 backdrop-blur-md border-white/5 shadow-xl rounded-xl transition-transform active:scale-95">
@@ -34,10 +42,10 @@ const StockIntakeCardComponent = ({ intake, supplierName, onViewDetails, onCance
                         </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="rounded-2xl border-none shadow-2xl bg-card">
-                        <DropdownMenuItem onClick={() => onViewDetails(intake)} className="rounded-xl">
+                        <DropdownMenuItem onClick={() => onViewDetails(intake)} className="rounded-xl p-3">
                             <FileText className="mr-2 h-4 w-4" /> Détails du bon
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => onCancelIntake(intake)} className="text-destructive focus:text-destructive rounded-xl">
+                        <DropdownMenuItem onClick={() => onCancelIntake(intake)} className="text-destructive focus:text-destructive rounded-xl p-3">
                             <Trash2 className="mr-2 h-4 w-4" /> Annuler l'entrée
                         </DropdownMenuItem>
                     </DropdownMenuContent>
@@ -85,7 +93,6 @@ const StockIntakeCardComponent = ({ intake, supplierName, onViewDetails, onCance
                 <Button 
                     variant="ghost" 
                     size="sm" 
-                    onClick={() => onViewDetails(intake)}
                     className="h-9 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-primary/10 hover:text-primary transition-all px-4"
                 >
                     Examiner

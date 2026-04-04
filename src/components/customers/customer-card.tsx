@@ -61,10 +61,12 @@ const CustomerCardComponent = ({ customer, onEdit, onDelete, isSelected, onToggl
 
     const handleCardClick = (e: React.MouseEvent) => {
         const target = e.target as HTMLElement;
-        if (target.closest('button')) return;
+        // Strict button/menu check to prevent interference
+        if (target.closest('button') || target.closest('[role="menuitem"]') || target.closest('[role="checkbox"]')) {
+            return;
+        }
         
-        // If selection mode is active or checkbox was target, toggle selection
-        if (isSelectionActive || target.closest('[role="checkbox"]')) {
+        if (isSelectionActive) {
             onToggleSelection();
         } else {
             onEdit(customer);
@@ -83,8 +85,8 @@ const CustomerCardComponent = ({ customer, onEdit, onDelete, isSelected, onToggl
                 <User className="h-32 w-32 rotate-12" />
             </div>
 
-            <div className="absolute top-4 right-4 z-10 flex gap-2 items-center">
-                <div onClick={(e) => e.stopPropagation()} className="p-1.5 bg-background/80 backdrop-blur-md rounded-xl border border-white/5 shadow-sm">
+            <div className="absolute top-4 right-4 z-10 flex gap-2 items-center" onClick={(e) => e.stopPropagation()}>
+                <div className="p-1.5 bg-background/80 backdrop-blur-md rounded-xl border border-white/5 shadow-sm">
                     <Checkbox
                         checked={isSelected}
                         onCheckedChange={onToggleSelection}
@@ -102,7 +104,6 @@ const CustomerCardComponent = ({ customer, onEdit, onDelete, isSelected, onToggl
                             variant="secondary" 
                             size="icon" 
                             className="h-9 w-9 bg-background/80 backdrop-blur-md border-white/5 shadow-xl rounded-xl transition-all"
-                            onClick={(e) => e.stopPropagation()}
                         >
                             <MoreHorizontal className="h-5 w-5" />
                         </Button>
@@ -113,10 +114,10 @@ const CustomerCardComponent = ({ customer, onEdit, onDelete, isSelected, onToggl
                                 <FileText className="mr-2 h-4 w-4" /> Voir le dossier
                             </Link>
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onEdit(customer); }} className="rounded-xl p-3">
+                        <DropdownMenuItem onClick={() => onEdit(customer)} className="rounded-xl p-3">
                             <Edit className="mr-2 h-4 w-4" /> Modifier
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onDelete(customer); }} className="text-destructive focus:text-destructive rounded-xl p-3">
+                        <DropdownMenuItem onClick={() => onDelete(customer)} className="text-destructive focus:text-destructive rounded-xl p-3">
                             <Trash2 className="mr-2 h-4 w-4" /> Supprimer
                         </DropdownMenuItem>
                     </DropdownMenuContent>
@@ -186,7 +187,7 @@ const CustomerCardComponent = ({ customer, onEdit, onDelete, isSelected, onToggl
                     <span>{isMounted && customer.lastActivityDate ? formatDistanceToNow(new Date(customer.lastActivityDate), { addSuffix: true, locale: fr }) : 'Aucun flux'}</span>
                 </div>
                 <Button variant="ghost" size="sm" asChild className="h-9 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-primary/10 hover:text-primary transition-all px-4">
-                    <Link href={`/customers/${customer.uuid}`}>
+                    <Link href={`/customers/${customer.uuid}`} onClick={(e) => e.stopPropagation()}>
                         Dossier <ChevronRight className="ml-1 h-3 w-3 opacity-50" />
                     </Link>
                 </Button>
