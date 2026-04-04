@@ -1,4 +1,3 @@
-
 'use client';
 
 import { db } from '@/lib/db';
@@ -41,34 +40,34 @@ class BackupService {
             const text = await file.text();
             const data = JSON.parse(text);
             
-            // Vérification des segments critiques
+            // Vérification des segments critiques pour la stabilité
             const mandatorySegments = ['products', 'customers', 'company_profile'];
             const missing = mandatorySegments.filter(s => !data[s]);
             
             if (missing.length > 0) {
-                throw new Error(`Segments manquants: ${missing.join(', ')}`);
+                throw new Error(`Segments critiques manquants: ${missing.join(', ')}`);
             }
             
             return data;
         } catch (error: any) {
-            throw new Error("Manifeste invalide : " + error.message);
+            throw new Error("Manifeste corrompu ou invalide : " + error.message);
         }
     }
 
     /**
-     * Restaure les données dans IndexedDB après validation manuelle dans l'aperçu.
+     * Restaure les données dans IndexedDB après validation et édition manuelle dans l'aperçu.
      */
     async restoreBackup(data: Record<string, any[]>): Promise<void> {
         try {
-            toast.info("Restauration souveraine initiée... Purge du cache en cours.");
+            toast.info("Restauration souveraine initiée... Purge du cache local.");
 
             await db.transaction('rw', db.tables, async () => {
-                // Étape 1 : Purge complète pour éviter les doublons ou conflits d'index
+                // Étape 1 : Purge complète pour garantir l'intégrité du nouveau manifeste
                 for (const table of db.tables) {
                     await table.clear();
                 }
 
-                // Étape 2 : Injection séquencée pour respecter l'intégrité
+                // Étape 2 : Injection séquencée par dépendances
                 const restoreOrder = [
                     'company_profile',
                     'suppliers',
@@ -86,17 +85,21 @@ class BackupService {
 
                 for (const segment of restoreOrder) {
                     if (data[segment] && Array.isArray(data[segment]) && data[segment].length > 0) {
-                        // On réinjecte avec bulkPut pour écraser tout conflit résiduel (sécurité double)
-                        await db.table(segment).bulkPut(data[segment]);
+                        // Réinjection propre sans les IDs locaux auto-incrémentés pour éviter les conflits
+                        const cleanData = data[segment].map(record => {
+                            const { id, ...rest } = record;
+                            return rest;
+                        });
+                        await db.table(segment).bulkAdd(cleanData);
                     }
                 }
             });
 
-            toast.success("Manifeste déployé. Redémarrage imminent.");
+            toast.success("Manifeste déployé avec succès. Redémarrage du système.");
 
         } catch (error: any) {
             console.error("Restore failed:", error);
-            throw new Error("Échec du déploiement : " + error.message);
+            throw new Error("Échec critique du déploiement : " + error.message);
         }
     }
 }
