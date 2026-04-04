@@ -51,9 +51,13 @@ import { ConfirmAlertDialog } from '@/components/ui/ConfirmAlertDialog';
 type SalesStatus = 'all' | 'paid' | 'partial' | 'unpaid';
 
 export default function SalesHistoryPage() {
+    const { viewMode, setViewMode } = useAppStore(state => ({
+        viewMode: state.salesViewMode,
+        setViewMode: state.actions.setSalesViewMode,
+    }));
+
     const [searchQuery, setSearchQuery] = useState('');
     const [filterStatus, setFilterStatus] = useState<SalesStatus>('all');
-    const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
     const debouncedSearchQuery = useDebounce(searchQuery, 300);
     const { dateRange, setDate, isMounted } = useDateRange(29);
     const profile = useAppStore(state => state.companyProfile);

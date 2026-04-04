@@ -1,4 +1,3 @@
-
 import { create } from 'zustand';
 import type { CompanyProfile, ReturnItem, StockIntakeItem } from '@/lib/types';
 import { toast } from 'sonner';
@@ -26,6 +25,7 @@ interface AppState {
     returnsViewMode: 'grid' | 'list';
     customersViewMode: 'grid' | 'list';
     expensesViewMode: 'grid' | 'list';
+    salesViewMode: 'grid' | 'list';
     actions: AppActions;
 }
 
@@ -58,6 +58,7 @@ interface AppActions {
     setReturnsViewMode: (mode: 'grid' | 'list') => void;
     setCustomersViewMode: (mode: 'grid' | 'list') => void;
     setExpensesViewMode: (mode: 'grid' | 'list') => void;
+    setSalesViewMode: (mode: 'grid' | 'list') => void;
 }
 
 const initialState: Omit<AppState, 'actions'> = {
@@ -70,6 +71,7 @@ const initialState: Omit<AppState, 'actions'> = {
     returnsViewMode: 'grid',
     customersViewMode: 'grid',
     expensesViewMode: 'list',
+    salesViewMode: 'grid',
 };
 
 export const useAppStore = create<AppState>()(
@@ -240,6 +242,7 @@ export const useAppStore = create<AppState>()(
                 setReturnsViewMode: (mode) => set({ returnsViewMode: mode }),
                 setCustomersViewMode: (mode) => set({ customersViewMode: mode }),
                 setExpensesViewMode: (mode) => set({ expensesViewMode: mode }),
+                setSalesViewMode: (mode) => set({ salesViewMode: mode }),
             }
         }),
         {
@@ -251,6 +254,7 @@ export const useAppStore = create<AppState>()(
               returnsViewMode: state.returnsViewMode,
               customersViewMode: state.customersViewMode,
               expensesViewMode: state.expensesViewMode,
+              salesViewMode: state.salesViewMode,
           }),
         }
     )

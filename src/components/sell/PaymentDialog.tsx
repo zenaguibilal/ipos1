@@ -52,7 +52,7 @@ export function PaymentDialog({ isOpen, onOpenChange }: { isOpen: boolean, onOpe
             
             if (cart?.customerUuid) {
                  setDueDate(addDays(new Date(), 30));
-                 customerService.getCustomerByUuid(cart.customerUuid).then(setCustomer);
+                 customerService.getCustomerByUuid(cart.customerUuid).then(c => setCustomer(c || null));
             } else {
                  setDueDate(undefined);
                  setCustomer(null);

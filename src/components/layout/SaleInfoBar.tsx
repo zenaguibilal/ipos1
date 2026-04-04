@@ -43,7 +43,7 @@ export function SaleInfoBar() {
         const hasItems = !!(cart && cart.items.length > 0);
         const isSellPage = pathname === '/sell';
         // The bar is visible on the sell page or if there are items in the cart globally.
-        setIsVisible(isSellPage || hasItems);
+        setIsVisible(!!(isSellPage || hasItems));
         
         fetchCustomer();
     }, [cart, pathname, fetchCustomer]);
@@ -164,7 +164,7 @@ export function SaleInfoBar() {
                                             <Button 
                                                 variant="ghost" 
                                                 size="icon" 
-                                                className="h-10 w-10 rounded-xl text-muted-foreground/20 hover:text-destructive hover:bg-destructive/10 transition-all active:scale-90"
+                                                className="h-10 w-10 rounded-xl text-muted-foreground/20 hover:text-destructive hover:bg-destructive/10 transition-all active:scale-95"
                                                 onClick={() => clearCart()}
                                             >
                                                 <Trash2 className="h-4 w-4" />
