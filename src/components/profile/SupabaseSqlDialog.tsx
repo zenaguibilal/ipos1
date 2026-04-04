@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -15,6 +16,7 @@ import { toast } from 'sonner';
 
 const SUPABASE_SQL_SCRIPT = `-- iPOS Luxury - Elite Cloud Schema (Verified v1.9.2)
 -- Ce script initialise votre coffre-fort Cloud avec une précision de type absolue.
+-- Toutes les colonnes camelCase sont citées pour garantir la compatibilité JS/Postgres.
 
 -- 1. Identité de l'Etablissement
 CREATE TABLE IF NOT EXISTS company_profile (
@@ -231,7 +233,7 @@ export function SupabaseSqlDialog() {
                                 </div>
                                 <div>
                                     <DialogTitle className="text-2xl font-black tracking-tight">Initialisation Supabase</DialogTitle>
-                                    <DialogDescription className="font-medium">Script SQL Elite pour configurer votre base Cloud en un clic.</DialogDescription>
+                                    <DialogDescription className="font-medium">Script SQL Elite certifié pour votre coffre-fort Cloud.</DialogDescription>
                                 </div>
                             </div>
                             <Button onClick={handleCopy} className="rounded-2xl h-12 px-6 font-black text-xs uppercase tracking-widest shadow-xl shadow-primary/20 gap-2 transition-all active:scale-95">
@@ -249,7 +251,7 @@ export function SupabaseSqlDialog() {
 
                     <div className="p-6 bg-muted/5 border-t border-white/5 text-center">
                         <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground opacity-40">
-                            Action souveraine : Vos données restent privées même sur Supabase.
+                            Précision de type absolue : Garanti compatible avec le moteur de synchronisation iPOS Luxury.
                         </p>
                     </div>
                 </DialogContent>
