@@ -1,3 +1,4 @@
+
 import { create } from 'zustand';
 import type { CompanyProfile, ReturnItem, StockIntakeItem } from '@/lib/types';
 import { toast } from 'sonner';
@@ -106,16 +107,13 @@ export const useAppStore = create<AppState>()(
                         const now = new Date();
                         
                         if (mode === 'push') {
+                            await supabaseSyncService.pushAllData(currentProfile.supabase_url, currentProfile.supabase_key);
                             const updatedProfile = await companyProfileService.updateProfile({ last_sync_at: now });
                             set({ companyProfile: updatedProfile, lastSyncDate: now });
-                            
-                            await supabaseSyncService.pushAllData(currentProfile.supabase_url, currentProfile.supabase_key);
                             toast.success("Sauvegarde Cloud (Push) réussie.");
                         } else {
                             await supabaseSyncService.pullAllData(currentProfile.supabase_url, currentProfile.supabase_key);
-                            
                             const refreshedProfile = await companyProfileService.updateProfile({ last_sync_at: now });
-                            
                             set({ companyProfile: refreshedProfile, lastSyncDate: now });
                             toast.success("Restauration Cloud (Pull) réussie.");
                         }
@@ -134,14 +132,20 @@ export const useAppStore = create<AppState>()(
                         return;
                     }
 
+                    set({ isSyncing: true });
                     try {
                         const now = new Date();
+                        // Background sync performs a Pull-then-Push cycle for maximum consistency
+                        await supabaseSyncService.pullAllData(currentProfile.supabase_url, currentProfile.supabase_key);
                         await supabaseSyncService.pushAllData(currentProfile.supabase_url, currentProfile.supabase_key);
+                        
                         const updatedProfile = await companyProfileService.updateProfile({ last_sync_at: now });
                         set({ companyProfile: updatedProfile, lastSyncDate: now });
-                        console.log("iPOS Luxury: Auto-sync complete.");
+                        console.log("iPOS Luxury: Auto-sync (Pull/Push) complete.");
                     } catch (error) {
                         console.error("iPOS Luxury: Background sync failed.", error);
+                    } finally {
+                        set({ isSyncing: false });
                     }
                 },
                 processReturn: async (returnData) => {
