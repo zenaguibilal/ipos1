@@ -97,8 +97,8 @@ export const useAppStore = create<AppState>()(
                 updateCompanyProfile: async (profileData) => {
                     const updatedProfile = await companyProfileService.updateProfile(profileData);
                     set({ companyProfile: updatedProfile });
-                    // Sync after profile update (if cloud credentials were added)
-                    get().actions.triggerSmartSync();
+                    // Sync instantanée après mise à jour profil
+                    get().actions.performBackgroundSync();
                 },
                 performCloudSync: async (mode) => {
                     const currentProfile = get().companyProfile;
@@ -140,16 +140,12 @@ export const useAppStore = create<AppState>()(
                     set({ isSyncing: true });
                     try {
                         const now = new Date();
-                        console.log("iPOS Luxury: Lancement de la synchronisation automatique...");
-                        
-                        // Cycle "Elite" : Pull d'abord pour récupérer les changements distants, puis Push pour envoyer les locaux
+                        // Cycle "Elite" instantané : Pull puis Push
                         await supabaseSyncService.pullAllData(currentProfile.supabase_url, currentProfile.supabase_key);
                         await supabaseSyncService.pushAllData(currentProfile.supabase_url, currentProfile.supabase_key);
                         
-                        // Mise à jour locale du timestamp de succès
                         const updatedProfile = await companyProfileService.updateProfile({ last_sync_at: now });
                         set({ companyProfile: updatedProfile, lastSyncDate: now });
-                        console.log("iPOS Luxury: Synchronisation Auto-Elite terminée.");
                     } catch (error: any) {
                         console.error("iPOS Luxury: Échec de la synchronisation en arrière-plan.", error);
                     } finally {
@@ -157,11 +153,11 @@ export const useAppStore = create<AppState>()(
                     }
                 },
                 triggerSmartSync: () => {
-                    // Debounce de 10 secondes pour éviter de saturer le cloud lors d'opérations successives
+                    // Délai réduit à 500ms pour une sensation de "Temps Réel" tout en évitant les micro-conflits
                     if (syncDebounceTimeout) clearTimeout(syncDebounceTimeout);
                     syncDebounceTimeout = setTimeout(() => {
                         get().actions.performBackgroundSync();
-                    }, 10000);
+                    }, 500);
                 },
                 processReturn: async (returnData) => {
                      try {
@@ -177,7 +173,6 @@ export const useAppStore = create<AppState>()(
                             }
                         });
                         toast.success("Retour de marchandise validé.");
-                        // Déclenchement automatique de la sync après mutation
                         get().actions.triggerSmartSync();
                         return true;
                     } catch (error: any) {
@@ -252,7 +247,6 @@ export const useAppStore = create<AppState>()(
                         });
 
                         toast.success("Réception de stock enregistrée.");
-                        // Déclenchement automatique de la sync après mutation
                         get().actions.triggerSmartSync();
                         return true;
                     } catch (error: any) {
