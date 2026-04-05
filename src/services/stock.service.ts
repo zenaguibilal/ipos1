@@ -1,9 +1,11 @@
+
 'use client';
 import { v4 as uuidv4 } from 'uuid';
 import type { StockIntake } from '@/lib/types';
 import { db } from '@/lib/db';
 import { inventoryService } from './inventory.service';
 import { supplierService } from './supplier.service';
+import { useAppStore } from '@/stores/appStore';
 
 class StockService {
     
@@ -42,6 +44,10 @@ class StockService {
         };
         const id = await db.stock_intakes.add(newIntake);
         newIntake.id = id;
+
+        // Trigger Cloud Sync
+        useAppStore.getState().actions.triggerSmartSync();
+
         return newIntake;
     }
 
@@ -65,6 +71,9 @@ class StockService {
 
             await db.stock_intakes.delete(intake.id);
         });
+
+        // Trigger Cloud Sync
+        useAppStore.getState().actions.triggerSmartSync();
     }
 }
 

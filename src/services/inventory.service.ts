@@ -4,6 +4,7 @@ import { v4 as uuidv4 } from 'uuid';
 import type { InventoryLog, InventoryLogReason, Product } from '@/lib/types';
 import { db } from '@/lib/db';
 import { calculateStockStatus } from '@/lib/utils';
+import { useAppStore } from '@/stores/appStore';
 
 class InventoryService {
 
@@ -27,6 +28,9 @@ class InventoryService {
         });
 
         await this.logChange(productUuid, quantityChange, newQuantity, reason, relatedUuid);
+
+        // Trigger Cloud Sync (debounced)
+        useAppStore.getState().actions.triggerSmartSync();
     }
     
     private async logChange(productUuid: string, change: number, newQuantity: number, reason: InventoryLogReason, relatedUuid?: string): Promise<void> {

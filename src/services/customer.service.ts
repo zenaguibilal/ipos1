@@ -6,6 +6,7 @@ import { db } from '@/lib/db';
 import Papa from 'papaparse';
 import { startOfMonth, subMonths, format, isSameMonth } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import { useAppStore } from '@/stores/appStore';
 
 class CustomerService {
     
@@ -86,6 +87,10 @@ class CustomerService {
 
         const id = await db.customers.add(newCustomer);
         newCustomer.id = id;
+        
+        // Trigger Cloud Sync
+        useAppStore.getState().actions.triggerSmartSync();
+        
         return newCustomer;
     }
 
@@ -104,6 +109,10 @@ class CustomerService {
         };
         
         await db.customers.update(existing.id, dataToUpdate);
+        
+        // Trigger Cloud Sync
+        useAppStore.getState().actions.triggerSmartSync();
+        
         return { ...existing, ...dataToUpdate };
     }
 
@@ -128,6 +137,8 @@ class CustomerService {
         
         if (customer.id) {
             await db.customers.delete(customer.id);
+            // Trigger Cloud Sync
+            useAppStore.getState().actions.triggerSmartSync();
         }
     }
 
@@ -150,6 +161,9 @@ class CustomerService {
         const customersToDelete = await db.customers.where('uuid').anyOf(uuids).toArray();
         const idsToDelete = customersToDelete.map(c => c.id!);
         await db.customers.bulkDelete(idsToDelete);
+        
+        // Trigger Cloud Sync
+        useAppStore.getState().actions.triggerSmartSync();
     }
     
     async getStats(): Promise<{ total: number; overdue: number; overLimit: number; totalOutstanding: number }> {
@@ -374,6 +388,9 @@ class CustomerService {
             if (toAdd.length > 0) await db.customers.bulkAdd(toAdd);
             if (toUpdate.length > 0) await db.customers.bulkPut(toUpdate);
         });
+
+        // Trigger Cloud Sync
+        useAppStore.getState().actions.triggerSmartSync();
     }
 }
 

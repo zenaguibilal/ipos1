@@ -1,8 +1,10 @@
+
 'use client';
 
 import type { Expense } from '@/lib/types';
 import { db } from '@/lib/db';
 import { v4 as uuidv4 } from 'uuid';
+import { useAppStore } from '@/stores/appStore';
 
 class ExpenseService {
 
@@ -36,6 +38,10 @@ class ExpenseService {
         };
         const id = await db.expenses.add(newExpense);
         newExpense.id = id;
+
+        // Trigger Cloud Sync
+        useAppStore.getState().actions.triggerSmartSync();
+
         return newExpense;
     }
 
@@ -49,6 +55,10 @@ class ExpenseService {
             updatedAt: new Date(),
         };
         await db.expenses.update(existing.id, dataToUpdate);
+
+        // Trigger Cloud Sync
+        useAppStore.getState().actions.triggerSmartSync();
+
         return { ...existing, ...dataToUpdate };
     }
 
@@ -56,6 +66,8 @@ class ExpenseService {
         const existing = await db.expenses.where('uuid').equals(uuid).first();
         if (existing?.id) {
             await db.expenses.delete(existing.id);
+            // Trigger Cloud Sync
+            useAppStore.getState().actions.triggerSmartSync();
         }
     }
 
@@ -63,6 +75,9 @@ class ExpenseService {
         const expensesToDelete = await db.expenses.where('uuid').anyOf(uuids).toArray();
         const idsToDelete = expensesToDelete.map(e => e.id!);
         await db.expenses.bulkDelete(idsToDelete);
+
+        // Trigger Cloud Sync
+        useAppStore.getState().actions.triggerSmartSync();
     }
 }
 

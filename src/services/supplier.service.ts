@@ -1,8 +1,10 @@
+
 'use client';
 
 import { v4 as uuidv4 } from 'uuid';
 import type { Supplier, SupplierPayment } from '@/lib/types';
 import { db } from '@/lib/db';
+import { useAppStore } from '@/stores/appStore';
 
 class SupplierService {
 
@@ -32,6 +34,10 @@ class SupplierService {
         };
         const id = await db.suppliers.add(newSupplier);
         newSupplier.id = id;
+
+        // Trigger Cloud Sync
+        useAppStore.getState().actions.triggerSmartSync();
+
         return newSupplier;
     }
 
@@ -41,6 +47,9 @@ class SupplierService {
         
         const newBalance = supplier.balance + amountChange;
         await db.suppliers.update(supplier.id, { balance: newBalance, updatedAt: new Date() });
+
+        // Trigger Cloud Sync (debounced)
+        useAppStore.getState().actions.triggerSmartSync();
     }
 
     async processSupplierPayment(paymentData: Omit<SupplierPayment, 'uuid' | 'createdAt'>): Promise<void> {
@@ -60,6 +69,9 @@ class SupplierService {
                 updatedAt: new Date()
             });
         });
+
+        // Trigger Cloud Sync
+        useAppStore.getState().actions.triggerSmartSync();
     }
 
     async getSupplierActivity(supplierUuid: string): Promise<any[]> {
@@ -80,6 +92,8 @@ class SupplierService {
         const supplier = await this.getSupplierByUuid(uuid);
         if (supplier?.id) {
             await db.suppliers.update(supplier.id, { ...data, updatedAt: new Date() });
+            // Trigger Cloud Sync
+            useAppStore.getState().actions.triggerSmartSync();
         }
     }
 
@@ -97,6 +111,9 @@ class SupplierService {
         }
 
         await db.suppliers.delete(supplier.id);
+        
+        // Trigger Cloud Sync
+        useAppStore.getState().actions.triggerSmartSync();
     }
 
     async bulkDelete(uuids: string[]): Promise<void> {

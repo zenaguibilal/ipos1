@@ -8,6 +8,7 @@ import { calculateStockStatus } from '@/lib/utils';
 import { inventoryService } from './inventory.service';
 import Papa from 'papaparse';
 import { supplierService } from './supplier.service';
+import { useAppStore } from '@/stores/appStore';
 
 class ProductService {
 
@@ -119,6 +120,10 @@ class ProductService {
         };
         const id = await db.products.add(newProduct);
         newProduct.id = id;
+
+        // Trigger Cloud Sync
+        useAppStore.getState().actions.triggerSmartSync();
+
         return newProduct;
     }
 
@@ -154,6 +159,10 @@ class ProductService {
         }
         
         await db.products.update(existingProduct.id, dataToUpdate);
+
+        // Trigger Cloud Sync
+        useAppStore.getState().actions.triggerSmartSync();
+
         return { ...existingProduct, ...dataToUpdate };
     }
 
@@ -162,11 +171,13 @@ class ProductService {
         if (!product) throw new Error("Produit original introuvable.");
 
         const { id, uuid: oldUuid, name, ...rest } = product;
-        return this.addProduct({
+        const duplicated = await this.addProduct({
             ...rest,
             name: `${name} (Copie)`,
             quantity: 0, 
         } as any);
+
+        return duplicated;
     }
 
     async deleteProduct(uuid: string): Promise<void> {
@@ -177,6 +188,8 @@ class ProductService {
         const product = await this.getProductByUuid(uuid);
         if (product?.id) {
             await db.products.delete(product.id);
+            // Trigger Cloud Sync
+            useAppStore.getState().actions.triggerSmartSync();
         }
     }
     
@@ -191,6 +204,9 @@ class ProductService {
         const productsToDelete = await db.products.where('uuid').anyOf(uuids).toArray();
         const idsToDelete = productsToDelete.map(p => p.id!);
         await db.products.bulkDelete(idsToDelete);
+
+        // Trigger Cloud Sync
+        useAppStore.getState().actions.triggerSmartSync();
     }
 
     async analyzeImport(file: File): Promise<ProductImportAnalysis> {
@@ -281,6 +297,9 @@ class ProductService {
             if (toAdd.length > 0) await db.products.bulkAdd(toAdd);
             if (toUpdate.length > 0) await db.products.bulkPut(toUpdate);
         });
+
+        // Trigger Cloud Sync
+        useAppStore.getState().actions.triggerSmartSync();
     }
 }
 

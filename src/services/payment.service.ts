@@ -1,8 +1,10 @@
+
 'use client';
 import { v4 as uuidv4 } from 'uuid';
 import type { Payment } from '@/lib/types';
 import { db } from '@/lib/db';
 import { customerService } from './customer.service';
+import { useAppStore } from '@/stores/appStore';
 
 class PaymentService {
     
@@ -28,6 +30,9 @@ class PaymentService {
 
         // Recalculate customer balance and status
         await customerService.recalculateCustomerStatus(customerUuid);
+
+        // Trigger Cloud Sync
+        useAppStore.getState().actions.triggerSmartSync();
     }
 
     async getPaymentsByCustomerUuid(customerUuid: string): Promise<Payment[]> {

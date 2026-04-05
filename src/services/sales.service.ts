@@ -1,9 +1,11 @@
+
 'use client';
 import { v4 as uuidv4 } from 'uuid';
 import type { Sale, CartItem, SaleItem } from '@/lib/types';
 import { db } from '@/lib/db';
 import { inventoryService } from './inventory.service';
 import { customerService } from './customer.service';
+import { useAppStore } from '@/stores/appStore';
 
 class SalesService {
 
@@ -104,6 +106,9 @@ class SalesService {
             }
         });
 
+        // Trigger Cloud Sync
+        useAppStore.getState().actions.triggerSmartSync();
+
         return newSale;
     }
 
@@ -126,6 +131,9 @@ class SalesService {
                 await customerService.recalculateCustomerStatus(sale.customerUuid);
             }
         });
+
+        // Trigger Cloud Sync
+        useAppStore.getState().actions.triggerSmartSync();
     }
 }
 
