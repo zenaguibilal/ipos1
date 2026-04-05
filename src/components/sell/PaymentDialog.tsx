@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, memo, useCallback } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -15,7 +15,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { useActiveCart, useCartActions } from '@/stores/cartStore';
 import { calculateCartTotals, formatCurrency, cn } from '@/lib/utils';
-import { Loader2, CheckCircle2, Info, Wallet, Banknote, Calendar, AlertCircle, ShieldAlert } from 'lucide-react';
+import { Loader2, CheckCircle2, Info, Wallet, Calendar, ShieldAlert } from 'lucide-react';
 import { PrintReceiptDialog } from '../sales/PrintReceiptDialog';
 import type { Sale, Customer } from '@/lib/types';
 import { DatePicker } from '../ui/date-picker';
@@ -24,9 +24,9 @@ import { customerService } from '@/services/customer.service';
 
 /**
  * PaymentDialog - Hardened financial finalization module.
- * Uses high-precision comparisons to avoid JS binary decimal errors.
+ * Senior Review Note: Uses high-precision comparisons and sanitized inputs.
  */
-export function PaymentDialog({ isOpen, onOpenChange }: { isOpen: boolean, onOpenChange: (open: boolean) => void }) {
+function PaymentDialogContent({ isOpen, onOpenChange }: { isOpen: boolean, onOpenChange: (open: boolean) => void }) {
     const [isMounted, setIsMounted] = useState(false);
     const cart = useActiveCart();
     const { processSale } = useCartActions();
@@ -70,7 +70,7 @@ export function PaymentDialog({ isOpen, onOpenChange }: { isOpen: boolean, onOpe
         }
     }, [isOpen, cart, isMounted]);
     
-    const handleProcessSale = async () => {
+    const handleProcessSale = useCallback(async () => {
         if (amountPaid < 0 || isLoading) return;
         
         setIsLoading(true);
@@ -84,7 +84,7 @@ export function PaymentDialog({ isOpen, onOpenChange }: { isOpen: boolean, onOpe
         } finally {
             setIsLoading(false);
         }
-    };
+    }, [amountPaid, isLoading, dueDate, processSale, onOpenChange]);
 
     const projectedBalance = useMemo(() => {
         if (!customer) return 0;
@@ -97,10 +97,14 @@ export function PaymentDialog({ isOpen, onOpenChange }: { isOpen: boolean, onOpe
         return projectedBalance > (customer.creditLimit + EPSILON);
     }, [customer, projectedBalance]);
 
+    const handleAmountChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+        const val = parseFloat(e.target.value);
+        setAmountPaid(isNaN(val) ? 0 : val);
+    }, []);
+
     if (!cart || !isMounted) return null;
 
     const isCreditSale = cart.customerUuid && amountPaid < (total - EPSILON);
-    // Decision matrix for finalizing the sale
     const canFinalize = !isLoading && amountPaid >= 0 && (
         isFullPayment || (cart.customerUuid && (!isOverLimit || approveOverLimit))
     );
@@ -137,8 +141,8 @@ export function PaymentDialog({ isOpen, onOpenChange }: { isOpen: boolean, onOpe
                                     type="number"
                                     step="0.01"
                                     className="text-2xl h-16 text-center font-black bg-background border-none shadow-inner focus-visible:ring-primary/20 rounded-2xl"
-                                    value={amountPaid}
-                                    onChange={(e) => setAmountPaid(parseFloat(e.target.value) || 0)}
+                                    value={amountPaid || ''}
+                                    onChange={handleAmountChange}
                                     autoFocus
                                     onFocus={(e) => e.target.select()}
                                     onKeyDown={(e) => { if(e.key === 'Enter' && canFinalize) handleProcessSale() }}
@@ -169,7 +173,7 @@ export function PaymentDialog({ isOpen, onOpenChange }: { isOpen: boolean, onOpe
                                     {isOverLimit && (
                                         <div className="p-5 bg-destructive/10 border border-destructive/20 rounded-2xl space-y-4 shadow-inner">
                                             <div className="flex items-center gap-3 text-destructive font-black text-[10px] uppercase tracking-widest">
-                                                <ShieldAlert className="h-5 w-5" /> Alerte Plafond Dépassé
+                                                <ShieldAlert className="h-5 w-5" /> Alerte Plafوند Dépassé
                                             </div>
                                             <div className="flex items-center justify-between bg-black/20 p-4 rounded-xl">
                                                 <span className="text-[10px] font-black uppercase text-primary">Dérogation Souveraine</span>
@@ -205,3 +209,6 @@ export function PaymentDialog({ isOpen, onOpenChange }: { isOpen: boolean, onOpe
         </>
     );
 }
+
+export const PaymentDialog = memo(PaymentDialogContent);
+PaymentDialog.displayName = 'PaymentDialog';

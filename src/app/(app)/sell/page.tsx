@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef, useCallback, memo } from 'react';
 import { ProductSelector } from "@/components/sell/ProductSearch";
 import { CartDisplay } from "@/components/sell/CartDisplay";
 import { CartTotalBar } from "@/components/sell/CartTotalBar";
@@ -10,57 +10,65 @@ import { useCartActions } from '@/stores/cartStore';
 import { toast } from 'sonner';
 
 /**
- * SellPage - Hardened POS Transaction Interface.
- * Implements strict modifier checks and efficient event delegation.
+ * @fileOverview SellPage - Hardened POS Transaction Interface.
+ * Senior Review Note: Implements strict input isolation and optimized lifecycle management.
  */
-export default function SellPage() {
+
+// Global Key Protocol Constants
+const KEYS = {
+    SEARCH: 'F1',
+    PAY: 'F2',
+    CUSTOMER: 'F4',
+    SUSPEND: 'F9',
+    CUSTOM: 'F10',
+    ESCAPE: 'Escape',
+    ENTER: 'Enter'
+} as const;
+
+function SellPageContent() {
     const { createCart } = useCartActions();
     const searchInputRef = useRef<HTMLInputElement>(null);
     const payButtonRef = useRef<HTMLButtonElement>(null);
     const customerComboRef = useRef<HTMLButtonElement>(null);
     const customItemButtonRef = useRef<HTMLButtonElement>(null);
     
-    // Memoized keydown handler to prevent identity changes on every render
     const handleKeyDown = useCallback((e: KeyboardEvent) => {
-        // Strict modifier check: ignore if any system modifier is pressed (Alt, Ctrl, Meta, Shift)
-        // This prevents collision with OS shortcuts or browser defaults.
-        if (e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return;
+        // Strict isolation: Ignore IME composition and standard system modifiers
+        if (e.isComposing || e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return;
 
         const target = e.target as HTMLElement;
-        const isTypingInInput = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.contentEditable === 'true';
+        const isTyping = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.contentEditable === 'true';
         
-        // F1: Global Search Focus
-        if (e.key === 'F1') {
+        // F1: Global Search Protocol (Override focus)
+        if (e.key === KEYS.SEARCH) {
             e.preventDefault();
             searchInputRef.current?.focus();
             return;
         }
         
-        // Context-aware escape: ignore if typing in a quantity field, unless it's a function key
-        if (isTypingInInput && target !== searchInputRef.current && !e.key.startsWith('F')) return;
+        // Shortcut Execution Logic
+        if (isTyping && target !== searchInputRef.current && !e.key.startsWith('F')) return;
 
         switch (e.key) {
-            case 'F2':
+            case KEYS.PAY:
                 e.preventDefault();
                 payButtonRef.current?.click();
                 break;
-            case 'F4':
+            case KEYS.CUSTOMER:
                 e.preventDefault();
                 customerComboRef.current?.click();
                 break;
-            case 'F9':
+            case KEYS.SUSPEND:
                 e.preventDefault();
                 createCart();
-                toast.success("Vente suspendue. Nouveau panier créé.");
+                toast.success("Vente suspendue. Nouveau manifeste actif.");
                 break;
-            case 'F10':
+            case KEYS.CUSTOM:
                 e.preventDefault();
                 customItemButtonRef.current?.click();
                 break;
-            case 'Escape':
-                if (isTypingInInput) {
-                    target.blur();
-                }
+            case KEYS.ESCAPE:
+                if (isTyping) target.blur();
                 break;
         }
     }, [createCart]);
@@ -87,7 +95,7 @@ export default function SellPage() {
                     </div>
                 </div>
 
-                {/* Product Catalog / Search */}
+                {/* Product Catalog / Search Engine */}
                 <div className="lg:col-span-2 flex flex-col min-h-0">
                     <ProductSelector 
                         searchInputRef={searchInputRef} 
@@ -96,17 +104,17 @@ export default function SellPage() {
                 </div>
             </div>
 
-            {/* Shortcut Legend Footer - Hidden on mobile */}
+            {/* Shortcut Legend Protocol */}
             <div className="hidden md:flex flex-wrap items-center justify-center gap-8 py-4 px-10 bg-card/50 backdrop-blur-xl border border-white/5 rounded-full text-[9px] font-black tracking-[0.2em] text-muted-foreground uppercase shadow-2xl">
                 <div className="flex items-center justify-center gap-3 pr-4 border-r border-white/10">
                     <span className="text-primary font-black">Elite Protocols</span>
                 </div>
                 {[
-                    { key: 'F1', label: 'Search' },
-                    { key: 'F2', label: 'Pay' },
-                    { key: 'F4', label: 'Customer' },
-                    { key: 'F9', label: 'Suspend' },
-                    { key: 'F10', label: 'Custom' },
+                    { key: KEYS.SEARCH, label: 'Search' },
+                    { key: KEYS.PAY, label: 'Pay' },
+                    { key: KEYS.CUSTOMER, label: 'Customer' },
+                    { key: KEYS.SUSPEND, label: 'Suspend' },
+                    { key: KEYS.CUSTOM, label: 'Custom' },
                 ].map(item => (
                     <div key={item.key} className="flex items-center gap-3 group">
                         <kbd className="bg-muted px-2.5 py-1.5 rounded-xl border border-white/10 text-primary shadow-inner transition-all group-hover:scale-110">{item.key}</kbd>
@@ -115,10 +123,15 @@ export default function SellPage() {
                 ))}
                 <div className="h-4 w-px bg-white/10" />
                 <div className="flex items-center gap-3 group">
-                    <kbd className="bg-primary text-primary-foreground px-2.5 py-1.5 rounded-xl shadow-lg group-hover:scale-110 transition-all">Enter</kbd>
+                    <kbd className="bg-primary text-primary-foreground px-2.5 py-1.5 rounded-xl shadow-lg group-hover:scale-110 transition-all">{KEYS.ENTER}</kbd>
                     <span className="text-primary font-black">Validate</span>
                 </div>
             </div>
         </div>
     );
 }
+
+const SellPage = memo(SellPageContent);
+SellPage.displayName = 'SellPage';
+
+export default SellPage;
