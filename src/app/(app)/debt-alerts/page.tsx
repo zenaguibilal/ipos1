@@ -44,8 +44,7 @@ export default function DebtAlertsPage() {
         const currentDay = now.getDate();
         const monthStart = startOfMonth(now);
         
-        // Maturity Buffer: Only track debt that was present BEFORE the last 3 days
-        // to avoid alerting on very recent daily transactions.
+        // Maturity Buffer: Avoid alerting on very recent daily transactions (Legacy Debt Only)
         const maturityThreshold = subDays(now, 3);
 
         // Step 1: Atomic fetch of customers with significant balance
@@ -57,6 +56,7 @@ export default function DebtAlertsPage() {
         if (debtors.length === 0) return [];
 
         // Step 2: Optimized index-based fetch for this month's payments
+        // We only care about customers who HAVEN'T paid this month
         const recentPayments = await db.payments
             .where('paymentDate')
             .above(monthStart)
@@ -69,13 +69,12 @@ export default function DebtAlertsPage() {
             .filter(c => {
                 if (!c.settlementDay) return false;
                 
-                // CRITICAL FIX: We check if they haven't paid this month AND it's past their day
+                // CRITICAL LOGIC: 
+                // 1. Current day must be PAST the agreed settlement day.
+                // 2. No payment recorded during the CURRENT calendar month.
+                // 3. Account must be established (older than 3 days) to avoid "Fresh Debt" noise.
                 const isPastSettlement = currentDay > c.settlementDay;
                 const hasNotPaidThisMonth = !paidCustomerUuids.has(c.uuid);
-                
-                // Logic: Debt is "Legacy" if customer was created before threshold 
-                // and hasn't cleared balance. We use createdAt as a safer proxy for debt origin
-                // than lastActivityDate which is polluted by small payments.
                 const isEstablishedAccount = c.createdAt ? new Date(c.createdAt) <= maturityThreshold : true;
 
                 return isPastSettlement && hasNotPaidThisMonth && isEstablishedAccount;
@@ -100,7 +99,7 @@ export default function DebtAlertsPage() {
     const handleWhatsApp = (customer: Customer) => {
         if (!customer.phone) return;
         const message = encodeURIComponent(
-            `Bonjour ${customer.firstName}, c'est le service financier iPOS. Nous constatons que votre solde de ${formatCurrency(customer.outstandingBalance)} est en attente de régularisation. Merci de passer au magasin dès que possible. Cordialement.`
+            `Bonjour ${customer.firstName}, c'est le service de recouvrement iPOS. Nous vous rappelons que votre solde de ${formatCurrency(customer.outstandingBalance)} est en attente de régularisation. Merci de passer au magasin dès que possible. Cordialement.`
         );
         window.open(`https://wa.me/${customer.phone}?text=${message}`, '_blank');
     };
@@ -119,6 +118,7 @@ export default function DebtAlertsPage() {
                 </div>
             </PageHeader>
 
+            {/* Elite Search Interface */}
             <div className="flex flex-col md:flex-row gap-6 items-center justify-between bg-card/20 p-2 rounded-[2.5rem] border border-white/5 backdrop-blur-xl shadow-inner">
                 <div className="relative group flex-grow max-w-xl px-4">
                     <Search className="absolute left-8 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground group-focus-within:text-primary transition-all duration-500" />
@@ -235,6 +235,7 @@ export default function DebtAlertsPage() {
                 )}
             </div>
 
+            {/* System Technical Note */}
             <div className="p-12 bg-primary/5 rounded-[3.5rem] border border-primary/10 flex items-start gap-8 relative overflow-hidden group shadow-2xl">
                 <Sparkles className="absolute -right-6 -top-6 h-32 w-32 text-primary/5 group-hover:opacity-20 transition-opacity duration-1000" />
                 <div className="p-5 rounded-3xl bg-primary/10 text-primary shadow-inner relative z-10 border border-primary/10">
@@ -242,10 +243,10 @@ export default function DebtAlertsPage() {
                 </div>
                 <div className="space-y-3 relative z-10">
                     <p className="text-sm font-black uppercase tracking-[0.3em] text-primary flex items-center gap-2">
-                        <Info className="h-4 w-4" /> Algorithme de Surveillance iPOS Elite
+                        <Info className="h-4 w-4" /> Algorithme de Recouvrement Elite
                     </p>
                     <p className="text-[12px] text-muted-foreground/70 font-medium leading-relaxed max-w-5xl italic">
-                        Le système identifie les retards critiques selon quatre critères : 1) Solde {'>'} {FINANCIAL_EPSILON} DA. 2) Jour de règlement dépassé. 3) Absence totale de versement durant le mois calendaire en cours. 4) Compte établi depuis plus de 72h. Cette rigueur évite les alertes intempestives sur les transactions de routine.
+                        Le radar identifie les dossiers critiques selon une triple validation : 1) Solde supérieur au seuil de tolérance ({FINANCIAL_EPSILON} DA). 2) Jour de règlement mensuel dépassé. 3) Absence totale de versement sur le mois calendaire en cours. Cette rigueur prévient les alertes intempestives sur les flux de routine.
                     </p>
                 </div>
             </div>
