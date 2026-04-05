@@ -17,7 +17,8 @@ import {
     PhoneCall,
     Info,
     Clock,
-    ShieldAlert
+    ShieldAlert,
+    History
 } from 'lucide-react';
 import type { Customer } from '@/lib/types';
 import { formatCurrency, cn, FINANCIAL_EPSILON } from '@/lib/utils';
@@ -29,24 +30,26 @@ import { startOfMonth, isBefore } from 'date-fns';
 
 /**
  * @fileOverview DebtAlertsPage - Elite Recovery Intelligence Interface.
- * Version 2.5: Implements cross-cycle debt tracking and linguistic purity.
+ * Version 3.0: Implements strict Sale-based Debt Aging and high-precision status tracking.
+ * Senior Review: Fixed "Activity Date" leakage and optimized live query pipeline.
  */
 
 interface DebtAlertItem extends Customer {
     daysPastSettlement: number;
     severity: 'critical' | 'warning';
+    isLegacy: boolean;
 }
 
 export default function DebtAlertsPage() {
     const [searchQuery, setSearchQuery] = useState('');
 
-    // CORE ENGINE: Hardened against cycle resets and evasion tactics
+    // CORE ENGINE: Targeted logic based on unpaid invoices rather than generic activity
     const alerts = useLiveQuery(async (): Promise<DebtAlertItem[]> => {
         const now = new Date();
         const currentDay = now.getDate();
         const firstOfThisMonth = startOfMonth(now);
         
-        // 1. Fetch significant debtors only
+        // 1. Fetch significant debtors
         const debtors = await db.customers
             .where('outstandingBalance')
             .above(FINANCIAL_EPSILON)
@@ -54,43 +57,67 @@ export default function DebtAlertsPage() {
 
         if (debtors.length === 0) return [];
 
-        // 2. Fetch payments from this month to detect "serious" settlement attempts
+        // 2. Fetch unpaid sales to detect true debt age (Avoids "Payment Activity" noise)
+        const unpaidSales = await db.sales
+            .where('paymentStatus')
+            .anyOf(['unpaid', 'partial'])
+            .toArray();
+            
+        const debtAgeMap = new Map<string, Date>();
+        unpaidSales.forEach(s => {
+            const saleDate = new Date(s.createdAt!);
+            const currentOldest = debtAgeMap.get(s.customerUuid || '');
+            if (!currentOldest || isBefore(saleDate, currentOldest)) {
+                debtAgeMap.set(s.customerUuid || '', saleDate);
+            }
+        });
+
+        // 3. Fetch current month payments to identify settlement attempts
         const recentPayments = await db.payments
             .where('paymentDate')
             .above(firstOfThisMonth)
             .toArray();
             
-        const paymentMap = new Map<string, number>();
+        const paymentTotalMap = new Map<string, number>();
         recentPayments.forEach(p => {
-            paymentMap.set(p.customerUuid, (paymentMap.get(p.customerUuid) || 0) + p.amount);
+            paymentTotalMap.set(p.customerUuid, (paymentTotalMap.get(p.customerUuid) || 0) + p.amount);
         });
 
-        // 3. Application of Elite Aging Algorithm
+        // 4. ELITE AGING ALGORITHM
         return debtors
             .filter(c => {
                 if (!c.settlementDay) return false;
 
-                const paidThisMonth = paymentMap.get(c.uuid) || 0;
-                // Threshold: Effort is considered significant if > 10% of debt or >= 1000 DA
-                const hasMadeSignificantEffort = paidThisMonth > (c.outstandingBalance * 0.1) || paidThisMonth >= 1000;
+                const paidThisMonth = paymentTotalMap.get(c.uuid) || 0;
+                // Threshold: Serious effort is > 15% of debt or >= 2000 DA (Hardened policy)
+                const hasMadeSignificantEffort = paidThisMonth > (c.outstandingBalance * 0.15) || paidThisMonth >= 2000;
                 
-                // Logic: 
-                // A) Past settlement day in current month.
-                // B) OR has debt from previous months (Legacy Debt) not addressed by a significant payment.
+                const oldestDebtDate = debtAgeMap.get(c.uuid);
                 const isPastDueThisMonth = currentDay > c.settlementDay;
-                const isLegacyDebtor = c.lastActivityDate ? isBefore(new Date(c.lastActivityDate), firstOfThisMonth) : true;
+                const isLegacyDebtor = oldestDebtDate ? isBefore(oldestDebtDate, firstOfThisMonth) : false;
 
                 return (isPastDueThisMonth || isLegacyDebtor) && !hasMadeSignificantEffort;
             })
             .map(c => {
-                const isHighlyCritical = (c.outstandingBalance > (c.creditLimit || 0)) || (currentDay - (c.settlementDay || 0) > 10);
+                const oldestDebtDate = debtAgeMap.get(c.uuid);
+                const isOverLimit = (c.outstandingBalance > (c.creditLimit || 0)) && (c.creditLimit || 0) > 0;
+                const delaySeverity = (currentDay - (c.settlementDay || 0));
+                
+                const isHighlyCritical = isOverLimit || delaySeverity > 15 || (oldestDebtDate && isBefore(oldestDebtDate, firstOfThisMonth));
+
                 return {
                     ...c,
                     daysPastSettlement: Math.max(0, currentDay - (c.settlementDay || 0)),
-                    severity: isHighlyCritical ? 'critical' : 'warning'
+                    severity: isHighlyCritical ? 'critical' : 'warning',
+                    isLegacy: oldestDebtDate ? isBefore(oldestDebtDate, firstOfThisMonth) : false
                 };
             })
-            .sort((a, b) => b.outstandingBalance - a.outstandingBalance);
+            .sort((a, b) => {
+                // Primary Sort: Severity, Secondary: Balance
+                if (a.severity === 'critical' && b.severity !== 'critical') return -1;
+                if (a.severity !== 'critical' && b.severity === 'critical') return 1;
+                return b.outstandingBalance - a.outstandingBalance;
+            });
     }, []);
 
     const filteredAlerts = useMemo(() => {
@@ -98,7 +125,8 @@ export default function DebtAlertsPage() {
         const q = searchQuery.toLowerCase().trim();
         if (!q) return alerts;
         return alerts.filter(c => 
-            `${c.firstName} ${c.lastName}`.toLowerCase().includes(q) ||
+            c.firstName.toLowerCase().includes(q) || 
+            c.lastName.toLowerCase().includes(q) ||
             c.phone?.includes(q)
         );
     }, [alerts, searchQuery]);
@@ -106,7 +134,7 @@ export default function DebtAlertsPage() {
     const handleWhatsApp = (customer: Customer) => {
         if (!customer.phone) return;
         const message = encodeURIComponent(
-            `Bonjour ${customer.firstName}, le service de suivi Elite iPOS vous informe que votre solde de ${formatCurrency(customer.outstandingBalance)} nécessite une régularisation. Merci de nous contacter rapidement. Cordialement.`
+            `Bonjour ${customer.firstName}, votre compte Elite iPOS affiche un solde de ${formatCurrency(customer.outstandingBalance)}. Un règlement est attendu pour régulariser votre situation. Merci de nous contacter. Cordialement.`
         );
         window.open(`https://wa.me/${customer.phone}?text=${message}`, '_blank');
     };
@@ -117,11 +145,11 @@ export default function DebtAlertsPage() {
         <div className="p-6 sm:p-10 space-y-10 max-w-[1600px] mx-auto animate-in fade-in duration-1000">
             <PageHeader 
                 title="Intelligence de Recouvrement" 
-                description="Surveillance proactive des flux débiteurs et alertes d'insolvabilité"
+                description="Analyse proactive des flux débiteurs et surveillance de l'insolvabilité"
             >
                 <div className="flex items-center gap-3 px-5 py-2.5 bg-primary/10 border border-primary/20 rounded-2xl shadow-inner group">
                     <div className="h-2 w-2 rounded-full bg-primary animate-pulse" />
-                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Radar Elite Actif</span>
+                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Algorithme Elite Actif</span>
                 </div>
             </PageHeader>
 
@@ -130,7 +158,7 @@ export default function DebtAlertsPage() {
                 <div className="lg:col-span-3 relative group">
                     <Search className="absolute left-8 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground group-focus-within:text-primary transition-all duration-500" />
                     <Input 
-                        placeholder="Identifier un dossier critique..."
+                        placeholder="Rechercher un dossier par nom ou mobile..."
                         className="pl-16 h-16 rounded-[2rem] bg-black/20 border-none shadow-inner font-black text-lg focus-visible:ring-primary/20"
                         value={searchQuery}
                         onChange={e => setSearchQuery(e.target.value)}
@@ -162,9 +190,9 @@ export default function DebtAlertsPage() {
                             </div>
                         </div>
                         <div className="space-y-3">
-                            <h3 className="text-3xl font-black tracking-tighter text-emerald-500">Flux Conformes</h3>
+                            <h3 className="text-3xl font-black tracking-tighter text-emerald-500">Intégrité des Flux</h3>
                             <p className="text-muted-foreground font-medium max-w-sm mx-auto leading-relaxed uppercase text-[10px] tracking-[0.3em] opacity-40">
-                                Aucune anomalie de règlement détectée dans le cycle actuel.
+                                Aucune anomalie de règlement détectée par le radar Elite.
                             </p>
                         </div>
                     </div>
@@ -187,13 +215,18 @@ export default function DebtAlertsPage() {
                                         )}>
                                             {customer.severity === 'critical' ? <ShieldAlert className="h-7 w-7" /> : <AlertCircle className="h-7 w-7" />}
                                         </div>
-                                        <div className="text-right">
+                                        <div className="flex flex-col items-end gap-2">
                                             <span className={cn(
                                                 "text-[9px] font-black uppercase tracking-[0.2em] px-4 py-1.5 rounded-full border",
                                                 customer.severity === 'critical' ? "bg-destructive/10 text-destructive border-destructive/20" : "bg-amber-500/10 text-amber-500 border-amber-500/20"
                                             )}>
-                                                Alerte Cycle
+                                                {customer.severity === 'critical' ? 'Critique' : 'Attention'}
                                             </span>
+                                            {customer.isLegacy && (
+                                                <Badge variant="outline" className="bg-primary/5 text-primary border-primary/20 text-[8px] font-black uppercase tracking-widest">
+                                                    <History className="h-2 w-2 mr-1" /> Dette Antérieure
+                                                </Badge>
+                                            )}
                                         </div>
                                     </div>
                                     <CardTitle className="text-2xl font-black tracking-tighter group-hover:text-primary transition-colors truncate">
@@ -262,13 +295,17 @@ export default function DebtAlertsPage() {
                 </div>
                 <div className="space-y-4 relative z-10">
                     <p className="text-sm font-black uppercase tracking-[0.4em] text-primary flex items-center gap-2">
-                        <Info className="h-4 w-4" /> Algorithme de Recouvrement Elite v2.5
+                        <Info className="h-4 w-4" /> Algorithme de Recouvrement Elite v3.0
                     </p>
                     <p className="text-[13px] text-muted-foreground/70 font-medium leading-relaxed max-w-5xl italic border-l-2 border-primary/20 pl-6">
-                        Le radar identifie les dossiers selon un protocole strict : les créances deviennent exigibles dès le dépassement du jour de règlement mensuel, ou si un reliquat des mois précédents persiste sans versement significatif (&gt;10% du solde). Cette rigueur garantit que les paiements symboliques ne trompent pas la surveillance du système.
+                        Le protocole v3.0 ignore désormais le simple historique d'activité pour se concentrer sur l'âge réel de la dette (Sale-based Aging). Un dossier est classé "Legacy" si une facture impayée persiste depuis le mois précédent, indépendamment des paiements symboliques effectués. La criticité est automatiquement augmentée en cas de dépassement du plafond de crédit ou de retard supérieur à 15 jours.
                     </p>
                 </div>
             </div>
         </div>
     );
+}
+
+function Badge({ children, variant, className }: { children: React.ReactNode, variant?: any, className?: string }) {
+    return <div className={cn("px-2 py-0.5 rounded text-[10px] border", className)}>{children}</div>
 }
