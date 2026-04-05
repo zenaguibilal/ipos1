@@ -18,7 +18,9 @@ import {
     Info,
     Clock,
     ShieldAlert,
-    History
+    History,
+    TrendingUp,
+    FileText
 } from 'lucide-react';
 import type { Customer } from '@/lib/types';
 import { formatCurrency, cn, FINANCIAL_EPSILON } from '@/lib/utils';
@@ -30,39 +32,35 @@ import { startOfMonth, isBefore } from 'date-fns';
 
 /**
  * @fileOverview DebtAlertsPage - Elite Recovery Intelligence Interface.
- * Version 3.0: Implements strict Sale-based Debt Aging and high-precision status tracking.
- * Senior Review: Fixed "Activity Date" leakage and optimized live query pipeline.
+ * Version 4.0: High-precision debt aging and memory-optimized data streams.
  */
 
 interface DebtAlertItem extends Customer {
     daysPastSettlement: number;
     severity: 'critical' | 'warning';
     isLegacy: boolean;
+    creditUsagePercent: number;
 }
 
 export default function DebtAlertsPage() {
     const [searchQuery, setSearchQuery] = useState('');
 
-    // CORE ENGINE: Targeted logic based on unpaid invoices rather than generic activity
+    // CORE ENGINE: Optimized Surgical Queries
     const alerts = useLiveQuery(async (): Promise<DebtAlertItem[]> => {
         const now = new Date();
         const currentDay = now.getDate();
         const firstOfThisMonth = startOfMonth(now);
         
-        // 1. Fetch significant debtors
-        const debtors = await db.customers
-            .where('outstandingBalance')
-            .above(FINANCIAL_EPSILON)
-            .toArray();
+        // 1. Parallel Batch Fetching (O(1) request count)
+        const [debtors, unpaidSales, recentPayments] = await Promise.all([
+            db.customers.where('outstandingBalance').above(FINANCIAL_EPSILON).toArray(),
+            db.sales.where('paymentStatus').anyOf(['unpaid', 'partial']).toArray(),
+            db.payments.where('paymentDate').above(firstOfThisMonth).toArray()
+        ]);
 
         if (debtors.length === 0) return [];
 
-        // 2. Fetch unpaid sales to detect true debt age (Avoids "Payment Activity" noise)
-        const unpaidSales = await db.sales
-            .where('paymentStatus')
-            .anyOf(['unpaid', 'partial'])
-            .toArray();
-            
+        // 2. Pre-index Data for O(1) Lookup
         const debtAgeMap = new Map<string, Date>();
         unpaidSales.forEach(s => {
             const saleDate = new Date(s.createdAt!);
@@ -72,25 +70,19 @@ export default function DebtAlertsPage() {
             }
         });
 
-        // 3. Fetch current month payments to identify settlement attempts
-        const recentPayments = await db.payments
-            .where('paymentDate')
-            .above(firstOfThisMonth)
-            .toArray();
-            
         const paymentTotalMap = new Map<string, number>();
         recentPayments.forEach(p => {
             paymentTotalMap.set(p.customerUuid, (paymentTotalMap.get(p.customerUuid) || 0) + p.amount);
         });
 
-        // 4. ELITE AGING ALGORITHM
+        // 3. ELITE AGING & RISK ALGORITHM
         return debtors
             .filter(c => {
                 if (!c.settlementDay) return false;
 
                 const paidThisMonth = paymentTotalMap.get(c.uuid) || 0;
-                // Threshold: Serious effort is > 15% of debt or >= 2000 DA (Hardened policy)
-                const hasMadeSignificantEffort = paidThisMonth > (c.outstandingBalance * 0.15) || paidThisMonth >= 2000;
+                // Threshold: Serious effort is > 20% of debt (Corporate Standard)
+                const hasMadeSignificantEffort = paidThisMonth > (c.outstandingBalance * 0.20);
                 
                 const oldestDebtDate = debtAgeMap.get(c.uuid);
                 const isPastDueThisMonth = currentDay > c.settlementDay;
@@ -100,20 +92,21 @@ export default function DebtAlertsPage() {
             })
             .map(c => {
                 const oldestDebtDate = debtAgeMap.get(c.uuid);
-                const isOverLimit = (c.outstandingBalance > (c.creditLimit || 0)) && (c.creditLimit || 0) > 0;
-                const delaySeverity = (currentDay - (c.settlementDay || 0));
+                const creditLimit = c.creditLimit || 0;
+                const creditUsagePercent = creditLimit > 0 ? (c.outstandingBalance / creditLimit) * 100 : 0;
+                const delaySeverity = currentDay - (c.settlementDay || 0);
                 
-                const isHighlyCritical = isOverLimit || delaySeverity > 15 || (oldestDebtDate && isBefore(oldestDebtDate, firstOfThisMonth));
+                const isHighlyCritical = creditUsagePercent > 100 || delaySeverity > 15 || (oldestDebtDate && isBefore(oldestDebtDate, firstOfThisMonth));
 
                 return {
                     ...c,
-                    daysPastSettlement: Math.max(0, currentDay - (c.settlementDay || 0)),
+                    daysPastSettlement: Math.max(0, delaySeverity),
                     severity: isHighlyCritical ? 'critical' : 'warning',
-                    isLegacy: oldestDebtDate ? isBefore(oldestDebtDate, firstOfThisMonth) : false
+                    isLegacy: oldestDebtDate ? isBefore(oldestDebtDate, firstOfThisMonth) : false,
+                    creditUsagePercent
                 };
             })
             .sort((a, b) => {
-                // Primary Sort: Severity, Secondary: Balance
                 if (a.severity === 'critical' && b.severity !== 'critical') return -1;
                 if (a.severity !== 'critical' && b.severity === 'critical') return 1;
                 return b.outstandingBalance - a.outstandingBalance;
@@ -134,7 +127,7 @@ export default function DebtAlertsPage() {
     const handleWhatsApp = (customer: Customer) => {
         if (!customer.phone) return;
         const message = encodeURIComponent(
-            `Bonjour ${customer.firstName}, votre compte Elite iPOS affiche un solde de ${formatCurrency(customer.outstandingBalance)}. Un règlement est attendu pour régulariser votre situation. Merci de nous contacter. Cordialement.`
+            `Bonjour ${customer.firstName}, votre compte Elite iPOS affiche un solde débiteur de ${formatCurrency(customer.outstandingBalance)}. Merci de régulariser votre situation dans les plus brefs délais. Cordialement.`
         );
         window.open(`https://wa.me/${customer.phone}?text=${message}`, '_blank');
     };
@@ -142,20 +135,20 @@ export default function DebtAlertsPage() {
     const isLoading = alerts === undefined;
 
     return (
-        <div className="p-6 sm:p-10 space-y-10 max-w-[1600px] mx-auto animate-in fade-in duration-1000">
+        <div className="p-6 sm:p-10 space-y-10 max-w-[1800px] mx-auto animate-in fade-in duration-1000">
             <PageHeader 
                 title="Intelligence de Recouvrement" 
                 description="Analyse proactive des flux débiteurs et surveillance de l'insolvabilité"
             >
                 <div className="flex items-center gap-3 px-5 py-2.5 bg-primary/10 border border-primary/20 rounded-2xl shadow-inner group">
                     <div className="h-2 w-2 rounded-full bg-primary animate-pulse" />
-                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Algorithme Elite Actif</span>
+                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Radar Elite v4.0 Actif</span>
                 </div>
             </PageHeader>
 
             {/* Filter Interface */}
-            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 items-center bg-card/20 p-3 rounded-[3rem] border border-white/5 backdrop-blur-3xl shadow-2xl">
-                <div className="lg:col-span-3 relative group">
+            <div className="flex flex-col lg:flex-row gap-6 items-center bg-card/20 p-3 rounded-[3rem] border border-white/5 backdrop-blur-3xl shadow-2xl">
+                <div className="flex-grow relative group w-full">
                     <Search className="absolute left-8 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground group-focus-within:text-primary transition-all duration-500" />
                     <Input 
                         placeholder="Rechercher un dossier par nom ou mobile..."
@@ -164,11 +157,17 @@ export default function DebtAlertsPage() {
                         onChange={e => setSearchQuery(e.target.value)}
                     />
                 </div>
-                <div className="flex items-center justify-center gap-6 px-6 border-l border-white/5">
+                <div className="flex items-center justify-center gap-10 px-10 border-l border-white/5 h-16 shrink-0">
                     <div className="text-center">
-                        <span className="text-[9px] font-black uppercase text-muted-foreground/40 tracking-widest block mb-1">Dossiers</span>
-                        <span className={cn("text-2xl font-black font-mono", filteredAlerts.length > 0 ? "text-destructive" : "text-emerald-500")}>
+                        <span className="text-[9px] font-black uppercase text-muted-foreground/40 tracking-widest block mb-1">Alertes Actives</span>
+                        <span className={cn("text-3xl font-black font-mono leading-none", filteredAlerts.length > 0 ? "text-destructive" : "text-emerald-500")}>
                             {filteredAlerts.length.toString().padStart(2, '0')}
+                        </span>
+                    </div>
+                    <div className="text-center">
+                        <span className="text-[9px] font-black uppercase text-muted-foreground/40 tracking-widest block mb-1">Volume Critique</span>
+                        <span className="text-3xl font-black font-mono leading-none text-primary">
+                            {filteredAlerts.filter(a => a.severity === 'critical').length.toString().padStart(2, '0')}
                         </span>
                     </div>
                 </div>
@@ -176,9 +175,9 @@ export default function DebtAlertsPage() {
 
             <div className="min-h-[500px]">
                 {isLoading ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
-                        {[...Array(6)].map((_, i) => (
-                            <div key={i} className="h-80 w-full rounded-[3.5rem] bg-card/40 border border-white/5 animate-pulse" />
+                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-8">
+                        {[...Array(8)].map((_, i) => (
+                            <div key={i} className="h-96 w-full rounded-[3.5rem] bg-card/40 border border-white/5 animate-pulse" />
                         ))}
                     </div>
                 ) : filteredAlerts.length === 0 ? (
@@ -190,27 +189,27 @@ export default function DebtAlertsPage() {
                             </div>
                         </div>
                         <div className="space-y-3">
-                            <h3 className="text-3xl font-black tracking-tighter text-emerald-500">Intégrité des Flux</h3>
+                            <h3 className="text-3xl font-black tracking-tighter text-emerald-500">Intégrité des Flux Totale</h3>
                             <p className="text-muted-foreground font-medium max-w-sm mx-auto leading-relaxed uppercase text-[10px] tracking-[0.3em] opacity-40">
-                                Aucune anomalie de règlement détectée par le radar Elite.
+                                Aucun retard de règlement détecté par le protocole Elite.
                             </p>
                         </div>
                     </div>
                 ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8 animate-in slide-in-from-bottom-4 duration-700">
+                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-8 animate-in slide-in-from-bottom-4 duration-700">
                         {filteredAlerts.map(customer => (
                             <Card key={customer.uuid} className={cn(
                                 "luxury-card group bg-card/40 backdrop-blur-xl border-white/5 overflow-hidden rounded-[3.5rem] relative transition-all duration-500 hover:scale-[1.02]",
-                                customer.severity === 'critical' && "border-destructive/20 shadow-destructive/5"
+                                customer.severity === 'critical' && "border-destructive/30 shadow-destructive/10"
                             )}>
                                 <div className="absolute -right-6 -top-6 opacity-[0.02] group-hover:opacity-10 transition-opacity duration-1000 pointer-events-none">
                                     <BellRing className="h-40 w-40 rotate-12 text-destructive" />
                                 </div>
 
-                                <CardHeader className="p-10 pb-4 relative z-10">
+                                <CardHeader className="p-8 pb-4 relative z-10">
                                     <div className="flex justify-between items-start mb-6">
                                         <div className={cn(
-                                            "p-4 rounded-2xl shadow-inner border",
+                                            "p-4 rounded-2xl shadow-inner border transition-colors",
                                             customer.severity === 'critical' ? "bg-destructive/10 text-destructive border-destructive/10" : "bg-amber-500/10 text-amber-500 border-amber-500/10"
                                         )}>
                                             {customer.severity === 'critical' ? <ShieldAlert className="h-7 w-7" /> : <AlertCircle className="h-7 w-7" />}
@@ -220,12 +219,12 @@ export default function DebtAlertsPage() {
                                                 "text-[9px] font-black uppercase tracking-[0.2em] px-4 py-1.5 rounded-full border",
                                                 customer.severity === 'critical' ? "bg-destructive/10 text-destructive border-destructive/20" : "bg-amber-500/10 text-amber-500 border-amber-500/20"
                                             )}>
-                                                {customer.severity === 'critical' ? 'Critique' : 'Attention'}
+                                                {customer.severity === 'critical' ? 'Urgence Critique' : 'Retard Modéré'}
                                             </span>
                                             {customer.isLegacy && (
-                                                <Badge variant="outline" className="bg-primary/5 text-primary border-primary/20 text-[8px] font-black uppercase tracking-widest">
-                                                    <History className="h-2 w-2 mr-1" /> Dette Antérieure
-                                                </Badge>
+                                                <div className="flex items-center gap-1.5 text-[8px] font-black uppercase text-primary bg-primary/10 px-2 py-0.5 rounded-md border border-primary/20">
+                                                    <History className="h-2.5 w-2.5" /> Dette Historique
+                                                </div>
                                             )}
                                         </div>
                                     </div>
@@ -238,48 +237,64 @@ export default function DebtAlertsPage() {
                                     </div>
                                 </CardHeader>
 
-                                <CardContent className="p-10 pt-4 space-y-8 relative z-10">
-                                    <div className="p-8 rounded-[2.5rem] bg-black/40 border border-white/5 space-y-2 relative overflow-hidden group/debt">
+                                <CardContent className="p-8 pt-4 space-y-6 relative z-10">
+                                    <div className="p-6 rounded-[2.5rem] bg-black/40 border border-white/5 space-y-2 relative overflow-hidden group/debt">
                                         <div className="absolute inset-0 bg-gradient-to-r from-destructive/10 to-transparent opacity-0 group-hover/debt:opacity-100 transition-opacity duration-1000" />
                                         <p className="text-[9px] font-black uppercase text-muted-foreground/40 tracking-[0.3em] relative z-10">Créance Exigible</p>
                                         <p className={cn(
-                                            "text-5xl font-black tracking-tighter relative z-10 leading-none font-mono",
+                                            "text-4xl font-black tracking-tighter relative z-10 leading-none font-mono",
                                             customer.severity === 'critical' ? "text-destructive" : "text-amber-500"
                                         )}>
                                             {formatCurrency(customer.outstandingBalance)}
                                         </p>
                                     </div>
 
+                                    {/* Risk Metrics */}
                                     <div className="grid grid-cols-2 gap-4">
+                                        <div className="p-4 rounded-2xl bg-muted/20 border border-white/5 space-y-1">
+                                            <p className="text-[8px] font-black uppercase text-muted-foreground/40 flex items-center gap-1"><Clock className="h-2.5 w-2.5" /> Retard</p>
+                                            <p className="text-sm font-black text-foreground">{customer.daysPastSettlement} Jours</p>
+                                        </div>
+                                        <div className="p-4 rounded-2xl bg-muted/20 border border-white/5 space-y-1">
+                                            <p className="text-[8px] font-black uppercase text-muted-foreground/40 flex items-center gap-1"><TrendingUp className="h-2.5 w-2.5" /> Utilisation</p>
+                                            <p className={cn("text-sm font-black", customer.creditUsagePercent > 100 ? "text-destructive" : "text-foreground")}>
+                                                {Math.round(customer.creditUsagePercent)}%
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-2 gap-3">
                                         <Button 
                                             variant="outline" 
-                                            className="rounded-[1.5rem] h-16 gap-3 border-emerald-500/20 bg-emerald-500/5 text-emerald-500 hover:bg-emerald-500 hover:text-white transition-all font-black text-[10px] uppercase tracking-widest shadow-xl"
+                                            className="rounded-2xl h-14 gap-2 border-emerald-500/20 bg-emerald-500/5 text-emerald-500 hover:bg-emerald-500 hover:text-white transition-all font-black text-[9px] uppercase tracking-widest shadow-xl"
                                             onClick={() => handleWhatsApp(customer)}
                                             disabled={!customer.phone}
                                         >
-                                            <MessageCircle className="h-5 w-5" /> Relance WP
+                                            <MessageCircle className="h-4 w-4" /> Relance WP
                                         </Button>
                                         <Button 
                                             variant="outline" 
-                                            className="rounded-[1.5rem] h-16 gap-3 border-blue-500/20 bg-blue-500/5 text-blue-500 hover:bg-blue-500 hover:text-white transition-all font-black text-[10px] uppercase tracking-widest shadow-xl"
+                                            className="rounded-2xl h-14 gap-2 border-blue-500/20 bg-blue-500/5 text-blue-500 hover:bg-blue-500 hover:text-white transition-all font-black text-[9px] uppercase tracking-widest shadow-xl"
                                             asChild
                                             disabled={!customer.phone}
                                         >
                                             <a href={`tel:${customer.phone}`}>
-                                                <PhoneCall className="h-5 w-5" /> Appel Direct
+                                                <PhoneCall className="h-4 w-4" /> Appel Direct
                                             </a>
                                         </Button>
                                     </div>
                                     
-                                    <Button 
-                                        variant="ghost" 
-                                        asChild
-                                        className="w-full rounded-2xl h-14 font-black text-[10px] uppercase tracking-widest hover:bg-primary/10 hover:text-primary transition-all group/btn"
-                                    >
-                                        <Link href={`/customers/${customer.uuid}`}>
-                                            Expertise Dossier <ChevronRight className="ml-2 h-4 w-4 transition-transform group-hover/btn:translate-x-1" />
-                                        </Link>
-                                    </Button>
+                                    <div className="flex gap-2">
+                                        <Button 
+                                            variant="ghost" 
+                                            asChild
+                                            className="flex-grow rounded-xl h-12 font-black text-[9px] uppercase tracking-widest hover:bg-primary/10 hover:text-primary transition-all group/btn"
+                                        >
+                                            <Link href={`/customers/${customer.uuid}`}>
+                                                Dossier Elite <ChevronRight className="ml-1.5 h-3 w-3 transition-transform group-hover/btn:translate-x-1" />
+                                            </Link>
+                                        </Button>
+                                    </div>
                                 </CardContent>
                             </Card>
                         ))}
@@ -288,24 +303,20 @@ export default function DebtAlertsPage() {
             </div>
 
             {/* Technical Intelligence Note */}
-            <div className="p-12 bg-primary/5 rounded-[4rem] border border-primary/10 flex items-start gap-8 relative overflow-hidden group shadow-2xl">
+            <div className="p-10 bg-primary/5 rounded-[3.5rem] border border-primary/10 flex items-start gap-8 relative overflow-hidden group shadow-2xl">
                 <Sparkles className="absolute -right-6 -top-6 h-32 w-32 text-primary/5 group-hover:opacity-20 transition-opacity duration-1000" />
-                <div className="p-6 rounded-[2rem] bg-black/40 text-primary shadow-inner relative z-10 border border-white/5">
-                    <Clock className="h-10 w-10" />
+                <div className="p-5 rounded-3xl bg-black/40 text-primary shadow-inner relative z-10 border border-white/5">
+                    <Clock className="h-8 w-8" />
                 </div>
-                <div className="space-y-4 relative z-10">
-                    <p className="text-sm font-black uppercase tracking-[0.4em] text-primary flex items-center gap-2">
-                        <Info className="h-4 w-4" /> Algorithme de Recouvrement Elite v3.0
+                <div className="space-y-3 relative z-10">
+                    <p className="text-xs font-black uppercase tracking-[0.4em] text-primary flex items-center gap-2">
+                        <Info className="h-3.5 w-3.5" /> Intelligence de Flux Elite v4.0
                     </p>
-                    <p className="text-[13px] text-muted-foreground/70 font-medium leading-relaxed max-w-5xl italic border-l-2 border-primary/20 pl-6">
-                        Le protocole v3.0 ignore désormais le simple historique d'activité pour se concentrer sur l'âge réel de la dette (Sale-based Aging). Un dossier est classé "Legacy" si une facture impayée persiste depuis le mois précédent, indépendamment des paiements symboliques effectués. La criticité est automatiquement augmentée en cas de dépassement du plafond de crédit ou de retard supérieur à 15 jours.
+                    <p className="text-[12px] text-muted-foreground/70 font-medium leading-relaxed max-w-5xl italic border-l-2 border-primary/20 pl-6">
+                        Le protocole v4.0 utilise une analyse multidimensionnelle : il ignore les paiements symboliques (moins de 20% du solde) et classe les dossiers en "Urgence Critique" dès que l'indice de dépassement du plafond de crédit ou le retard de règlement (Settlement Lag) excède les seuils de sécurité de l'établissement.
                     </p>
                 </div>
             </div>
         </div>
     );
-}
-
-function Badge({ children, variant, className }: { children: React.ReactNode, variant?: any, className?: string }) {
-    return <div className={cn("px-2 py-0.5 rounded text-[10px] border", className)}>{children}</div>
 }
