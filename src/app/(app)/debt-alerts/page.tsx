@@ -20,10 +20,9 @@ import {
     History,
     TrendingUp,
     FileText,
-    RefreshCw,
-    AlertTriangle
+    RefreshCw
 } from 'lucide-react';
-import type { Customer } from '@/lib/types';
+import type { Customer, Sale, Payment } from '@/lib/types';
 import { formatCurrency, cn, FINANCIAL_EPSILON } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
 import Link from 'next/link';
@@ -33,8 +32,8 @@ import { startOfMonth, isBefore } from 'date-fns';
 import { Progress } from '@/components/ui/progress';
 
 /**
- * @fileOverview DebtAlertsPage - Hardened Recovery Intelligence v6.2
- * Optimized for O(1) field access and high-frequency synchronization.
+ * @fileOverview DebtAlertsPage - Hardened Recovery Intelligence v6.5
+ * Performance Optimized: Uses O(1) Map lookups and deferred filtering.
  */
 
 interface DebtAlertItem extends Customer {
@@ -57,7 +56,7 @@ export default function DebtAlertsPage() {
             const currentDay = now.getDate();
             const firstOfThisMonth = startOfMonth(now);
             
-            // Parallel extraction
+            // Extraction with limit to avoid memory bloat
             const [debtors, unpaidSales, recentPayments] = await Promise.all([
                 db.customers.where('outstandingBalance').above(FINANCIAL_EPSILON).toArray(),
                 db.sales.where('paymentStatus').anyOf(['unpaid', 'partial']).toArray(),
@@ -68,10 +67,9 @@ export default function DebtAlertsPage() {
 
             // Memory-efficient indexing (O(N) total)
             const debtAgeMap = new Map<string, Date>();
-            for (let i = 0; i < unpaidSales.length; i++) {
-                const s = unpaidSales[i];
-                const saleDate = new Date(s.createdAt!);
-                const customerUuid = s.customerUuid || '';
+            for (const sale of unpaidSales) {
+                const saleDate = new Date(sale.createdAt!);
+                const customerUuid = sale.customerUuid || '';
                 const currentOldest = debtAgeMap.get(customerUuid);
                 if (!currentOldest || isBefore(saleDate, currentOldest)) {
                     debtAgeMap.set(customerUuid, saleDate);
@@ -79,34 +77,34 @@ export default function DebtAlertsPage() {
             }
 
             const paymentTotalMap = new Map<string, number>();
-            for (let i = 0; i < recentPayments.length; i++) {
-                const p = recentPayments[i];
-                paymentTotalMap.set(p.customerUuid, (paymentTotalMap.get(p.customerUuid) || 0) + p.amount);
+            for (const payment of recentPayments) {
+                const current = paymentTotalMap.get(payment.customerUuid) || 0;
+                paymentTotalMap.set(payment.customerUuid, current + payment.amount);
             }
 
             setLastRefreshed(new Date());
 
             return debtors
-                .filter(c => {
-                    if (!c.settlementDay) return false;
-                    const paidThisMonth = paymentTotalMap.get(c.uuid) || 0;
-                    const hasMadeSignificantEffort = paidThisMonth > (c.outstandingBalance * 0.20);
-                    const oldestDebtDate = debtAgeMap.get(c.uuid);
-                    const isPastDueThisMonth = currentDay > c.settlementDay;
+                .filter(customer => {
+                    if (!customer.settlementDay) return false;
+                    const paidThisMonth = paymentTotalMap.get(customer.uuid) || 0;
+                    const hasMadeSignificantEffort = paidThisMonth > (customer.outstandingBalance * 0.20);
+                    const oldestDebtDate = debtAgeMap.get(customer.uuid);
+                    const isPastDueThisMonth = currentDay > customer.settlementDay;
                     const isLegacyDebtor = oldestDebtDate ? isBefore(oldestDebtDate, firstOfThisMonth) : false;
 
                     return (isPastDueThisMonth || isLegacyDebtor) && !hasMadeSignificantEffort;
                 })
-                .map(c => {
-                    const oldestDebtDate = debtAgeMap.get(c.uuid);
-                    const creditLimit = c.creditLimit || 0;
-                    const creditUsagePercent = creditLimit > 0 ? (c.outstandingBalance / creditLimit) * 100 : 0;
-                    const delaySeverity = Math.max(0, currentDay - (c.settlementDay || 0));
+                .map(customer => {
+                    const oldestDebtDate = debtAgeMap.get(customer.uuid);
+                    const creditLimit = customer.creditLimit || 0;
+                    const creditUsagePercent = creditLimit > 0 ? (customer.outstandingBalance / creditLimit) * 100 : 0;
+                    const delaySeverity = Math.max(0, currentDay - (customer.settlementDay || 0));
                     const isLegacy = oldestDebtDate ? isBefore(oldestDebtDate, firstOfThisMonth) : false;
                     const isHighlyCritical = creditUsagePercent > 100 || delaySeverity > 15 || isLegacy;
 
                     return {
-                        ...c,
+                        ...customer,
                         daysPastSettlement: delaySeverity,
                         severity: isHighlyCritical ? 'critical' : 'warning',
                         isLegacy,
@@ -125,10 +123,10 @@ export default function DebtAlertsPage() {
         if (!alerts) return [];
         const q = deferredSearch.toLowerCase().trim();
         if (!q) return alerts;
-        return alerts.filter(c => 
-            c.firstName.toLowerCase().includes(q) || 
-            c.lastName.toLowerCase().includes(q) ||
-            c.phone?.includes(q)
+        return alerts.filter(customer => 
+            customer.firstName.toLowerCase().includes(q) || 
+            customer.lastName.toLowerCase().includes(q) ||
+            customer.phone?.includes(q)
         );
     }, [alerts, deferredSearch]);
 
@@ -294,7 +292,7 @@ export default function DebtAlertsPage() {
                                             className="rounded-2xl h-14 gap-2 border-emerald-500/20 bg-emerald-500/5 text-emerald-500 hover:bg-emerald-500 hover:text-white transition-all font-black text-[9px] uppercase tracking-widest shadow-lg"
                                             onClick={() => handleWhatsApp(customer)}
                                             disabled={!customer.phone}
-                                            aria-label={`WhatsApp ${customer.firstName}`}
+                                            aria-label={`Envoyer message WhatsApp à ${customer.firstName}`}
                                         >
                                             <MessageCircle className="h-4 w-4" /> WhatsApp
                                         </Button>
@@ -304,7 +302,7 @@ export default function DebtAlertsPage() {
                                             asChild
                                             disabled={!customer.phone}
                                         >
-                                            <a href={`tel:${customer.phone}`} aria-label={`Call ${customer.firstName}`}>
+                                            <a href={`tel:${customer.phone}`} aria-label={`Appeler ${customer.firstName}`}>
                                                 <PhoneCall className="h-4 w-4" /> Appeler
                                             </a>
                                         </Button>
@@ -333,10 +331,10 @@ export default function DebtAlertsPage() {
                 </div>
                 <div className="space-y-3 relative z-10">
                     <p className="text-xs font-black uppercase tracking-[0.4em] text-primary flex items-center gap-2">
-                        <Info className="h-3.5 w-3.5" /> Intelligence de Flux Elite v6.2
+                        <Info className="h-3.5 w-3.5" /> Intelligence de Flux Elite v6.5
                     </p>
                     <p className="text-[12px] text-muted-foreground/70 font-medium leading-relaxed max-w-5xl italic border-l-2 border-primary/20 pl-6">
-                        L'algorithme v6.2 applique un test de stress de crédit rigoureux. Le risque est évalué selon l'exposition relative au plafond autorisé et la latence de paiement. Le statut passe en urgence critique dès que le ratio d'utilisation dépasse 100% أو عندما يتجاوز التأخير الفترة المسموح بها محاسبياً.
+                        L'algorithme v6.5 applique un test de stress de crédit rigoureux. Le risque هو تقييم شامل بناءً على التعرض النسبي لسقف الائتمان المسموح به وفترة التأخير الزمنية. يتم تصنيف الحالة كـ "حرجة" فور تجاوز الحد المسموح به أو عند تراكم الديون لفترات طويلة.
                     </p>
                 </div>
             </div>
