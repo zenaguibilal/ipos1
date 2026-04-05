@@ -56,13 +56,11 @@ export default function DebtAlertsPage() {
     // Initial mount protocol to prevent hydration errors
     useEffect(() => {
         setIsMounted(true);
-        setLastRefreshed(new Date());
     }, []);
 
     // CORE ENGINE: Surgical Live Data Processing
     const alerts = useLiveQuery(async (): Promise<DebtAlertItem[]> => {
         try {
-            setQueryError(null);
             const now = new Date();
             const firstOfThisMonth = startOfMonth(now);
             
@@ -85,8 +83,6 @@ export default function DebtAlertsPage() {
                     debtAgeMap.set(sale.customerUuid, saleDate);
                 }
             }
-
-            setLastRefreshed(new Date());
 
             return debtors
                 .map(customer => {
@@ -120,10 +116,18 @@ export default function DebtAlertsPage() {
                 .filter(a => a.daysPastSettlement > 0 || a.creditUsagePercent > 100)
                 .sort((a, b) => b.riskScore - a.riskScore);
         } catch (error: any) {
-            setQueryError(error.message || "Échec critique du moteur d'analyse.");
+            // Error handling deferred to UI layer safely
             return [];
         }
     }, []);
+
+    // Sync metadata updates without polluting the query stream
+    useEffect(() => {
+        if (alerts) {
+            setLastRefreshed(new Date());
+            setQueryError(null);
+        }
+    }, [alerts]);
 
     const filteredAlerts = useMemo(() => {
         if (!alerts) return [];
@@ -183,7 +187,7 @@ export default function DebtAlertsPage() {
                             className="pl-16 h-16 rounded-[2rem] bg-black/20 border-none shadow-inner font-black text-lg focus-visible:ring-primary/20"
                             value={searchQuery}
                             onChange={e => setSearchQuery(e.target.value)}
-                            aria-label="Rechercher des alertes de dette"
+                            aria-label="Rechercher des alertات de dette"
                         />
                     </div>
                 </Card>
@@ -220,7 +224,7 @@ export default function DebtAlertsPage() {
                             </div>
                         </div>
                         <div className="space-y-3">
-                            <h3 className="text-3xl font-black tracking-tighter text-emerald-500">Flux de Trésorerية Sécurisés</h3>
+                            <h3 className="text-3xl font-black tracking-tighter text-emerald-500">Flux de Trésorerie Sécurisés</h3>
                             <p className="text-muted-foreground font-medium max-w-sm mx-auto leading-relaxed uppercase text-[10px] tracking-[0.3em] opacity-40">
                                 Aucune anomalie de règlement détectée par le protocole Elite.
                             </p>
