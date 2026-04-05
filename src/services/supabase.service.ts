@@ -1,3 +1,4 @@
+
 'use client';
 
 import { db } from '@/lib/db';
@@ -11,7 +12,6 @@ class SupabaseSyncService {
     
     /**
      * Ordonnancement strict des tables pour garantir l'intégrité référentielle.
-     * On synchronise d'abord les entités racines (Profil, Fournisseurs) avant les transactions.
      */
     private readonly tableSyncOrder = [
         { name: 'company_profile', table: db.company_profile },
@@ -58,7 +58,7 @@ class SupabaseSyncService {
             const records = await item.table.toArray();
             if (records.length === 0) continue;
 
-            // Préparation des données : on retire l'ID local auto-incrémenté pour laisser Supabase gérer par UUID
+            // Préparation des données : on retire l'ID local auto-incrémenté
             const dataToSync = records.map((r: any) => {
                 const { id, ...rest } = r;
                 return rest;
@@ -75,7 +75,8 @@ class SupabaseSyncService {
     }
 
     /**
-     * Récupère les données du cloud et fusionne avec la base locale.
+     * Récupère les données du cloud et fusionne avec la base locale intelligemment.
+     * Utilise updatedAt pour éviter d'écraser des données locales plus récentes.
      */
     async pullAllData(url: string, key: string): Promise<void> {
         const supabase = getSupabaseClient(url, key);
@@ -91,8 +92,14 @@ class SupabaseSyncService {
                         const localRecord = await item.table.where('uuid').equals(remoteRecord.uuid).first();
                         
                         if (localRecord) {
-                            const { id } = localRecord;
-                            await item.table.update(id, remoteRecord);
+                            // Comparaison intelligente des timestamps
+                            const localUpdate = localRecord.updatedAt ? new Date(localRecord.updatedAt).getTime() : 0;
+                            const remoteUpdate = remoteRecord.updatedAt ? new Date(remoteRecord.updatedAt).getTime() : 0;
+                            
+                            if (remoteUpdate > localUpdate) {
+                                const { id } = localRecord;
+                                await item.table.update(id, remoteRecord);
+                            }
                         } else {
                             await item.table.add(remoteRecord);
                         }

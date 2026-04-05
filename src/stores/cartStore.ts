@@ -7,6 +7,7 @@ import { toast } from 'sonner';
 import { v4 as uuidv4 } from 'uuid';
 import { salesService } from '@/services/sales.service';
 import { customerService } from '@/services/customer.service';
+import { useAppStore } from './appStore';
 
 // State Interface
 interface CartState {
@@ -242,8 +243,11 @@ export const useCartStore = create<CartState>()(
                         resetCart();
                         
                         if (activeCart.customerUuid) {
-                            customerService.recalculateCustomerStatus(activeCart.customerUuid);
+                            await customerService.recalculateCustomerStatus(activeCart.customerUuid);
                         }
+
+                        // Trigger proactive background sync from AppStore
+                        useAppStore.getState().actions.performBackgroundSync();
 
                         return sale;
 

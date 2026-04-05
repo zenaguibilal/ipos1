@@ -94,6 +94,8 @@ export const useAppStore = create<AppState>()(
                 updateCompanyProfile: async (profileData) => {
                     const updatedProfile = await companyProfileService.updateProfile(profileData);
                     set({ companyProfile: updatedProfile });
+                    // Sync after profile update (if cloud credentials were added)
+                    get().actions.performBackgroundSync();
                 },
                 performCloudSync: async (mode) => {
                     const currentProfile = get().companyProfile;
@@ -135,15 +137,15 @@ export const useAppStore = create<AppState>()(
                     set({ isSyncing: true });
                     try {
                         const now = new Date();
-                        // Background sync performs a Pull-then-Push cycle for maximum consistency
+                        // Cycle complet : Récupérer d'abord les changements distants, puis envoyer les locaux
                         await supabaseSyncService.pullAllData(currentProfile.supabase_url, currentProfile.supabase_key);
                         await supabaseSyncService.pushAllData(currentProfile.supabase_url, currentProfile.supabase_key);
                         
                         const updatedProfile = await companyProfileService.updateProfile({ last_sync_at: now });
                         set({ companyProfile: updatedProfile, lastSyncDate: now });
-                        console.log("iPOS Luxury: Auto-sync (Pull/Push) complete.");
+                        console.log("iPOS Luxury: Auto-sync complete.");
                     } catch (error) {
-                        console.error("iPOS Luxury: Background sync failed.", error);
+                        console.error("iPOS Luxury: Background sync failed silently.", error);
                     } finally {
                         set({ isSyncing: false });
                     }
@@ -162,6 +164,8 @@ export const useAppStore = create<AppState>()(
                             }
                         });
                         toast.success("Retour de marchandise validé.");
+                        // Trigger proactive background sync
+                        get().actions.performBackgroundSync();
                         return true;
                     } catch (error: any) {
                         toast.error("Échec du traitement du retour.");
@@ -235,6 +239,8 @@ export const useAppStore = create<AppState>()(
                         });
 
                         toast.success("Réception de stock enregistrée.");
+                        // Trigger proactive background sync
+                        get().actions.performBackgroundSync();
                         return true;
                     } catch (error: any) {
                         toast.error("Échec de la réception de stock.");
