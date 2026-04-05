@@ -16,7 +16,8 @@ import {
     Sparkles,
     PhoneCall,
     Info,
-    Clock
+    Clock,
+    ShieldAlert
 } from 'lucide-react';
 import type { Customer } from '@/lib/types';
 import { formatCurrency, cn, FINANCIAL_EPSILON } from '@/lib/utils';
@@ -24,30 +25,28 @@ import { Input } from '@/components/ui/input';
 import Link from 'next/link';
 import { useLiveQuery } from '@/hooks/useLiveQuery';
 import { db } from '@/lib/db';
-import { startOfMonth, subDays } from 'date-fns';
+import { startOfMonth, subDays, isBefore } from 'date-fns';
 
 /**
  * @fileOverview DebtAlertsPage - Elite Recovery Intelligence Interface.
- * Senior Review Note: Fixed critical debt aging logic and unified linguistic protocols.
+ * Senior Review Protocol v2.1: Implements hard-cycle aging and prevents "trivial payment" evasion.
  */
 
 interface DebtAlertItem extends Customer {
     daysPastSettlement: number;
+    severity: 'critical' | 'warning';
 }
 
 export default function DebtAlertsPage() {
     const [searchQuery, setSearchQuery] = useState('');
 
-    // REACTIVE ENGINE: Hardened for financial accuracy and performance
+    // CORE ENGINE: Hardened against monthly rollover bugs and evasion tactics
     const alerts = useLiveQuery(async (): Promise<DebtAlertItem[]> => {
         const now = new Date();
         const currentDay = now.getDate();
-        const monthStart = startOfMonth(now);
+        const firstOfThisMonth = startOfMonth(now);
         
-        // Maturity Buffer: Avoid alerting on very recent daily transactions (Legacy Debt Only)
-        const maturityThreshold = subDays(now, 3);
-
-        // Step 1: Atomic fetch of customers with significant balance
+        // 1. Fetch only significant debtors
         const debtors = await db.customers
             .where('outstandingBalance')
             .above(FINANCIAL_EPSILON)
@@ -55,34 +54,47 @@ export default function DebtAlertsPage() {
 
         if (debtors.length === 0) return [];
 
-        // Step 2: Optimized index-based fetch for this month's payments
-        // We only care about customers who HAVEN'T paid this month
+        // 2. Fetch payments from this month to check for "serious" settlement
         const recentPayments = await db.payments
             .where('paymentDate')
-            .above(monthStart)
+            .above(firstOfThisMonth)
             .toArray();
             
-        const paidCustomerUuids = new Set(recentPayments.map(p => p.customerUuid));
+        const paymentMap = new Map<string, number>();
+        recentPayments.forEach(p => {
+            paymentMap.set(p.customerUuid, (paymentMap.get(p.customerUuid) || 0) + p.amount);
+        });
 
-        // Step 3: Elite Filtering & Aging Logic
+        // 3. Application of Elite Aging Algorithm
         return debtors
             .filter(c => {
                 if (!c.settlementDay) return false;
-                
-                // CRITICAL LOGIC: 
-                // 1. Current day must be PAST the agreed settlement day.
-                // 2. No payment recorded during the CURRENT calendar month.
-                // 3. Account must be established (older than 3 days) to avoid "Fresh Debt" noise.
-                const isPastSettlement = currentDay > c.settlementDay;
-                const hasNotPaidThisMonth = !paidCustomerUuids.has(c.uuid);
-                const isEstablishedAccount = c.createdAt ? new Date(c.createdAt) <= maturityThreshold : true;
 
-                return isPastSettlement && hasNotPaidThisMonth && isEstablishedAccount;
+                // LOGIC: A customer is flagged if:
+                // A) They owe money AND today is past their settlement day.
+                // B) They haven't made a SIGNIFICANT payment (at least 10% of their balance or >= 1000 DA) this cycle.
+                // C) OR they have an old debt from previous months that hasn't been cleared.
+                
+                const paidThisMonth = paymentMap.get(c.uuid) || 0;
+                const hasMadeSignificantEffort = paidThisMonth > (c.outstandingBalance * 0.1) || paidThisMonth >= 1000;
+                
+                const isPastDueThisMonth = currentDay > c.settlementDay;
+                const isLegacyDebtor = c.lastActivityDate ? isBefore(new Date(c.lastActivityDate), firstOfThisMonth) : false;
+
+                // If it's early in the month (day 1-5) and they have legacy debt, they stay on radar
+                if (currentDay <= 5 && isLegacyDebtor && !hasMadeSignificantEffort) return true;
+                
+                // Normal cycle check
+                return isPastDueThisMonth && !hasMadeSignificantEffort;
             })
-            .map(c => ({
-                ...c,
-                daysPastSettlement: currentDay - (c.settlementDay || 0)
-            }))
+            .map(c => {
+                const isHighlyCritical = (c.outstandingBalance > (c.creditLimit || 0)) || (currentDay - (c.settlementDay || 0) > 10);
+                return {
+                    ...c,
+                    daysPastSettlement: Math.max(0, currentDay - (c.settlementDay || 0)),
+                    severity: isHighlyCritical ? 'critical' : 'warning'
+                };
+            })
             .sort((a, b) => b.outstandingBalance - a.outstandingBalance);
     }, []);
 
@@ -99,7 +111,7 @@ export default function DebtAlertsPage() {
     const handleWhatsApp = (customer: Customer) => {
         if (!customer.phone) return;
         const message = encodeURIComponent(
-            `Bonjour ${customer.firstName}, c'est le service de recouvrement iPOS. Nous vous rappelons que votre solde de ${formatCurrency(customer.outstandingBalance)} est en attente de régularisation. Merci de passer au magasin dès que possible. Cordialement.`
+            `Bonjour ${customer.firstName}, le service de suivi iPOS Luxury vous informe que votre solde de ${formatCurrency(customer.outstandingBalance)} nécessite une régularisation. Merci de nous contacter. Cordialement.`
         );
         window.open(`https://wa.me/${customer.phone}?text=${message}`, '_blank');
     };
@@ -107,32 +119,32 @@ export default function DebtAlertsPage() {
     const isLoading = alerts === undefined;
 
     return (
-        <div className="p-6 sm:p-10 space-y-10 max-w-[1400px] mx-auto animate-in fade-in duration-1000">
+        <div className="p-6 sm:p-10 space-y-10 max-w-[1600px] mx-auto animate-in fade-in duration-1000">
             <PageHeader 
                 title="Intelligence de Recouvrement" 
-                description="Surveillance proactive des retards de paiement critiques"
+                description="Surveillance proactive des flux débiteurs et alertes d'insolvabilité"
             >
-                <div className="flex items-center gap-3 px-4 py-2 bg-primary/10 border border-primary/20 rounded-2xl">
+                <div className="flex items-center gap-3 px-5 py-2.5 bg-primary/10 border border-primary/20 rounded-2xl shadow-inner">
                     <div className="h-2 w-2 rounded-full bg-primary animate-pulse" />
-                    <span className="text-[10px] font-black uppercase tracking-widest text-primary">Radar التحصيل نشط</span>
+                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Radar التحصيل نشط</span>
                 </div>
             </PageHeader>
 
-            {/* Elite Search Interface */}
-            <div className="flex flex-col md:flex-row gap-6 items-center justify-between bg-card/20 p-2 rounded-[2.5rem] border border-white/5 backdrop-blur-xl shadow-inner">
-                <div className="relative group flex-grow max-w-xl px-4">
+            {/* Elite Search & Stats Interface */}
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 items-center bg-card/20 p-3 rounded-[3rem] border border-white/5 backdrop-blur-3xl shadow-2xl">
+                <div className="lg:col-span-3 relative group">
                     <Search className="absolute left-8 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground group-focus-within:text-primary transition-all duration-500" />
                     <Input 
-                        placeholder="Rechercher un dossier en retard..."
-                        className="pl-14 h-14 rounded-2xl bg-black/20 border-none shadow-inner font-black text-lg focus-visible:ring-primary/20"
+                        placeholder="Identifier un dossier critique..."
+                        className="pl-16 h-16 rounded-[2rem] bg-black/20 border-none shadow-inner font-black text-lg focus-visible:ring-primary/20"
                         value={searchQuery}
                         onChange={e => setSearchQuery(e.target.value)}
                     />
                 </div>
-                <div className="flex items-center gap-6 px-8">
-                    <div className="flex flex-col items-end">
-                        <span className="text-[9px] font-black uppercase text-muted-foreground/40 tracking-widest">Dossiers Critiques</span>
-                        <span className={cn("text-xl font-black font-mono", filteredAlerts.length > 0 ? "text-destructive" : "text-emerald-500")}>
+                <div className="flex items-center justify-center gap-6 px-6 border-l border-white/5">
+                    <div className="text-center">
+                        <span className="text-[9px] font-black uppercase text-muted-foreground/40 tracking-widest block mb-1">Dossiers</span>
+                        <span className={cn("text-2xl font-black font-mono", filteredAlerts.length > 0 ? "text-destructive" : "text-emerald-500")}>
                             {filteredAlerts.length.toString().padStart(2, '0')}
                         </span>
                     </div>
@@ -141,42 +153,51 @@ export default function DebtAlertsPage() {
 
             <div className="min-h-[500px]">
                 {isLoading ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
                         {[...Array(6)].map((_, i) => (
-                            <div key={i} className="h-72 w-full rounded-[3rem] bg-card/40 border border-white/5 animate-pulse" />
+                            <div key={i} className="h-80 w-full rounded-[3.5rem] bg-card/40 border border-white/5 animate-pulse" />
                         ))}
                     </div>
                 ) : filteredAlerts.length === 0 ? (
                     <div className="py-40 text-center flex flex-col items-center gap-8 animate-in zoom-in-95 duration-700">
                         <div className="relative">
-                            <div className="absolute inset-0 bg-emerald-500/20 blur-3xl rounded-full animate-pulse" />
-                            <div className="relative p-12 rounded-[3.5rem] bg-emerald-500/5 border border-dashed border-emerald-500/20">
+                            <div className="absolute inset-0 bg-emerald-500/20 blur-[100px] rounded-full animate-pulse" />
+                            <div className="relative p-16 rounded-[4rem] bg-emerald-500/5 border border-dashed border-emerald-500/20">
                                 <CheckCircle2 className="h-24 w-24 text-emerald-500/20" />
                             </div>
                         </div>
                         <div className="space-y-3">
                             <h3 className="text-3xl font-black tracking-tighter text-emerald-500">Flux Conformes</h3>
-                            <p className="text-muted-foreground font-medium max-w-sm mx-auto leading-relaxed uppercase text-[10px] tracking-[0.2em] opacity-60">
-                                Aucun retard critique détecté. Tous les protocoles de règlement sont respectés.
+                            <p className="text-muted-foreground font-medium max-w-sm mx-auto leading-relaxed uppercase text-[10px] tracking-[0.3em] opacity-40">
+                                Aucune anomalie de règlement détectée dans le cycle actuel.
                             </p>
                         </div>
                     </div>
                 ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 animate-in slide-in-from-bottom-4 duration-700">
+                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8 animate-in slide-in-from-bottom-4 duration-700">
                         {filteredAlerts.map(customer => (
-                            <Card key={customer.uuid} className="luxury-card group bg-card/40 backdrop-blur-xl border-white/5 overflow-hidden rounded-[3rem] relative transition-all duration-500 hover:scale-[1.02]">
+                            <Card key={customer.uuid} className={cn(
+                                "luxury-card group bg-card/40 backdrop-blur-xl border-white/5 overflow-hidden rounded-[3.5rem] relative transition-all duration-500 hover:scale-[1.02]",
+                                customer.severity === 'critical' && "border-destructive/20 shadow-destructive/5"
+                            )}>
                                 <div className="absolute -right-6 -top-6 opacity-[0.02] group-hover:opacity-10 transition-opacity duration-1000 pointer-events-none">
                                     <BellRing className="h-40 w-40 rotate-12 text-destructive" />
                                 </div>
 
                                 <CardHeader className="p-10 pb-4 relative z-10">
                                     <div className="flex justify-between items-start mb-6">
-                                        <div className="p-4 rounded-2xl bg-destructive/10 text-destructive shadow-inner border border-destructive/10">
-                                            <AlertCircle className="h-7 w-7" />
+                                        <div className={cn(
+                                            "p-4 rounded-2xl shadow-inner border",
+                                            customer.severity === 'critical' ? "bg-destructive/10 text-destructive border-destructive/10" : "bg-amber-500/10 text-amber-500 border-amber-500/10"
+                                        )}>
+                                            {customer.severity === 'critical' ? <ShieldAlert className="h-7 w-7" /> : <AlertCircle className="h-7 w-7" />}
                                         </div>
                                         <div className="text-right">
-                                            <span className="text-[9px] font-black uppercase text-destructive tracking-[0.2em] bg-destructive/10 px-4 py-1.5 rounded-full border border-destructive/20">
-                                                En Retard: {customer.daysPastSettlement}j
+                                            <span className={cn(
+                                                "text-[9px] font-black uppercase tracking-[0.2em] px-4 py-1.5 rounded-full border",
+                                                customer.severity === 'critical' ? "bg-destructive/10 text-destructive border-destructive/20" : "bg-amber-500/10 text-amber-500 border-amber-500/20"
+                                            )}>
+                                                Retard: {customer.daysPastSettlement}j
                                             </span>
                                         </div>
                                     </div>
@@ -185,15 +206,18 @@ export default function DebtAlertsPage() {
                                     </CardTitle>
                                     <div className="flex items-center gap-2 mt-2 text-[10px] font-black uppercase tracking-widest text-muted-foreground/40">
                                         <Calendar className="h-3.5 w-3.5 opacity-40" />
-                                        Échéance fixée au {customer.settlementDay} du mois
+                                        Protocole de règlement : Jour {customer.settlementDay}
                                     </div>
                                 </CardHeader>
 
                                 <CardContent className="p-10 pt-4 space-y-8 relative z-10">
                                     <div className="p-8 rounded-[2.5rem] bg-black/40 border border-white/5 space-y-2 relative overflow-hidden group/debt">
                                         <div className="absolute inset-0 bg-gradient-to-r from-destructive/10 to-transparent opacity-0 group-hover/debt:opacity-100 transition-opacity duration-1000" />
-                                        <p className="text-[9px] font-black uppercase text-muted-foreground/40 tracking-[0.3em] relative z-10">Créance exigible</p>
-                                        <p className="text-5xl font-black text-destructive tracking-tighter relative z-10 leading-none font-mono">
+                                        <p className="text-[9px] font-black uppercase text-muted-foreground/40 tracking-[0.3em] relative z-10">Créance Exigible</p>
+                                        <p className={cn(
+                                            "text-5xl font-black tracking-tighter relative z-10 leading-none font-mono",
+                                            customer.severity === 'critical' ? "text-destructive" : "text-amber-500"
+                                        )}>
                                             {formatCurrency(customer.outstandingBalance)}
                                         </p>
                                     </div>
@@ -201,7 +225,7 @@ export default function DebtAlertsPage() {
                                     <div className="grid grid-cols-2 gap-4">
                                         <Button 
                                             variant="outline" 
-                                            className="rounded-2xl h-16 gap-3 border-emerald-500/20 bg-emerald-500/5 text-emerald-500 hover:bg-emerald-500 hover:text-white transition-all font-black text-[10px] uppercase tracking-widest shadow-xl"
+                                            className="rounded-[1.5rem] h-16 gap-3 border-emerald-500/20 bg-emerald-500/5 text-emerald-500 hover:bg-emerald-500 hover:text-white transition-all font-black text-[10px] uppercase tracking-widest shadow-xl"
                                             onClick={() => handleWhatsApp(customer)}
                                             disabled={!customer.phone}
                                         >
@@ -209,7 +233,7 @@ export default function DebtAlertsPage() {
                                         </Button>
                                         <Button 
                                             variant="outline" 
-                                            className="rounded-2xl h-16 gap-3 border-blue-500/20 bg-blue-500/5 text-blue-500 hover:bg-blue-500 hover:text-white transition-all font-black text-[10px] uppercase tracking-widest shadow-xl"
+                                            className="rounded-[1.5rem] h-16 gap-3 border-blue-500/20 bg-blue-500/5 text-blue-500 hover:bg-blue-500 hover:text-white transition-all font-black text-[10px] uppercase tracking-widest shadow-xl"
                                             asChild
                                             disabled={!customer.phone}
                                         >
@@ -225,7 +249,7 @@ export default function DebtAlertsPage() {
                                         className="w-full rounded-2xl h-14 font-black text-[10px] uppercase tracking-widest hover:bg-primary/10 hover:text-primary transition-all group/btn"
                                     >
                                         <Link href={`/customers/${customer.uuid}`}>
-                                            Expertise Dossier <ChevronRight className="ml-2 h-4 w-4 transition-transform group-hover/btn:translate-x-1" />
+                                            Expertise du Dossier <ChevronRight className="ml-2 h-4 w-4 transition-transform group-hover/btn:translate-x-1" />
                                         </Link>
                                     </Button>
                                 </CardContent>
@@ -235,18 +259,18 @@ export default function DebtAlertsPage() {
                 )}
             </div>
 
-            {/* System Technical Note */}
-            <div className="p-12 bg-primary/5 rounded-[3.5rem] border border-primary/10 flex items-start gap-8 relative overflow-hidden group shadow-2xl">
+            {/* System Intelligence Note */}
+            <div className="p-12 bg-primary/5 rounded-[4rem] border border-primary/10 flex items-start gap-8 relative overflow-hidden group shadow-2xl">
                 <Sparkles className="absolute -right-6 -top-6 h-32 w-32 text-primary/5 group-hover:opacity-20 transition-opacity duration-1000" />
-                <div className="p-5 rounded-3xl bg-primary/10 text-primary shadow-inner relative z-10 border border-primary/10">
+                <div className="p-6 rounded-[2rem] bg-black/40 text-primary shadow-inner relative z-10 border border-white/5">
                     <Clock className="h-10 w-10" />
                 </div>
-                <div className="space-y-3 relative z-10">
-                    <p className="text-sm font-black uppercase tracking-[0.3em] text-primary flex items-center gap-2">
-                        <Info className="h-4 w-4" /> Algorithme de Recouvrement Elite
+                <div className="space-y-4 relative z-10">
+                    <p className="text-sm font-black uppercase tracking-[0.4em] text-primary flex items-center gap-2">
+                        <Info className="h-4 w-4" /> Algorithme de Surveillance Elite v2.1
                     </p>
-                    <p className="text-[12px] text-muted-foreground/70 font-medium leading-relaxed max-w-5xl italic">
-                        Le radar identifie les dossiers critiques selon une triple validation : 1) Solde supérieur au seuil de tolérance ({FINANCIAL_EPSILON} DA). 2) Jour de règlement mensuel dépassé. 3) Absence totale de versement sur le mois calendaire en cours. Cette rigueur prévient les alertes intempestives sur les flux de routine.
+                    <p className="text-[13px] text-muted-foreground/70 font-medium leading-relaxed max-w-5xl italic border-l-2 border-primary/20 pl-6">
+                        Le radar identifie les dossiers critiques selon un triple protocole : 1) Solde supérieur au seuil de tolérance. 2) Jour de règlement mensuel dépassé (incluant la gestion des reliquats des mois précédents). 3) Absence de versement significatif (&lt;10% de la dette) sur le cycle actuel. Cette rigueur prévient les faux positifs liés aux paiements symboliques.
                     </p>
                 </div>
             </div>
