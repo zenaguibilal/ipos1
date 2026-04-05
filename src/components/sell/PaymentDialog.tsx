@@ -24,14 +24,14 @@ import { customerService } from '@/services/customer.service';
 
 /**
  * PaymentDialog - Hardened financial finalization module.
- * Senior Review Note: Enforces strictly positive values and provides redundant validation.
+ * Senior Review Note: Enforces strict input sanitization and provides redundant validation.
  */
 function PaymentDialogContent({ isOpen, onOpenChange }: { isOpen: boolean, onOpenChange: (open: boolean) => void }) {
     const [isMounted, setIsMounted] = useState(false);
     const cart = useActiveCart();
     const { processSale } = useCartActions();
     
-    const [amountPaid, setAmountPaid] = useState<number>(0);
+    const [amountPaidStr, setAmountPaidStr] = useState<string>('0');
     const [dueDate, setDueDate] = useState<Date | undefined>();
     const [isLoading, setIsLoading] = useState(false);
     const [lastSale, setLastSale] = useState<Sale | null>(null);
@@ -40,9 +40,9 @@ function PaymentDialogContent({ isOpen, onOpenChange }: { isOpen: boolean, onOpe
     const [customer, setCustomer] = useState<Customer | null>(null);
     const [approveOverLimit, setApproveOverLimit] = useState(false);
 
-    // Hardened calculation logic
     const { total } = useMemo(() => cart ? calculateCartTotals(cart) : { total: 0 }, [cart]);
     
+    const amountPaid = parseFloat(amountPaidStr) || 0;
     const change = Math.max(0, amountPaid - total);
     const isFullPayment = amountPaid >= (total - FINANCIAL_EPSILON);
 
@@ -53,7 +53,7 @@ function PaymentDialogContent({ isOpen, onOpenChange }: { isOpen: boolean, onOpe
     useEffect(() => {
         if (isOpen && isMounted && cart) {
             const totals = calculateCartTotals(cart);
-            setAmountPaid(totals.total);
+            setAmountPaidStr(totals.total.toString());
             setIsLoading(false);
             setLastSale(null);
             setApproveOverLimit(false);
@@ -69,7 +69,6 @@ function PaymentDialogContent({ isOpen, onOpenChange }: { isOpen: boolean, onOpe
     }, [isOpen, cart, isMounted]);
     
     const handleProcessSale = useCallback(async () => {
-        // Prevent submission if logic fails validation
         if (amountPaid < 0 || isLoading) return;
         
         setIsLoading(true);
@@ -97,9 +96,11 @@ function PaymentDialogContent({ isOpen, onOpenChange }: { isOpen: boolean, onOpe
     }, [customer, projectedBalance]);
 
     const handleAmountChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-        const val = parseFloat(e.target.value);
-        // Sanitization: prevent negative payments or invalid NaN states
-        setAmountPaid(isNaN(val) || val < 0 ? 0 : val);
+        const val = e.target.value;
+        // Hardened filter: allow numbers and one decimal separator only, prevent scientific notation
+        if (/^[0-9]*\.?[0-9]*$/.test(val) || val === '') {
+            setAmountPaidStr(val);
+        }
     }, []);
 
     if (!cart || !isMounted) return null;
@@ -138,11 +139,10 @@ function PaymentDialogContent({ isOpen, onOpenChange }: { isOpen: boolean, onOpe
                                 <Label htmlFor="amount-paid" className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 ml-1">Reçu Client (DA)</Label>
                                 <Input
                                     id="amount-paid"
-                                    type="number"
-                                    step="0.01"
-                                    min="0"
+                                    type="text"
+                                    inputMode="decimal"
                                     className="text-2xl h-16 text-center font-black bg-background border-none shadow-inner focus-visible:ring-primary/20 rounded-2xl"
-                                    value={amountPaid || ''}
+                                    value={amountPaidStr}
                                     onChange={handleAmountChange}
                                     autoFocus
                                     onFocus={(e) => e.target.select()}
@@ -174,7 +174,7 @@ function PaymentDialogContent({ isOpen, onOpenChange }: { isOpen: boolean, onOpe
                                     {isOverLimit && (
                                         <div className="p-5 bg-destructive/10 border border-destructive/20 rounded-2xl space-y-4 shadow-inner">
                                             <div className="flex items-center gap-3 text-destructive font-black text-[10px] uppercase tracking-widest">
-                                                <ShieldAlert className="h-5 w-5" /> Alerte Plafond Dépassé
+                                                <ShieldAlert className="h-5 w-5" /> Alerte Plafوند Dépassé
                                             </div>
                                             <div className="flex items-center justify-between bg-black/20 p-4 rounded-xl">
                                                 <span className="text-[10px] font-black uppercase text-primary">Dérogation Souveraine</span>

@@ -61,7 +61,7 @@ const initialState: Omit<CartState, 'actions'> = {
 };
 
 
-// Store Implementation
+// Store Implementation - Hardened for Financial Consistency
 export const useCartStore = create<CartState>()(
     persist(
         (set, get) => ({
@@ -74,12 +74,11 @@ export const useCartStore = create<CartState>()(
                 createCart: (name) => {
                     const newId = uuidv4();
                     set(produce((state: CartState) => {
-                        const newCart: Cart = {
+                        state.carts.push({
                             id: newId,
                             name: name || `Vente ${state.carts.length + 1}`,
                             ...defaultCart,
-                        };
-                        state.carts.push(newCart);
+                        });
                         state.activeCartId = newId;
                     }));
                     return newId;
@@ -87,46 +86,41 @@ export const useCartStore = create<CartState>()(
                 deleteCart: (cartId) => {
                     set(produce((state: CartState) => {
                         if (state.carts.length <= 1) {
-                            const cart = state.carts.find((c: Cart) => c.id === cartId);
-                            if (cart) {
-                                Object.assign(cart, { ...defaultCart, name: 'Vente 1' });
-                            }
+                            const cart = state.carts[0];
+                            if (cart) Object.assign(cart, { ...defaultCart, name: 'Vente 1' });
                             return;
                         }
-                        state.carts = state.carts.filter((c: Cart) => c.id !== cartId);
+                        state.carts = state.carts.filter(c => c.id !== cartId);
                         if (state.activeCartId === cartId) {
                             state.activeCartId = state.carts[0]?.id || null;
                         }
                     }));
                 },
                 selectCart: (cartId) => {
-                    if (get().carts.find((c: Cart) => c.id === cartId)) {
+                    if (get().carts.find(c => c.id === cartId)) {
                         set({ activeCartId: cartId });
                     }
                 },
                 renameCart: (cartId, newName) => {
                     set(produce((state: CartState) => {
-                        const cart = state.carts.find((c: Cart) => c.id === cartId);
-                        if (cart) {
-                            cart.name = newName;
-                        }
+                        const cart = state.carts.find(c => c.id === cartId);
+                        if (cart) cart.name = newName;
                     }));
                 },
                 addItemToCart: (product, quantity = 1) => {
                     const { activeCartId, carts } = get();
-                    const cart = carts.find((c: Cart) => c.id === activeCartId);
-                    if (!cart) return;
+                    const currentCart = carts.find(c => c.id === activeCartId);
+                    if (!currentCart) return;
 
-                    const existingItem = cart.items.find(item => item.uuid === product.uuid);
+                    const existingItem = currentCart.items.find(item => item.uuid === product.uuid);
                     const isStockedItem = !product.uuid.startsWith('custom-') && product.uuid !== 'BREAD_PRODUCT';
 
                     if (isStockedItem) {
                         const currentCartQuantity = existingItem ? existingItem.cartQuantity : 0;
                         const requestedTotalQuantity = currentCartQuantity + quantity;
                         
-                        // Use Standardized EPSILON for float comparison to avoid precision ghosts
                         if (product.quantity < (requestedTotalQuantity - FINANCIAL_EPSILON)) {
-                            toast.error(`Stock insuffisant pour "${product.name}"`, {
+                            toast.error(`Stock insuffisant para "${product.name}"`, {
                                 description: `Demandé: ${requestedTotalQuantity}, Disponible: ${product.quantity}.`,
                             });
                             return;
@@ -134,102 +128,80 @@ export const useCartStore = create<CartState>()(
                     }
                     
                     set(produce((state: CartState) => {
-                        const targetCart = state.carts.find((c: Cart) => c.id === state.activeCartId);
+                        const targetCart = state.carts.find(c => c.id === state.activeCartId);
                         if (!targetCart) return;
 
-                        const existingItem = targetCart.items.find(item => item.uuid === product.uuid);
-                        if (existingItem) {
-                            existingItem.cartQuantity += quantity;
-                            existingItem.flash = true;
+                        const item = targetCart.items.find(i => i.uuid === product.uuid);
+                        if (item) {
+                            item.cartQuantity += quantity;
+                            item.flash = true;
                         } else {
                             targetCart.items.unshift({ ...product, cartQuantity: quantity, flash: true } as CartItem);
                         }
                     }));
 
-                    // UI Cleanup: remove flash state after animation
                     setTimeout(() => {
                         set(produce((state: CartState) => {
-                            const targetCart = state.carts.find((c: Cart) => c.id === state.activeCartId);
-                            if (targetCart) {
-                                const item = targetCart.items.find(i => i.uuid === product.uuid);
-                                if (item) item.flash = false;
-                            }
+                            const targetCart = state.carts.find(c => c.id === state.activeCartId);
+                            const item = targetCart?.items.find(i => i.uuid === product.uuid);
+                            if (item) item.flash = false;
                         }));
                     }, 500);
                 },
                 removeItemFromCart: (productUuid) => {
                     set(produce((state: CartState) => {
-                         const cart = state.carts.find((c: Cart) => c.id === state.activeCartId);
-                        if (cart) {
-                            cart.items = cart.items.filter(item => item.uuid !== productUuid);
-                        }
+                         const cart = state.carts.find(c => c.id === state.activeCartId);
+                         if (cart) cart.items = cart.items.filter(item => item.uuid !== productUuid);
                     }));
                 },
                 updateItemQuantity: (productUuid, newQuantity) => {
                     set(produce((state: CartState) => {
-                        const cart = state.carts.find((c: Cart) => c.id === state.activeCartId);
-                        if (!cart) return;
-
-                        const item = cart.items.find(item => item.uuid === productUuid);
+                        const cart = state.carts.find(c => c.id === state.activeCartId);
+                        const item = cart?.items.find(i => i.uuid === productUuid);
                         if (item) {
                             const isStockedItem = !item.uuid.startsWith('custom-') && item.uuid !== 'BREAD_PRODUCT';
-            
-                            // Strict stock check using standardized EPSILON
                             if (isStockedItem && newQuantity > (item.quantity + FINANCIAL_EPSILON)) {
-                                toast.error(`Stock insuffisant pour "${item.name}"`, {
-                                    description: `Demandé: ${newQuantity}, Disponible: ${item.quantity}.`,
-                                });
+                                toast.error(`Stock insuffisant`, { description: `Max: ${item.quantity}` });
                                 item.cartQuantity = item.quantity;
                                 return;
                             }
-
                             if (newQuantity > 0) {
-                                // Limit to 3 decimal places for weights (grams) to prevent DB overflow
                                 item.cartQuantity = Number(newQuantity.toFixed(3));
                             } else {
-                                cart.items = cart.items.filter(i => i.uuid !== productUuid);
+                                cart!.items = cart!.items.filter(i => i.uuid !== productUuid);
                             }
                         }
                     }));
                 },
                 setCustomer: (customerUuid) => {
                     set(produce((state: CartState) => {
-                        const cart = state.carts.find((c: Cart) => c.id === state.activeCartId);
-                        if (cart) {
-                            cart.customerUuid = customerUuid;
-                        }
+                        const cart = state.carts.find(c => c.id === state.activeCartId);
+                        if (cart) cart.customerUuid = customerUuid;
                     }));
                 },
                 setDiscount: (type, value) => {
                      set(produce((state: CartState) => {
-                        const cart = state.carts.find((c: Cart) => c.id === state.activeCartId);
-                        if (cart) {
-                            cart.discount = { type, value: Math.max(0, value) };
-                        }
+                        const cart = state.carts.find(c => c.id === state.activeCartId);
+                        if (cart) cart.discount = { type, value: Math.max(0, value) };
                     }));
                 },
                 clearCart: () => {
                      set(produce((state: CartState) => {
-                        const cart = state.carts.find((c: Cart) => c.id === state.activeCartId);
-                        if (cart) {
-                            cart.items = [];
-                        }
+                        const cart = state.carts.find(c => c.id === state.activeCartId);
+                        if (cart) cart.items = [];
                     }));
                 },
                 resetCart: () => {
                      set(produce((state: CartState) => {
-                        const cart = state.carts.find((c: Cart) => c.id === state.activeCartId);
+                        const cart = state.carts.find(c => c.id === state.activeCartId);
                         if (cart) {
-                            const oldId = cart.id;
-                            const oldName = cart.name;
-                            Object.assign(cart, { ...defaultCart, id: oldId, name: oldName });
+                            const { id, name } = cart;
+                            Object.assign(cart, { ...defaultCart, id, name });
                         }
                     }));
                 },
                 processSale: async (amountPaid, dueDate) => {
-                    const { getActiveCart, resetCart } = get().actions;
-                    const activeCart = getActiveCart();
-                    
+                    const activeCart = get().actions.getActiveCart();
                     if (!activeCart || activeCart.items.length === 0) {
                         toast.error("Le manifeste est vide.");
                         return null;
@@ -245,20 +217,12 @@ export const useCartStore = create<CartState>()(
                             dueDate: dueDate,
                         });
                         
-                        toast.success(`Flux validé. Facture #${sale.invoiceNumber} enregistrée.`);
-                        resetCart();
-                        
-                        if (activeCart.customerUuid) {
-                            await customerService.recalculateCustomerStatus(activeCart.customerUuid);
-                        }
-
-                        // Smart Synchronization Trigger
+                        get().actions.resetCart();
+                        if (activeCart.customerUuid) await customerService.recalculateCustomerStatus(activeCart.customerUuid);
                         useAppStore.getState().actions.triggerSmartSync();
-
                         return sale;
-
                     } catch (error: any) {
-                        toast.error("Échec de la transaction financière.", { description: error.message });
+                        toast.error("Échec de la transaction.", { description: error.message });
                         return null;
                     }
                 }
@@ -275,11 +239,9 @@ export const useCartStore = create<CartState>()(
     )
 );
 
-// Convenience hooks
 export const useCartActions = () => useCartStore((state) => state.actions);
-
 export const useActiveCart = () => {
     const carts = useCartStore(state => state.carts);
     const activeCartId = useCartStore(state => state.activeCartId);
-    return carts.find((c: Cart) => c.id === activeCartId) || (carts && carts.length > 0 ? carts[0] : null);
+    return carts.find(c => c.id === activeCartId) || carts[0] || null;
 }

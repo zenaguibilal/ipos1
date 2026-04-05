@@ -1,10 +1,10 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useDeferredValue } from 'react';
 import type { Product } from '@/lib/types';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Search, PackagePlus, Tag, ShoppingBag, Loader2, Sparkles, AlertCircle } from 'lucide-react';
+import { Search, PackagePlus, ShoppingBag, Loader2, Sparkles, AlertCircle } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 import { useDebounce } from '@/hooks/useDebounce';
 import { productService } from '@/services/product.service';
@@ -64,33 +64,32 @@ interface ProductSelectorProps {
 
 /**
  * ProductSelector - Secure high-frequency search engine.
- * Implements AbortController to solve race conditions.
+ * Implements AbortController and useDeferredValue to solve race conditions and main thread jank.
  */
 export function ProductSelector({ searchInputRef, customItemButtonRef }: ProductSelectorProps) {
     const { addItemToCart } = useCartActions();
     const [searchQuery, setSearchQuery] = useState('');
     const debouncedSearchQuery = useDebounce(searchQuery, 150);
+    const deferredResults = useDeferredValue(debouncedSearchQuery);
 
     const [searchResults, setSearchResults] = useState<Product[]>([]);
     const [isSearching, setIsSearching] = useState(false);
     const [searchError, setSearchError] = useState<string | null>(null);
 
     useEffect(() => {
-        if (!debouncedSearchQuery.trim()) {
+        if (!deferredResults.trim()) {
             setSearchResults([]);
             setSearchError(null);
             return;
         }
 
-        // Initialize AbortController to cancel previous pending requests
         const controller = new AbortController();
         
         const fetchSearchResults = async () => {
             setIsSearching(true);
             setSearchError(null);
             try {
-                // Pass signal to the service if supported, otherwise manually check aborted state
-                const data = await productService.filterProducts({ query: debouncedSearchQuery });
+                const data = await productService.filterProducts({ query: deferredResults });
                 if (!controller.signal.aborted) {
                     setSearchResults(data.slice(0, 15));
                 }
@@ -105,13 +104,14 @@ export function ProductSelector({ searchInputRef, customItemButtonRef }: Product
 
         fetchSearchResults();
         return () => controller.abort();
-    }, [debouncedSearchQuery]);
+    }, [deferredResults]);
 
     const handleSelect = (product: Product) => {
         addItemToCart(product);
         setSearchQuery('');
         setSearchResults([]);
-        searchInputRef.current?.focus();
+        // Force return focus to search input for rapid scanning
+        setTimeout(() => searchInputRef.current?.focus(), 0);
     };
     
     const isActiveSearch = searchQuery.trim().length > 0;
@@ -144,7 +144,7 @@ export function ProductSelector({ searchInputRef, customItemButtonRef }: Product
                         variant="outline" 
                         className="h-16 w-16 flex-shrink-0 rounded-3xl border-none bg-primary/5 hover:bg-primary/20 hover:text-primary transition-all shadow-xl group" 
                     >
-                        <Tag className="h-6 w-6 transition-transform group-hover:scale-110 group-hover:-rotate-12"/>
+                        <ShoppingBag className="h-6 w-6 transition-transform group-hover:scale-110 group-hover:-rotate-12"/>
                     </Button>
                 </CustomItemDialog>
             </div>
