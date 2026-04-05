@@ -22,8 +22,9 @@ class iPOSDatabase extends Dexie {
     constructor() {
         super('iPOSDatabase');
         this.version(1).stores({
+            // CRITICAL FIX: Added outstandingBalance to indexes to allow .where() queries
             products: '++id, &uuid, name, *barcodes, category, supplierUuid, stockStatus, dateExpiration',
-            customers: '++id, &uuid, searchName, debtStatus, isOverLimit, isBreadClient, bread_type_recurrence',
+            customers: '++id, &uuid, searchName, debtStatus, isOverLimit, isBreadClient, bread_type_recurrence, outstandingBalance',
             sales: '++id, &uuid, invoiceNumber, customerUuid, createdAt, paymentStatus',
             expenses: '++id, &uuid, category, expenseDate',
             suppliers: '++id, &uuid, &name',
