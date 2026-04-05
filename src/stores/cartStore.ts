@@ -25,6 +25,9 @@ interface CartActions {
     
     addItemToCart: (product: Product, quantity?: number) => void;
     removeItemFromCart: (productUuid: string) => void;
+    /**
+     * Updates item quantity with floating point support and stock validation.
+     */
     updateItemQuantity: (productUuid: string, newQuantity: number) => void;
     
     setCustomer: (customerUuid: string | null) => void;
@@ -43,7 +46,6 @@ const defaultCart: Omit<Cart, 'id' | 'name'> = {
     discount: { type: 'fixed', value: 0 },
 };
 
-// Use a stable ID for the initial cart to prevent hydration mismatch
 const INITIAL_CART_ID = 'initial-cart-id';
 
 const createInitialCart = (): Cart => ({
@@ -168,7 +170,8 @@ export const useCartStore = create<CartState>()(
                             if (item) {
                                 const isStockedItem = !item.uuid.startsWith('custom-') && item.uuid !== 'BREAD_PRODUCT';
                 
-                                if (isStockedItem && newQuantity > item.quantity) {
+                                // Strict stock check using high precision to avoid floating point issues
+                                if (isStockedItem && newQuantity > (item.quantity + 0.0001)) {
                                     toast.error(`Stock insuffisant pour "${item.name}"`, {
                                         description: `Demandé: ${newQuantity}, Disponible: ${item.quantity}.`,
                                     });
@@ -177,7 +180,7 @@ export const useCartStore = create<CartState>()(
                                 }
 
                                 if (newQuantity > 0) {
-                                    item.cartQuantity = newQuantity;
+                                    item.cartQuantity = Number(newQuantity.toFixed(3)); // 3 decimals for weights
                                 } else {
                                     cart.items = cart.items.filter(i => i.uuid !== productUuid);
                                 }
@@ -224,7 +227,7 @@ export const useCartStore = create<CartState>()(
                     const activeCart = getActiveCart();
                     
                     if (!activeCart || activeCart.items.length === 0) {
-                        toast.error("Le panier est vide.");
+                        toast.error("Le manifeste est vide.");
                         return null;
                     }
 
@@ -238,20 +241,20 @@ export const useCartStore = create<CartState>()(
                             dueDate: dueDate,
                         });
                         
-                        toast.success(`Vente #${sale.invoiceNumber} enregistrée.`);
+                        toast.success(`Flux validé. Facture #${sale.invoiceNumber} enregistrée.`);
                         resetCart();
                         
                         if (activeCart.customerUuid) {
                             await customerService.recalculateCustomerStatus(activeCart.customerUuid);
                         }
 
-                        // Déclenchement automatique de la sync "Elite" après la vente
+                        // Elite Synchronization Trigger
                         useAppStore.getState().actions.triggerSmartSync();
 
                         return sale;
 
                     } catch (error: any) {
-                        toast.error("Échec de la vente.", { description: error.message });
+                        toast.error("Échec de la transaction financière.", { description: error.message });
                         return null;
                     }
                 }

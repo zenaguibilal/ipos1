@@ -18,11 +18,11 @@ interface CartItemRowProps {
 
 /**
  * CartItemRow - Displays a single line in the transaction manifest.
- * Uses decimal precision for quantities to support weights (Kg/Litre).
+ * Uses floating point support for quantities (Kg/Litre).
  */
 const CartItemRow = React.memo(({ item, onUpdate, onRemove }: CartItemRowProps) => {
     const handleQtyChange = (val: string) => {
-        // parseFloat is MANDATORY for POS systems to support non-unit measures
+        // Use parseFloat to support weights (e.g., 0.5kg)
         const num = parseFloat(val);
         if (isNaN(num)) return;
         onUpdate(item.uuid, Math.max(0, num));
@@ -30,6 +30,7 @@ const CartItemRow = React.memo(({ item, onUpdate, onRemove }: CartItemRowProps) 
 
     const isCustom = item.uuid.startsWith('custom-');
     const isService = item.uuid === 'BREAD_PRODUCT';
+    const stepValue = item.unite === 'Kg' || item.unite === 'Litre' ? "0.001" : "1";
 
     return (
         <div 
@@ -43,26 +44,28 @@ const CartItemRow = React.memo(({ item, onUpdate, onRemove }: CartItemRowProps) 
                     <p className="font-black text-sm tracking-tight truncate group-hover:text-primary transition-colors">{item.name}</p>
                     {isCustom && <Tag className="h-3 w-3 text-amber-500 opacity-50" />}
                 </div>
-                <p className="text-[10px] font-bold text-muted-foreground/50">{formatCurrency(item.price)} <span className="mx-1 opacity-30">/</span> {item.unite || 'pcs'}</p>
+                <p className="text-[10px] font-bold text-muted-foreground/50">
+                    {formatCurrency(item.price)} <span className="mx-1 opacity-30">/</span> {item.unite || 'pcs'}
+                </p>
             </div>
             
             <div className="flex flex-col items-center gap-1">
                 <Input
                     type="number"
-                    step={item.unite === 'Kg' || item.unite === 'Litre' ? "0.001" : "1"}
+                    step={stepValue}
                     value={item.cartQuantity}
                     onChange={(e) => handleQtyChange(e.target.value)}
                     className="w-24 text-center h-10 rounded-xl bg-background/50 border-none shadow-inner font-black text-primary"
                     min="0"
                 />
                 {!isCustom && !isService && item.cartQuantity >= item.quantity && (
-                    <span className="text-[8px] font-black text-destructive uppercase">Stock Critique</span>
+                    <span className="text-[8px] font-black text-destructive uppercase animate-pulse">Stock Critique</span>
                 )}
             </div>
 
             <div className="w-24 text-right">
                 <p className="font-black text-base tracking-tighter text-foreground">
-                    {formatCurrency(Number(item.price) * Number(item.cartQuantity))}
+                    {formatCurrency(item.price * item.cartQuantity)}
                 </p>
             </div>
 

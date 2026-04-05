@@ -10,7 +10,7 @@ import { useCartActions } from '@/stores/cartStore';
 import { toast } from 'sonner';
 
 /**
- * SellPage - Elite POS Transaction Interface
+ * SellPage - Professional POS Transaction Interface.
  * Implements strict keyboard event management and high-speed workflow.
  */
 export default function SellPage() {
@@ -21,19 +21,21 @@ export default function SellPage() {
     const customItemButtonRef = useRef<HTMLButtonElement>(null);
     
     const handleKeyDown = useCallback((e: KeyboardEvent) => {
-        // Ignore if any modifier key is pressed to prevent conflict with OS shortcuts
+        // Strict modifier check to prevent collision with system/browser shortcuts
         if (e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return;
 
         const target = e.target as HTMLElement;
-        const isTyping = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.contentEditable === 'true';
+        const isTypingInInput = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.contentEditable === 'true';
         
+        // F1: Focus Search (Global)
         if (e.key === 'F1') {
             e.preventDefault();
             searchInputRef.current?.focus();
             return;
         }
         
-        if (isTyping && target !== searchInputRef.current) return;
+        // If typing in another input (like quantity), only F-keys should escape
+        if (isTypingInInput && target !== searchInputRef.current && !e.key.startsWith('F')) return;
 
         switch (e.key) {
             case 'F2':
@@ -54,7 +56,9 @@ export default function SellPage() {
                 customItemButtonRef.current?.click();
                 break;
             case 'Escape':
-                target.blur();
+                if (isTypingInInput) {
+                    target.blur();
+                }
                 break;
         }
     }, [createCart]);
@@ -67,19 +71,21 @@ export default function SellPage() {
     return (
         <div className="h-full flex flex-col p-4 sm:p-8 gap-6 overflow-hidden animate-in slide-in-from-bottom-2 duration-700">
             <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 flex-grow min-h-0">
-                <div className="lg:col-span-3 flex flex-col bg-card luxury-card rounded-[2rem] overflow-hidden border-none min-h-0">
+                {/* Transaction Manifest (Cart) */}
+                <div className="lg:col-span-3 flex flex-col bg-card luxury-card rounded-[2.5rem] overflow-hidden border-none min-h-0">
                     <div className="p-6 bg-muted/30 border-b border-white/5">
                         <CustomerCombobox ref={customerComboRef} />
                     </div>
                     
                     <CartDisplay />
                     
-                    <div className="mt-auto p-6 space-y-6 bg-muted/20 border-t border-white/5">
+                    <div className="mt-auto p-8 space-y-6 bg-muted/20 border-t border-white/5">
                         <CartTotalBar />
                         <SaleActions payButtonRef={payButtonRef} />
                     </div>
                 </div>
 
+                {/* Product Catalog / Search */}
                 <div className="lg:col-span-2 flex flex-col min-h-0">
                     <ProductSelector 
                         searchInputRef={searchInputRef} 
@@ -88,7 +94,7 @@ export default function SellPage() {
                 </div>
             </div>
 
-            {/* Legend / Shortcut Footer */}
+            {/* Shortcut Legend Footer */}
             <div className="hidden md:flex flex-wrap items-center justify-center gap-8 py-4 px-10 bg-card/50 backdrop-blur-xl border border-white/5 rounded-full text-[9px] font-black tracking-[0.2em] text-muted-foreground uppercase shadow-2xl">
                 <div className="flex items-center justify-center gap-3 pr-4 border-r border-white/10">
                     <span className="text-primary font-black">Légende Elite</span>
@@ -108,7 +114,7 @@ export default function SellPage() {
                 <div className="h-4 w-px bg-white/10" />
                 <div className="flex items-center gap-3 group">
                     <kbd className="bg-primary text-primary-foreground px-2.5 py-1.5 rounded-xl shadow-lg group-hover:scale-110 transition-all">Enter</kbd>
-                    <span className="text-primary">Valider</span>
+                    <span className="text-primary font-black">Valider</span>
                 </div>
             </div>
         </div>

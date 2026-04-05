@@ -24,7 +24,8 @@ export function formatDateToYYYYMMDD(date: Date): string {
 
 export function formatCurrency(value: number | string, currency = 'DA') {
   const numValue = typeof value === 'string' ? parseFloat(value) : value;
-  const formattedValue = (typeof numValue !== 'number' || isNaN(numValue)) ? '0.0' : numValue.toFixed(1);
+  // Use fixed precision for financial display to avoid floating point noise
+  const formattedValue = (typeof numValue !== 'number' || isNaN(numValue)) ? '0.0' : numValue.toFixed(2);
   return `${formattedValue} ${currency}`;
 }
 
@@ -33,16 +34,29 @@ interface CalculableCart {
     discount: { type: 'fixed' | 'percentage'; value: number };
 }
 
+/**
+ * Calculates cart totals with fixed precision to avoid JS floating point errors.
+ */
 export function calculateCartTotals(cart: CalculableCart) {
-    const subtotal = cart.items.reduce((acc, item) => acc + item.price * item.cartQuantity, 0);
+    const subtotal = cart.items.reduce((acc, item) => {
+        // Multiply by 100 to work with integers, then divide back (standard financial practice)
+        return acc + Math.round(item.price * item.cartQuantity * 100);
+    }, 0) / 100;
     
-    const discountAmount = cart.discount.type === 'percentage'
-        ? (subtotal * (cart.discount.value || 0)) / 100
-        : (cart.discount.value || 0);
+    let discountAmount = 0;
+    if (cart.discount.type === 'percentage') {
+        discountAmount = Math.round(subtotal * (cart.discount.value || 0)) / 100;
+    } else {
+        discountAmount = cart.discount.value || 0;
+    }
     
     const total = Math.max(0, subtotal - discountAmount);
 
-    return { subtotal, discountAmount, total };
+    return { 
+        subtotal: Number(subtotal.toFixed(2)), 
+        discountAmount: Number(discountAmount.toFixed(2)), 
+        total: Number(total.toFixed(2)) 
+    };
 }
 
 export function calculateStockStatus(quantity: number, minStockLevel: number): Product['stockStatus'] {

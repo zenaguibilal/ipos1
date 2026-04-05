@@ -23,8 +23,8 @@ import { addDays } from 'date-fns';
 import { customerService } from '@/services/customer.service';
 
 /**
- * PaymentDialog - Finalization module for transactions.
- * Implements strict financial validation and credit limit monitoring.
+ * PaymentDialog - Core financial finalization module.
+ * Uses high-precision comparisons to avoid JS floating point errors.
  */
 export function PaymentDialog({ isOpen, onOpenChange }: { isOpen: boolean, onOpenChange: (open: boolean) => void }) {
     const [isMounted, setIsMounted] = useState(false);
@@ -40,12 +40,13 @@ export function PaymentDialog({ isOpen, onOpenChange }: { isOpen: boolean, onOpe
     const [customer, setCustomer] = useState<Customer | null>(null);
     const [approveOverLimit, setApproveOverLimit] = useState(false);
 
+    // Get totals from utility with precision handling
     const { total } = useMemo(() => cart ? calculateCartTotals(cart) : { total: 0 }, [cart]);
     
-    // JS Precision Fix: Using toFixed(2) then back to Number for financial comparison
-    const roundedTotal = Number(total.toFixed(2));
-    const roundedPaid = Number(amountPaid.toFixed(2));
-    const change = Number((roundedPaid - roundedTotal).toFixed(2));
+    // EPSILON for floating point comparison (standard 0.01 for currency)
+    const EPSILON = 0.005;
+    const change = Math.max(0, amountPaid - total);
+    const isFullPayment = amountPaid >= (total - EPSILON);
 
     useEffect(() => {
         setIsMounted(true);
@@ -71,6 +72,7 @@ export function PaymentDialog({ isOpen, onOpenChange }: { isOpen: boolean, onOpe
     
     const handleProcessSale = async () => {
         if (amountPaid < 0 || isLoading) return;
+        
         setIsLoading(true);
         try {
             const sale = await processSale(amountPaid, dueDate);
@@ -86,54 +88,54 @@ export function PaymentDialog({ isOpen, onOpenChange }: { isOpen: boolean, onOpe
 
     const projectedBalance = useMemo(() => {
         if (!customer) return 0;
-        const creditAmount = Math.max(0, roundedTotal - roundedPaid);
+        const creditAmount = Math.max(0, total - amountPaid);
         return (customer.outstandingBalance || 0) + creditAmount;
-    }, [customer, roundedTotal, roundedPaid]);
+    }, [customer, total, amountPaid]);
 
     const isOverLimit = useMemo(() => {
         if (!customer || !customer.creditLimit) return false;
-        return projectedBalance > (customer.creditLimit + 0.01); // 0.01 epsilon
+        return projectedBalance > (customer.creditLimit + EPSILON);
     }, [customer, projectedBalance]);
 
     if (!cart || !isMounted) return null;
 
-    const isCreditSale = cart.customerUuid && roundedPaid < roundedTotal;
+    const isCreditSale = cart.customerUuid && amountPaid < (total - EPSILON);
     const canFinalize = !isLoading && amountPaid >= 0 && (
-        roundedPaid >= roundedTotal || 
-        (cart.customerUuid && (!isOverLimit || approveOverLimit))
+        isFullPayment || (cart.customerUuid && (!isOverLimit || approveOverLimit))
     );
     
     return (
         <>
             <Dialog open={isOpen} onOpenChange={onOpenChange}>
-                <DialogContent className="sm:max-w-[500px] overflow-hidden border-none shadow-2xl p-0 gap-0 bg-card rounded-3xl">
-                    <div className="bg-primary/5 p-6 border-b border-primary/10">
+                <DialogContent className="sm:max-w-[500px] overflow-hidden border-none shadow-2xl p-0 gap-0 bg-card rounded-[2.5rem]">
+                    <div className="bg-primary/5 p-8 border-b border-primary/10">
                         <DialogHeader>
-                            <div className="flex items-center gap-3">
-                                <div className="p-3 rounded-2xl bg-primary text-primary-foreground shadow-lg">
+                            <div className="flex items-center gap-4">
+                                <div className="p-3.5 rounded-2xl bg-primary text-primary-foreground shadow-2xl shadow-primary/20">
                                     <Wallet className="h-6 w-6" />
                                 </div>
                                 <div>
-                                    <DialogTitle className="text-xl font-black tracking-tight">Finalisation Transaction</DialogTitle>
-                                    <DialogDescription className="font-medium">{cart.name}</DialogDescription>
+                                    <DialogTitle className="text-2xl font-black tracking-tight">Validation Flux</DialogTitle>
+                                    <DialogDescription className="font-medium text-[10px] font-black uppercase tracking-widest opacity-50">{cart.name}</DialogDescription>
                                 </div>
                             </div>
                         </DialogHeader>
                     </div>
 
-                    <div className="p-6 space-y-6">
-                        <div className="text-center p-6 bg-muted/30 rounded-3xl border border-border/50 relative overflow-hidden">
-                            <Label className="text-muted-foreground uppercase text-[10px] font-black tracking-widest mb-2 block">Total du Manifeste</Label>
-                            <p className="text-5xl font-black text-primary tracking-tighter">{formatCurrency(total)}</p>
+                    <div className="p-8 space-y-8">
+                        <div className="text-center p-8 bg-black/40 rounded-[2rem] border border-white/5 relative overflow-hidden group shadow-inner">
+                            <Label className="text-muted-foreground uppercase text-[10px] font-black tracking-[0.3em] mb-3 block opacity-40">Solde Net du Manifeste</Label>
+                            <p className="text-5xl font-black text-primary tracking-tighter transition-transform duration-500 group-hover:scale-105">{formatCurrency(total)}</p>
                         </div>
 
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                             <div className="space-y-2">
-                                <Label htmlFor="amount-paid" className="text-xs font-bold text-muted-foreground ml-1">Montant Reçu (DA)</Label>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                             <div className="space-y-3">
+                                <Label htmlFor="amount-paid" className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 ml-1">Encaissé (DA)</Label>
                                 <Input
                                     id="amount-paid"
                                     type="number"
-                                    className="text-2xl h-16 text-center font-black bg-background border-2 border-transparent focus-visible:border-primary/20 rounded-2xl shadow-sm"
+                                    step="0.01"
+                                    className="text-2xl h-16 text-center font-black bg-background border-none shadow-inner focus-visible:ring-primary/20 rounded-2xl"
                                     value={amountPaid}
                                     onChange={(e) => setAmountPaid(parseFloat(e.target.value) || 0)}
                                     autoFocus
@@ -141,45 +143,42 @@ export function PaymentDialog({ isOpen, onOpenChange }: { isOpen: boolean, onOpe
                                     onKeyDown={(e) => { if(e.key === 'Enter' && canFinalize) handleProcessSale() }}
                                 />
                             </div>
-                            <div className="space-y-2">
-                                 <Label className="text-xs font-bold text-muted-foreground ml-1">Reliquat / Monnaie</Label>
+                            <div className="space-y-3">
+                                 <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 ml-1">Reliquat Flux</Label>
                                  <div className={cn(
-                                     "text-2xl h-16 flex items-center justify-center font-black rounded-2xl border-2 border-dashed transition-all",
-                                     change >= 0 ? "bg-green-500/10 border-green-500/30 text-green-500" : "bg-muted/50 border-border/50 text-muted-foreground"
+                                     "text-2xl h-16 flex items-center justify-center font-black rounded-2xl border border-dashed transition-all duration-500",
+                                     change >= 0.01 ? "bg-emerald-500/5 border-emerald-500/20 text-emerald-500" : "bg-muted/20 border-white/5 text-muted-foreground/20"
                                  )}>
-                                    {change >= 0 ? formatCurrency(change) : '-'}
+                                    {change >= 0.01 ? formatCurrency(change) : '-'}
                                  </div>
                             </div>
                         </div>
 
                         {isCreditSale && (
-                            <div className="space-y-4 animate-in fade-in slide-in-from-top-2">
-                                <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-2xl space-y-4">
-                                    <div className="flex items-start gap-3">
-                                        <Info className="h-4 w-4 text-amber-500 mt-1" />
+                            <div className="space-y-4 animate-in slide-in-from-top-4 duration-500">
+                                <div className="p-6 bg-amber-500/5 border border-amber-500/10 rounded-[2rem] space-y-6">
+                                    <div className="flex items-start gap-4">
+                                        <div className="p-2 rounded-xl bg-amber-500/10 text-amber-500"><Info className="h-5 w-5" /></div>
                                         <div className="space-y-1">
-                                            <p className="text-sm font-bold text-amber-500">Achat en Compte (Crédit)</p>
-                                            <p className="text-[10px] text-amber-500/80 font-medium">Flux débiteur de {formatCurrency(roundedTotal - roundedPaid)} à enregistrer.</p>
+                                            <p className="text-xs font-black uppercase tracking-tight text-amber-600">Inscription au Grand Livre (Crédit)</p>
+                                            <p className="text-[10px] text-amber-600/60 font-medium">Un flux débiteur de {formatCurrency(total - amountPaid)} sera rattaché au compte client.</p>
                                         </div>
                                     </div>
                                     
                                     {isOverLimit && (
-                                        <div className="p-4 bg-destructive/10 border border-destructive/20 rounded-xl space-y-3">
-                                            <div className="flex items-center gap-2 text-destructive font-black text-[10px] uppercase">
-                                                <ShieldAlert className="h-4 w-4" /> Alerte Plafond Dépassé
+                                        <div className="p-5 bg-destructive/10 border border-destructive/20 rounded-2xl space-y-4 shadow-inner">
+                                            <div className="flex items-center gap-3 text-destructive font-black text-[10px] uppercase tracking-widest">
+                                                <ShieldAlert className="h-5 w-5" /> Alerte Plafond Dépassé
                                             </div>
-                                            <p className="text-[10px] font-medium leading-relaxed">
-                                                Nouveau solde estimé : <span className="font-black">{formatCurrency(projectedBalance)}</span>
-                                            </p>
-                                            <div className="flex items-center justify-between bg-black/20 p-3 rounded-lg">
-                                                <span className="text-[10px] font-black uppercase text-primary">Dérogation Manuelle</span>
+                                            <div className="flex items-center justify-between bg-black/20 p-4 rounded-xl">
+                                                <span className="text-[10px] font-black uppercase text-primary">Dérogation Souveraine</span>
                                                 <Switch checked={approveOverLimit} onCheckedChange={setApproveOverLimit} className="data-[state=checked]:bg-primary" />
                                             </div>
                                         </div>
                                     )}
 
-                                    <div className="space-y-2 pt-2 border-t border-amber-500/10">
-                                        <Label className="text-[10px] uppercase font-bold text-amber-500/70 ml-1">Échéance prévue</Label>
+                                    <div className="space-y-3 pt-4 border-t border-amber-500/10">
+                                        <Label className="text-[10px] uppercase font-black tracking-widest text-amber-600/40 ml-1">Échéance de Règlement</Label>
                                         <DatePicker date={dueDate} setDate={setDueDate} />
                                     </div>
                                 </div>
@@ -187,15 +186,15 @@ export function PaymentDialog({ isOpen, onOpenChange }: { isOpen: boolean, onOpe
                         )}
                     </div>
 
-                    <div className="p-6 bg-card border-t flex gap-3">
-                        <Button variant="ghost" onClick={() => onOpenChange(false)} disabled={isLoading} className="flex-1 rounded-2xl h-12 font-bold">Annuler</Button>
+                    <div className="p-8 bg-card border-t border-white/5 flex gap-4">
+                        <Button variant="ghost" onClick={() => onOpenChange(false)} disabled={isLoading} className="flex-1 rounded-2xl h-14 font-black text-xs uppercase tracking-widest">Annuler</Button>
                         <Button 
                             onClick={handleProcessSale} 
                             disabled={!canFinalize} 
-                            className="flex-1 rounded-2xl h-12 font-black shadow-lg shadow-primary/20 transition-all active:scale-95 gap-2"
+                            className="flex-1 rounded-2xl h-14 font-black text-xs uppercase tracking-widest shadow-xl shadow-primary/20 transition-all active:scale-95 gap-3"
                         >
-                            {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
-                            Valider [Enter]
+                            {isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <CheckCircle2 className="h-5 w-5" />}
+                            Valider Flux [Enter]
                         </Button>
                     </div>
                 </DialogContent>
