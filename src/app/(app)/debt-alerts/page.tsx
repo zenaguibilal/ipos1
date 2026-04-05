@@ -14,43 +14,54 @@ import {
     AlertCircle,
     CheckCircle2,
     Sparkles,
-    Loader2
+    PhoneCall,
+    Info
 } from 'lucide-react';
-import { customerService } from '@/services/customer.service';
 import type { Customer } from '@/lib/types';
-import { formatCurrency, cn } from '@/lib/utils';
-import { Skeleton } from '@/components/ui/skeleton';
+import { formatCurrency, cn, FINANCIAL_EPSILON } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
 import Link from 'next/link';
 import { useLiveQuery } from '@/hooks/useLiveQuery';
 import { db } from '@/lib/db';
-import { startOfMonth } from 'date-fns';
+import { startOfMonth, subDays } from 'date-fns';
 
 /**
  * @fileOverview DebtAlertsPage - Elite Recovery Intelligence.
- * Senior Review: Refactored to reactive architecture using Live Queries.
- * Eliminates stale data and O(N) fetch performance issues.
+ * Refactored for professional debt aging logic and reactive performance.
  */
 export default function DebtAlertsPage() {
     const [searchQuery, setSearchQuery] = useState('');
 
-    // REACTIVE ENGINE: Tracks customers and payments in real-time
+    // REACTIVE ENGINE: Monitored data stream with professional aging logic
     const alerts = useLiveQuery(async () => {
         const now = new Date();
         const currentDay = now.getDate();
         const monthStart = startOfMonth(now);
+        // Maturity Buffer: Debt must be at least 3 days old to trigger an aggressive alert
+        const maturityThreshold = subDays(now, 3);
 
-        // Step 1: Atomic fetch of potential debtors
-        const debtors = await db.customers.where('outstandingBalance').above(0.01).toArray();
+        // Step 1: Atomic fetch of potential debtors using the financial epsilon
+        const debtors = await db.customers.where('outstandingBalance').above(FINANCIAL_EPSILON).toArray();
         if (debtors.length === 0) return [];
 
-        // Step 2: Batch fetch all payments for this month to avoid N+1 queries
+        // Step 2: Batch fetch payments to verify current month integrity
         const recentPayments = await db.payments.where('paymentDate').above(monthStart).toArray();
         const paidCustomerUuids = new Set(recentPayments.map(p => p.customerUuid));
 
-        // Step 3: Elite Filtering Protocol
+        // Step 3: Elite Filtering & Aging Protocol
         return debtors
-            .filter(c => c.settlementDay && currentDay > c.settlementDay && !paidCustomerUuids.has(c.uuid))
+            .filter(c => {
+                if (!c.settlementDay) return false;
+                
+                // Logic: Is it past the settlement day AND no payment this month?
+                const isPastSettlement = currentDay > c.settlementDay;
+                const hasNotPaidThisMonth = !paidCustomerUuids.has(c.uuid);
+                
+                // Safety check: Don't alert for very recent debts (accrued after settlement day this month)
+                const isLegacyDebt = c.lastActivityDate ? new Date(c.lastActivityDate) <= maturityThreshold : true;
+
+                return isPastSettlement && hasNotPaidThisMonth && isLegacyDebt;
+            })
             .sort((a, b) => b.outstandingBalance - a.outstandingBalance);
     }, []);
 
@@ -67,9 +78,7 @@ export default function DebtAlertsPage() {
     const handleWhatsApp = (customer: Customer) => {
         if (!customer.phone) return;
         const message = encodeURIComponent(
-            `Bonjour ${customer.firstName}, j'espère que vous allez bien. C'est iPOS. ` +
-            `Sauf erreur de ma part, votre solde de ${formatCurrency(customer.outstandingBalance)} ` +
-            `pour ce mois n'a pas encore été réglé. Merci de passer nous voir. Cordialement.`
+            `Bonjour ${customer.firstName}, c'est iPOS Luxury. Nous vous informons que votre solde de ${formatCurrency(customer.outstandingBalance)} est arrivé à échéance. Merci de régulariser votre situation dès que possible. Cordialement.`
         );
         window.open(`https://wa.me/${customer.phone}?text=${message}`, '_blank');
     };
@@ -80,11 +89,11 @@ export default function DebtAlertsPage() {
         <div className="p-6 sm:p-10 space-y-10 max-w-[1400px] mx-auto animate-in fade-in duration-1000">
             <PageHeader 
                 title="Intelligence de Recouvrement" 
-                description="Surveillance proactive des retards de paiement en temps réel"
+                description="Surveillance proactive des retards critiques et des échéances"
             >
-                <div className="flex items-center gap-3 px-4 py-2 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl">
-                    <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-                    <span className="text-[10px] font-black uppercase tracking-widest text-emerald-600">Flux de surveillance actif</span>
+                <div className="flex items-center gap-3 px-4 py-2 bg-primary/10 border border-primary/20 rounded-2xl">
+                    <div className="h-2 w-2 rounded-full bg-primary animate-pulse" />
+                    <span className="text-[10px] font-black uppercase tracking-widest text-primary">Radar التحصيل نشط</span>
                 </div>
             </PageHeader>
 
@@ -92,7 +101,7 @@ export default function DebtAlertsPage() {
                 <div className="relative group flex-grow max-w-xl px-4">
                     <Search className="absolute left-8 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground group-focus-within:text-primary transition-all duration-500" />
                     <Input 
-                        placeholder="Identifier un profil en retard..."
+                        placeholder="Identifier ένα ملف متأخر..."
                         className="pl-14 h-14 rounded-2xl bg-black/20 border-none shadow-inner font-black text-lg focus-visible:ring-primary/20"
                         value={searchQuery}
                         onChange={e => setSearchQuery(e.target.value)}
@@ -100,8 +109,10 @@ export default function DebtAlertsPage() {
                 </div>
                 <div className="flex items-center gap-6 px-8">
                     <div className="flex flex-col items-end">
-                        <span className="text-[9px] font-black uppercase text-muted-foreground/40 tracking-widest">Total Critique</span>
-                        <span className="text-xl font-black text-primary">{filteredAlerts.length} Dossiers</span>
+                        <span className="text-[9px] font-black uppercase text-muted-foreground/40 tracking-widest">Dossiers Critiques</span>
+                        <span className={cn("text-xl font-black", filteredAlerts.length > 0 ? "text-destructive" : "text-emerald-500")}>
+                            {filteredAlerts.length} Profils
+                        </span>
                     </div>
                 </div>
             </div>
@@ -122,9 +133,9 @@ export default function DebtAlertsPage() {
                             </div>
                         </div>
                         <div className="space-y-3">
-                            <h3 className="text-3xl font-black tracking-tighter text-emerald-500">Sérénité Financière</h3>
+                            <h3 className="text-3xl font-black tracking-tighter text-emerald-500">Flux Conformes</h3>
                             <p className="text-muted-foreground font-medium max-w-sm mx-auto leading-relaxed uppercase text-[10px] tracking-[0.2em] opacity-60">
-                                Tous les flux sont conformes. Aucun retard critique détecté dans le registre.
+                                Aucun retard critique détecté. Tous les comptes respectent les protocoles de règlement.
                             </p>
                         </div>
                     </div>
@@ -133,7 +144,7 @@ export default function DebtAlertsPage() {
                         {filteredAlerts.map(customer => (
                             <Card key={customer.uuid} className="luxury-card group bg-card/40 backdrop-blur-xl border-white/5 overflow-hidden rounded-[3rem] relative transition-all duration-500 hover:scale-[1.02]">
                                 <div className="absolute -right-6 -top-6 opacity-[0.02] group-hover:opacity-10 transition-opacity duration-1000 pointer-events-none">
-                                    <BellRing className="h-40 w-40 rotate-12" />
+                                    <BellRing className="h-40 w-40 rotate-12 text-destructive" />
                                 </div>
 
                                 <CardHeader className="p-10 pb-4 relative z-10">
@@ -152,14 +163,14 @@ export default function DebtAlertsPage() {
                                     </CardTitle>
                                     <div className="flex items-center gap-2 mt-2 text-[10px] font-black uppercase tracking-widest text-muted-foreground/40">
                                         <Calendar className="h-3.5 w-3.5 opacity-40" />
-                                        Règlement exigible le {customer.settlementDay} de chaque mois
+                                        Échéance fixée au {customer.settlementDay} du mois
                                     </div>
                                 </CardHeader>
 
                                 <CardContent className="p-10 pt-4 space-y-8 relative z-10">
                                     <div className="p-8 rounded-[2.5rem] bg-black/40 border border-white/5 space-y-2 relative overflow-hidden group/debt">
                                         <div className="absolute inset-0 bg-gradient-to-r from-destructive/10 to-transparent opacity-0 group-hover/debt:opacity-100 transition-opacity duration-1000" />
-                                        <p className="text-[9px] font-black uppercase text-muted-foreground/40 tracking-[0.3em] relative z-10">Créance Immédiate</p>
+                                        <p className="text-[9px] font-black uppercase text-muted-foreground/40 tracking-[0.3em] relative z-10">Créance exigible</p>
                                         <p className="text-5xl font-black text-destructive tracking-tighter relative z-10 leading-none">{formatCurrency(customer.outstandingBalance)}</p>
                                     </div>
 
@@ -170,18 +181,29 @@ export default function DebtAlertsPage() {
                                             onClick={() => handleWhatsApp(customer)}
                                             disabled={!customer.phone}
                                         >
-                                            <MessageCircle className="h-5 w-5" /> Relance WP
+                                            <MessageCircle className="h-5 w-5" /> Relancer WP
                                         </Button>
                                         <Button 
-                                            variant="ghost" 
+                                            variant="outline" 
+                                            className="rounded-2xl h-16 gap-3 border-blue-500/20 bg-blue-500/5 text-blue-500 hover:bg-blue-500 hover:text-white transition-all font-black text-[10px] uppercase tracking-widest shadow-xl"
                                             asChild
-                                            className="rounded-2xl h-16 font-black text-[10px] uppercase tracking-widest hover:bg-primary/10 hover:text-primary transition-all group/btn border border-transparent hover:border-primary/20"
+                                            disabled={!customer.phone}
                                         >
-                                            <Link href={`/customers/${customer.uuid}`}>
-                                                Dossier <ChevronRight className="ml-2 h-4 w-4 transition-transform group-hover/btn:translate-x-1" />
-                                            </Link>
+                                            <a href={`tel:${customer.phone}`}>
+                                                <PhoneCall className="h-5 w-5" /> Appeler
+                                            </a>
                                         </Button>
                                     </div>
+                                    
+                                    <Button 
+                                        variant="ghost" 
+                                        asChild
+                                        className="w-full rounded-2xl h-14 font-black text-[10px] uppercase tracking-widest hover:bg-primary/10 hover:text-primary transition-all group/btn"
+                                    >
+                                        <Link href={`/customers/${customer.uuid}`}>
+                                            Expertise Dossier <ChevronRight className="ml-2 h-4 w-4 transition-transform group-hover/btn:translate-x-1" />
+                                        </Link>
+                                    </Button>
                                 </CardContent>
                             </Card>
                         ))}
@@ -195,9 +217,11 @@ export default function DebtAlertsPage() {
                     <Landmark className="h-10 w-10" />
                 </div>
                 <div className="space-y-3 relative z-10">
-                    <p className="text-sm font-black uppercase tracking-[0.3em] text-primary">Protocole de Vigilance iPOS Elite</p>
+                    <p className="text-sm font-black uppercase tracking-[0.3em] text-primary flex items-center gap-2">
+                        <Info className="h-4 w-4" /> Algorithme de Surveillance النخبة
+                    </p>
                     <p className="text-[12px] text-muted-foreground/70 font-medium leading-relaxed max-w-5xl italic">
-                        Le moteur analytique surveille les flux de trésorerie en continu. Un client est automatiquement retiré de la zone de vigilance dès qu'un versement (même partiel) est détecté dans le mois calendaire en cours, ou si son solde devient inférieur à l'indice de tolérance (0.01 DA). Cela garantit que vos efforts de recouvrement se concentrent sur les défaillances réelles.
+                        Le système n'affiche que les retards "critiques". Un profil est considéré en alerte si : 1) Son solde est supérieur à l'indice de tolérance (0.01 DA). 2) Le jour de règlement mensuel est dépassé. 3) Aucun versement n'a été enregistré durant le mois calendaire actuel. 4) La dette n'est pas "fraîche" (datant de moins de 72h), afin d'éviter les faux positifs lors des transactions quotidiennes.
                     </p>
                 </div>
             </div>
