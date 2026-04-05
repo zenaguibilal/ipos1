@@ -124,7 +124,7 @@ export function PaymentDialog({ isOpen, onOpenChange }: { isOpen: boolean, onOpe
 
                     <div className="p-8 space-y-8">
                         <div className="text-center p-8 bg-black/40 rounded-[2rem] border border-white/5 relative overflow-hidden group shadow-inner">
-                            <Label className="text-muted-foreground uppercase text-[10px] font-black tracking-[0.3em] mb-3 block opacity-40">Solde Net du Manifeste</Label>
+                            <Label className="text-muted-foreground uppercase text-[10px] font-black tracking-[0.3em] mb-3 block opacity-40">Solده Net du Manifestه</Label>
                             <p className="text-5xl font-black text-primary tracking-tighter transition-transform duration-500 group-hover:scale-105">{formatCurrency(total)}</p>
                         </div>
 

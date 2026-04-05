@@ -170,7 +170,7 @@ export const useCartStore = create<CartState>()(
                             if (item) {
                                 const isStockedItem = !item.uuid.startsWith('custom-') && item.uuid !== 'BREAD_PRODUCT';
                 
-                                // Strict stock check using high precision to avoid floating point issues
+                                // Strict stock check using high precision
                                 if (isStockedItem && newQuantity > (item.quantity + 0.0001)) {
                                     toast.error(`Stock insuffisant pour "${item.name}"`, {
                                         description: `Demandé: ${newQuantity}, Disponible: ${item.quantity}.`,

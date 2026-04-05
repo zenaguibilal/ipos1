@@ -24,8 +24,8 @@ export function formatDateToYYYYMMDD(date: Date): string {
 
 export function formatCurrency(value: number | string, currency = 'DA') {
   const numValue = typeof value === 'string' ? parseFloat(value) : value;
-  // Use fixed precision for financial display to avoid floating point noise
-  const formattedValue = (typeof numValue !== 'number' || isNaN(numValue)) ? '0.0' : numValue.toFixed(2);
+  // Use fixed precision for financial display
+  const formattedValue = (typeof numValue !== 'number' || isNaN(numValue)) ? '0.00' : numValue.toFixed(2);
   return `${formattedValue} ${currency}`;
 }
 
@@ -35,17 +35,24 @@ interface CalculableCart {
 }
 
 /**
- * Calculates cart totals with fixed precision to avoid JS floating point errors.
+ * Calculates cart totals using integer arithmetic to avoid IEEE 754 floating point issues.
  */
 export function calculateCartTotals(cart: CalculableCart) {
-    const subtotal = cart.items.reduce((acc, item) => {
-        // Multiply by 100 to work with integers, then divide back (standard financial practice)
-        return acc + Math.round(item.price * item.cartQuantity * 100);
-    }, 0) / 100;
+    // We work with 1000 to support up to 3 decimal places for weights and precision
+    const PRECISION = 1000;
+    
+    const subtotalRaw = cart.items.reduce((acc, item) => {
+        const itemPrice = Math.round((item.price || 0) * PRECISION);
+        const itemQty = item.cartQuantity || 0;
+        return acc + (itemPrice * itemQty);
+    }, 0);
+
+    const subtotal = subtotalRaw / PRECISION;
     
     let discountAmount = 0;
     if (cart.discount.type === 'percentage') {
-        discountAmount = Math.round(subtotal * (cart.discount.value || 0)) / 100;
+        // Percentage discount calculated on the scaled integer
+        discountAmount = Math.round(subtotalRaw * ((cart.discount.value || 0) / 100)) / PRECISION;
     } else {
         discountAmount = cart.discount.value || 0;
     }
