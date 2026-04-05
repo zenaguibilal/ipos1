@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
@@ -60,7 +59,7 @@ export default function ZakatPage() {
         // Zakat = (Cash + Inventory + Receivables) - Payables
         const assets = inventory + data.customerDebts + cashInHand + cashInBank;
         const base = assets - data.supplierDebts;
-        const isEligible = base >= data.nisabThreshold;
+        const isEligible = data.nisabThreshold > 0 && base >= data.nisabThreshold;
         const zakat = isEligible ? base * 0.025 : 0;
 
         return { assets, base, zakat, isEligible };

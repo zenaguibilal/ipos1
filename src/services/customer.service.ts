@@ -21,7 +21,7 @@ class CustomerService {
         let collection = db.customers.toCollection();
 
         if (filters.status) {
-            if(filters.status === 'has_debt') collection = collection.filter(c => c.outstandingBalance > 0);
+            if(filters.status === 'has_debt') collection = collection.filter(c => (c.outstandingBalance || 0) > 0);
             if(filters.status === 'overdue') collection = collection.filter(c => c.debtStatus === 'overdue');
             if(filters.status === 'over_limit') collection = collection.filter(c => c.isOverLimit === true);
             if(filters.status === 'is_bread_client') collection = collection.filter(c => c.isBreadClient === true);
@@ -247,10 +247,11 @@ class CustomerService {
         ]);
         
         const totalInvoiced = sales.reduce((sum, s) => sum + s.total, 0);
+        const totalPaidAtSale = sales.reduce((sum, s) => sum + (s.amountPaid || 0), 0);
         const totalPaidViaPayments = payments.reduce((sum, p) => sum + p.amount, 0);
         const netCreditFromReturns = returns.reduce((sum, r) => sum + (r.totalReturnValue - r.amountRefunded), 0);
-        
-        const newBalance = totalInvoiced - totalPaidViaPayments - netCreditFromReturns;
+
+        const newBalance = totalInvoiced - totalPaidAtSale - totalPaidViaPayments - netCreditFromReturns;
         const totalSpent = totalInvoiced;
 
         const isOverLimit = customer.creditLimit != null && customer.creditLimit > 0 ? newBalance > customer.creditLimit : false;
@@ -296,7 +297,7 @@ class CustomerService {
         // Filter for customers who are genuinely late
         const alerts = [];
         for (const c of all) {
-            if (c.outstandingBalance <= 0.01) continue;
+            if ((c.outstandingBalance || 0) <= 0.01) continue;
             
             // Check if they have a payment this month
             const payments = await db.payments.where('customerUuid').equals(c.uuid).toArray();
@@ -307,7 +308,7 @@ class CustomerService {
             }
         }
 
-        return alerts.sort((a,b) => b.outstandingBalance - a.outstandingBalance);
+        return alerts.sort((a,b) => (b.outstandingBalance || 0) - (a.outstandingBalance || 0));
     }
 
     async analyzeImport(file: File): Promise<ImportAnalysis> {

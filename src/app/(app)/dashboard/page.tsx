@@ -1,4 +1,3 @@
-
 'use client';
 
 import React from 'react';
@@ -8,21 +7,9 @@ import { DateRangePicker } from '@/components/ui/date-range-picker';
 import { useDateRange } from '@/hooks/useDateRange';
 import type { RecentSale, RecentReturn, SalesByDay } from '@/lib/types';
 import { dashboardService } from '@/services/dashboard.service';
-import { 
-    TrendingUp, 
-    Receipt, 
-    Undo2, 
-    Users, 
-    CreditCard, 
-    Archive, 
-    RefreshCw, 
-    Star, 
-    ArrowUpRight, 
-    ArrowDownRight,
-    ShoppingCart,
-    Wallet,
-    Percent,
-    Sparkles
+import {
+    TrendingUp, Receipt, Undo2, Users, CreditCard, Archive, RefreshCw,
+    Star, ArrowUpRight, ArrowDownRight, ShoppingCart, Wallet, Percent, Sparkles
 } from 'lucide-react';
 import { formatCurrency, safeToDate, cn } from '@/lib/utils';
 import { format } from 'date-fns';
@@ -34,16 +21,29 @@ import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
 import { useLiveQuery } from '@/hooks/useLiveQuery';
 
-// --- Composants mémoïsés pour une fluidité Elite (Turbo Optimized) ---
+// ─── StatCard ─────────────────────────────────────────────────────────────────
 
-const StatCard = React.memo(({ title, value, icon: Icon, change, isLoading, href, positiveIsGood = true, suffix }: { title: string, value: string, icon: React.ElementType, change?: number, isLoading: boolean, href?: string, positiveIsGood?: boolean, suffix?: string }) => {
+const StatCard = React.memo(({
+    title, value, icon: Icon, change, isLoading, href, positiveIsGood = true, suffix
+}: {
+    title: string;
+    value: string;
+    icon: React.ElementType;
+    change?: number;
+    isLoading: boolean;
+    href?: string;
+    positiveIsGood?: boolean;
+    suffix?: string;
+}) => {
     const isPositive = change !== undefined && change >= 0;
     const isGood = positiveIsGood ? isPositive : !isPositive;
 
     const cardContent = (
         <Card className="luxury-card h-full bg-card/40 backdrop-blur-2xl overflow-hidden group border-white/5 rounded-[2rem]">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3 p-6">
-                <CardTitle className="text-[10px] font-black uppercase tracking-[0.25em] text-muted-foreground group-hover:text-primary transition-all duration-500">{title}</CardTitle>
+                <CardTitle className="text-[10px] font-black uppercase tracking-[0.25em] text-muted-foreground group-hover:text-primary transition-all duration-500">
+                    {title}
+                </CardTitle>
                 <div className="p-3 rounded-2xl bg-muted/50 text-muted-foreground group-hover:bg-primary group-hover:text-primary-foreground group-hover:shadow-lg group-hover:shadow-primary/20 transition-all duration-500">
                     <Icon className="h-4 w-4" />
                 </div>
@@ -53,112 +53,132 @@ const StatCard = React.memo(({ title, value, icon: Icon, change, isLoading, href
                     <Skeleton className="h-10 w-32 bg-muted/20 rounded-lg" />
                 ) : (
                     <div className="flex items-baseline gap-1">
-                        <div className="text-3xl font-black tracking-tighter text-foreground group-hover:scale-105 transition-transform duration-500 origin-left">{value}</div>
-                        {suffix && <span className="text-[10px] font-black text-muted-foreground uppercase opacity-50">{suffix}</span>}
+                        <div className="text-3xl font-black tracking-tighter text-foreground group-hover:scale-105 transition-transform duration-500 origin-left">
+                            {value}
+                        </div>
+                        {suffix && (
+                            <span className="text-[10px] font-black text-muted-foreground uppercase opacity-50">{suffix}</span>
+                        )}
                     </div>
                 )}
                 {isLoading ? (
                     <Skeleton className="h-4 w-24 mt-3 bg-muted/20 rounded-md" />
                 ) : (
-                    (change !== undefined && isFinite(change) && change !== 0) ? (
+                    change !== undefined && isFinite(change) && change !== 0 ? (
                         <div className="mt-3 flex items-center gap-2">
                             <div className={cn(
-                                "flex items-center gap-0.5 px-2 py-1 rounded-xl text-[10px] font-black tracking-tighter shadow-sm",
-                                isGood ? "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20" : "bg-destructive/10 text-destructive border border-destructive/20"
+                                'flex items-center gap-0.5 px-2 py-1 rounded-xl text-[10px] font-black tracking-tighter shadow-sm',
+                                isGood
+                                    ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20'
+                                    : 'bg-destructive/10 text-destructive border border-destructive/20'
                             )}>
                                 {isPositive ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
                                 {Math.abs(change).toFixed(1)}%
                             </div>
                             <span className="text-[9px] font-black text-muted-foreground uppercase opacity-30 tracking-widest">Évolution</span>
                         </div>
-                    ) : <div className="h-8"></div>
+                    ) : <div className="h-8" />
                 )}
             </CardContent>
         </Card>
     );
 
     if (href) {
-        return <Link href={href} className="block transition-all hover:scale-[1.03] active:scale-97">{cardContent}</Link>;
+        return (
+            <Link href={href} className="block transition-all hover:scale-[1.03] active:scale-97">
+                {cardContent}
+            </Link>
+        );
     }
-
     return cardContent;
 });
 StatCard.displayName = 'StatCard';
 
-const SalesChart = React.memo(({ data, isLoading }: { data: SalesByDay[], isLoading: boolean }) => (
+// ─── SalesChart ───────────────────────────────────────────────────────────────
+
+const SalesChart = React.memo(({ data, isLoading }: { data: SalesByDay[]; isLoading: boolean }) => (
     <Card className="luxury-card lg:col-span-2 bg-card/40 backdrop-blur-3xl border-white/5 overflow-hidden rounded-[2.5rem]">
         <CardHeader className="bg-muted/20 border-b border-white/5 p-8">
-            <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                    <div className="p-3.5 rounded-2xl bg-primary text-primary-foreground shadow-2xl shadow-primary/20">
-                        <TrendingUp className="h-6 w-6" />
-                    </div>
-                    <div>
-                        <CardTitle className="text-2xl font-black tracking-tighter">Courbe de Croissance</CardTitle>
-                        <CardDescription className="text-[10px] font-black uppercase tracking-[0.3em] text-primary/50">Flux de revenus & Bénéfice net</CardDescription>
-                    </div>
+            <div className="flex items-center gap-4">
+                <div className="p-3.5 rounded-2xl bg-primary text-primary-foreground shadow-2xl shadow-primary/20">
+                    <TrendingUp className="h-6 w-6" />
+                </div>
+                <div>
+                    <CardTitle className="text-2xl font-black tracking-tighter">Courbe de Croissance</CardTitle>
+                    <CardDescription className="text-[10px] font-black uppercase tracking-[0.3em] text-primary/50">
+                        Flux de revenus & Bénéfice net
+                    </CardDescription>
                 </div>
             </div>
         </CardHeader>
         <CardContent className="h-96 w-full p-8">
-             {isLoading ? (
+            {isLoading ? (
                 <div className="h-full w-full flex flex-col items-center justify-center bg-muted/5 rounded-[2rem] border border-dashed border-white/5">
                     <RefreshCw className="h-10 w-10 text-primary/20 animate-spin mb-4" />
                     <p className="text-[10px] font-black uppercase tracking-[0.4em] text-primary/20">Analyse des flux...</p>
                 </div>
             ) : (
-            <ResponsiveContainer>
-                <AreaChart data={data} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-                    <defs>
-                        <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="hsl(var(--chart-primary))" stopOpacity={0.4}/>
-                            <stop offset="95%" stopColor="hsl(var(--chart-primary))" stopOpacity={0}/>
-                        </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border) / 0.2)" vertical={false} />
-                    <XAxis 
-                        dataKey="date" 
-                        tickFormatter={(str) => format(new Date(str), 'd MMM', { locale: fr })}
-                        stroke="hsl(var(--muted-foreground))"
-                        fontSize={10}
-                        fontWeight="900"
-                        tickLine={false}
-                        axisLine={false}
-                        dy={15}
-                    />
-                    <YAxis 
-                        tickFormatter={(val) => `${val / 1000}k`}
-                        stroke="hsl(var(--muted-foreground))"
-                        fontSize={10}
-                        fontWeight="900"
-                        tickLine={false}
-                        axisLine={false}
-                        dx={-15}
-                    />
-                    <Tooltip 
-                        contentStyle={{ backgroundColor: 'hsl(var(--card) / 0.9)', backdropFilter: 'blur(16px)', borderRadius: '1.5rem', border: '1px solid rgba(255,255,255,0.05)' }}
-                        itemStyle={{ fontSize: '12px', fontWeight: '900', textTransform: 'uppercase' }}
-                        formatter={(value: number) => [formatCurrency(value), "Recettes"]}
-                    />
-                    <Area type="monotone" dataKey="total" name="total" stroke="hsl(var(--chart-primary))" strokeWidth={5} fillOpacity={1} fill="url(#colorRevenue)" isAnimationActive={false} />
-                </AreaChart>
-            </ResponsiveContainer>
-             )}
+                <ResponsiveContainer>
+                    <AreaChart data={data} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                        <defs>
+                            <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="5%" stopColor="hsl(var(--chart-primary))" stopOpacity={0.4} />
+                                <stop offset="95%" stopColor="hsl(var(--chart-primary))" stopOpacity={0} />
+                            </linearGradient>
+                        </defs>
+                        <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border) / 0.2)" vertical={false} />
+                        <XAxis
+                            dataKey="date"
+                            tickFormatter={(str) => format(new Date(str), 'd MMM', { locale: fr })}
+                            stroke="hsl(var(--muted-foreground))"
+                            fontSize={10} fontWeight="900" tickLine={false} axisLine={false} dy={15}
+                        />
+                        <YAxis
+                            tickFormatter={(val) => `${val / 1000}k`}
+                            stroke="hsl(var(--muted-foreground))"
+                            fontSize={10} fontWeight="900" tickLine={false} axisLine={false} dx={-15}
+                        />
+                        <Tooltip
+                            contentStyle={{
+                                backgroundColor: 'hsl(var(--card) / 0.9)',
+                                backdropFilter: 'blur(16px)',
+                                borderRadius: '1.5rem',
+                                border: '1px solid rgba(255,255,255,0.05)',
+                            }}
+                            itemStyle={{ fontSize: '12px', fontWeight: '900', textTransform: 'uppercase' }}
+                            formatter={(value: number) => [formatCurrency(value), 'Recettes']}
+                        />
+                        <Area
+                            type="monotone" dataKey="total" name="total"
+                            stroke="hsl(var(--chart-primary))" strokeWidth={5}
+                            fillOpacity={1} fill="url(#colorRevenue)" isAnimationActive={false}
+                        />
+                    </AreaChart>
+                </ResponsiveContainer>
+            )}
         </CardContent>
     </Card>
 ));
 SalesChart.displayName = 'SalesChart';
 
-const RecentActivity = React.memo(({ sales, returns, isLoading }: { sales: RecentSale[], returns: RecentReturn[], isLoading: boolean }) => (
+// ─── RecentActivity ───────────────────────────────────────────────────────────
+
+const RecentActivity = React.memo(({
+    sales, returns, isLoading
+}: { sales: RecentSale[]; returns: RecentReturn[]; isLoading: boolean }) => (
     <Card className="luxury-card bg-card/40 backdrop-blur-3xl border-white/5 overflow-hidden rounded-[2.5rem]">
         <CardHeader className="bg-muted/20 border-b border-white/5 p-8">
             <CardTitle className="text-2xl font-black tracking-tighter">Flux en Temps Réel</CardTitle>
-            <CardDescription className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground/40">Derniers mouvements validés</CardDescription>
+            <CardDescription className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground/40">
+                Derniers mouvements validés
+            </CardDescription>
         </CardHeader>
         <CardContent className="p-6 space-y-4 max-h-[400px] overflow-y-auto custom-scrollbar">
-             {isLoading ? (
+            {isLoading ? (
                 <div className="space-y-4">
-                    {[...Array(5)].map((_, i) => <Skeleton key={`skel-recent-${i}`} className="h-20 w-full rounded-3xl bg-muted/10" />)}
+                    {[...Array(5)].map((_, i) => (
+                        <Skeleton key={`skel-recent-${i}`} className="h-20 w-full rounded-3xl bg-muted/10" />
+                    ))}
                 </div>
             ) : (
                 <div className="space-y-3">
@@ -170,13 +190,19 @@ const RecentActivity = React.memo(({ sales, returns, isLoading }: { sales: Recen
                     ) : (
                         <>
                             {sales.map(s => (
-                                <Link href={`/sales-history?query=${s.invoiceNumber}`} key={`sale-act-${s.uuid}`} className="flex items-center gap-4 p-4 rounded-[1.5rem] bg-muted/20 border border-transparent hover:border-primary/30 hover:bg-primary/5 transition-all duration-500 group">
+                                <Link
+                                    href={`/sales-history?query=${s.invoiceNumber}`}
+                                    key={`sale-act-${s.uuid}`}
+                                    className="flex items-center gap-4 p-4 rounded-[1.5rem] bg-muted/20 border border-transparent hover:border-primary/30 hover:bg-primary/5 transition-all duration-500 group"
+                                >
                                     <div className="p-3 rounded-2xl bg-primary/10 text-primary group-hover:scale-110 transition-all shadow-inner">
                                         <Receipt className="h-5 w-5" />
                                     </div>
                                     <div className="flex-grow min-w-0">
                                         <p className="font-black text-sm tracking-tight truncate group-hover:text-primary transition-colors">{s.customerName}</p>
-                                        <p className="text-[9px] font-black text-muted-foreground/40 uppercase tracking-widest">{format(safeToDate(s.createdAt!), 'HH:mm')} • #{s.invoiceNumber}</p>
+                                        <p className="text-[9px] font-black text-muted-foreground/40 uppercase tracking-widest">
+                                            {format(safeToDate(s.createdAt!), 'HH:mm')} • #{s.invoiceNumber}
+                                        </p>
                                     </div>
                                     <div className="text-right">
                                         <p className="font-black text-base text-primary tracking-tighter">{formatCurrency(s.total)}</p>
@@ -184,13 +210,19 @@ const RecentActivity = React.memo(({ sales, returns, isLoading }: { sales: Recen
                                 </Link>
                             ))}
                             {returns.map(r => (
-                                <Link href={`/returns?query=${r.originalInvoiceNumber}`} key={`return-act-${r.uuid}`} className="flex items-center gap-4 p-4 rounded-[1.5rem] bg-destructive/5 border border-transparent hover:border-destructive/30 hover:bg-destructive/10 transition-all duration-500 group">
+                                <Link
+                                    href={`/returns?query=${r.originalInvoiceNumber}`}
+                                    key={`return-act-${r.uuid}`}
+                                    className="flex items-center gap-4 p-4 rounded-[1.5rem] bg-destructive/5 border border-transparent hover:border-destructive/30 hover:bg-destructive/10 transition-all duration-500 group"
+                                >
                                     <div className="p-3 rounded-2xl bg-destructive/10 text-destructive group-hover:scale-110 transition-all shadow-inner">
                                         <Undo2 className="h-5 w-5" />
                                     </div>
                                     <div className="flex-grow min-w-0">
                                         <p className="font-black text-sm tracking-tight truncate">{r.customerName}</p>
-                                        <p className="text-[9px] font-black text-muted-foreground/40 uppercase tracking-widest">{format(safeToDate(r.createdAt!), 'HH:mm')} • Retour Client</p>
+                                        <p className="text-[9px] font-black text-muted-foreground/40 uppercase tracking-widest">
+                                            {format(safeToDate(r.createdAt!), 'HH:mm')} • Retour Client
+                                        </p>
                                     </div>
                                     <div className="text-right">
                                         <p className="font-black text-base text-destructive tracking-tighter">-{formatCurrency(r.totalReturnValue)}</p>
@@ -200,16 +232,17 @@ const RecentActivity = React.memo(({ sales, returns, isLoading }: { sales: Recen
                         </>
                     )}
                 </div>
-             )}
+            )}
         </CardContent>
     </Card>
 ));
 RecentActivity.displayName = 'RecentActivity';
 
+// ─── DashboardPage ────────────────────────────────────────────────────────────
+
 export default function DashboardPage() {
     const { dateRange, setDate, isMounted } = useDateRange(29);
-    
-    // Live query for instant statistical updates
+
     const data = useLiveQuery(
         async () => {
             if (!isMounted || !dateRange?.from || !dateRange?.to) return null;
@@ -240,11 +273,12 @@ export default function DashboardPage() {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
-                <SalesChart data={data?.salesByDay ?? []} isLoading={isLoading}/>
-                <RecentActivity sales={data?.recentSales ?? []} returns={data?.recentReturns ?? []} isLoading={isLoading}/>
+                <SalesChart data={data?.salesByDay ?? []} isLoading={isLoading} />
+                <RecentActivity sales={data?.recentSales ?? []} returns={data?.recentReturns ?? []} isLoading={isLoading} />
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
+                {/* Best-Sellers */}
                 <Card className="luxury-card bg-card/40 backdrop-blur-3xl border-white/5 overflow-hidden rounded-[2.5rem]">
                     <CardHeader className="bg-muted/20 border-b border-white/5 p-8">
                         <CardTitle className="text-xl font-black tracking-tighter flex items-center gap-3">
@@ -253,8 +287,9 @@ export default function DashboardPage() {
                         </CardTitle>
                     </CardHeader>
                     <CardContent className="p-8 space-y-6">
-                        {isLoading ? [...Array(5)].map((_, i) => <Skeleton key={`skel-prod-${i}`} className="h-16 w-full rounded-2xl bg-muted/10" />) : 
-                            data?.topProducts.map((p, i) => (
+                        {isLoading
+                            ? [...Array(5)].map((_, i) => <Skeleton key={`skel-prod-${i}`} className="h-16 w-full rounded-2xl bg-muted/10" />)
+                            : data?.topProducts.map((p, i) => (
                                 <div key={`prod-list-${p.productUuid}`} className="flex items-center gap-5 group">
                                     <span className="text-2xl font-black text-muted-foreground/20 w-8">0{i + 1}</span>
                                     <div className="flex-grow">
@@ -263,11 +298,11 @@ export default function DashboardPage() {
                                     </div>
                                     <p className="font-black text-sm tracking-tighter">{formatCurrency(p.revenueGenerated)}</p>
                                 </div>
-                            ))
-                        }
+                            ))}
                     </CardContent>
                 </Card>
 
+                {/* Top Clients */}
                 <Card className="luxury-card bg-card/40 backdrop-blur-3xl border-white/5 overflow-hidden rounded-[2.5rem]">
                     <CardHeader className="bg-muted/20 border-b border-white/5 p-8">
                         <CardTitle className="text-xl font-black tracking-tighter flex items-center gap-3">
@@ -276,23 +311,24 @@ export default function DashboardPage() {
                         </CardTitle>
                     </CardHeader>
                     <CardContent className="p-8 space-y-6">
-                        {isLoading ? [...Array(5)].map((_, i) => <Skeleton key={`skel-cust-${i}`} className="h-16 w-full rounded-2xl bg-muted/10" />) : 
-                            data?.topCustomers.map((c, i) => (
+                        {isLoading
+                            ? [...Array(5)].map((_, i) => <Skeleton key={`skel-cust-${i}`} className="h-16 w-full rounded-2xl bg-muted/10" />)
+                            : data?.topCustomers.map((c, i) => (
                                 <Link href={`/customers/${c.customerUuid}`} key={`cust-list-${c.customerUuid}`} className="flex items-center gap-5 group">
                                     <div className="h-12 w-12 rounded-[1.25rem] bg-muted/50 flex items-center justify-center font-black text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary transition-all">
                                         {c.name.substring(0, 1)}
                                     </div>
                                     <div className="flex-grow">
                                         <p className="font-black text-sm group-hover:text-primary transition-colors">{c.name}</p>
-                                        <p className="text-[9px] font-black uppercase text-muted-foreground/40 mt-1">Rang #{i+1}</p>
+                                        <p className="text-[9px] font-black uppercase text-muted-foreground/40 mt-1">Rang #{i + 1}</p>
                                     </div>
                                     <p className="font-black text-sm text-primary">{formatCurrency(c.totalSpent)}</p>
                                 </Link>
-                            ))
-                        }
+                            ))}
                     </CardContent>
                 </Card>
 
+                {/* Low Stock Alerts */}
                 <Card className="luxury-card bg-card/40 backdrop-blur-3xl border-white/5 overflow-hidden rounded-[2.5rem]">
                     <CardHeader className="bg-muted/20 border-b border-white/5 p-8 text-amber-500">
                         <CardTitle className="text-xl font-black tracking-tighter flex items-center gap-3">
@@ -301,17 +337,20 @@ export default function DashboardPage() {
                         </CardTitle>
                     </CardHeader>
                     <CardContent className="p-8 space-y-8">
-                        {isLoading ? [...Array(5)].map((_, i) => <Skeleton key={`skel-stock-${i}`} className="h-16 w-full rounded-2xl bg-muted/10" />) : 
-                            data?.lowStockProducts.map(p => (
+                        {isLoading
+                            ? [...Array(5)].map((_, i) => <Skeleton key={`skel-stock-${i}`} className="h-16 w-full rounded-2xl bg-muted/10" />)
+                            : data?.lowStockProducts.map(p => (
                                 <div key={`stock-list-${p.uuid}`} className="space-y-3">
                                     <div className="flex justify-between items-center text-[10px] font-black uppercase">
                                         <span className="truncate pr-4">{p.name}</span>
                                         <span className="text-amber-500">{p.quantity} / {p.minStockLevel}</span>
                                     </div>
-                                    <Progress value={(p.quantity / p.minStockLevel) * 100} className="h-2 bg-muted/30" />
+                                    <Progress
+                                        value={(p.quantity / p.minStockLevel) * 100}
+                                        className="h-2 bg-muted/30"
+                                    />
                                 </div>
-                            ))
-                        }
+                            ))}
                     </CardContent>
                 </Card>
             </div>
