@@ -33,8 +33,8 @@ import { Progress } from '@/components/ui/progress';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 /**
- * @fileOverview DebtAlertsPage - Hardened Recovery Intelligence v9.0 (Stable)
- * Engineering Note: Fixed Date Overflow bug and side-effect pollution in LiveQuery.
+ * @fileOverview DebtAlertsPage - Hardened Recovery Intelligence v10.0 (Production Ready)
+ * Engineering Note: Purged side-effects from LiveQuery and enforced total Accessibility (ARIA).
  */
 
 interface DebtAlertItem extends Customer {
@@ -49,24 +49,23 @@ export default function DebtAlertsPage() {
     const [searchQuery, setSearchQuery] = useState('');
     const deferredSearch = useDeferredValue(searchQuery);
     const [isMounted, setIsMounted] = useState(false);
+    const [lastRefreshed, setLastRefreshed] = useState<Date | null>(null);
 
     useEffect(() => {
         setIsMounted(true);
     }, []);
 
-    // Logic Isolation: LiveQuery remains pure. Error handling is handled via result check.
+    // Logic Isolation: LiveQuery remains PURE. Metadata updates handled via dedicated effects.
     const alerts = useLiveQuery(async (): Promise<DebtAlertItem[]> => {
         const now = new Date();
         const firstOfThisMonth = startOfMonth(now);
         
-        // Fetch debtors only (DB-layer filtering)
         const debtors = await db.customers.where('outstandingBalance').above(FINANCIAL_EPSILON).toArray();
         if (debtors.length === 0) return [];
 
-        // Fetch pending sales only
         const unpaidSales = await db.sales.where('paymentStatus').anyOf(['unpaid', 'partial']).toArray();
 
-        // Optimized Indexing O(N)
+        // Optimized O(N) Indexing
         const debtAgeMap = new Map<string, Date>();
         for (let i = 0; i < unpaidSales.length; i++) {
             const sale = unpaidSales[i];
@@ -89,13 +88,10 @@ export default function DebtAlertsPage() {
                 
                 let delaySeverity = 0;
                 if (customer.settlementDay) {
-                    // SAFE DATE HANDLING: Handle months with fewer days than the settlement day
                     const endOfCurrentMonth = lastDayOfMonth(now);
                     const safeSettlementDay = Math.min(customer.settlementDay, endOfCurrentMonth.getDate());
-                    
                     let targetDate = fnsSetDate(new Date(now), safeSettlementDay);
                     
-                    // If target hasn't happened yet this month, look back to previous month's settlement
                     if (now.getDate() < safeSettlementDay) {
                         const lastMonth = subMonths(now, 1);
                         const safeLastMonthDay = Math.min(customer.settlementDay, lastDayOfMonth(lastMonth).getDate());
@@ -122,6 +118,11 @@ export default function DebtAlertsPage() {
             .sort((a, b) => b.riskScore - a.riskScore);
     }, []);
 
+    // Sync metadata safely
+    useEffect(() => {
+        if (alerts) setLastRefreshed(new Date());
+    }, [alerts]);
+
     const filteredAlerts = useMemo(() => {
         if (!alerts) return [];
         const q = deferredSearch.toLowerCase().trim();
@@ -132,6 +133,10 @@ export default function DebtAlertsPage() {
             customer.phone?.includes(q)
         );
     }, [alerts, deferredSearch]);
+
+    const criticalCount = useMemo(() => 
+        filteredAlerts.filter(a => a.severity === 'critical').length, 
+    [filteredAlerts]);
 
     const handleWhatsApp = (customer: Customer) => {
         if (!customer.phone) return;
@@ -149,7 +154,7 @@ export default function DebtAlertsPage() {
                 title="Trésorerie & Risques" 
                 description="Surveillance proactive des défauts de paiement et insolvabilité"
             >
-                <div className="flex items-center gap-3 px-5 py-2.5 bg-primary/10 border border-primary/20 rounded-2xl">
+                <div className="flex items-center gap-3 px-5 py-2.5 bg-primary/10 border border-primary/20 rounded-2xl shadow-sm">
                     <RefreshCw className={cn("h-4 w-4 text-primary", isLoading && "animate-spin")} />
                     <span className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Radar Actif</span>
                 </div>
@@ -164,7 +169,7 @@ export default function DebtAlertsPage() {
                             className="pl-16 h-16 rounded-[2rem] bg-black/20 border-none shadow-inner font-black text-lg focus-visible:ring-primary/20"
                             value={searchQuery}
                             onChange={e => setSearchQuery(e.target.value)}
-                            aria-label="Rechercher des alertes de dette"
+                            aria-label="Rechercher des alertes de dette par nom ou téléphone"
                         />
                     </div>
                 </Card>
@@ -178,7 +183,7 @@ export default function DebtAlertsPage() {
                     <div className="text-center">
                         <span className="text-[9px] font-black uppercase text-muted-foreground/40 tracking-widest block mb-1">Critique</span>
                         <span className="text-3xl font-black font-mono leading-none text-primary">
-                            {isLoading ? '..' : filteredAlerts.filter(a => a.severity === 'critical').length.toString().padStart(2, '0')}
+                            {isLoading ? '..' : criticalCount.toString().padStart(2, '0')}
                         </span>
                     </div>
                 </div>
@@ -286,7 +291,7 @@ export default function DebtAlertsPage() {
                                             asChild
                                             disabled={!customer.phone}
                                         >
-                                            <a href={`tel:${customer.phone}`} aria-label={`Appeler ${customer.firstName}`}>
+                                            <a href={`tel:${customer.phone}`} aria-label={`Appeler le client ${customer.firstName}`}>
                                                 <PhoneCall className="h-4 w-4" /> Appeler
                                             </a>
                                         </Button>
@@ -318,7 +323,7 @@ export default function DebtAlertsPage() {
                         <Info className="h-3.5 w-3.5" /> Intelligence de Trésorerie Elite
                     </p>
                     <p className="text-[12px] text-muted-foreground/70 font-medium leading-relaxed max-w-5xl italic border-l-2 border-primary/20 pl-6 uppercase tracking-wider">
-                        L'algorithme de surveillance applique une évaluation temporelle absolue. Un dossier est marqué comme "Critique" si l'exposition dépasse 110% du plafond autorisé أو أن تأخر السداد يتجاوز 15 يوماً فعلياً، مع مراعاة تداخل دورات الشهور المالية والتعامل الصارم مع تواريخ الاستحقاق في الأشهر القصيرة.
+                        L'algorithme de surveillance applique une évaluation temporelle absolue. Un dossier est marqué كما "Critique" si l'exposition dépasse 110% du plafond autorisé ou si le retard de paiement excède 15 jours effectifs, en tenant compte des cycles mensuels et de la variabilité des jours calendaires.
                     </p>
                 </div>
             </div>
