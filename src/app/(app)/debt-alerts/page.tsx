@@ -25,11 +25,11 @@ import { Input } from '@/components/ui/input';
 import Link from 'next/link';
 import { useLiveQuery } from '@/hooks/useLiveQuery';
 import { db } from '@/lib/db';
-import { startOfMonth, subDays, isBefore } from 'date-fns';
+import { startOfMonth, isBefore } from 'date-fns';
 
 /**
  * @fileOverview DebtAlertsPage - Elite Recovery Intelligence Interface.
- * Senior Review Protocol v2.1: Implements hard-cycle aging and prevents "trivial payment" evasion.
+ * Version 2.5: Implements cross-cycle debt tracking and linguistic purity.
  */
 
 interface DebtAlertItem extends Customer {
@@ -40,13 +40,13 @@ interface DebtAlertItem extends Customer {
 export default function DebtAlertsPage() {
     const [searchQuery, setSearchQuery] = useState('');
 
-    // CORE ENGINE: Hardened against monthly rollover bugs and evasion tactics
+    // CORE ENGINE: Hardened against cycle resets and evasion tactics
     const alerts = useLiveQuery(async (): Promise<DebtAlertItem[]> => {
         const now = new Date();
         const currentDay = now.getDate();
         const firstOfThisMonth = startOfMonth(now);
         
-        // 1. Fetch only significant debtors
+        // 1. Fetch significant debtors only
         const debtors = await db.customers
             .where('outstandingBalance')
             .above(FINANCIAL_EPSILON)
@@ -54,7 +54,7 @@ export default function DebtAlertsPage() {
 
         if (debtors.length === 0) return [];
 
-        // 2. Fetch payments from this month to check for "serious" settlement
+        // 2. Fetch payments from this month to detect "serious" settlement attempts
         const recentPayments = await db.payments
             .where('paymentDate')
             .above(firstOfThisMonth)
@@ -70,22 +70,17 @@ export default function DebtAlertsPage() {
             .filter(c => {
                 if (!c.settlementDay) return false;
 
-                // LOGIC: A customer is flagged if:
-                // A) They owe money AND today is past their settlement day.
-                // B) They haven't made a SIGNIFICANT payment (at least 10% of their balance or >= 1000 DA) this cycle.
-                // C) OR they have an old debt from previous months that hasn't been cleared.
-                
                 const paidThisMonth = paymentMap.get(c.uuid) || 0;
+                // Threshold: Effort is considered significant if > 10% of debt or >= 1000 DA
                 const hasMadeSignificantEffort = paidThisMonth > (c.outstandingBalance * 0.1) || paidThisMonth >= 1000;
                 
+                // Logic: 
+                // A) Past settlement day in current month.
+                // B) OR has debt from previous months (Legacy Debt) not addressed by a significant payment.
                 const isPastDueThisMonth = currentDay > c.settlementDay;
-                const isLegacyDebtor = c.lastActivityDate ? isBefore(new Date(c.lastActivityDate), firstOfThisMonth) : false;
+                const isLegacyDebtor = c.lastActivityDate ? isBefore(new Date(c.lastActivityDate), firstOfThisMonth) : true;
 
-                // If it's early in the month (day 1-5) and they have legacy debt, they stay on radar
-                if (currentDay <= 5 && isLegacyDebtor && !hasMadeSignificantEffort) return true;
-                
-                // Normal cycle check
-                return isPastDueThisMonth && !hasMadeSignificantEffort;
+                return (isPastDueThisMonth || isLegacyDebtor) && !hasMadeSignificantEffort;
             })
             .map(c => {
                 const isHighlyCritical = (c.outstandingBalance > (c.creditLimit || 0)) || (currentDay - (c.settlementDay || 0) > 10);
@@ -111,7 +106,7 @@ export default function DebtAlertsPage() {
     const handleWhatsApp = (customer: Customer) => {
         if (!customer.phone) return;
         const message = encodeURIComponent(
-            `Bonjour ${customer.firstName}, le service de suivi iPOS Luxury vous informe que votre solde de ${formatCurrency(customer.outstandingBalance)} nécessite une régularisation. Merci de nous contacter. Cordialement.`
+            `Bonjour ${customer.firstName}, le service de suivi Elite iPOS vous informe que votre solde de ${formatCurrency(customer.outstandingBalance)} nécessite une régularisation. Merci de nous contacter rapidement. Cordialement.`
         );
         window.open(`https://wa.me/${customer.phone}?text=${message}`, '_blank');
     };
@@ -124,13 +119,13 @@ export default function DebtAlertsPage() {
                 title="Intelligence de Recouvrement" 
                 description="Surveillance proactive des flux débiteurs et alertes d'insolvabilité"
             >
-                <div className="flex items-center gap-3 px-5 py-2.5 bg-primary/10 border border-primary/20 rounded-2xl shadow-inner">
+                <div className="flex items-center gap-3 px-5 py-2.5 bg-primary/10 border border-primary/20 rounded-2xl shadow-inner group">
                     <div className="h-2 w-2 rounded-full bg-primary animate-pulse" />
-                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Radar التحصيل نشط</span>
+                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Radar Elite Actif</span>
                 </div>
             </PageHeader>
 
-            {/* Elite Search & Stats Interface */}
+            {/* Filter Interface */}
             <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 items-center bg-card/20 p-3 rounded-[3rem] border border-white/5 backdrop-blur-3xl shadow-2xl">
                 <div className="lg:col-span-3 relative group">
                     <Search className="absolute left-8 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground group-focus-within:text-primary transition-all duration-500" />
@@ -197,7 +192,7 @@ export default function DebtAlertsPage() {
                                                 "text-[9px] font-black uppercase tracking-[0.2em] px-4 py-1.5 rounded-full border",
                                                 customer.severity === 'critical' ? "bg-destructive/10 text-destructive border-destructive/20" : "bg-amber-500/10 text-amber-500 border-amber-500/20"
                                             )}>
-                                                Retard: {customer.daysPastSettlement}j
+                                                Alerte Cycle
                                             </span>
                                         </div>
                                     </div>
@@ -206,7 +201,7 @@ export default function DebtAlertsPage() {
                                     </CardTitle>
                                     <div className="flex items-center gap-2 mt-2 text-[10px] font-black uppercase tracking-widest text-muted-foreground/40">
                                         <Calendar className="h-3.5 w-3.5 opacity-40" />
-                                        Protocole de règlement : Jour {customer.settlementDay}
+                                        Protocole Jour : {customer.settlementDay}
                                     </div>
                                 </CardHeader>
 
@@ -229,7 +224,7 @@ export default function DebtAlertsPage() {
                                             onClick={() => handleWhatsApp(customer)}
                                             disabled={!customer.phone}
                                         >
-                                            <MessageCircle className="h-5 w-5" /> Relancer WP
+                                            <MessageCircle className="h-5 w-5" /> Relance WP
                                         </Button>
                                         <Button 
                                             variant="outline" 
@@ -238,7 +233,7 @@ export default function DebtAlertsPage() {
                                             disabled={!customer.phone}
                                         >
                                             <a href={`tel:${customer.phone}`}>
-                                                <PhoneCall className="h-5 w-5" /> Appeler
+                                                <PhoneCall className="h-5 w-5" /> Appel Direct
                                             </a>
                                         </Button>
                                     </div>
@@ -249,7 +244,7 @@ export default function DebtAlertsPage() {
                                         className="w-full rounded-2xl h-14 font-black text-[10px] uppercase tracking-widest hover:bg-primary/10 hover:text-primary transition-all group/btn"
                                     >
                                         <Link href={`/customers/${customer.uuid}`}>
-                                            Expertise du Dossier <ChevronRight className="ml-2 h-4 w-4 transition-transform group-hover/btn:translate-x-1" />
+                                            Expertise Dossier <ChevronRight className="ml-2 h-4 w-4 transition-transform group-hover/btn:translate-x-1" />
                                         </Link>
                                     </Button>
                                 </CardContent>
@@ -259,7 +254,7 @@ export default function DebtAlertsPage() {
                 )}
             </div>
 
-            {/* System Intelligence Note */}
+            {/* Technical Intelligence Note */}
             <div className="p-12 bg-primary/5 rounded-[4rem] border border-primary/10 flex items-start gap-8 relative overflow-hidden group shadow-2xl">
                 <Sparkles className="absolute -right-6 -top-6 h-32 w-32 text-primary/5 group-hover:opacity-20 transition-opacity duration-1000" />
                 <div className="p-6 rounded-[2rem] bg-black/40 text-primary shadow-inner relative z-10 border border-white/5">
@@ -267,10 +262,10 @@ export default function DebtAlertsPage() {
                 </div>
                 <div className="space-y-4 relative z-10">
                     <p className="text-sm font-black uppercase tracking-[0.4em] text-primary flex items-center gap-2">
-                        <Info className="h-4 w-4" /> Algorithme de Surveillance Elite v2.1
+                        <Info className="h-4 w-4" /> Algorithme de Recouvrement Elite v2.5
                     </p>
                     <p className="text-[13px] text-muted-foreground/70 font-medium leading-relaxed max-w-5xl italic border-l-2 border-primary/20 pl-6">
-                        Le radar identifie les dossiers critiques selon un triple protocole : 1) Solde supérieur au seuil de tolérance. 2) Jour de règlement mensuel dépassé (incluant la gestion des reliquats des mois précédents). 3) Absence de versement significatif (&lt;10% de la dette) sur le cycle actuel. Cette rigueur prévient les faux positifs liés aux paiements symboliques.
+                        Le radar identifie les dossiers selon un protocole strict : les créances deviennent exigibles dès le dépassement du jour de règlement mensuel, ou si un reliquat des mois précédents persiste sans versement significatif (&gt;10% du solde). Cette rigueur garantit que les paiements symboliques ne trompent pas la surveillance du système.
                     </p>
                 </div>
             </div>
