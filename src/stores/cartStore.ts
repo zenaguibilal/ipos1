@@ -26,7 +26,7 @@ interface CartActions {
     addItemToCart: (product: Product, quantity?: number) => void;
     removeItemFromCart: (productUuid: string) => void;
     /**
-     * Updates item quantity with floating point support and stock validation.
+     * Updates item quantity with floating point support and high-precision stock validation.
      */
     updateItemQuantity: (productUuid: string, newQuantity: number) => void;
     
@@ -123,7 +123,8 @@ export const useCartStore = create<CartState>()(
                         const currentCartQuantity = existingItem ? existingItem.cartQuantity : 0;
                         const requestedTotalQuantity = currentCartQuantity + quantity;
                         
-                        if (product.quantity < requestedTotalQuantity) {
+                        // Use EPSILON for float comparison
+                        if (product.quantity < (requestedTotalQuantity - 0.0001)) {
                             toast.error(`Stock insuffisant pour "${product.name}"`, {
                                 description: `Demandé: ${requestedTotalQuantity}, Disponible: ${product.quantity}.`,
                             });
@@ -170,7 +171,7 @@ export const useCartStore = create<CartState>()(
                             if (item) {
                                 const isStockedItem = !item.uuid.startsWith('custom-') && item.uuid !== 'BREAD_PRODUCT';
                 
-                                // Strict stock check using high precision
+                                // Strict stock check using high precision EPSILON
                                 if (isStockedItem && newQuantity > (item.quantity + 0.0001)) {
                                     toast.error(`Stock insuffisant pour "${item.name}"`, {
                                         description: `Demandé: ${newQuantity}, Disponible: ${item.quantity}.`,
@@ -180,7 +181,8 @@ export const useCartStore = create<CartState>()(
                                 }
 
                                 if (newQuantity > 0) {
-                                    item.cartQuantity = Number(newQuantity.toFixed(3)); // 3 decimals for weights
+                                    // Limit to 3 decimal places for weights (grams)
+                                    item.cartQuantity = Number(newQuantity.toFixed(3));
                                 } else {
                                     cart.items = cart.items.filter(i => i.uuid !== productUuid);
                                 }
@@ -248,7 +250,7 @@ export const useCartStore = create<CartState>()(
                             await customerService.recalculateCustomerStatus(activeCart.customerUuid);
                         }
 
-                        // Elite Synchronization Trigger
+                        // Smart Synchronization Trigger
                         useAppStore.getState().actions.triggerSmartSync();
 
                         return sale;

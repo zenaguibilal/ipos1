@@ -17,12 +17,11 @@ interface CartItemRowProps {
 }
 
 /**
- * CartItemRow - Displays a single line in the transaction manifest.
- * Uses floating point support for quantities (Kg/Litre).
+ * CartItemRow - High-efficiency row component.
+ * Memoized to prevent cascade re-renders.
  */
 const CartItemRow = React.memo(({ item, onUpdate, onRemove }: CartItemRowProps) => {
     const handleQtyChange = (val: string) => {
-        // Use parseFloat to support weights (e.g., 0.5kg)
         const num = parseFloat(val);
         if (isNaN(num)) return;
         onUpdate(item.uuid, Math.max(0, num));
@@ -30,6 +29,7 @@ const CartItemRow = React.memo(({ item, onUpdate, onRemove }: CartItemRowProps) 
 
     const isCustom = item.uuid.startsWith('custom-');
     const isService = item.uuid === 'BREAD_PRODUCT';
+    // Precision step: allow grams/ml for weight-based units
     const stepValue = item.unite === 'Kg' || item.unite === 'Litre' ? "0.001" : "1";
 
     return (
@@ -58,8 +58,8 @@ const CartItemRow = React.memo(({ item, onUpdate, onRemove }: CartItemRowProps) 
                     className="w-24 text-center h-10 rounded-xl bg-background/50 border-none shadow-inner font-black text-primary"
                     min="0"
                 />
-                {!isCustom && !isService && item.cartQuantity >= item.quantity && (
-                    <span className="text-[8px] font-black text-destructive uppercase animate-pulse">Stock Critique</span>
+                {!isCustom && !isService && item.cartQuantity >= (item.quantity - 0.0001) && (
+                    <span className="text-[8px] font-black text-destructive uppercase animate-pulse">Max Stock</span>
                 )}
             </div>
 

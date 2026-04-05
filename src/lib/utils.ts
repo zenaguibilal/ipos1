@@ -35,34 +35,34 @@ interface CalculableCart {
 }
 
 /**
- * Calculates cart totals using integer arithmetic to avoid IEEE 754 floating point issues.
+ * Hardened financial calculator using scaled integer arithmetic.
+ * Prevents IEEE 754 floating point errors common in JS.
  */
 export function calculateCartTotals(cart: CalculableCart) {
-    // We work with 1000 to support up to 3 decimal places for weights and precision
-    const PRECISION = 1000;
+    // Scaling factor for 3 decimal precision (useful for weights/grams)
+    const SCALE = 1000;
     
     const subtotalRaw = cart.items.reduce((acc, item) => {
-        const itemPrice = Math.round((item.price || 0) * PRECISION);
-        const itemQty = item.cartQuantity || 0;
-        return acc + (itemPrice * itemQty);
+        const priceCents = Math.round((item.price || 0) * SCALE);
+        const qty = item.cartQuantity || 0;
+        return acc + Math.round(priceCents * qty);
     }, 0);
 
-    const subtotal = subtotalRaw / PRECISION;
+    const subtotal = subtotalRaw / SCALE;
     
-    let discountAmount = 0;
+    let discountAmountRaw = 0;
     if (cart.discount.type === 'percentage') {
-        // Percentage discount calculated on the scaled integer
-        discountAmount = Math.round(subtotalRaw * ((cart.discount.value || 0) / 100)) / PRECISION;
+        discountAmountRaw = Math.round(subtotalRaw * ((cart.discount.value || 0) / 100));
     } else {
-        discountAmount = cart.discount.value || 0;
+        discountAmountRaw = Math.round((cart.discount.value || 0) * SCALE);
     }
     
-    const total = Math.max(0, subtotal - discountAmount);
+    const totalRaw = Math.max(0, subtotalRaw - discountAmountRaw);
 
     return { 
-        subtotal: Number(subtotal.toFixed(2)), 
-        discountAmount: Number(discountAmount.toFixed(2)), 
-        total: Number(total.toFixed(2)) 
+        subtotal: subtotal, 
+        discountAmount: discountAmountRaw / SCALE, 
+        total: totalRaw / SCALE 
     };
 }
 

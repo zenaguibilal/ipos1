@@ -10,8 +10,8 @@ import { useCartActions } from '@/stores/cartStore';
 import { toast } from 'sonner';
 
 /**
- * SellPage - Professional POS Transaction Interface.
- * Implements strict keyboard event management and high-speed workflow.
+ * SellPage - Hardened POS Transaction Interface.
+ * Implements strict modifier checks and efficient event delegation.
  */
 export default function SellPage() {
     const { createCart } = useCartActions();
@@ -20,21 +20,23 @@ export default function SellPage() {
     const customerComboRef = useRef<HTMLButtonElement>(null);
     const customItemButtonRef = useRef<HTMLButtonElement>(null);
     
+    // Memoized keydown handler to prevent identity changes on every render
     const handleKeyDown = useCallback((e: KeyboardEvent) => {
-        // Strict modifier check to prevent collision with system/browser shortcuts
+        // Strict modifier check: ignore if any system modifier is pressed (Alt, Ctrl, Meta, Shift)
+        // This prevents collision with OS shortcuts or browser defaults.
         if (e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return;
 
         const target = e.target as HTMLElement;
         const isTypingInInput = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.contentEditable === 'true';
         
-        // F1: Focus Search (Global)
+        // F1: Global Search Focus
         if (e.key === 'F1') {
             e.preventDefault();
             searchInputRef.current?.focus();
             return;
         }
         
-        // If typing in another input (like quantity), only F-keys should escape
+        // Context-aware escape: ignore if typing in a quantity field, unless it's a function key
         if (isTypingInInput && target !== searchInputRef.current && !e.key.startsWith('F')) return;
 
         switch (e.key) {
@@ -94,17 +96,17 @@ export default function SellPage() {
                 </div>
             </div>
 
-            {/* Shortcut Legend Footer */}
+            {/* Shortcut Legend Footer - Hidden on mobile */}
             <div className="hidden md:flex flex-wrap items-center justify-center gap-8 py-4 px-10 bg-card/50 backdrop-blur-xl border border-white/5 rounded-full text-[9px] font-black tracking-[0.2em] text-muted-foreground uppercase shadow-2xl">
                 <div className="flex items-center justify-center gap-3 pr-4 border-r border-white/10">
-                    <span className="text-primary font-black">Légende Elite</span>
+                    <span className="text-primary font-black">Elite Protocols</span>
                 </div>
                 {[
-                    { key: 'F1', label: 'Rechercher' },
-                    { key: 'F2', label: 'Payer' },
-                    { key: 'F4', label: 'Client' },
-                    { key: 'F9', label: 'Suspendre' },
-                    { key: 'F10', label: 'Spécial' },
+                    { key: 'F1', label: 'Search' },
+                    { key: 'F2', label: 'Pay' },
+                    { key: 'F4', label: 'Customer' },
+                    { key: 'F9', label: 'Suspend' },
+                    { key: 'F10', label: 'Custom' },
                 ].map(item => (
                     <div key={item.key} className="flex items-center gap-3 group">
                         <kbd className="bg-muted px-2.5 py-1.5 rounded-xl border border-white/10 text-primary shadow-inner transition-all group-hover:scale-110">{item.key}</kbd>
@@ -114,7 +116,7 @@ export default function SellPage() {
                 <div className="h-4 w-px bg-white/10" />
                 <div className="flex items-center gap-3 group">
                     <kbd className="bg-primary text-primary-foreground px-2.5 py-1.5 rounded-xl shadow-lg group-hover:scale-110 transition-all">Enter</kbd>
-                    <span className="text-primary font-black">Valider</span>
+                    <span className="text-primary font-black">Validate</span>
                 </div>
             </div>
         </div>

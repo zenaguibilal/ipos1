@@ -14,7 +14,8 @@ import { CustomItemDialog } from './CustomItemDialog';
 import { cn } from '@/lib/utils';
 
 /**
- * SearchResultItem - Optimized list item for high-frequency interaction.
+ * SearchResultItem - Atomic visual unit.
+ * Memoized to prevent UI jank during rapid typing.
  */
 const SearchResultItem = React.memo(({ product, onSelect }: { product: Product, onSelect: (p: Product) => void }) => {
     return (
@@ -29,11 +30,11 @@ const SearchResultItem = React.memo(({ product, onSelect }: { product: Product, 
             <div className="relative z-10">
                 <div className="flex items-center gap-2 mb-2">
                     <span className="px-2 py-0.5 rounded-lg bg-primary/10 text-primary text-[8px] font-black uppercase tracking-[0.2em] border border-primary/20">
-                        {product.category || 'Général'}
+                        {product.category || 'Elite Catalog'}
                     </span>
                     {product.quantity <= product.minStockLevel && (
                         <span className="px-2 py-0.5 rounded-lg bg-destructive/10 text-destructive text-[8px] font-black uppercase tracking-[0.2em] border border-destructive/20 animate-pulse">
-                            Stock Faible
+                            Critical Stock
                         </span>
                     )}
                 </div>
@@ -62,7 +63,8 @@ interface ProductSelectorProps {
 }
 
 /**
- * ProductSelector - Handles high-speed catalog search with AbortController to prevent race conditions.
+ * ProductSelector - Secure high-frequency search engine.
+ * Implements AbortController to solve race conditions.
  */
 export function ProductSelector({ searchInputRef, customItemButtonRef }: ProductSelectorProps) {
     const { addItemToCart } = useCartActions();
@@ -80,19 +82,21 @@ export function ProductSelector({ searchInputRef, customItemButtonRef }: Product
             return;
         }
 
+        // Initialize AbortController to cancel previous pending requests
         const controller = new AbortController();
         
         const fetchSearchResults = async () => {
             setIsSearching(true);
             setSearchError(null);
             try {
+                // Pass signal to the service if supported, otherwise manually check aborted state
                 const data = await productService.filterProducts({ query: debouncedSearchQuery });
                 if (!controller.signal.aborted) {
-                    setSearchResults(data.slice(0, 12)); // Optimal list size for visual scanning
+                    setSearchResults(data.slice(0, 15));
                 }
             } catch (e: any) {
                 if (!controller.signal.aborted) {
-                    setSearchError("Échec du moteur de recherche.");
+                    setSearchError("Moteur de recherche indisponible.");
                 }
             } finally {
                 if (!controller.signal.aborted) setIsSearching(false);
@@ -122,7 +126,7 @@ export function ProductSelector({ searchInputRef, customItemButtonRef }: Product
                     )} />
                     <Input
                         ref={searchInputRef}
-                        placeholder="Rechercher un produit [F1]..."
+                        placeholder="Scanner ou rechercher [F1]..."
                         className="pl-14 text-lg h-16 rounded-3xl bg-background/50 border-none shadow-inner focus-visible:ring-primary/20 font-black tracking-tight"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
@@ -157,7 +161,7 @@ export function ProductSelector({ searchInputRef, customItemButtonRef }: Product
                             <Search className="h-14 w-14 text-primary/20" />
                         </div>
                         <p className="text-sm font-black uppercase tracking-[0.3em] text-muted-foreground/20 max-w-[250px] mx-auto leading-relaxed">
-                            Scannez un code-barres ou saisissez un nom...
+                            Prêt pour le scan. Saisissez une référence ou utilisez le lecteur.
                         </p>
                     </div>
                 ) : (
@@ -165,9 +169,9 @@ export function ProductSelector({ searchInputRef, customItemButtonRef }: Product
                         <div className="flex items-center justify-between px-2">
                             <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-primary flex items-center gap-3">
                                 <Sparkles className="h-3 w-3 text-primary" />
-                                Index Elite
+                                Résultats Indexés
                             </h3>
-                            <span className="text-[9px] font-black text-muted-foreground/30 uppercase">{searchResults.length} Résultats</span>
+                            <span className="text-[9px] font-black text-muted-foreground/30 uppercase">{searchResults.length} Trouvés</span>
                         </div>
 
                         {searchResults.length > 0 ? (
@@ -179,7 +183,7 @@ export function ProductSelector({ searchInputRef, customItemButtonRef }: Product
                         ) : !isSearching && (
                             <div className="py-20 text-center space-y-4 opacity-20 flex flex-col items-center">
                                 <ShoppingBag className="h-12 w-12 mb-2" />
-                                <p className="text-[10px] font-black uppercase tracking-[0.4em]">Aucune correspondance</p>
+                                <p className="text-[10px] font-black uppercase tracking-[0.4em]">Néant. Produit non répertorié.</p>
                             </div>
                         )}
                     </div>

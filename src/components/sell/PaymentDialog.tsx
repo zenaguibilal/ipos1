@@ -23,8 +23,8 @@ import { addDays } from 'date-fns';
 import { customerService } from '@/services/customer.service';
 
 /**
- * PaymentDialog - Core financial finalization module.
- * Uses high-precision comparisons to avoid JS floating point errors.
+ * PaymentDialog - Hardened financial finalization module.
+ * Uses high-precision comparisons to avoid JS binary decimal errors.
  */
 export function PaymentDialog({ isOpen, onOpenChange }: { isOpen: boolean, onOpenChange: (open: boolean) => void }) {
     const [isMounted, setIsMounted] = useState(false);
@@ -40,10 +40,10 @@ export function PaymentDialog({ isOpen, onOpenChange }: { isOpen: boolean, onOpe
     const [customer, setCustomer] = useState<Customer | null>(null);
     const [approveOverLimit, setApproveOverLimit] = useState(false);
 
-    // Get totals from utility with precision handling
+    // Hardened calculation logic
     const { total } = useMemo(() => cart ? calculateCartTotals(cart) : { total: 0 }, [cart]);
     
-    // EPSILON for floating point comparison (standard 0.01 for currency)
+    // EPSILON for high-precision financial comparison
     const EPSILON = 0.005;
     const change = Math.max(0, amountPaid - total);
     const isFullPayment = amountPaid >= (total - EPSILON);
@@ -100,6 +100,7 @@ export function PaymentDialog({ isOpen, onOpenChange }: { isOpen: boolean, onOpe
     if (!cart || !isMounted) return null;
 
     const isCreditSale = cart.customerUuid && amountPaid < (total - EPSILON);
+    // Decision matrix for finalizing the sale
     const canFinalize = !isLoading && amountPaid >= 0 && (
         isFullPayment || (cart.customerUuid && (!isOverLimit || approveOverLimit))
     );
@@ -115,7 +116,7 @@ export function PaymentDialog({ isOpen, onOpenChange }: { isOpen: boolean, onOpe
                                     <Wallet className="h-6 w-6" />
                                 </div>
                                 <div>
-                                    <DialogTitle className="text-2xl font-black tracking-tight">Validation Flux</DialogTitle>
+                                    <DialogTitle className="text-2xl font-black tracking-tight">Clôture de Session</DialogTitle>
                                     <DialogDescription className="font-medium text-[10px] font-black uppercase tracking-widest opacity-50">{cart.name}</DialogDescription>
                                 </div>
                             </div>
@@ -124,13 +125,13 @@ export function PaymentDialog({ isOpen, onOpenChange }: { isOpen: boolean, onOpe
 
                     <div className="p-8 space-y-8">
                         <div className="text-center p-8 bg-black/40 rounded-[2rem] border border-white/5 relative overflow-hidden group shadow-inner">
-                            <Label className="text-muted-foreground uppercase text-[10px] font-black tracking-[0.3em] mb-3 block opacity-40">Solده Net du Manifestه</Label>
+                            <Label className="text-muted-foreground uppercase text-[10px] font-black tracking-[0.3em] mb-3 block opacity-40">Net à Encaisser</Label>
                             <p className="text-5xl font-black text-primary tracking-tighter transition-transform duration-500 group-hover:scale-105">{formatCurrency(total)}</p>
                         </div>
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                              <div className="space-y-3">
-                                <Label htmlFor="amount-paid" className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 ml-1">Encaissé (DA)</Label>
+                                <Label htmlFor="amount-paid" className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 ml-1">Reçu Client (DA)</Label>
                                 <Input
                                     id="amount-paid"
                                     type="number"
@@ -144,7 +145,7 @@ export function PaymentDialog({ isOpen, onOpenChange }: { isOpen: boolean, onOpe
                                 />
                             </div>
                             <div className="space-y-3">
-                                 <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 ml-1">Reliquat Flux</Label>
+                                 <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 ml-1">Monnaie à Rendre</Label>
                                  <div className={cn(
                                      "text-2xl h-16 flex items-center justify-center font-black rounded-2xl border border-dashed transition-all duration-500",
                                      change >= 0.01 ? "bg-emerald-500/5 border-emerald-500/20 text-emerald-500" : "bg-muted/20 border-white/5 text-muted-foreground/20"
@@ -160,7 +161,7 @@ export function PaymentDialog({ isOpen, onOpenChange }: { isOpen: boolean, onOpe
                                     <div className="flex items-start gap-4">
                                         <div className="p-2 rounded-xl bg-amber-500/10 text-amber-500"><Info className="h-5 w-5" /></div>
                                         <div className="space-y-1">
-                                            <p className="text-xs font-black uppercase tracking-tight text-amber-600">Inscription au Grand Livre (Crédit)</p>
+                                            <p className="text-xs font-black uppercase tracking-tight text-amber-600">Inscription au Grand Livre</p>
                                             <p className="text-[10px] text-amber-600/60 font-medium">Un flux débiteur de {formatCurrency(total - amountPaid)} sera rattaché au compte client.</p>
                                         </div>
                                     </div>
@@ -194,7 +195,7 @@ export function PaymentDialog({ isOpen, onOpenChange }: { isOpen: boolean, onOpe
                             className="flex-1 rounded-2xl h-14 font-black text-xs uppercase tracking-widest shadow-xl shadow-primary/20 transition-all active:scale-95 gap-3"
                         >
                             {isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <CheckCircle2 className="h-5 w-5" />}
-                            Valider Flux [Enter]
+                            Valider le Flux [Enter]
                         </Button>
                     </div>
                 </DialogContent>
