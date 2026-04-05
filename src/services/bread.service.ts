@@ -5,7 +5,12 @@ import type { BreadOrder, Customer, CartItem, BreadOrderWithCustomer } from '@/l
 import { db } from '@/lib/db';
 import { salesService } from './sales.service';
 import { BREAD_WEEK_DAYS } from '@/lib/constants';
+import { useAppStore } from '@/stores/appStore';
 
+/**
+ * Service de gestion de la logistique du pain.
+ * Intègre désormais les déclencheurs de synchronisation Elite.
+ */
 class BreadService {
     
     async generateAndGetOrdersForDate(date: string): Promise<BreadOrderWithCustomer[]> {
@@ -60,6 +65,8 @@ class BreadService {
 
         if (ordersToCreate.length > 0) {
             await db.bread_orders.bulkAdd(ordersToCreate);
+            // Déclenchement Sync Elite
+            useAppStore.getState().actions.triggerSmartSync();
         }
     }
     
@@ -87,6 +94,10 @@ class BreadService {
         };
         
         await db.bread_orders.add(newOrder);
+        
+        // Déclenchement Sync Elite
+        useAppStore.getState().actions.triggerSmartSync();
+        
         return newOrder;
     }
 
@@ -94,23 +105,37 @@ class BreadService {
         const order = await db.bread_orders.where('uuid').equals(uuid).first();
         if(!order || order.venteUuid) return;
 
-        const updateData: Partial<BreadOrder> = { quantite: quantity, updatedAt: new Date() };
+        const updateData: Partial<BreadOrder> = { 
+            quantite: quantity, 
+            updatedAt: new Date() 
+        };
         if (order.quantite_origine === undefined) {
             updateData.quantite_origine = order.quantite;
         }
         await db.bread_orders.update(order.id!, updateData);
+        
+        // Déclenchement Sync Elite
+        useAppStore.getState().actions.triggerSmartSync();
     }
     
     async updateBreadOrderDeliveryStatus(uuid: string, delivered: boolean): Promise<void> {
         const order = await db.bread_orders.where('uuid').equals(uuid).first();
         if (!order) return;
-        await db.bread_orders.update(order.id!, { est_livre: delivered, updatedAt: new Date() });
+        await db.bread_orders.update(order.id!, { 
+            est_livre: delivered, 
+            updatedAt: new Date() 
+        });
+        
+        // Déclenchement Sync Elite
+        useAppStore.getState().actions.triggerSmartSync();
     }
 
     async deleteBreadOrder(uuid: string): Promise<void> {
         const order = await db.bread_orders.where('uuid').equals(uuid).first();
         if (order && !order.venteUuid) {
             await db.bread_orders.delete(order.id!);
+            // Déclenchement Sync Elite
+            useAppStore.getState().actions.triggerSmartSync();
         }
     }
 
@@ -155,9 +180,17 @@ class BreadService {
                 });
 
                 const orderIds = customerOrders.map(o => o.id!);
-                await db.bread_orders.where('id').anyOf(orderIds).modify({ venteUuid: sale.uuid, est_paye: true, est_livre: true });
+                await db.bread_orders.where('id').anyOf(orderIds).modify({ 
+                    venteUuid: sale.uuid, 
+                    est_paye: true, 
+                    est_livre: true,
+                    updatedAt: new Date()
+                });
             }
         });
+        
+        // Déclenchement Sync Elite (déjà déclenché par salesService, mais assuré ici aussi)
+        useAppStore.getState().actions.triggerSmartSync();
     }
 
     async billAllRemainingOrdersForDate(date: string, breadPrice: number): Promise<number> {

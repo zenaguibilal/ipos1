@@ -6,6 +6,7 @@ import { getSupabaseClient } from '@/lib/supabase';
 /**
  * Service de synchronisation souverain pour iPOS Luxury.
  * Gère le transfert bidirectionnel intelligent entre IndexedDB et Supabase.
+ * Utilise une logique de fusion temporelle Elite (updatedAt).
  */
 class SupabaseSyncService {
     
@@ -47,7 +48,8 @@ class SupabaseSyncService {
     }
 
     /**
-     * Pousse l'intégralité des données locales vers le cloud.
+     * Pousse l'intégralité des données locales vers le cloud (Mode Push).
+     * Utilise le mode UPSERT pour éviter les doublons.
      */
     async pushAllData(url: string, key: string): Promise<void> {
         const supabase = getSupabaseClient(url, key);
@@ -57,26 +59,26 @@ class SupabaseSyncService {
             const records = await item.table.toArray();
             if (records.length === 0) continue;
 
-            // Préparation des données : on retire l'ID local auto-incrémenté
+            // Préparation des données : on retire l'ID local Dexie (auto-incrémenté)
             const dataToSync = records.map((r: any) => {
                 const { id, ...rest } = r;
                 return rest;
             });
 
+            // Upsert massif par table
             const { error } = await supabase
                 .from(item.name)
                 .upsert(dataToSync, { onConflict: 'uuid' });
 
             if (error) {
-                console.error(`Échec Push [${item.name}]: ${error.message}`);
-                // On continue pour les autres tables malgré l'erreur
+                console.warn(`Échec Push [${item.name}]: ${error.message}`);
             }
         }
     }
 
     /**
-     * Récupère les données du cloud et fusionne avec la base locale intelligemment.
-     * Utilise updatedAt pour éviter d'écraser des données locales plus récentes.
+     * Récupère les données du cloud et fusionne avec la base locale (Mode Pull).
+     * Utilise updatedAt pour préserver les modifications les plus récentes.
      */
     async pullAllData(url: string, key: string): Promise<void> {
         const supabase = getSupabaseClient(url, key);
@@ -85,7 +87,7 @@ class SupabaseSyncService {
         for (const item of this.tableSyncOrder) {
             const { data, error } = await supabase.from(item.name).select('*');
             if (error) {
-                console.error(`Échec Pull [${item.name}]: ${error.message}`);
+                console.warn(`Échec Pull [${item.name}]: ${error.message}`);
                 continue;
             }
             
@@ -95,17 +97,17 @@ class SupabaseSyncService {
                         const localRecord = await item.table.where('uuid').equals(remoteRecord.uuid).first();
                         
                         if (localRecord) {
-                            // Comparaison intelligente des timestamps
+                            // Comparaison intelligente des horodatages (Conflict Resolution)
                             const localUpdate = localRecord.updatedAt ? new Date(localRecord.updatedAt).getTime() : 0;
                             const remoteUpdate = remoteRecord.updatedAt ? new Date(remoteRecord.updatedAt).getTime() : 0;
                             
-                            // On ne met à jour localement que si la version cloud est strictement plus récente
+                            // On ne met à jour localement que si la version cloud est STRICTEMENT plus récente
                             if (remoteUpdate > localUpdate) {
                                 const { id } = localRecord;
                                 await item.table.update(id, remoteRecord);
                             }
                         } else {
-                            // Nouvel enregistrement inexistant localement
+                            // Nouvel enregistrement inexistant localement : ajout direct
                             await item.table.add(remoteRecord);
                         }
                     }

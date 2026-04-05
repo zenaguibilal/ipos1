@@ -1,4 +1,3 @@
-
 'use client';
 import { v4 as uuidv4 } from 'uuid';
 import type { Customer, Sale, ImportAnalysis, Payment, ProductReturn } from '@/lib/types';
@@ -281,6 +280,10 @@ class CustomerService {
         };
         
         await db.customers.update(customer.id, customerUpdate);
+        
+        // Trigger Cloud Sync Elite
+        useAppStore.getState().actions.triggerSmartSync();
+        
         return { ...customer, ...customerUpdate };
     }
 

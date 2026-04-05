@@ -1,4 +1,3 @@
-
 'use client';
 
 import { AppHeader } from '@/components/layout/header';
@@ -7,6 +6,10 @@ import { useAppStore, useAppActions } from '@/stores/appStore';
 import { useEffect, useRef } from 'react';
 import { SaleInfoBar } from '@/components/layout/SaleInfoBar';
 
+/**
+ * Layout racine de l'application iPOS Luxury.
+ * Orchestre la synchronisation proactive et les cycles de maintenance en arrière-plan.
+ */
 export default function AppLayout({
   children,
 }: {
@@ -17,17 +20,16 @@ export default function AppLayout({
   const isSyncing = useAppStore(state => state.isSyncing);
   const initialSyncTriggered = useRef(false);
 
-  // Fetch company profile on initial load.
+  // Initialisation du profil établissement
   useEffect(() => {
     fetchCompanyProfile();
   }, [fetchCompanyProfile]);
 
-  // Proactive Sync on App Launch
-  // Triggers as soon as the profile is loaded and cloud credentials are available
+  // Synchronisation proactive au lancement de l'application
   useEffect(() => {
     if (companyProfile?.supabase_url && companyProfile?.supabase_key && !isSyncing && !initialSyncTriggered.current) {
       initialSyncTriggered.current = true;
-      // Brief delay to ensure database stability on mount
+      // Délai de 3s pour stabiliser la DB avant le premier cycle Elite
       const timeoutId = setTimeout(() => {
         performBackgroundSync();
       }, 3000);
@@ -35,9 +37,20 @@ export default function AppLayout({
     }
   }, [companyProfile, isSyncing, performBackgroundSync]);
 
-  // Automated Background Sync - Every 5 minutes
+  // Détection du retour en ligne pour synchronisation immédiate
   useEffect(() => {
-    const SYNC_INTERVAL = 5 * 60 * 1000; // 5 minutes
+    const handleOnline = () => {
+      console.log("iPOS Luxury: Connection restored. Triggering immediate sync.");
+      performBackgroundSync();
+    };
+
+    window.addEventListener('online', handleOnline);
+    return () => window.removeEventListener('online', handleOnline);
+  }, [performBackgroundSync]);
+
+  // Cycle de synchronisation automatisé toutes les 5 minutes
+  useEffect(() => {
+    const SYNC_INTERVAL = 5 * 60 * 1000;
     
     const intervalId = setInterval(() => {
       if (typeof navigator !== 'undefined' && navigator.onLine) {
