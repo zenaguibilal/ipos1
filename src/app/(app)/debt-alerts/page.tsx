@@ -20,7 +20,8 @@ import {
     History,
     TrendingUp,
     FileText,
-    RefreshCw
+    RefreshCw,
+    AlertTriangle
 } from 'lucide-react';
 import type { Customer } from '@/lib/types';
 import { formatCurrency, cn, FINANCIAL_EPSILON } from '@/lib/utils';
@@ -32,8 +33,8 @@ import { startOfMonth, isBefore } from 'date-fns';
 import { Progress } from '@/components/ui/progress';
 
 /**
- * @fileOverview DebtAlertsPage - Hardened Recovery Intelligence.
- * Optimized for O(1) field access and deferred UI responsiveness.
+ * @fileOverview DebtAlertsPage - Hardened Recovery Intelligence v6.2
+ * Optimized for O(1) field access and high-frequency synchronization.
  */
 
 interface DebtAlertItem extends Customer {
@@ -49,67 +50,75 @@ export default function DebtAlertsPage() {
     const deferredSearch = useDeferredValue(searchQuery);
     const [lastRefreshed, setLastRefreshed] = useState<Date>(new Date());
 
-    // CORE ENGINE: Optimized Surgical Queries
+    // CORE ENGINE: Surgical Reactive Queries
     const alerts = useLiveQuery(async (): Promise<DebtAlertItem[]> => {
-        const now = new Date();
-        const currentDay = now.getDate();
-        const firstOfThisMonth = startOfMonth(now);
-        
-        // Parallel fetching with targeted selection
-        const [debtors, unpaidSales, recentPayments] = await Promise.all([
-            db.customers.where('outstandingBalance').above(FINANCIAL_EPSILON).toArray(),
-            db.sales.where('paymentStatus').anyOf(['unpaid', 'partial']).toArray(),
-            db.payments.where('paymentDate').above(firstOfThisMonth).toArray()
-        ]);
+        try {
+            const now = new Date();
+            const currentDay = now.getDate();
+            const firstOfThisMonth = startOfMonth(now);
+            
+            // Parallel extraction
+            const [debtors, unpaidSales, recentPayments] = await Promise.all([
+                db.customers.where('outstandingBalance').above(FINANCIAL_EPSILON).toArray(),
+                db.sales.where('paymentStatus').anyOf(['unpaid', 'partial']).toArray(),
+                db.payments.where('paymentDate').above(firstOfThisMonth).toArray()
+            ]);
 
-        if (debtors.length === 0) return [];
+            if (debtors.length === 0) return [];
 
-        // O(1) Pre-indexing
-        const debtAgeMap = new Map<string, Date>();
-        for (const s of unpaidSales) {
-            const saleDate = new Date(s.createdAt!);
-            const customerUuid = s.customerUuid || '';
-            const currentOldest = debtAgeMap.get(customerUuid);
-            if (!currentOldest || isBefore(saleDate, currentOldest)) {
-                debtAgeMap.set(customerUuid, saleDate);
+            // Memory-efficient indexing (O(N) total)
+            const debtAgeMap = new Map<string, Date>();
+            for (let i = 0; i < unpaidSales.length; i++) {
+                const s = unpaidSales[i];
+                const saleDate = new Date(s.createdAt!);
+                const customerUuid = s.customerUuid || '';
+                const currentOldest = debtAgeMap.get(customerUuid);
+                if (!currentOldest || isBefore(saleDate, currentOldest)) {
+                    debtAgeMap.set(customerUuid, saleDate);
+                }
             }
+
+            const paymentTotalMap = new Map<string, number>();
+            for (let i = 0; i < recentPayments.length; i++) {
+                const p = recentPayments[i];
+                paymentTotalMap.set(p.customerUuid, (paymentTotalMap.get(p.customerUuid) || 0) + p.amount);
+            }
+
+            setLastRefreshed(new Date());
+
+            return debtors
+                .filter(c => {
+                    if (!c.settlementDay) return false;
+                    const paidThisMonth = paymentTotalMap.get(c.uuid) || 0;
+                    const hasMadeSignificantEffort = paidThisMonth > (c.outstandingBalance * 0.20);
+                    const oldestDebtDate = debtAgeMap.get(c.uuid);
+                    const isPastDueThisMonth = currentDay > c.settlementDay;
+                    const isLegacyDebtor = oldestDebtDate ? isBefore(oldestDebtDate, firstOfThisMonth) : false;
+
+                    return (isPastDueThisMonth || isLegacyDebtor) && !hasMadeSignificantEffort;
+                })
+                .map(c => {
+                    const oldestDebtDate = debtAgeMap.get(c.uuid);
+                    const creditLimit = c.creditLimit || 0;
+                    const creditUsagePercent = creditLimit > 0 ? (c.outstandingBalance / creditLimit) * 100 : 0;
+                    const delaySeverity = Math.max(0, currentDay - (c.settlementDay || 0));
+                    const isLegacy = oldestDebtDate ? isBefore(oldestDebtDate, firstOfThisMonth) : false;
+                    const isHighlyCritical = creditUsagePercent > 100 || delaySeverity > 15 || isLegacy;
+
+                    return {
+                        ...c,
+                        daysPastSettlement: delaySeverity,
+                        severity: isHighlyCritical ? 'critical' : 'warning',
+                        isLegacy,
+                        creditUsagePercent,
+                        riskScore: (Math.min(150, creditUsagePercent) * 0.65) + (delaySeverity * 2.5)
+                    };
+                })
+                .sort((a, b) => b.riskScore - a.riskScore);
+        } catch (error) {
+            console.error("Critical Failure in Alert Engine:", error);
+            throw error;
         }
-
-        const paymentTotalMap = new Map<string, number>();
-        for (const p of recentPayments) {
-            paymentTotalMap.set(p.customerUuid, (paymentTotalMap.get(p.customerUuid) || 0) + p.amount);
-        }
-
-        setLastRefreshed(new Date());
-
-        return debtors
-            .filter(c => {
-                if (!c.settlementDay) return false;
-                const paidThisMonth = paymentTotalMap.get(c.uuid) || 0;
-                const hasMadeSignificantEffort = paidThisMonth > (c.outstandingBalance * 0.20);
-                const oldestDebtDate = debtAgeMap.get(c.uuid);
-                const isPastDueThisMonth = currentDay > c.settlementDay;
-                const isLegacyDebtor = oldestDebtDate ? isBefore(oldestDebtDate, firstOfThisMonth) : false;
-
-                return (isPastDueThisMonth || isLegacyDebtor) && !hasMadeSignificantEffort;
-            })
-            .map(c => {
-                const oldestDebtDate = debtAgeMap.get(c.uuid);
-                const creditLimit = c.creditLimit || 0;
-                const creditUsagePercent = creditLimit > 0 ? (c.outstandingBalance / creditLimit) * 100 : 0;
-                const delaySeverity = Math.max(0, currentDay - (c.settlementDay || 0));
-                const isHighlyCritical = creditUsagePercent > 100 || delaySeverity > 15 || (oldestDebtDate && isBefore(oldestDebtDate, firstOfThisMonth));
-
-                return {
-                    ...c,
-                    daysPastSettlement: delaySeverity,
-                    severity: isHighlyCritical ? 'critical' : 'warning',
-                    isLegacy: oldestDebtDate ? isBefore(oldestDebtDate, firstOfThisMonth) : false,
-                    creditUsagePercent,
-                    riskScore: (Math.min(150, creditUsagePercent) * 0.65) + (delaySeverity * 2.5)
-                };
-            })
-            .sort((a, b) => b.riskScore - a.riskScore);
     }, []);
 
     const filteredAlerts = useMemo(() => {
@@ -168,7 +177,7 @@ export default function DebtAlertsPage() {
                     <div className="text-center">
                         <span className="text-[9px] font-black uppercase text-muted-foreground/40 tracking-widest block mb-1">Alertes</span>
                         <span className={cn("text-3xl font-black font-mono leading-none", filteredAlerts.length > 0 ? "text-destructive" : "text-emerald-500")}>
-                            {filteredAlerts.length.toString().padStart(2, '0')}
+                            {(filteredAlerts.length || 0).toString().padStart(2, '0')}
                         </span>
                     </div>
                     <div className="h-10 w-px bg-white/5" />
@@ -285,7 +294,7 @@ export default function DebtAlertsPage() {
                                             className="rounded-2xl h-14 gap-2 border-emerald-500/20 bg-emerald-500/5 text-emerald-500 hover:bg-emerald-500 hover:text-white transition-all font-black text-[9px] uppercase tracking-widest shadow-lg"
                                             onClick={() => handleWhatsApp(customer)}
                                             disabled={!customer.phone}
-                                            aria-label={`Envoyer un message WhatsApp à ${customer.firstName}`}
+                                            aria-label={`WhatsApp ${customer.firstName}`}
                                         >
                                             <MessageCircle className="h-4 w-4" /> WhatsApp
                                         </Button>
@@ -295,7 +304,7 @@ export default function DebtAlertsPage() {
                                             asChild
                                             disabled={!customer.phone}
                                         >
-                                            <a href={`tel:${customer.phone}`} aria-label={`Appeler ${customer.firstName}`}>
+                                            <a href={`tel:${customer.phone}`} aria-label={`Call ${customer.firstName}`}>
                                                 <PhoneCall className="h-4 w-4" /> Appeler
                                             </a>
                                         </Button>
@@ -324,10 +333,10 @@ export default function DebtAlertsPage() {
                 </div>
                 <div className="space-y-3 relative z-10">
                     <p className="text-xs font-black uppercase tracking-[0.4em] text-primary flex items-center gap-2">
-                        <Info className="h-3.5 w-3.5" /> Intelligence de Flux Elite v6.1
+                        <Info className="h-3.5 w-3.5" /> Intelligence de Flux Elite v6.2
                     </p>
                     <p className="text-[12px] text-muted-foreground/70 font-medium leading-relaxed max-w-5xl italic border-l-2 border-primary/20 pl-6">
-                        L'algorithme v6.1 applique un test de stress de crédit rigoureux. Le risque est évalué selon l'exposition relative au plafond autorisé et la latence de paiement. Le statut passe en urgence critique dès que le ratio d'utilisation dépasse 100% أو عندما يتجاوز التأخير الفترة المسموح بها قانونياً ومحاسبياً.
+                        L'algorithme v6.2 applique un test de stress de crédit rigoureux. Le risque est évalué selon l'exposition relative au plafond autorisé et la latence de paiement. Le statut passe en urgence critique dès que le ratio d'utilisation dépasse 100% أو عندما يتجاوز التأخير الفترة المسموح بها محاسبياً.
                     </p>
                 </div>
             </div>
