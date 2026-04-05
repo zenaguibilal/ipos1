@@ -1,10 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import type { Product } from '@/lib/types';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Search, PackagePlus, Tag, ShoppingBag, Loader2, Sparkles } from 'lucide-react';
+import { Search, PackagePlus, Tag, ShoppingBag, Loader2, Sparkles, AlertCircle } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 import { useDebounce } from '@/hooks/useDebounce';
 import { productService } from '@/services/product.service';
@@ -13,13 +13,17 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { CustomItemDialog } from './CustomItemDialog';
 import { cn } from '@/lib/utils';
 
-const SearchResultItem = ({ product, onSelect }: { product: Product, onSelect: (product: Product) => void }) => {
+interface SearchResultItemProps {
+    product: Product;
+    onSelect: (product: Product) => void;
+}
+
+const SearchResultItem = ({ product, onSelect }: SearchResultItemProps) => {
     return (
         <div
             onClick={() => onSelect(product)}
             className="group relative flex flex-col justify-between p-5 cursor-pointer bg-card/40 backdrop-blur-md border border-white/5 rounded-[2rem] transition-all duration-500 hover:bg-primary/10 hover:border-primary/30 hover:shadow-2xl active:scale-95 overflow-hidden"
         >
-            {/* Background Accent */}
             <div className="absolute -right-4 -top-4 opacity-[0.03] group-hover:opacity-10 transition-opacity duration-700">
                 <ShoppingBag className="h-24 w-24 rotate-12" />
             </div>
@@ -53,47 +57,60 @@ const SearchResultItem = ({ product, onSelect }: { product: Product, onSelect: (
     );
 };
 
-export function ProductSelector() {
+interface ProductSelectorProps {
+    searchInputRef: React.RefObject<HTMLInputElement>;
+    customItemButtonRef: React.RefObject<HTMLButtonElement>;
+}
+
+export function ProductSelector({ searchInputRef, customItemButtonRef }: ProductSelectorProps) {
     const { addItemToCart } = useCartActions();
     const [searchQuery, setSearchQuery] = useState('');
     const debouncedSearchQuery = useDebounce(searchQuery, 200);
 
     const [searchResults, setSearchResults] = useState<Product[]>([]);
     const [isSearching, setIsSearching] = useState(false);
+    const [searchError, setSearchError] = useState<string | null>(null);
 
-    // Fetch search results only when query is NOT empty
     useEffect(() => {
         if (!debouncedSearchQuery.trim()) {
             setSearchResults([]);
+            setSearchError(null);
             return;
         }
 
+        let isMounted = true;
         const fetchSearchResults = async () => {
             setIsSearching(true);
+            setSearchError(null);
             try {
                 const data = await productService.filterProducts({ query: debouncedSearchQuery });
-                // Limit to 5 results as requested
-                setSearchResults(data.slice(0, 5));
-            } catch (e) {
-                console.error("Search error:", e);
+                if (isMounted) {
+                    setSearchResults(data.slice(0, 5));
+                }
+            } catch (e: any) {
+                if (isMounted) {
+                    setSearchError("Échec de la recherche");
+                    console.error("Search error:", e);
+                }
             } finally {
-                setIsSearching(false);
+                if (isMounted) setIsSearching(false);
             }
         };
         fetchSearchResults();
+        return () => { isMounted = false; };
     }, [debouncedSearchQuery]);
 
     const handleSelect = (product: Product) => {
         addItemToCart(product);
         setSearchQuery('');
         setSearchResults([]);
+        searchInputRef.current?.focus();
     };
     
     const isActiveSearch = searchQuery.trim().length > 0;
 
     return (
         <div className="flex flex-col h-full bg-card/20 backdrop-blur-3xl luxury-card rounded-[2.5rem] overflow-hidden border-white/5">
-            {/* Search Header */}
             <div className="p-6 bg-muted/20 border-b border-white/5 flex gap-4 items-center">
                 <div className="relative flex-grow">
                     <Search className={cn(
@@ -101,7 +118,7 @@ export function ProductSelector() {
                         isActiveSearch ? "text-primary scale-110" : "text-muted-foreground/30"
                     )} />
                     <Input
-                        id="sell-search-input"
+                        ref={searchInputRef}
                         placeholder="Rechercher un produit [F1]..."
                         className="pl-14 text-lg h-16 rounded-3xl bg-background/50 border-none shadow-inner focus-visible:ring-primary/20 font-black tracking-tight"
                         value={searchQuery}
@@ -116,19 +133,22 @@ export function ProductSelector() {
                 </div>
                 <CustomItemDialog>
                     <Button 
-                        id="sell-custom-item-button" 
+                        ref={customItemButtonRef}
                         variant="outline" 
                         className="h-16 w-16 flex-shrink-0 rounded-3xl border-none bg-primary/5 hover:bg-primary/20 hover:text-primary transition-all shadow-xl group" 
-                        aria-label="Article Personnalisé"
                     >
                         <Tag className="h-6 w-6 transition-transform group-hover:scale-110 group-hover:-rotate-12"/>
                     </Button>
                 </CustomItemDialog>
             </div>
 
-            {/* Results Area */}
             <ScrollArea className="flex-grow p-8">
-                {!isActiveSearch ? (
+                {searchError ? (
+                    <div className="py-20 text-center space-y-4 bg-destructive/5 rounded-[3rem] border border-dashed border-destructive/20">
+                        <AlertCircle className="h-10 w-10 text-destructive mx-auto opacity-40" />
+                        <p className="text-sm font-bold text-destructive/70">{searchError}</p>
+                    </div>
+                ) : !isActiveSearch ? (
                     <div className="h-full flex flex-col items-center justify-center py-24 text-center space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-1000">
                         <div className="relative">
                             <div className="absolute -inset-4 bg-primary/10 rounded-full blur-3xl animate-pulse"></div>

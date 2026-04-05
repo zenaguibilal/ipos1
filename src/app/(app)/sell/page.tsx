@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { ProductSelector } from "@/components/sell/ProductSearch";
 import { CartDisplay } from "@/components/sell/CartDisplay";
 import { CartTotalBar } from "@/components/sell/CartTotalBar";
@@ -11,46 +11,49 @@ import { toast } from 'sonner';
 
 export default function SellPage() {
     const { createCart } = useCartActions();
+    const searchInputRef = useRef<HTMLInputElement>(null);
+    const payButtonRef = useRef<HTMLButtonElement>(null);
+    const customerComboRef = useRef<HTMLButtonElement>(null);
+    const customItemButtonRef = useRef<HTMLButtonElement>(null);
     
-    // Global Keyboard Shortcuts
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
-            const activeElement = document.activeElement as HTMLElement;
-            const isTyping = activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA' || activeElement.contentEditable === 'true';
+            const target = e.target as HTMLElement;
+            const isTyping = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.contentEditable === 'true';
             
+            // Allow F1 even while typing to jump back to search
             if (e.key === 'F1') {
                 e.preventDefault();
-                document.getElementById('sell-search-input')?.focus();
+                searchInputRef.current?.focus();
                 return;
             }
             
-            if (isTyping && activeElement.id !== 'sell-search-input') return;
+            if (isTyping && target !== searchInputRef.current) return;
 
-            if (e.key === 'F2') {
-                e.preventDefault();
-                document.getElementById('sell-pay-button')?.click();
-            }
-            if (e.key === 'F4') {
-                e.preventDefault();
-                const combo = document.getElementById('sell-customer-combobox');
-                combo?.focus();
-                combo?.click();
-            }
-            if (e.key === 'F8') {
-                e.preventDefault();
-                document.getElementById('sell-drafts-button')?.click();
-            }
-            if (e.key === 'F9') {
-                e.preventDefault();
-                createCart();
-                toast.success("Vente suspendue. Nouveau panier créé.");
-            }
-            if (e.key === 'F10') {
-                e.preventDefault();
-                document.getElementById('sell-custom-item-button')?.click();
-            }
-            if (e.key === 'Escape') {
-                activeElement.blur();
+            switch (e.key) {
+                case 'F2':
+                    e.preventDefault();
+                    payButtonRef.current?.click();
+                    break;
+                case 'F4':
+                    e.preventDefault();
+                    customerComboRef.current?.click();
+                    break;
+                case 'F8':
+                    // Drafts dropdown usually handled by focus or internal triggers
+                    break;
+                case 'F9':
+                    e.preventDefault();
+                    createCart();
+                    toast.success("Vente suspendue. Nouveau panier créé.");
+                    break;
+                case 'F10':
+                    e.preventDefault();
+                    customItemButtonRef.current?.click();
+                    break;
+                case 'Escape':
+                    target.blur();
+                    break;
             }
         };
 
@@ -61,27 +64,27 @@ export default function SellPage() {
     return (
         <div className="h-full flex flex-col p-4 sm:p-8 gap-6 overflow-hidden animate-in slide-in-from-bottom-2 duration-700">
             <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 flex-grow min-h-0">
-                {/* Main Column: Cart and Finalization */}
                 <div className="lg:col-span-3 flex flex-col bg-card luxury-card rounded-[2rem] overflow-hidden border-none min-h-0">
                     <div className="p-6 bg-muted/30 border-b border-white/5">
-                        <CustomerCombobox />
+                        <CustomerCombobox ref={customerComboRef} />
                     </div>
                     
                     <CartDisplay />
                     
                     <div className="mt-auto p-6 space-y-6 bg-muted/20 border-t border-white/5">
                         <CartTotalBar />
-                        <SaleActions />
+                        <SaleActions payButtonRef={payButtonRef} />
                     </div>
                 </div>
 
-                {/* Secondary Column: Product Search and Grid */}
                 <div className="lg:col-span-2 flex flex-col min-h-0">
-                    <ProductSelector />
+                    <ProductSelector 
+                        searchInputRef={searchInputRef} 
+                        customItemButtonRef={customItemButtonRef} 
+                    />
                 </div>
             </div>
 
-            {/* Shortcut Help Legend - Professional Luxury Bar */}
             <div className="hidden md:flex flex-wrap items-center justify-center gap-8 py-4 px-10 bg-card/50 backdrop-blur-xl border border-white/5 rounded-full text-[9px] font-black tracking-[0.2em] text-muted-foreground uppercase shadow-2xl">
                 <div className="flex items-center justify-center gap-3 pr-4 border-r border-white/10">
                     <span className="text-primary font-black">Légende des Raccourcis</span>
@@ -97,10 +100,6 @@ export default function SellPage() {
                 <div className="flex items-center gap-3 group">
                     <kbd className="bg-muted px-2.5 py-1.5 rounded-xl border border-white/10 text-primary shadow-inner transition-all group-hover:scale-110">F4</kbd>
                     <span>Client</span>
-                </div>
-                <div className="flex items-center gap-3 group">
-                    <kbd className="bg-muted px-2.5 py-1.5 rounded-xl border border-white/10 text-primary shadow-inner transition-all group-hover:scale-110">F8</kbd>
-                    <span>Brouillons</span>
                 </div>
                 <div className="flex items-center gap-3 group">
                     <kbd className="bg-muted px-2.5 py-1.5 rounded-xl border border-white/10 text-primary shadow-inner transition-all group-hover:scale-110">F9</kbd>

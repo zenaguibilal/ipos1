@@ -1,7 +1,6 @@
-
 'use client';
 
-import { useState, useMemo, useEffect, useCallback } from 'react';
+import React, { useState, useMemo, useEffect, useCallback, forwardRef } from 'react';
 import { customerService } from '@/services/customer.service';
 import { useCartActions, useActiveCart } from '@/stores/cartStore';
 import type { ComboboxOption } from '@/components/ui/combobox';
@@ -14,7 +13,7 @@ import { UserPlus, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { CustomerDialog } from '@/components/customers/customer-dialog';
 
-export function CustomerCombobox() {
+export const CustomerCombobox = forwardRef<HTMLButtonElement>((_, ref) => {
     const { setCustomer } = useCartActions();
     const activeCart = useActiveCart();
     
@@ -37,7 +36,7 @@ export function CustomerCombobox() {
     }, [fetchCustomers]);
 
     const customerOptions = useMemo<ComboboxOption[]>(() => {
-        const options: ComboboxOption[] = customers.map(c => ({
+        const options: ComboboxOption[] = (customers || []).map(c => ({
             value: c.uuid,
             label: `${c.firstName} ${c.lastName}`,
             subLabel: c.outstandingBalance > 0 
@@ -85,7 +84,7 @@ export function CustomerCombobox() {
             </div>
             
             <Combobox
-                id="sell-customer-combobox"
+                ref={ref}
                 options={customerOptions}
                 value={selectedValue}
                 onSelect={handleSelect}
@@ -122,4 +121,5 @@ export function CustomerCombobox() {
             />
         </div>
     );
-}
+});
+CustomerCombobox.displayName = "CustomerCombobox";

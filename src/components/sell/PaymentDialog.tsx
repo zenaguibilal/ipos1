@@ -22,12 +22,17 @@ import { DatePicker } from '../ui/date-picker';
 import { addDays } from 'date-fns';
 import { customerService } from '@/services/customer.service';
 
-export function PaymentDialog({ isOpen, onOpenChange }: { isOpen: boolean, onOpenChange: (open: boolean) => void }) {
+interface PaymentDialogProps {
+    isOpen: boolean;
+    onOpenChange: (open: boolean) => void;
+}
+
+export function PaymentDialog({ isOpen, onOpenChange }: PaymentDialogProps) {
     const [isMounted, setIsMounted] = useState(false);
     const cart = useActiveCart();
     const { processSale } = useCartActions();
     
-    const [amountPaid, setAmountPaid] = useState(0);
+    const [amountPaid, setAmountPaid] = useState<number>(0);
     const [dueDate, setDueDate] = useState<Date | undefined>();
     const [isLoading, setIsLoading] = useState(false);
     const [lastSale, setLastSale] = useState<Sale | null>(null);
@@ -36,21 +41,22 @@ export function PaymentDialog({ isOpen, onOpenChange }: { isOpen: boolean, onOpe
     const [customer, setCustomer] = useState<Customer | null>(null);
     const [approveOverLimit, setApproveOverLimit] = useState(false);
 
-    const { total } = cart ? calculateCartTotals(cart) : { total: 0 };
-    const change = amountPaid - total;
+    const { total } = useMemo(() => cart ? calculateCartTotals(cart) : { total: 0 }, [cart]);
+    const change = useMemo(() => amountPaid - total, [amountPaid, total]);
 
     useEffect(() => {
         setIsMounted(true);
     }, []);
 
     useEffect(() => {
-        if (isOpen && isMounted) {
-            setAmountPaid(total);
+        if (isOpen && isMounted && cart) {
+            const totals = calculateCartTotals(cart);
+            setAmountPaid(totals.total);
             setIsLoading(false);
             setLastSale(null);
             setApproveOverLimit(false);
             
-            if (cart?.customerUuid) {
+            if (cart.customerUuid) {
                  setDueDate(addDays(new Date(), 30));
                  customerService.getCustomerByUuid(cart.customerUuid).then(c => setCustomer(c || null));
             } else {
@@ -58,24 +64,27 @@ export function PaymentDialog({ isOpen, onOpenChange }: { isOpen: boolean, onOpe
                  setCustomer(null);
             }
         }
-    }, [isOpen, total, cart?.customerUuid, isMounted]);
+    }, [isOpen, cart, isMounted]);
     
     const handleProcessSale = async () => {
-        if (amountPaid < 0) return;
+        if (amountPaid < 0 || isLoading) return;
         setIsLoading(true);
-        const sale = await processSale(amountPaid, dueDate);
-        if (sale) {
-            setLastSale(sale);
-            onOpenChange(false);
-            setIsReceiptOpen(true);
+        try {
+            const sale = await processSale(amountPaid, dueDate);
+            if (sale) {
+                setLastSale(sale);
+                onOpenChange(false);
+                setIsReceiptOpen(true);
+            }
+        } finally {
+            setIsLoading(false);
         }
-        setIsLoading(false);
     };
 
     const projectedBalance = useMemo(() => {
         if (!customer) return 0;
         const creditAmount = Math.max(0, total - amountPaid);
-        return customer.outstandingBalance + creditAmount;
+        return (customer.outstandingBalance || 0) + creditAmount;
     }, [customer, total, amountPaid]);
 
     const isOverLimit = useMemo(() => {
@@ -85,7 +94,7 @@ export function PaymentDialog({ isOpen, onOpenChange }: { isOpen: boolean, onOpe
 
     if (!cart || !isMounted) return null;
 
-    const isCreditSale = cart.customerUuid && amountPaid < total;
+    const isCreditSale = !!(cart.customerUuid && amountPaid < total);
     const canFinalize = !isLoading && amountPaid >= 0 && (
         amountPaid >= total || 
         (cart.customerUuid && (!isOverLimit || approveOverLimit))
@@ -130,7 +139,7 @@ export function PaymentDialog({ isOpen, onOpenChange }: { isOpen: boolean, onOpe
                                         type="number"
                                         className="text-2xl h-16 text-center font-bold focus-visible:ring-primary bg-background border-2 border-transparent focus-visible:border-primary/20 rounded-2xl shadow-sm"
                                         value={amountPaid}
-                                        onChange={(e) => setAmountPaid(Number(e.target.value))}
+                                        onChange={(e) => setAmountPaid(Number(e.target.value) || 0)}
                                         autoFocus
                                         onFocus={(e) => e.target.select()}
                                         onKeyDown={(e) => { if(e.key === 'Enter' && canFinalize) handleProcessSale() }}
