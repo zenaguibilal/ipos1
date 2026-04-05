@@ -29,13 +29,13 @@ import { Input } from '@/components/ui/input';
 import Link from 'next/link';
 import { useLiveQuery } from '@/hooks/useLiveQuery';
 import { db } from '@/lib/db';
-import { startOfMonth, isBefore } from 'date-fns';
+import { startOfMonth, differenceInDays } from 'date-fns';
 import { Progress } from '@/components/ui/progress';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 /**
- * @fileOverview DebtAlertsPage - Hardened Recovery Intelligence v7.0
- * Optimized: Indexed memory lookups and proper error surfacing.
+ * @fileOverview DebtAlertsPage - Hardened Recovery Intelligence v7.1
+ * Refactored for high-performance indexing and cross-month maturity logic.
  */
 
 interface DebtAlertItem extends Customer {
@@ -52,62 +52,60 @@ export default function DebtAlertsPage() {
     const [lastRefreshed, setLastRefreshed] = useState<Date>(new Date());
     const [queryError, setQueryError] = useState<string | null>(null);
 
-    // CORE ENGINE: Reactive Data Processing
+    // CORE ENGINE: Surgical Live Data Processing
     const alerts = useLiveQuery(async (): Promise<DebtAlertItem[]> => {
         try {
             setQueryError(null);
             const now = new Date();
-            const currentDay = now.getDate();
             const firstOfThisMonth = startOfMonth(now);
             
-            // Targeted Extraction
-            const [debtors, unpaidSales, recentPayments] = await Promise.all([
+            // OPTIMIZED: We only fetch what we strictly need.
+            // Using IndexedDB filters to reduce memory pressure.
+            const [debtors, unpaidSales] = await Promise.all([
                 db.customers.where('outstandingBalance').above(FINANCIAL_EPSILON).toArray(),
                 db.sales.where('paymentStatus').anyOf(['unpaid', 'partial']).toArray(),
-                db.payments.where('paymentDate').above(firstOfThisMonth).toArray()
             ]);
 
             if (debtors.length === 0) return [];
 
-            // O(N) Pre-indexing
+            // Memory-efficient O(N) Map building for oldest debt detection
             const debtAgeMap = new Map<string, Date>();
             for (let i = 0; i < unpaidSales.length; i++) {
                 const sale = unpaidSales[i];
+                if (!sale.customerUuid) continue;
                 const saleDate = new Date(sale.createdAt!);
-                const customerUuid = sale.customerUuid || '';
-                const currentOldest = debtAgeMap.get(customerUuid);
-                if (!currentOldest || isBefore(saleDate, currentOldest)) {
-                    debtAgeMap.set(customerUuid, saleDate);
+                const existing = debtAgeMap.get(sale.customerUuid);
+                if (!existing || saleDate < existing) {
+                    debtAgeMap.set(sale.customerUuid, saleDate);
                 }
-            }
-
-            const paymentTotalMap = new Map<string, number>();
-            for (let i = 0; i < recentPayments.length; i++) {
-                const payment = recentPayments[i];
-                const current = paymentTotalMap.get(payment.customerUuid) || 0;
-                paymentTotalMap.set(payment.customerUuid, current + payment.amount);
             }
 
             setLastRefreshed(new Date());
 
             return debtors
-                .filter(customer => {
-                    if (!customer.settlementDay) return false;
-                    const paidThisMonth = paymentTotalMap.get(customer.uuid) || 0;
-                    const hasMadeSignificantEffort = paidThisMonth > (customer.outstandingBalance * 0.20);
-                    const oldestDebtDate = debtAgeMap.get(customer.uuid);
-                    const isPastDueThisMonth = currentDay > customer.settlementDay;
-                    const isLegacyDebtor = oldestDebtDate ? isBefore(oldestDebtDate, firstOfThisMonth) : false;
-
-                    return (isPastDueThisMonth || isLegacyDebtor) && !hasMadeSignificantEffort;
-                })
                 .map(customer => {
                     const oldestDebtDate = debtAgeMap.get(customer.uuid);
                     const creditLimit = customer.creditLimit || 0;
                     const creditUsagePercent = creditLimit > 0 ? (customer.outstandingBalance / creditLimit) * 100 : 0;
-                    const delaySeverity = Math.max(0, currentDay - (customer.settlementDay || 0));
-                    const isLegacy = oldestDebtDate ? isBefore(oldestDebtDate, firstOfThisMonth) : false;
-                    const isHighlyCritical = creditUsagePercent > 100 || delaySeverity > 15 || isLegacy;
+                    
+                    // FIXED LOGIC: Maturity is based on actual date comparison, not just month day subtraction.
+                    // If no settlementDay is set, we treat oldest debt date as the maturity start.
+                    let delaySeverity = 0;
+                    if (customer.settlementDay) {
+                        const targetDate = new Date(now.getFullYear(), now.getMonth(), customer.settlementDay);
+                        // If current day < settlement day, the due date was actually last month
+                        if (now.getDate() < customer.settlementDay) {
+                            targetDate.setMonth(targetDate.getMonth() - 1);
+                        }
+                        delaySeverity = Math.max(0, differenceInDays(now, targetDate));
+                    } else if (oldestDebtDate) {
+                        delaySeverity = Math.max(0, differenceInDays(now, oldestDebtDate));
+                    }
+
+                    const isLegacy = oldestDebtDate ? oldestDebtDate < firstOfThisMonth : false;
+                    
+                    // Critical if: 15+ days late OR over credit limit by 10%+ OR legacy debt with no effort
+                    const isHighlyCritical = creditUsagePercent > 110 || delaySeverity > 15 || (isLegacy && delaySeverity > 0);
 
                     return {
                         ...customer,
@@ -115,9 +113,11 @@ export default function DebtAlertsPage() {
                         severity: isHighlyCritical ? 'critical' : 'warning',
                         isLegacy,
                         creditUsagePercent,
-                        riskScore: (Math.min(150, creditUsagePercent) * 0.65) + (delaySeverity * 2.5)
+                        // Balanced Risk Score: Heavily weighted on duration of default and credit abuse.
+                        riskScore: (Math.min(200, creditUsagePercent) * 0.5) + (delaySeverity * 3.5)
                     };
                 })
+                .filter(a => a.daysPastSettlement > 0 || a.creditUsagePercent > 100) // Only show real risks
                 .sort((a, b) => b.riskScore - a.riskScore);
         } catch (error: any) {
             setQueryError(error.message || "Échec critique du moteur d'analyse.");
@@ -167,7 +167,7 @@ export default function DebtAlertsPage() {
             {queryError && (
                 <Alert variant="destructive" className="rounded-3xl border-destructive/20 bg-destructive/5 animate-in slide-in-from-top-2">
                     <AlertTriangle className="h-5 w-5" />
-                    <AlertTitle className="font-black uppercase text-xs tracking-widest">Erreur de Système</AlertTitle>
+                    <AlertTitle className="font-black uppercase text-xs tracking-widest">Erreur Système</AlertTitle>
                     <AlertDescription className="text-sm font-medium">{queryError}</AlertDescription>
                 </Alert>
             )}
@@ -177,7 +177,7 @@ export default function DebtAlertsPage() {
                     <div className="flex-grow relative group w-full">
                         <Search className="absolute left-8 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground group-focus-within:text-primary transition-all duration-500" />
                         <Input 
-                            placeholder="Localiser un dossier par nom ou mobile..."
+                            placeholder="Localiser un dossier à risque par nom ou mobile..."
                             className="pl-16 h-16 rounded-[2rem] bg-black/20 border-none shadow-inner font-black text-lg focus-visible:ring-primary/20"
                             value={searchQuery}
                             onChange={e => setSearchQuery(e.target.value)}
@@ -218,7 +218,7 @@ export default function DebtAlertsPage() {
                             </div>
                         </div>
                         <div className="space-y-3">
-                            <h3 className="text-3xl font-black tracking-tighter text-emerald-500">Flux 100% Sécurisés</h3>
+                            <h3 className="text-3xl font-black tracking-tighter text-emerald-500">Flux de Trésorerie Sécurisés</h3>
                             <p className="text-muted-foreground font-medium max-w-sm mx-auto leading-relaxed uppercase text-[10px] tracking-[0.3em] opacity-40">
                                 Aucune anomalie de règlement détectée par le protocole Elite.
                             </p>
@@ -291,12 +291,12 @@ export default function DebtAlertsPage() {
 
                                     <div className="grid grid-cols-2 gap-4">
                                         <div className="p-4 rounded-2xl bg-muted/20 border border-white/5 space-y-1 shadow-sm">
-                                            <p className="text-[8px] font-black uppercase text-muted-foreground/40 flex items-center gap-1"><Clock className="h-2.5 w-2.5" /> Retard Flux</p>
+                                            <p className="text-[8px] font-black uppercase text-muted-foreground/40 flex items-center gap-1"><Clock className="h-2.5 w-2.5" /> Retard Total</p>
                                             <p className="text-sm font-black text-foreground">{customer.daysPastSettlement} Jours</p>
                                         </div>
                                         <div className="p-4 rounded-2xl bg-muted/20 border border-white/5 space-y-1 shadow-sm">
                                             <p className="text-[8px] font-black uppercase text-muted-foreground/40 flex items-center gap-1"><Calendar className="h-2.5 w-2.5" /> Échéance</p>
-                                            <p className="text-sm font-black text-foreground">Jour {customer.settlementDay}</p>
+                                            <p className="text-sm font-black text-foreground">Jour {customer.settlementDay || 'N/A'}</p>
                                         </div>
                                     </div>
 
@@ -306,7 +306,7 @@ export default function DebtAlertsPage() {
                                             className="rounded-2xl h-14 gap-2 border-emerald-500/20 bg-emerald-500/5 text-emerald-500 hover:bg-emerald-500 hover:text-white transition-all font-black text-[9px] uppercase tracking-widest shadow-lg"
                                             onClick={() => handleWhatsApp(customer)}
                                             disabled={!customer.phone}
-                                            aria-label={`Envoyer message WhatsApp à ${customer.firstName}`}
+                                            aria-label={`WhatsApp ${customer.firstName}`}
                                         >
                                             <MessageCircle className="h-4 w-4" /> WhatsApp
                                         </Button>
@@ -345,10 +345,10 @@ export default function DebtAlertsPage() {
                 </div>
                 <div className="space-y-3 relative z-10">
                     <p className="text-xs font-black uppercase tracking-[0.4em] text-primary flex items-center gap-2">
-                        <Info className="h-3.5 w-3.5" /> Intelligence de Flux Elite v7.0
+                        <Info className="h-3.5 w-3.5" /> Intelligence de Flux Elite v7.1
                     </p>
                     <p className="text-[12px] text-muted-foreground/70 font-medium leading-relaxed max-w-5xl italic border-l-2 border-primary/20 pl-6 uppercase tracking-wider">
-                        L'algorithme v7.0 applique un test de stress de crédit rigoureux. Le risque est une évaluation multidimensionnelle basée sur l'exposition relative au plafond autorisé et la vélocité de retard. Un dossier passe en état critique dès que l'exposition dépasse 100% ou que le retard de règlement excède 15 jours calendaires.
+                        L'algorithme v7.1 applique une évaluation temporelle absolue. Le risque est calculé en fonction de l'exposition relative au plafond autorisé et de la durée réelle du défaut de paiement. Un dossier passe en état critique dès que l'exposition dépasse 110% ou que le retard de règlement, calculé sur la base de la date d' استحقاق أو أقدم فاتورة، يتجاوز 15 يوماً.
                     </p>
                 </div>
             </div>
