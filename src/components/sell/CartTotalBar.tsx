@@ -10,7 +10,7 @@ import { formatCurrency } from "@/lib/utils";
 
 /**
  * CartTotalBar - Hardened financial calculation summary.
- * Uses integer arithmetic through calculateCartTotals to avoid decimal drift.
+ * Uses scaled integer arithmetic through calculateCartTotals to avoid decimal drift.
  */
 function CartTotalBarContent() {
     const [isMounted, setIsMounted] = useState(false);
@@ -24,7 +24,8 @@ function CartTotalBarContent() {
     const handleDiscountValueChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
         if (!cart) return;
         const val = parseFloat(e.target.value);
-        setDiscount(cart.discount.type, isNaN(val) ? 0 : val);
+        // Robust numeric validation
+        setDiscount(cart.discount.type, isNaN(val) ? 0 : Math.max(0, val));
     }, [cart, setDiscount]);
 
     if (!isMounted || !cart) return <div className="h-32 bg-muted/20 animate-pulse rounded-[2rem] border border-white/5" />;

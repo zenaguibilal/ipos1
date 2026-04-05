@@ -14,7 +14,6 @@ import { toast } from 'sonner';
  * Senior Review Note: Implements strict input isolation and optimized lifecycle management.
  */
 
-// Global Key Protocol Constants
 const KEYS = {
     SEARCH: 'F1',
     PAY: 'F2',

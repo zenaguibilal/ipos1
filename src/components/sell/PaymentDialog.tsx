@@ -15,7 +15,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { useActiveCart, useCartActions } from '@/stores/cartStore';
 import { calculateCartTotals, formatCurrency, cn, FINANCIAL_EPSILON } from '@/lib/utils';
-import { Loader2, CheckCircle2, Info, Wallet, Calendar, ShieldAlert } from 'lucide-react';
+import { Loader2, CheckCircle2, Info, Wallet, Calendar, ShieldAlert, AlertCircle } from 'lucide-react';
 import { PrintReceiptDialog } from '../sales/PrintReceiptDialog';
 import type { Sale, Customer } from '@/lib/types';
 import { DatePicker } from '../ui/date-picker';
@@ -69,6 +69,7 @@ function PaymentDialogContent({ isOpen, onOpenChange }: { isOpen: boolean, onOpe
     }, [isOpen, cart, isMounted]);
     
     const handleProcessSale = useCallback(async () => {
+        // Prevent submission if logic fails validation
         if (amountPaid < 0 || isLoading) return;
         
         setIsLoading(true);

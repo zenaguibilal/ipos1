@@ -73,12 +73,12 @@ export const useCartStore = create<CartState>()(
                 },
                 createCart: (name) => {
                     const newId = uuidv4();
-                    const newCart: Cart = {
-                        id: newId,
-                        name: name || `Vente ${get().carts.length + 1}`,
-                        ...defaultCart,
-                    };
                     set(produce((state: CartState) => {
+                        const newCart: Cart = {
+                            id: newId,
+                            name: name || `Vente ${state.carts.length + 1}`,
+                            ...defaultCart,
+                        };
                         state.carts.push(newCart);
                         state.activeCartId = newId;
                     }));
@@ -124,7 +124,7 @@ export const useCartStore = create<CartState>()(
                         const currentCartQuantity = existingItem ? existingItem.cartQuantity : 0;
                         const requestedTotalQuantity = currentCartQuantity + quantity;
                         
-                        // Use Standardized EPSILON for float comparison
+                        // Use Standardized EPSILON for float comparison to avoid precision ghosts
                         if (product.quantity < (requestedTotalQuantity - FINANCIAL_EPSILON)) {
                             toast.error(`Stock insuffisant pour "${product.name}"`, {
                                 description: `Demandé: ${requestedTotalQuantity}, Disponible: ${product.quantity}.`,
@@ -146,6 +146,7 @@ export const useCartStore = create<CartState>()(
                         }
                     }));
 
+                    // UI Cleanup: remove flash state after animation
                     setTimeout(() => {
                         set(produce((state: CartState) => {
                             const targetCart = state.carts.find((c: Cart) => c.id === state.activeCartId);
@@ -167,26 +168,26 @@ export const useCartStore = create<CartState>()(
                 updateItemQuantity: (productUuid, newQuantity) => {
                     set(produce((state: CartState) => {
                         const cart = state.carts.find((c: Cart) => c.id === state.activeCartId);
-                        if (cart) {
-                            const item = cart.items.find(item => item.uuid === productUuid);
-                            if (item) {
-                                const isStockedItem = !item.uuid.startsWith('custom-') && item.uuid !== 'BREAD_PRODUCT';
-                
-                                // Strict stock check using standardized EPSILON
-                                if (isStockedItem && newQuantity > (item.quantity + FINANCIAL_EPSILON)) {
-                                    toast.error(`Stock insuffisant pour "${item.name}"`, {
-                                        description: `Demandé: ${newQuantity}, Disponible: ${item.quantity}.`,
-                                    });
-                                    item.cartQuantity = item.quantity;
-                                    return;
-                                }
+                        if (!cart) return;
 
-                                if (newQuantity > 0) {
-                                    // Limit to 3 decimal places for weights (grams)
-                                    item.cartQuantity = Number(newQuantity.toFixed(3));
-                                } else {
-                                    cart.items = cart.items.filter(i => i.uuid !== productUuid);
-                                }
+                        const item = cart.items.find(item => item.uuid === productUuid);
+                        if (item) {
+                            const isStockedItem = !item.uuid.startsWith('custom-') && item.uuid !== 'BREAD_PRODUCT';
+            
+                            // Strict stock check using standardized EPSILON
+                            if (isStockedItem && newQuantity > (item.quantity + FINANCIAL_EPSILON)) {
+                                toast.error(`Stock insuffisant pour "${item.name}"`, {
+                                    description: `Demandé: ${newQuantity}, Disponible: ${item.quantity}.`,
+                                });
+                                item.cartQuantity = item.quantity;
+                                return;
+                            }
+
+                            if (newQuantity > 0) {
+                                // Limit to 3 decimal places for weights (grams) to prevent DB overflow
+                                item.cartQuantity = Number(newQuantity.toFixed(3));
+                            } else {
+                                cart.items = cart.items.filter(i => i.uuid !== productUuid);
                             }
                         }
                     }));
