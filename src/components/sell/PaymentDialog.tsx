@@ -14,7 +14,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { useActiveCart, useCartActions } from '@/stores/cartStore';
-import { calculateCartTotals, formatCurrency, cn } from '@/lib/utils';
+import { calculateCartTotals, formatCurrency, cn, FINANCIAL_EPSILON } from '@/lib/utils';
 import { Loader2, CheckCircle2, Info, Wallet, Calendar, ShieldAlert } from 'lucide-react';
 import { PrintReceiptDialog } from '../sales/PrintReceiptDialog';
 import type { Sale, Customer } from '@/lib/types';
@@ -24,7 +24,7 @@ import { customerService } from '@/services/customer.service';
 
 /**
  * PaymentDialog - Hardened financial finalization module.
- * Senior Review Note: Uses high-precision comparisons and sanitized inputs.
+ * Senior Review Note: Enforces strictly positive values and provides redundant validation.
  */
 function PaymentDialogContent({ isOpen, onOpenChange }: { isOpen: boolean, onOpenChange: (open: boolean) => void }) {
     const [isMounted, setIsMounted] = useState(false);
@@ -43,10 +43,8 @@ function PaymentDialogContent({ isOpen, onOpenChange }: { isOpen: boolean, onOpe
     // Hardened calculation logic
     const { total } = useMemo(() => cart ? calculateCartTotals(cart) : { total: 0 }, [cart]);
     
-    // EPSILON for high-precision financial comparison
-    const EPSILON = 0.005;
     const change = Math.max(0, amountPaid - total);
-    const isFullPayment = amountPaid >= (total - EPSILON);
+    const isFullPayment = amountPaid >= (total - FINANCIAL_EPSILON);
 
     useEffect(() => {
         setIsMounted(true);
@@ -94,17 +92,18 @@ function PaymentDialogContent({ isOpen, onOpenChange }: { isOpen: boolean, onOpe
 
     const isOverLimit = useMemo(() => {
         if (!customer || !customer.creditLimit) return false;
-        return projectedBalance > (customer.creditLimit + EPSILON);
+        return projectedBalance > (customer.creditLimit + FINANCIAL_EPSILON);
     }, [customer, projectedBalance]);
 
     const handleAmountChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
         const val = parseFloat(e.target.value);
-        setAmountPaid(isNaN(val) ? 0 : val);
+        // Sanitization: prevent negative payments or invalid NaN states
+        setAmountPaid(isNaN(val) || val < 0 ? 0 : val);
     }, []);
 
     if (!cart || !isMounted) return null;
 
-    const isCreditSale = cart.customerUuid && amountPaid < (total - EPSILON);
+    const isCreditSale = cart.customerUuid && amountPaid < (total - FINANCIAL_EPSILON);
     const canFinalize = !isLoading && amountPaid >= 0 && (
         isFullPayment || (cart.customerUuid && (!isOverLimit || approveOverLimit))
     );
@@ -140,6 +139,7 @@ function PaymentDialogContent({ isOpen, onOpenChange }: { isOpen: boolean, onOpe
                                     id="amount-paid"
                                     type="number"
                                     step="0.01"
+                                    min="0"
                                     className="text-2xl h-16 text-center font-black bg-background border-none shadow-inner focus-visible:ring-primary/20 rounded-2xl"
                                     value={amountPaid || ''}
                                     onChange={handleAmountChange}
@@ -173,7 +173,7 @@ function PaymentDialogContent({ isOpen, onOpenChange }: { isOpen: boolean, onOpe
                                     {isOverLimit && (
                                         <div className="p-5 bg-destructive/10 border border-destructive/20 rounded-2xl space-y-4 shadow-inner">
                                             <div className="flex items-center gap-3 text-destructive font-black text-[10px] uppercase tracking-widest">
-                                                <ShieldAlert className="h-5 w-5" /> Alerte Plafوند Dépassé
+                                                <ShieldAlert className="h-5 w-5" /> Alerte Plafond Dépassé
                                             </div>
                                             <div className="flex items-center justify-between bg-black/20 p-4 rounded-xl">
                                                 <span className="text-[10px] font-black uppercase text-primary">Dérogation Souveraine</span>

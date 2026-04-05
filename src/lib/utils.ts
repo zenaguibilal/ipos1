@@ -7,6 +7,12 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 /**
+ * Constant for high-precision financial comparisons.
+ * Prevents floating point errors from blocking logical operations.
+ */
+export const FINANCIAL_EPSILON = 0.00001;
+
+/**
  * Safely converts a Date object or an ISO string to a JavaScript Date.
  * @param date - The Date or string to convert.
  * @returns A JavaScript Date object.

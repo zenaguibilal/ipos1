@@ -7,6 +7,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { salesService } from '@/services/sales.service';
 import { customerService } from '@/services/customer.service';
 import { useAppStore } from './appStore';
+import { FINANCIAL_EPSILON } from '@/lib/utils';
 
 // State Interface
 interface CartState {
@@ -123,8 +124,8 @@ export const useCartStore = create<CartState>()(
                         const currentCartQuantity = existingItem ? existingItem.cartQuantity : 0;
                         const requestedTotalQuantity = currentCartQuantity + quantity;
                         
-                        // Use EPSILON for float comparison
-                        if (product.quantity < (requestedTotalQuantity - 0.0001)) {
+                        // Use Standardized EPSILON for float comparison
+                        if (product.quantity < (requestedTotalQuantity - FINANCIAL_EPSILON)) {
                             toast.error(`Stock insuffisant pour "${product.name}"`, {
                                 description: `Demandé: ${requestedTotalQuantity}, Disponible: ${product.quantity}.`,
                             });
@@ -171,8 +172,8 @@ export const useCartStore = create<CartState>()(
                             if (item) {
                                 const isStockedItem = !item.uuid.startsWith('custom-') && item.uuid !== 'BREAD_PRODUCT';
                 
-                                // Strict stock check using high precision EPSILON
-                                if (isStockedItem && newQuantity > (item.quantity + 0.0001)) {
+                                // Strict stock check using standardized EPSILON
+                                if (isStockedItem && newQuantity > (item.quantity + FINANCIAL_EPSILON)) {
                                     toast.error(`Stock insuffisant pour "${item.name}"`, {
                                         description: `Demandé: ${newQuantity}, Disponible: ${item.quantity}.`,
                                     });
