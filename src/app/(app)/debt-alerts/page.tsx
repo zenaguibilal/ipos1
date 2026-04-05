@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,7 +8,6 @@ import {
     BellRing, 
     MessageCircle, 
     Calendar, 
-    Landmark, 
     ChevronRight,
     Search,
     AlertCircle,
@@ -21,7 +20,8 @@ import {
     History,
     TrendingUp,
     FileText,
-    Activity
+    Activity,
+    RefreshCw
 } from 'lucide-react';
 import type { Customer } from '@/lib/types';
 import { formatCurrency, cn, FINANCIAL_EPSILON } from '@/lib/utils';
@@ -34,7 +34,8 @@ import { Progress } from '@/components/ui/progress';
 
 /**
  * @fileOverview DebtAlertsPage - Elite Recovery Intelligence Interface.
- * Version 5.0: Surgical data indexing and credit exposure analytics.
+ * Version 6.0: Surgical data indexing and refined credit exposure analytics.
+ * Uncompromising linguistic consistency and high-precision risk weightage.
  */
 
 interface DebtAlertItem extends Customer {
@@ -47,6 +48,7 @@ interface DebtAlertItem extends Customer {
 
 export default function DebtAlertsPage() {
     const [searchQuery, setSearchQuery] = useState('');
+    const [lastRefreshed, setLastRefreshed] = useState<Date>(new Date());
 
     // CORE ENGINE: Surgical indexing to prevent memory leaks on large datasets
     const alerts = useLiveQuery(async (): Promise<DebtAlertItem[]> => {
@@ -79,13 +81,16 @@ export default function DebtAlertsPage() {
             paymentTotalMap.set(p.customerUuid, (paymentTotalMap.get(p.customerUuid) || 0) + p.amount);
         });
 
+        // Update the timestamp for UI feedback
+        setLastRefreshed(new Date());
+
         // ELITE ANALYTICS: Risk Exposure Mapping
         return debtors
             .filter(c => {
                 if (!c.settlementDay) return false;
 
                 const paidThisMonth = paymentTotalMap.get(c.uuid) || 0;
-                // Threshold: Serious effort is > 20% of debt (Accounting Standard)
+                // Threshold: Serious effort is > 20% of debt (Financial Integrity Standard)
                 const hasMadeSignificantEffort = paidThisMonth > (c.outstandingBalance * 0.20);
                 
                 const oldestDebtDate = debtAgeMap.get(c.uuid);
@@ -98,17 +103,19 @@ export default function DebtAlertsPage() {
                 const oldestDebtDate = debtAgeMap.get(c.uuid);
                 const creditLimit = c.creditLimit || 0;
                 const creditUsagePercent = creditLimit > 0 ? (c.outstandingBalance / creditLimit) * 100 : 0;
-                const delaySeverity = currentDay - (c.settlementDay || 0);
+                const delaySeverity = Math.max(0, currentDay - (c.settlementDay || 0));
                 
+                // Risk Factors: Legacy debt or over-limit usage trigger critical status
                 const isHighlyCritical = creditUsagePercent > 100 || delaySeverity > 15 || (oldestDebtDate && isBefore(oldestDebtDate, firstOfThisMonth));
 
                 return {
                     ...c,
-                    daysPastSettlement: Math.max(0, delaySeverity),
+                    daysPastSettlement: delaySeverity,
                     severity: isHighlyCritical ? 'critical' : 'warning',
                     isLegacy: oldestDebtDate ? isBefore(oldestDebtDate, firstOfThisMonth) : false,
                     creditUsagePercent,
-                    riskScore: (creditUsagePercent * 0.6) + (delaySeverity * 2)
+                    // Weighted Risk Score: Usage (65%) + Latency (35%)
+                    riskScore: (Math.min(150, creditUsagePercent) * 0.65) + (delaySeverity * 2.5)
                 };
             })
             .sort((a, b) => b.riskScore - a.riskScore);
@@ -141,9 +148,15 @@ export default function DebtAlertsPage() {
                 title="Surveillance de Trésorerie" 
                 description="Radar souverain de détection des risques d'insolvabilité"
             >
-                <div className="flex items-center gap-3 px-5 py-2.5 bg-primary/10 border border-primary/20 rounded-2xl shadow-inner group">
-                    <Activity className="h-4 w-4 text-primary animate-pulse" />
-                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Protocol Elite v5.0 Actif</span>
+                <div className="flex items-center gap-4">
+                    <div className="hidden md:flex flex-col items-end -space-y-1">
+                        <span className="text-[8px] font-black uppercase text-muted-foreground/40 tracking-widest">Dernier scan</span>
+                        <span className="text-[10px] font-bold text-primary/60">{lastRefreshed.toLocaleTimeString()}</span>
+                    </div>
+                    <div className="flex items-center gap-3 px-5 py-2.5 bg-primary/10 border border-primary/20 rounded-2xl shadow-inner group">
+                        <RefreshCw className={cn("h-4 w-4 text-primary", isLoading && "animate-spin")} />
+                        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Protocol Elite v6.0 Actif</span>
+                    </div>
                 </div>
             </PageHeader>
 
@@ -324,10 +337,10 @@ export default function DebtAlertsPage() {
                 </div>
                 <div className="space-y-3 relative z-10">
                     <p className="text-xs font-black uppercase tracking-[0.4em] text-primary flex items-center gap-2">
-                        <Info className="h-3.5 w-3.5" /> Intelligence de Flux Elite v5.0
+                        <Info className="h-3.5 w-3.5" /> Intelligence de Flux Elite v6.0
                     </p>
                     <p className="text-[12px] text-muted-foreground/70 font-medium leading-relaxed max-w-5xl italic border-l-2 border-primary/20 pl-6">
-                        L'algorithme v5.0 applique un "Credit Stress Test" : il évalue le risque non seulement sur le retard de paiement، mais aussi sur le taux d'exposition (Credit Exposure) par rapport au plafond autorisé. Un dossier passe en "Urgence Critique" dès que le ratio d'utilisation dépasse 100% أو أن تأخر السداد يتجاوز 15 يوماً من تاريخ الاستحقاق المتفق عليه.
+                        L'algorithme v6.0 applique un "Credit Stress Test" : il évalue le risque non seulement sur le retard de paiement, mais aussi sur le taux d'exposition (Credit Exposure) par rapport au plafond autorisé. Un dossier passe en "Urgence Critique" dès que le ratio d'utilisation dépasse 100% أو أن تأخر السداد يتجاوز 15 يوماً من تاريخ الاستحقاق المتفق عليه.
                     </p>
                 </div>
             </div>
