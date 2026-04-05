@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useDeferredValue } from 'react';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -20,7 +20,6 @@ import {
     History,
     TrendingUp,
     FileText,
-    Activity,
     RefreshCw
 } from 'lucide-react';
 import type { Customer } from '@/lib/types';
@@ -33,9 +32,8 @@ import { startOfMonth, isBefore } from 'date-fns';
 import { Progress } from '@/components/ui/progress';
 
 /**
- * @fileOverview DebtAlertsPage - Elite Recovery Intelligence Interface.
- * Version 6.0: Surgical data indexing and refined credit exposure analytics.
- * Uncompromising linguistic consistency and high-precision risk weightage.
+ * @fileOverview DebtAlertsPage - Hardened Recovery Intelligence.
+ * Optimized for O(1) field access and deferred UI responsiveness.
  */
 
 interface DebtAlertItem extends Customer {
@@ -48,15 +46,16 @@ interface DebtAlertItem extends Customer {
 
 export default function DebtAlertsPage() {
     const [searchQuery, setSearchQuery] = useState('');
+    const deferredSearch = useDeferredValue(searchQuery);
     const [lastRefreshed, setLastRefreshed] = useState<Date>(new Date());
 
-    // CORE ENGINE: Surgical indexing to prevent memory leaks on large datasets
+    // CORE ENGINE: Optimized Surgical Queries
     const alerts = useLiveQuery(async (): Promise<DebtAlertItem[]> => {
         const now = new Date();
         const currentDay = now.getDate();
         const firstOfThisMonth = startOfMonth(now);
         
-        // Batch Fetching with optimized memory keys
+        // Parallel fetching with targeted selection
         const [debtors, unpaidSales, recentPayments] = await Promise.all([
             db.customers.where('outstandingBalance').above(FINANCIAL_EPSILON).toArray(),
             db.sales.where('paymentStatus').anyOf(['unpaid', 'partial']).toArray(),
@@ -65,34 +64,29 @@ export default function DebtAlertsPage() {
 
         if (debtors.length === 0) return [];
 
-        // O(1) Pre-indexing for high-speed computation
+        // O(1) Pre-indexing
         const debtAgeMap = new Map<string, Date>();
-        unpaidSales.forEach(s => {
+        for (const s of unpaidSales) {
             const saleDate = new Date(s.createdAt!);
             const customerUuid = s.customerUuid || '';
             const currentOldest = debtAgeMap.get(customerUuid);
             if (!currentOldest || isBefore(saleDate, currentOldest)) {
                 debtAgeMap.set(customerUuid, saleDate);
             }
-        });
+        }
 
         const paymentTotalMap = new Map<string, number>();
-        recentPayments.forEach(p => {
+        for (const p of recentPayments) {
             paymentTotalMap.set(p.customerUuid, (paymentTotalMap.get(p.customerUuid) || 0) + p.amount);
-        });
+        }
 
-        // Update the timestamp for UI feedback
         setLastRefreshed(new Date());
 
-        // ELITE ANALYTICS: Risk Exposure Mapping
         return debtors
             .filter(c => {
                 if (!c.settlementDay) return false;
-
                 const paidThisMonth = paymentTotalMap.get(c.uuid) || 0;
-                // Threshold: Serious effort is > 20% of debt (Financial Integrity Standard)
                 const hasMadeSignificantEffort = paidThisMonth > (c.outstandingBalance * 0.20);
-                
                 const oldestDebtDate = debtAgeMap.get(c.uuid);
                 const isPastDueThisMonth = currentDay > c.settlementDay;
                 const isLegacyDebtor = oldestDebtDate ? isBefore(oldestDebtDate, firstOfThisMonth) : false;
@@ -104,8 +98,6 @@ export default function DebtAlertsPage() {
                 const creditLimit = c.creditLimit || 0;
                 const creditUsagePercent = creditLimit > 0 ? (c.outstandingBalance / creditLimit) * 100 : 0;
                 const delaySeverity = Math.max(0, currentDay - (c.settlementDay || 0));
-                
-                // Risk Factors: Legacy debt or over-limit usage trigger critical status
                 const isHighlyCritical = creditUsagePercent > 100 || delaySeverity > 15 || (oldestDebtDate && isBefore(oldestDebtDate, firstOfThisMonth));
 
                 return {
@@ -114,7 +106,6 @@ export default function DebtAlertsPage() {
                     severity: isHighlyCritical ? 'critical' : 'warning',
                     isLegacy: oldestDebtDate ? isBefore(oldestDebtDate, firstOfThisMonth) : false,
                     creditUsagePercent,
-                    // Weighted Risk Score: Usage (65%) + Latency (35%)
                     riskScore: (Math.min(150, creditUsagePercent) * 0.65) + (delaySeverity * 2.5)
                 };
             })
@@ -123,19 +114,19 @@ export default function DebtAlertsPage() {
 
     const filteredAlerts = useMemo(() => {
         if (!alerts) return [];
-        const q = searchQuery.toLowerCase().trim();
+        const q = deferredSearch.toLowerCase().trim();
         if (!q) return alerts;
         return alerts.filter(c => 
             c.firstName.toLowerCase().includes(q) || 
             c.lastName.toLowerCase().includes(q) ||
             c.phone?.includes(q)
         );
-    }, [alerts, searchQuery]);
+    }, [alerts, deferredSearch]);
 
     const handleWhatsApp = (customer: Customer) => {
         if (!customer.phone) return;
         const message = encodeURIComponent(
-            `Bonjour ${customer.firstName}, votre compte Elite iPOS affiche un solde débiteur de ${formatCurrency(customer.outstandingBalance)}. Merci de régulariser votre situation dans les plus brefs délais. Cordialement.`
+            `Bonjour ${customer.firstName}, votre compte Elite iPOS affiche un solde débiteur de ${formatCurrency(customer.outstandingBalance)}. Merci de régulariser votre situation rapidement. Cordialement.`
         );
         window.open(`https://wa.me/${customer.phone}?text=${message}`, '_blank');
     };
@@ -153,14 +144,13 @@ export default function DebtAlertsPage() {
                         <span className="text-[8px] font-black uppercase text-muted-foreground/40 tracking-widest">Dernier scan</span>
                         <span className="text-[10px] font-bold text-primary/60">{lastRefreshed.toLocaleTimeString()}</span>
                     </div>
-                    <div className="flex items-center gap-3 px-5 py-2.5 bg-primary/10 border border-primary/20 rounded-2xl shadow-inner group">
+                    <div className="flex items-center gap-3 px-5 py-2.5 bg-primary/10 border border-primary/20 rounded-2xl shadow-inner">
                         <RefreshCw className={cn("h-4 w-4 text-primary", isLoading && "animate-spin")} />
-                        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Protocol Elite v6.0 Actif</span>
+                        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Elite Protocol Active</span>
                     </div>
                 </div>
             </PageHeader>
 
-            {/* Elite Data Control Panel */}
             <div className="grid lg:grid-cols-4 gap-6">
                 <Card className="lg:col-span-3 rounded-[3rem] border-white/5 bg-card/20 backdrop-blur-3xl p-3 shadow-2xl flex items-center">
                     <div className="flex-grow relative group w-full">
@@ -170,10 +160,11 @@ export default function DebtAlertsPage() {
                             className="pl-16 h-16 rounded-[2rem] bg-black/20 border-none shadow-inner font-black text-lg focus-visible:ring-primary/20"
                             value={searchQuery}
                             onChange={e => setSearchQuery(e.target.value)}
+                            aria-label="Rechercher des alertes de dette"
                         />
                     </div>
                 </Card>
-                <div className="flex items-center justify-between p-8 bg-card/40 rounded-[3rem] border border-white/5">
+                <div className="flex items-center justify-between p-8 bg-card/40 rounded-[3rem] border border-white/5 shadow-xl">
                     <div className="text-center">
                         <span className="text-[9px] font-black uppercase text-muted-foreground/40 tracking-widest block mb-1">Alertes</span>
                         <span className={cn("text-3xl font-black font-mono leading-none", filteredAlerts.length > 0 ? "text-destructive" : "text-emerald-500")}>
@@ -251,8 +242,7 @@ export default function DebtAlertsPage() {
                                 </CardHeader>
 
                                 <CardContent className="p-8 pt-4 space-y-6 relative z-10">
-                                    <div className="p-6 rounded-[2.5rem] bg-black/40 border border-white/5 space-y-2 relative overflow-hidden group/debt">
-                                        <div className="absolute inset-0 bg-gradient-to-r from-destructive/10 to-transparent opacity-0 group-hover/debt:opacity-100 transition-opacity duration-1000" />
+                                    <div className="p-6 rounded-[2.5rem] bg-black/40 border border-white/5 space-y-2 relative overflow-hidden group/debt shadow-inner">
                                         <p className="text-[9px] font-black uppercase text-muted-foreground/40 tracking-[0.3em] relative z-10">Montant Exigible</p>
                                         <p className={cn(
                                             "text-4xl font-black tracking-tighter relative z-10 leading-none font-mono",
@@ -262,10 +252,9 @@ export default function DebtAlertsPage() {
                                         </p>
                                     </div>
 
-                                    {/* Exposure Analytics */}
                                     <div className="space-y-3">
                                         <div className="flex justify-between items-center text-[9px] font-black uppercase tracking-widest">
-                                            <span className="text-muted-foreground/40 flex items-center gap-1.5"><TrendingUp className="h-3 w-3" /> Utilisation du Plafond</span>
+                                            <span className="text-muted-foreground/40 flex items-center gap-1.5"><TrendingUp className="h-3 w-3" /> Exposition Crédit</span>
                                             <span className={cn(customer.creditUsagePercent > 90 ? "text-destructive" : "text-primary")}>
                                                 {Math.round(customer.creditUsagePercent)}%
                                             </span>
@@ -273,18 +262,18 @@ export default function DebtAlertsPage() {
                                         <Progress 
                                             value={Math.min(100, customer.creditUsagePercent)} 
                                             className={cn(
-                                                "h-1.5 bg-black/20",
+                                                "h-1.5 bg-black/20 shadow-inner",
                                                 customer.creditUsagePercent > 100 ? "[&>div]:bg-destructive" : "[&>div]:bg-primary"
                                             )} 
                                         />
                                     </div>
 
                                     <div className="grid grid-cols-2 gap-4">
-                                        <div className="p-4 rounded-2xl bg-muted/20 border border-white/5 space-y-1">
+                                        <div className="p-4 rounded-2xl bg-muted/20 border border-white/5 space-y-1 shadow-sm">
                                             <p className="text-[8px] font-black uppercase text-muted-foreground/40 flex items-center gap-1"><Clock className="h-2.5 w-2.5" /> Retard Flux</p>
                                             <p className="text-sm font-black text-foreground">{customer.daysPastSettlement} Jours</p>
                                         </div>
-                                        <div className="p-4 rounded-2xl bg-muted/20 border border-white/5 space-y-1">
+                                        <div className="p-4 rounded-2xl bg-muted/20 border border-white/5 space-y-1 shadow-sm">
                                             <p className="text-[8px] font-black uppercase text-muted-foreground/40 flex items-center gap-1"><Calendar className="h-2.5 w-2.5" /> Échéance</p>
                                             <p className="text-sm font-black text-foreground">Jour {customer.settlementDay}</p>
                                         </div>
@@ -293,35 +282,34 @@ export default function DebtAlertsPage() {
                                     <div className="grid grid-cols-2 gap-3">
                                         <Button 
                                             variant="outline" 
-                                            className="rounded-2xl h-14 gap-2 border-emerald-500/20 bg-emerald-500/5 text-emerald-500 hover:bg-emerald-500 hover:text-white transition-all font-black text-[9px] uppercase tracking-widest shadow-xl"
+                                            className="rounded-2xl h-14 gap-2 border-emerald-500/20 bg-emerald-500/5 text-emerald-500 hover:bg-emerald-500 hover:text-white transition-all font-black text-[9px] uppercase tracking-widest shadow-lg"
                                             onClick={() => handleWhatsApp(customer)}
                                             disabled={!customer.phone}
+                                            aria-label={`Envoyer un message WhatsApp à ${customer.firstName}`}
                                         >
                                             <MessageCircle className="h-4 w-4" /> WhatsApp
                                         </Button>
                                         <Button 
                                             variant="outline" 
-                                            className="rounded-2xl h-14 gap-2 border-blue-500/20 bg-blue-500/5 text-blue-500 hover:bg-blue-500 hover:text-white transition-all font-black text-[9px] uppercase tracking-widest shadow-xl"
+                                            className="rounded-2xl h-14 gap-2 border-blue-500/20 bg-blue-500/5 text-blue-500 hover:bg-blue-500 hover:text-white transition-all font-black text-[9px] uppercase tracking-widest shadow-lg"
                                             asChild
                                             disabled={!customer.phone}
                                         >
-                                            <a href={`tel:${customer.phone}`}>
+                                            <a href={`tel:${customer.phone}`} aria-label={`Appeler ${customer.firstName}`}>
                                                 <PhoneCall className="h-4 w-4" /> Appeler
                                             </a>
                                         </Button>
                                     </div>
                                     
-                                    <div className="flex gap-2">
-                                        <Button 
-                                            variant="ghost" 
-                                            asChild
-                                            className="flex-grow rounded-xl h-12 font-black text-[9px] uppercase tracking-widest hover:bg-primary/10 hover:text-primary transition-all group/btn"
-                                        >
-                                            <Link href={`/customers/${customer.uuid}`}>
-                                                <FileText className="mr-2 h-3.5 w-3.5 opacity-40" /> Grand Livre <ChevronRight className="ml-auto h-3 w-3 transition-transform group-hover/btn:translate-x-1" />
-                                            </Link>
-                                        </Button>
-                                    </div>
+                                    <Button 
+                                        variant="ghost" 
+                                        asChild
+                                        className="w-full rounded-xl h-12 font-black text-[9px] uppercase tracking-widest hover:bg-primary/10 hover:text-primary transition-all group/btn"
+                                    >
+                                        <Link href={`/customers/${customer.uuid}`}>
+                                            <FileText className="mr-2 h-3.5 w-3.5 opacity-40" /> Grand Livre <ChevronRight className="ml-auto h-3 w-3 transition-transform group-hover/btn:translate-x-1" />
+                                        </Link>
+                                    </Button>
                                 </CardContent>
                             </Card>
                         ))}
@@ -329,7 +317,6 @@ export default function DebtAlertsPage() {
                 )}
             </div>
 
-            {/* System Intelligence Note */}
             <div className="p-10 bg-primary/5 rounded-[3.5rem] border border-primary/10 flex items-start gap-8 relative overflow-hidden group shadow-2xl">
                 <Sparkles className="absolute -right-6 -top-6 h-32 w-32 text-primary/5 group-hover:opacity-20 transition-opacity duration-1000" />
                 <div className="p-5 rounded-3xl bg-black/40 text-primary shadow-inner relative z-10 border border-white/5">
@@ -337,10 +324,10 @@ export default function DebtAlertsPage() {
                 </div>
                 <div className="space-y-3 relative z-10">
                     <p className="text-xs font-black uppercase tracking-[0.4em] text-primary flex items-center gap-2">
-                        <Info className="h-3.5 w-3.5" /> Intelligence de Flux Elite v6.0
+                        <Info className="h-3.5 w-3.5" /> Intelligence de Flux Elite v6.1
                     </p>
                     <p className="text-[12px] text-muted-foreground/70 font-medium leading-relaxed max-w-5xl italic border-l-2 border-primary/20 pl-6">
-                        L'algorithme v6.0 applique un "Credit Stress Test" : il évalue le risque non seulement sur le retard de paiement, mais aussi sur le taux d'exposition (Credit Exposure) par rapport au plafond autorisé. Un dossier passe en "Urgence Critique" dès que le ratio d'utilisation dépasse 100% أو أن تأخر السداد يتجاوز 15 يوماً من تاريخ الاستحقاق المتفق عليه.
+                        L'algorithme v6.1 applique un test de stress de crédit rigoureux. Le risque est évalué selon l'exposition relative au plafond autorisé et la latence de paiement. Le statut passe en urgence critique dès que le ratio d'utilisation dépasse 100% أو عندما يتجاوز التأخير الفترة المسموح بها قانونياً ومحاسبياً.
                     </p>
                 </div>
             </div>
