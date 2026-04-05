@@ -33,8 +33,8 @@ import { Progress } from '@/components/ui/progress';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 /**
- * @fileOverview DebtAlertsPage - Hardened Recovery Intelligence v10.0 (Production Ready)
- * Engineering Note: Purged side-effects from LiveQuery and enforced total Accessibility (ARIA).
+ * @fileOverview DebtAlertsPage - Hardened Recovery Intelligence v11.0
+ * Pure data fetching, zero side-effects, full accessibility compliance.
  */
 
 interface DebtAlertItem extends Customer {
@@ -55,7 +55,7 @@ export default function DebtAlertsPage() {
         setIsMounted(true);
     }, []);
 
-    // Logic Isolation: LiveQuery remains PURE. Metadata updates handled via dedicated effects.
+    // Pure Query logic: No state updates allowed inside this block
     const alerts = useLiveQuery(async (): Promise<DebtAlertItem[]> => {
         const now = new Date();
         const firstOfThisMonth = startOfMonth(now);
@@ -65,10 +65,9 @@ export default function DebtAlertsPage() {
 
         const unpaidSales = await db.sales.where('paymentStatus').anyOf(['unpaid', 'partial']).toArray();
 
-        // Optimized O(N) Indexing
+        // High-performance Indexing (O(N))
         const debtAgeMap = new Map<string, Date>();
-        for (let i = 0; i < unpaidSales.length; i++) {
-            const sale = unpaidSales[i];
+        for (const sale of unpaidSales) {
             if (!sale.customerUuid || !sale.createdAt) continue;
             const saleDate = new Date(sale.createdAt);
             const existing = debtAgeMap.get(sale.customerUuid);
@@ -118,7 +117,7 @@ export default function DebtAlertsPage() {
             .sort((a, b) => b.riskScore - a.riskScore);
     }, []);
 
-    // Sync metadata safely
+    // Side-effects managed outside the query
     useEffect(() => {
         if (alerts) setLastRefreshed(new Date());
     }, [alerts]);
@@ -141,7 +140,7 @@ export default function DebtAlertsPage() {
     const handleWhatsApp = (customer: Customer) => {
         if (!customer.phone) return;
         const message = encodeURIComponent(
-            `Bonjour ${customer.firstName}, votre compte iPOS présente un solde de ${formatCurrency(customer.outstandingBalance)}. Merci de régulariser.`
+            `Bonjour ${customer.firstName}, votre compte iPOS présente un solde de ${formatCurrency(customer.outstandingBalance)}. Merci de régulariser votre situation.`
         );
         window.open(`https://wa.me/${customer.phone}?text=${message}`, '_blank');
     };
@@ -151,7 +150,7 @@ export default function DebtAlertsPage() {
     return (
         <div className="p-6 sm:p-10 space-y-10 max-w-[1800px] mx-auto animate-in fade-in duration-1000">
             <PageHeader 
-                title="Trésorerie & Risques" 
+                title="Trésorerie & Risques Elite" 
                 description="Surveillance proactive des défauts de paiement et insolvabilité"
             >
                 <div className="flex items-center gap-3 px-5 py-2.5 bg-primary/10 border border-primary/20 rounded-2xl shadow-sm">
@@ -165,11 +164,11 @@ export default function DebtAlertsPage() {
                     <div className="flex-grow relative group w-full">
                         <Search className="absolute left-8 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground group-focus-within:text-primary transition-all" />
                         <Input 
-                            placeholder="Identifier un dossier par nom ou mobile..."
+                            placeholder="Identifier un dossier par nom أو mobile..."
                             className="pl-16 h-16 rounded-[2rem] bg-black/20 border-none shadow-inner font-black text-lg focus-visible:ring-primary/20"
                             value={searchQuery}
                             onChange={e => setSearchQuery(e.target.value)}
-                            aria-label="Rechercher des alertات de dette par nom ou téléphone"
+                            aria-label="Rechercher des alertes de dette"
                         />
                     </div>
                 </Card>
@@ -290,8 +289,9 @@ export default function DebtAlertsPage() {
                                             className="rounded-2xl h-14 gap-2 border-blue-500/20 bg-blue-500/5 text-blue-500 hover:bg-blue-500 hover:text-white transition-all font-black text-[9px] uppercase tracking-widest"
                                             asChild
                                             disabled={!customer.phone}
+                                            aria-label={`Appeler le client ${customer.firstName}`}
                                         >
-                                            <a href={`tel:${customer.phone}`} aria-label={`Appeler le client ${customer.firstName}`}>
+                                            <a href={`tel:${customer.phone}`}>
                                                 <PhoneCall className="h-4 w-4" /> Appeler
                                             </a>
                                         </Button>
@@ -301,8 +301,9 @@ export default function DebtAlertsPage() {
                                         variant="ghost" 
                                         asChild
                                         className="w-full rounded-xl h-12 font-black text-[9px] uppercase tracking-widest hover:bg-primary/10 hover:text-primary transition-all group/btn"
+                                        aria-label={`Consulter le grand livre de ${customer.firstName}`}
                                     >
-                                        <Link href={`/customers/${customer.uuid}`} aria-label={`Consulter le grand livre de ${customer.firstName}`}>
+                                        <Link href={`/customers/${customer.uuid}`}>
                                             <FileText className="mr-2 h-3.5 w-3.5 opacity-40" /> Grand Livre <ChevronRight className="ml-auto h-3 w-3 transition-transform group-hover/btn:translate-x-1" />
                                         </Link>
                                     </Button>
@@ -323,7 +324,7 @@ export default function DebtAlertsPage() {
                         <Info className="h-3.5 w-3.5" /> Intelligence de Trésorerie Elite
                     </p>
                     <p className="text-[12px] text-muted-foreground/70 font-medium leading-relaxed max-w-5xl italic border-l-2 border-primary/20 pl-6 uppercase tracking-wider">
-                        L'algorithme de surveillance applique une évaluation temporelle absolue. Un dossier est marqué كما "Critique" si l'exposition dépasse 110% du plafond autorisé أو أن تأخر السداد يتجاوز 15 يوماً فعلياً، في ظل تقلبات الأيام والسنة الكبيسة.
+                        L'algorithme de surveillance applique une évaluation temporelle absolue. Un dossier est marqué comme "Critique" si l'exposition dépasse 110% du plafond autorisé أو أن التأخير في السداد يتجاوز 15 يوماً فعلياً، مع مراعاة كافة تقلبات التقويم.
                     </p>
                 </div>
             </div>
