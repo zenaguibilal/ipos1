@@ -16,12 +16,20 @@ interface CartItemRowProps {
     onRemove: (uuid: string) => void;
 }
 
+/**
+ * CartItemRow - Displays a single line in the transaction manifest.
+ * Uses decimal precision for quantities to support weights (Kg/Litre).
+ */
 const CartItemRow = React.memo(({ item, onUpdate, onRemove }: CartItemRowProps) => {
     const handleQtyChange = (val: string) => {
-        const num = parseInt(val, 10);
+        // parseFloat is MANDATORY for POS systems to support non-unit measures
+        const num = parseFloat(val);
         if (isNaN(num)) return;
         onUpdate(item.uuid, Math.max(0, num));
     };
+
+    const isCustom = item.uuid.startsWith('custom-');
+    const isService = item.uuid === 'BREAD_PRODUCT';
 
     return (
         <div 
@@ -33,7 +41,7 @@ const CartItemRow = React.memo(({ item, onUpdate, onRemove }: CartItemRowProps) 
             <div className="flex-grow min-w-0">
                 <div className="flex items-center gap-2 mb-1">
                     <p className="font-black text-sm tracking-tight truncate group-hover:text-primary transition-colors">{item.name}</p>
-                    {item.uuid.startsWith('custom-') && <Tag className="h-3 w-3 text-amber-500 opacity-50" />}
+                    {isCustom && <Tag className="h-3 w-3 text-amber-500 opacity-50" />}
                 </div>
                 <p className="text-[10px] font-bold text-muted-foreground/50">{formatCurrency(item.price)} <span className="mx-1 opacity-30">/</span> {item.unite || 'pcs'}</p>
             </div>
@@ -41,18 +49,21 @@ const CartItemRow = React.memo(({ item, onUpdate, onRemove }: CartItemRowProps) 
             <div className="flex flex-col items-center gap-1">
                 <Input
                     type="number"
+                    step={item.unite === 'Kg' || item.unite === 'Litre' ? "0.001" : "1"}
                     value={item.cartQuantity}
                     onChange={(e) => handleQtyChange(e.target.value)}
-                    className="w-20 text-center h-10 rounded-xl bg-background/50 border-none shadow-inner font-black text-primary"
+                    className="w-24 text-center h-10 rounded-xl bg-background/50 border-none shadow-inner font-black text-primary"
                     min="0"
                 />
-                {item.cartQuantity >= item.quantity && !item.uuid.startsWith('custom-') && (
-                    <span className="text-[8px] font-black text-destructive uppercase">Stock Max</span>
+                {!isCustom && !isService && item.cartQuantity >= item.quantity && (
+                    <span className="text-[8px] font-black text-destructive uppercase">Stock Critique</span>
                 )}
             </div>
 
             <div className="w-24 text-right">
-                <p className="font-black text-base tracking-tighter text-foreground">{formatCurrency(item.price * item.cartQuantity)}</p>
+                <p className="font-black text-base tracking-tighter text-foreground">
+                    {formatCurrency(Number(item.price) * Number(item.cartQuantity))}
+                </p>
             </div>
 
             <Button 
@@ -86,8 +97,8 @@ export function CartDisplay() {
                     <ShoppingCart className="h-20 w-20 text-muted-foreground/20" />
                 </div>
                 <div className="space-y-2">
-                    <p className="text-2xl font-black tracking-tighter text-muted-foreground/40">Manifeste vide</p>
-                    <p className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground/20">Prêt pour une nouvelle vente Elite</p>
+                    <p className="text-2xl font-black tracking-tighter text-muted-foreground/40">Manifeste Vierge</p>
+                    <p className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground/20">En attente de flux commercial...</p>
                 </div>
             </div>
         )
@@ -97,9 +108,9 @@ export function CartDisplay() {
         <ScrollArea className="flex-grow">
             <div className="p-6">
                 <div className="grid grid-cols-[1fr_auto_auto_auto] gap-x-6 items-center text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/40 px-4 mb-6">
-                    <div className="text-left">Désignation</div>
-                    <div className="text-center">Quantité</div>
-                    <div className="text-right">Total Flux</div>
+                    <div className="text-left">Désignation Produit</div>
+                    <div className="text-center">Quantité Flux</div>
+                    <div className="text-right">Total Net</div>
                     <div></div>
                 </div>
 

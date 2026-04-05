@@ -13,12 +13,10 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { CustomItemDialog } from './CustomItemDialog';
 import { cn } from '@/lib/utils';
 
-interface SearchResultItemProps {
-    product: Product;
-    onSelect: (product: Product) => void;
-}
-
-const SearchResultItem = ({ product, onSelect }: SearchResultItemProps) => {
+/**
+ * SearchResultItem - High-speed selection item.
+ */
+const SearchResultItem = ({ product, onSelect }: { product: Product, onSelect: (p: Product) => void }) => {
     return (
         <div
             onClick={() => onSelect(product)}
@@ -46,7 +44,7 @@ const SearchResultItem = ({ product, onSelect }: SearchResultItemProps) => {
 
             <div className="relative z-10 mt-6 flex items-center justify-between">
                 <div className="flex flex-col">
-                    <span className="text-[9px] font-black uppercase tracking-widest text-muted-foreground opacity-50">Stock: {product.quantity}</span>
+                    <span className="text-[9px] font-black uppercase tracking-widest text-muted-foreground opacity-50">Stock: {product.quantity} {product.unite}</span>
                     <span className="text-xl font-black text-primary tracking-tighter">{formatCurrency(product.price)}</span>
                 </div>
                 <div className="h-10 w-10 rounded-2xl bg-primary text-primary-foreground shadow-lg shadow-primary/20 flex items-center justify-center transition-all duration-500 group-hover:scale-110 group-hover:rotate-12">
@@ -62,6 +60,9 @@ interface ProductSelectorProps {
     customItemButtonRef: React.RefObject<HTMLButtonElement>;
 }
 
+/**
+ * ProductSelector - Handles catalog search with race-condition prevention.
+ */
 export function ProductSelector({ searchInputRef, customItemButtonRef }: ProductSelectorProps) {
     const { addItemToCart } = useCartActions();
     const [searchQuery, setSearchQuery] = useState('');
@@ -78,26 +79,28 @@ export function ProductSelector({ searchInputRef, customItemButtonRef }: Product
             return;
         }
 
-        let isMounted = true;
+        const controller = new AbortController();
+        
         const fetchSearchResults = async () => {
             setIsSearching(true);
             setSearchError(null);
             try {
+                // The service should ideally accept an AbortSignal, but here we just manage the state
                 const data = await productService.filterProducts({ query: debouncedSearchQuery });
-                if (isMounted) {
-                    setSearchResults(data.slice(0, 5));
+                if (!controller.signal.aborted) {
+                    setSearchResults(data.slice(0, 10));
                 }
             } catch (e: any) {
-                if (isMounted) {
+                if (!controller.signal.aborted) {
                     setSearchError("Échec de la recherche");
-                    console.error("Search error:", e);
                 }
             } finally {
-                if (isMounted) setIsSearching(false);
+                if (!controller.signal.aborted) setIsSearching(false);
             }
         };
+
         fetchSearchResults();
-        return () => { isMounted = false; };
+        return () => controller.abort();
     }, [debouncedSearchQuery]);
 
     const handleSelect = (product: Product) => {
@@ -149,51 +152,33 @@ export function ProductSelector({ searchInputRef, customItemButtonRef }: Product
                         <p className="text-sm font-bold text-destructive/70">{searchError}</p>
                     </div>
                 ) : !isActiveSearch ? (
-                    <div className="h-full flex flex-col items-center justify-center py-24 text-center space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-1000">
-                        <div className="relative">
-                            <div className="absolute -inset-4 bg-primary/10 rounded-full blur-3xl animate-pulse"></div>
-                            <div className="relative p-8 rounded-[2.5rem] bg-card/40 border border-white/5 shadow-2xl">
-                                <Search className="h-14 w-14 text-primary/30" />
-                            </div>
+                    <div className="h-full flex flex-col items-center justify-center py-24 text-center space-y-6">
+                        <div className="relative p-8 rounded-[2.5rem] bg-card/40 border border-white/5 shadow-2xl">
+                            <Search className="h-14 w-14 text-primary/30" />
                         </div>
-                        <div className="space-y-2">
-                            <p className="text-[10px] font-black uppercase tracking-[0.4em] text-primary/40">Mode Attente</p>
-                            <p className="text-base font-medium text-muted-foreground/30 italic max-w-[200px] mx-auto leading-relaxed">
-                                Tapez le nom du produit pour commencer la recherche.
-                            </p>
-                        </div>
+                        <p className="text-base font-medium text-muted-foreground/30 italic max-w-[200px] mx-auto">
+                            Scannez un code-barres ou saisissez un nom...
+                        </p>
                     </div>
                 ) : (
                     <div className="space-y-8">
                         <div className="flex items-center justify-between px-2">
                             <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-primary flex items-center gap-3">
-                                <Sparkles className="h-3 w-3 text-primary animate-bounce" />
-                                Sélection Elite
+                                <Sparkles className="h-3 w-3 text-primary" />
+                                Résultats Elite
                             </h3>
-                            <span className="px-3 py-1 rounded-full bg-muted/50 text-[9px] font-black text-muted-foreground/50 uppercase tracking-widest border border-white/5">
-                                Top 5 Résultats
-                            </span>
                         </div>
 
                         {searchResults.length > 0 ? (
-                            <div className="grid grid-cols-1 gap-4 animate-in slide-in-from-bottom-4 duration-700">
+                            <div className="grid grid-cols-1 gap-4">
                                 {searchResults.map(product => (
-                                    <SearchResultItem 
-                                        key={product.uuid} 
-                                        product={product} 
-                                        onSelect={handleSelect} 
-                                    />
+                                    <SearchResultItem key={product.uuid} product={product} onSelect={handleSelect} />
                                 ))}
                             </div>
                         ) : !isSearching && (
-                            <div className="py-20 text-center space-y-4 bg-destructive/5 rounded-[3rem] border border-dashed border-destructive/20 animate-in zoom-in-95 duration-500">
-                                <div className="p-4 rounded-2xl bg-destructive/10 w-fit mx-auto">
-                                    <ShoppingBag className="h-10 w-10 text-destructive/40" />
-                                </div>
-                                <div className="space-y-1">
-                                    <p className="text-lg font-black text-destructive/70 tracking-tight">Aucun produit trouvé</p>
-                                    <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/40">Vérifiez l'orthographe ou le code-barres</p>
-                                </div>
+                            <div className="py-20 text-center space-y-4 opacity-20">
+                                <ShoppingBag className="h-10 w-10 mx-auto" />
+                                <p className="text-lg font-black tracking-tight">Aucun article trouvé</p>
                             </div>
                         )}
                     </div>
