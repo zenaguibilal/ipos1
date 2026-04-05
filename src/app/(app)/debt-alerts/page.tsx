@@ -20,9 +20,10 @@ import {
     History,
     TrendingUp,
     FileText,
-    RefreshCw
+    RefreshCw,
+    AlertTriangle
 } from 'lucide-react';
-import type { Customer, Sale, Payment } from '@/lib/types';
+import type { Customer } from '@/lib/types';
 import { formatCurrency, cn, FINANCIAL_EPSILON } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
 import Link from 'next/link';
@@ -30,10 +31,11 @@ import { useLiveQuery } from '@/hooks/useLiveQuery';
 import { db } from '@/lib/db';
 import { startOfMonth, isBefore } from 'date-fns';
 import { Progress } from '@/components/ui/progress';
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 /**
- * @fileOverview DebtAlertsPage - Hardened Recovery Intelligence v6.5
- * Performance Optimized: Uses O(1) Map lookups and deferred filtering.
+ * @fileOverview DebtAlertsPage - Hardened Recovery Intelligence v7.0
+ * Optimized: Indexed memory lookups and proper error surfacing.
  */
 
 interface DebtAlertItem extends Customer {
@@ -48,15 +50,17 @@ export default function DebtAlertsPage() {
     const [searchQuery, setSearchQuery] = useState('');
     const deferredSearch = useDeferredValue(searchQuery);
     const [lastRefreshed, setLastRefreshed] = useState<Date>(new Date());
+    const [queryError, setQueryError] = useState<string | null>(null);
 
-    // CORE ENGINE: Surgical Reactive Queries
+    // CORE ENGINE: Reactive Data Processing
     const alerts = useLiveQuery(async (): Promise<DebtAlertItem[]> => {
         try {
+            setQueryError(null);
             const now = new Date();
             const currentDay = now.getDate();
             const firstOfThisMonth = startOfMonth(now);
             
-            // Extraction with limit to avoid memory bloat
+            // Targeted Extraction
             const [debtors, unpaidSales, recentPayments] = await Promise.all([
                 db.customers.where('outstandingBalance').above(FINANCIAL_EPSILON).toArray(),
                 db.sales.where('paymentStatus').anyOf(['unpaid', 'partial']).toArray(),
@@ -65,9 +69,10 @@ export default function DebtAlertsPage() {
 
             if (debtors.length === 0) return [];
 
-            // Memory-efficient indexing (O(N) total)
+            // O(N) Pre-indexing
             const debtAgeMap = new Map<string, Date>();
-            for (const sale of unpaidSales) {
+            for (let i = 0; i < unpaidSales.length; i++) {
+                const sale = unpaidSales[i];
                 const saleDate = new Date(sale.createdAt!);
                 const customerUuid = sale.customerUuid || '';
                 const currentOldest = debtAgeMap.get(customerUuid);
@@ -77,7 +82,8 @@ export default function DebtAlertsPage() {
             }
 
             const paymentTotalMap = new Map<string, number>();
-            for (const payment of recentPayments) {
+            for (let i = 0; i < recentPayments.length; i++) {
+                const payment = recentPayments[i];
                 const current = paymentTotalMap.get(payment.customerUuid) || 0;
                 paymentTotalMap.set(payment.customerUuid, current + payment.amount);
             }
@@ -113,9 +119,9 @@ export default function DebtAlertsPage() {
                     };
                 })
                 .sort((a, b) => b.riskScore - a.riskScore);
-        } catch (error) {
-            console.error("Critical Failure in Alert Engine:", error);
-            throw error;
+        } catch (error: any) {
+            setQueryError(error.message || "Échec critique du moteur d'analyse.");
+            return [];
         }
     }, []);
 
@@ -157,6 +163,14 @@ export default function DebtAlertsPage() {
                     </div>
                 </div>
             </PageHeader>
+
+            {queryError && (
+                <Alert variant="destructive" className="rounded-3xl border-destructive/20 bg-destructive/5 animate-in slide-in-from-top-2">
+                    <AlertTriangle className="h-5 w-5" />
+                    <AlertTitle className="font-black uppercase text-xs tracking-widest">Erreur de Système</AlertTitle>
+                    <AlertDescription className="text-sm font-medium">{queryError}</AlertDescription>
+                </Alert>
+            )}
 
             <div className="grid lg:grid-cols-4 gap-6">
                 <Card className="lg:col-span-3 rounded-[3rem] border-white/5 bg-card/20 backdrop-blur-3xl p-3 shadow-2xl flex items-center">
@@ -250,7 +264,7 @@ export default function DebtAlertsPage() {
 
                                 <CardContent className="p-8 pt-4 space-y-6 relative z-10">
                                     <div className="p-6 rounded-[2.5rem] bg-black/40 border border-white/5 space-y-2 relative overflow-hidden group/debt shadow-inner">
-                                        <p className="text-[9px] font-black uppercase text-muted-foreground/40 tracking-[0.3em] relative z-10">Montant Exigible</p>
+                                        <p className="text-[9px] font-black uppercase text-muted-foreground/40 tracking-[0.3em] relative z-10">Montant Net Exigible</p>
                                         <p className={cn(
                                             "text-4xl font-black tracking-tighter relative z-10 leading-none font-mono",
                                             customer.severity === 'critical' ? "text-destructive" : "text-amber-500"
@@ -331,10 +345,10 @@ export default function DebtAlertsPage() {
                 </div>
                 <div className="space-y-3 relative z-10">
                     <p className="text-xs font-black uppercase tracking-[0.4em] text-primary flex items-center gap-2">
-                        <Info className="h-3.5 w-3.5" /> Intelligence de Flux Elite v6.5
+                        <Info className="h-3.5 w-3.5" /> Intelligence de Flux Elite v7.0
                     </p>
-                    <p className="text-[12px] text-muted-foreground/70 font-medium leading-relaxed max-w-5xl italic border-l-2 border-primary/20 pl-6">
-                        L'algorithme v6.5 applique un test de stress de crédit rigoureux. Le risque هو تقييم شامل بناءً على التعرض النسبي لسقف الائتمان المسموح به وفترة التأخير الزمنية. يتم تصنيف الحالة كـ "حرجة" فور تجاوز الحد المسموح به أو عند تراكم الديون لفترات طويلة.
+                    <p className="text-[12px] text-muted-foreground/70 font-medium leading-relaxed max-w-5xl italic border-l-2 border-primary/20 pl-6 uppercase tracking-wider">
+                        L'algorithme v7.0 applique un test de stress de crédit rigoureux. Le risque est une évaluation multidimensionnelle basée sur l'exposition relative au plafond autorisé et la vélocité de retard. Un dossier passe en état critique dès que l'exposition dépasse 100% ou que le retard de règlement excède 15 jours calendaires.
                     </p>
                 </div>
             </div>
