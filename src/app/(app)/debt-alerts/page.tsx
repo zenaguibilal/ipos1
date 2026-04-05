@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useDeferredValue } from 'react';
+import { useState, useMemo, useDeferredValue, useEffect } from 'react';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -35,7 +35,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 /**
  * @fileOverview DebtAlertsPage - Hardened Recovery Intelligence v7.1
- * Refactored for high-performance indexing and cross-month maturity logic.
+ * Refactored for high-performance indexing and hydration safety.
  */
 
 interface DebtAlertItem extends Customer {
@@ -49,8 +49,15 @@ interface DebtAlertItem extends Customer {
 export default function DebtAlertsPage() {
     const [searchQuery, setSearchQuery] = useState('');
     const deferredSearch = useDeferredValue(searchQuery);
-    const [lastRefreshed, setLastRefreshed] = useState<Date>(new Date());
+    const [lastRefreshed, setLastRefreshed] = useState<Date | null>(null);
     const [queryError, setQueryError] = useState<string | null>(null);
+    const [isMounted, setIsMounted] = useState(false);
+
+    // Initial mount protocol to prevent hydration errors
+    useEffect(() => {
+        setIsMounted(true);
+        setLastRefreshed(new Date());
+    }, []);
 
     // CORE ENGINE: Surgical Live Data Processing
     const alerts = useLiveQuery(async (): Promise<DebtAlertItem[]> => {
@@ -59,8 +66,7 @@ export default function DebtAlertsPage() {
             const now = new Date();
             const firstOfThisMonth = startOfMonth(now);
             
-            // OPTIMIZED: We only fetch what we strictly need.
-            // Using IndexedDB filters to reduce memory pressure.
+            // OPTIMIZED: Using IndexedDB filters to reduce memory pressure.
             const [debtors, unpaidSales] = await Promise.all([
                 db.customers.where('outstandingBalance').above(FINANCIAL_EPSILON).toArray(),
                 db.sales.where('paymentStatus').anyOf(['unpaid', 'partial']).toArray(),
@@ -68,7 +74,7 @@ export default function DebtAlertsPage() {
 
             if (debtors.length === 0) return [];
 
-            // Memory-efficient O(N) Map building for oldest debt detection
+            // Memory-efficient Map building for oldest debt detection
             const debtAgeMap = new Map<string, Date>();
             for (let i = 0; i < unpaidSales.length; i++) {
                 const sale = unpaidSales[i];
@@ -88,12 +94,9 @@ export default function DebtAlertsPage() {
                     const creditLimit = customer.creditLimit || 0;
                     const creditUsagePercent = creditLimit > 0 ? (customer.outstandingBalance / creditLimit) * 100 : 0;
                     
-                    // FIXED LOGIC: Maturity is based on actual date comparison, not just month day subtraction.
-                    // If no settlementDay is set, we treat oldest debt date as the maturity start.
                     let delaySeverity = 0;
                     if (customer.settlementDay) {
                         const targetDate = new Date(now.getFullYear(), now.getMonth(), customer.settlementDay);
-                        // If current day < settlement day, the due date was actually last month
                         if (now.getDate() < customer.settlementDay) {
                             targetDate.setMonth(targetDate.getMonth() - 1);
                         }
@@ -103,8 +106,6 @@ export default function DebtAlertsPage() {
                     }
 
                     const isLegacy = oldestDebtDate ? oldestDebtDate < firstOfThisMonth : false;
-                    
-                    // Critical if: 15+ days late OR over credit limit by 10%+ OR legacy debt with no effort
                     const isHighlyCritical = creditUsagePercent > 110 || delaySeverity > 15 || (isLegacy && delaySeverity > 0);
 
                     return {
@@ -113,11 +114,10 @@ export default function DebtAlertsPage() {
                         severity: isHighlyCritical ? 'critical' : 'warning',
                         isLegacy,
                         creditUsagePercent,
-                        // Balanced Risk Score: Heavily weighted on duration of default and credit abuse.
                         riskScore: (Math.min(200, creditUsagePercent) * 0.5) + (delaySeverity * 3.5)
                     };
                 })
-                .filter(a => a.daysPastSettlement > 0 || a.creditUsagePercent > 100) // Only show real risks
+                .filter(a => a.daysPastSettlement > 0 || a.creditUsagePercent > 100)
                 .sort((a, b) => b.riskScore - a.riskScore);
         } catch (error: any) {
             setQueryError(error.message || "Échec critique du moteur d'analyse.");
@@ -144,7 +144,7 @@ export default function DebtAlertsPage() {
         window.open(`https://wa.me/${customer.phone}?text=${message}`, '_blank');
     };
 
-    const isLoading = alerts === undefined;
+    const isLoading = alerts === undefined || !isMounted;
 
     return (
         <div className="p-6 sm:p-10 space-y-10 max-w-[1800px] mx-auto animate-in fade-in duration-1000">
@@ -155,7 +155,9 @@ export default function DebtAlertsPage() {
                 <div className="flex items-center gap-4">
                     <div className="hidden md:flex flex-col items-end -space-y-1">
                         <span className="text-[8px] font-black uppercase text-muted-foreground/40 tracking-widest">Dernier scan</span>
-                        <span className="text-[10px] font-bold text-primary/60">{lastRefreshed.toLocaleTimeString()}</span>
+                        <span className="text-[10px] font-bold text-primary/60">
+                            {lastRefreshed ? lastRefreshed.toLocaleTimeString() : '--:--:--'}
+                        </span>
                     </div>
                     <div className="flex items-center gap-3 px-5 py-2.5 bg-primary/10 border border-primary/20 rounded-2xl shadow-inner">
                         <RefreshCw className={cn("h-4 w-4 text-primary", isLoading && "animate-spin")} />
@@ -189,14 +191,14 @@ export default function DebtAlertsPage() {
                     <div className="text-center">
                         <span className="text-[9px] font-black uppercase text-muted-foreground/40 tracking-widest block mb-1">Alertes</span>
                         <span className={cn("text-3xl font-black font-mono leading-none", filteredAlerts.length > 0 ? "text-destructive" : "text-emerald-500")}>
-                            {(filteredAlerts.length || 0).toString().padStart(2, '0')}
+                            {isMounted ? (filteredAlerts.length || 0).toString().padStart(2, '0') : '00'}
                         </span>
                     </div>
                     <div className="h-10 w-px bg-white/5" />
                     <div className="text-center">
                         <span className="text-[9px] font-black uppercase text-muted-foreground/40 tracking-widest block mb-1">Critique</span>
                         <span className="text-3xl font-black font-mono leading-none text-primary">
-                            {filteredAlerts.filter(a => a.severity === 'critical').length.toString().padStart(2, '0')}
+                            {isMounted ? filteredAlerts.filter(a => a.severity === 'critical').length.toString().padStart(2, '0') : '00'}
                         </span>
                     </div>
                 </div>
@@ -218,7 +220,7 @@ export default function DebtAlertsPage() {
                             </div>
                         </div>
                         <div className="space-y-3">
-                            <h3 className="text-3xl font-black tracking-tighter text-emerald-500">Flux de Trésorerie Sécurisés</h3>
+                            <h3 className="text-3xl font-black tracking-tighter text-emerald-500">Flux de Trésorerية Sécurisés</h3>
                             <p className="text-muted-foreground font-medium max-w-sm mx-auto leading-relaxed uppercase text-[10px] tracking-[0.3em] opacity-40">
                                 Aucune anomalie de règlement détectée par le protocole Elite.
                             </p>
@@ -348,7 +350,7 @@ export default function DebtAlertsPage() {
                         <Info className="h-3.5 w-3.5" /> Intelligence de Flux Elite v7.1
                     </p>
                     <p className="text-[12px] text-muted-foreground/70 font-medium leading-relaxed max-w-5xl italic border-l-2 border-primary/20 pl-6 uppercase tracking-wider">
-                        L'algorithme v7.1 applique une évaluation temporelle absolue. Le risque est calculé en fonction de l'exposition relative au plafond autorisé et de la durée réelle du défaut de paiement. Un dossier passe en état critique dès que l'exposition dépasse 110% ou que le retard de règlement, calculé sur la base de la date d' استحقاق أو أقدم فاتورة، يتجاوز 15 يوماً.
+                        L'algorithme v7.1 applique une évaluation temporelle absolue. Le risque est calculé en fonction de l'exposition relative au plafond autorisé et de la durée réelle du défaut de paiement. Un dossier passe en état critique dès que l'exposition dépasse 110% ou que le retard de règlement dépasse 15 jours.
                     </p>
                 </div>
             </div>
