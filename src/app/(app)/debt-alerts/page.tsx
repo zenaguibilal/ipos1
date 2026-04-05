@@ -302,9 +302,9 @@ export default function DebtAlertsPage() {
                                         asChild
                                         className="w-full rounded-xl h-12 font-black text-[9px] uppercase tracking-widest hover:bg-primary/10 hover:text-primary transition-all group/btn"
                                     >
-                                        <Link href={`/customers/${customer.uuid}`} aria-label={`Consulter le grand livre de ${customer.firstName}`}>
+                                        <link href={`/customers/${customer.uuid}`} aria-label={`Consulter le grand livre de ${customer.firstName}`}>
                                             <FileText className="mr-2 h-3.5 w-3.5 opacity-40" /> Grand Livre <ChevronRight className="ml-auto h-3 w-3 transition-transform group-hover/btn:translate-x-1" />
-                                        </Link>
+                                        </link>
                                     </Button>
                                 </CardContent>
                             </Card>
