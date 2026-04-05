@@ -202,6 +202,7 @@ export interface InventoryLog {
     reason: InventoryLogReason;
     relatedUuid?: string; 
     createdAt: Date;
+    updatedAt?: Date;
 }
 
 export interface Supplier {
@@ -226,6 +227,7 @@ export interface SupplierPayment {
     method: 'cash' | 'check' | 'transfer';
     notes?: string;
     createdAt?: Date;
+    updatedAt?: Date;
 }
 
 export interface BreadOrder {

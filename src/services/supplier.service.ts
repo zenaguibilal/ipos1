@@ -25,12 +25,13 @@ class SupplierService {
         const existingByName = await db.suppliers.where('name').equals(name).first();
         if (existingByName) return existingByName;
 
+        const now = new Date();
         const newSupplier: Supplier = {
             uuid: uuidv4(),
             name: name,
             balance: 0,
-            createdAt: new Date(),
-            updatedAt: new Date(),
+            createdAt: now,
+            updatedAt: now,
         };
         const id = await db.suppliers.add(newSupplier);
         newSupplier.id = id;
@@ -52,21 +53,23 @@ class SupplierService {
         useAppStore.getState().actions.triggerSmartSync();
     }
 
-    async processSupplierPayment(paymentData: Omit<SupplierPayment, 'uuid' | 'createdAt'>): Promise<void> {
+    async processSupplierPayment(paymentData: Omit<SupplierPayment, 'uuid' | 'createdAt' | 'updatedAt'>): Promise<void> {
         await db.transaction('rw', [db.suppliers, db.supplier_payments], async () => {
             const supplier = await this.getSupplierByUuid(paymentData.supplierUuid);
             if (!supplier || !supplier.id) throw new Error("Fournisseur non trouvé.");
 
+            const now = new Date();
             const newPayment: SupplierPayment = {
                 ...paymentData,
                 uuid: uuidv4(),
-                createdAt: new Date(),
+                createdAt: now,
+                updatedAt: now,
             };
 
             await db.supplier_payments.add(newPayment);
             await db.suppliers.update(supplier.id, { 
                 balance: supplier.balance - paymentData.amount,
-                updatedAt: new Date()
+                updatedAt: now
             });
         });
 

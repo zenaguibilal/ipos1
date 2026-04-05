@@ -14,7 +14,7 @@ import { Database, Copy, Check, Terminal } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { toast } from 'sonner';
 
-const SUPABASE_SQL_SCRIPT = `-- iPOS Luxury - Elite Cloud Schema (Verified v1.9.2)
+const SUPABASE_SQL_SCRIPT = `-- iPOS Luxury - Elite Cloud Schema (Verified v1.9.5)
 -- Ce script initialise votre coffre-fort Cloud avec une précision de type absolue.
 -- Note: La sécurité RLS est désactivée pour faciliter la synchronisation locale-first.
 
@@ -33,7 +33,7 @@ CREATE TABLE IF NOT EXISTS company_profile (
     "rcNumber" TEXT,
     "goldPricePerGram" NUMERIC,
     prix_pain NUMERIC,
-    "updatedAt" TIMESTAMPTZ,
+    "updatedAt" TIMESTAMPTZ DEFAULT NOW(),
     last_sync_at TIMESTAMPTZ,
     supabase_url TEXT,
     supabase_key TEXT
@@ -194,7 +194,8 @@ CREATE TABLE IF NOT EXISTS inventory_logs (
     "newQuantity" NUMERIC NOT NULL,
     reason TEXT NOT NULL,
     "relatedUuid" UUID,
-    "createdAt" TIMESTAMPTZ DEFAULT NOW()
+    "createdAt" TIMESTAMPTZ DEFAULT NOW(),
+    "updatedAt" TIMESTAMPTZ DEFAULT NOW()
 );
 ALTER TABLE inventory_logs DISABLE ROW LEVEL SECURITY;
 
@@ -206,7 +207,8 @@ CREATE TABLE IF NOT EXISTS supplier_payments (
     "paymentDate" TIMESTAMPTZ NOT NULL,
     method TEXT NOT NULL,
     notes TEXT,
-    "createdAt" TIMESTAMPTZ DEFAULT NOW()
+    "createdAt" TIMESTAMPTZ DEFAULT NOW(),
+    "updatedAt" TIMESTAMPTZ DEFAULT NOW()
 );
 ALTER TABLE supplier_payments DISABLE ROW LEVEL SECURITY;
 `;

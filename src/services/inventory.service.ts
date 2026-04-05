@@ -42,6 +42,7 @@ class InventoryService {
             reason: reason,
             relatedUuid: relatedUuid,
             createdAt: new Date(),
+            updatedAt: new Date(),
         };
 
         await db.inventory_logs.add(logEntry);
