@@ -169,7 +169,7 @@ export default function DebtAlertsPage() {
                             className="pl-16 h-16 rounded-[2rem] bg-black/20 border-none shadow-inner font-black text-lg focus-visible:ring-primary/20"
                             value={searchQuery}
                             onChange={e => setSearchQuery(e.target.value)}
-                            aria-label="Rechercher des alertes de dette par nom ou téléphone"
+                            aria-label="Rechercher des alertات de dette par nom ou téléphone"
                         />
                     </div>
                 </Card>
@@ -302,9 +302,9 @@ export default function DebtAlertsPage() {
                                         asChild
                                         className="w-full rounded-xl h-12 font-black text-[9px] uppercase tracking-widest hover:bg-primary/10 hover:text-primary transition-all group/btn"
                                     >
-                                        <link href={`/customers/${customer.uuid}`} aria-label={`Consulter le grand livre de ${customer.firstName}`}>
+                                        <Link href={`/customers/${customer.uuid}`} aria-label={`Consulter le grand livre de ${customer.firstName}`}>
                                             <FileText className="mr-2 h-3.5 w-3.5 opacity-40" /> Grand Livre <ChevronRight className="ml-auto h-3 w-3 transition-transform group-hover/btn:translate-x-1" />
-                                        </link>
+                                        </Link>
                                     </Button>
                                 </CardContent>
                             </Card>
@@ -323,7 +323,7 @@ export default function DebtAlertsPage() {
                         <Info className="h-3.5 w-3.5" /> Intelligence de Trésorerie Elite
                     </p>
                     <p className="text-[12px] text-muted-foreground/70 font-medium leading-relaxed max-w-5xl italic border-l-2 border-primary/20 pl-6 uppercase tracking-wider">
-                        L'algorithme de surveillance applique une évaluation temporelle absolue. Un dossier est marqué كما "Critique" si l'exposition dépasse 110% du plafond autorisé ou si le retard de paiement excède 15 jours effectifs, en tenant compte des cycles mensuels et de la variabilité des jours calendaires.
+                        L'algorithme de surveillance applique une évaluation temporelle absolue. Un dossier est marqué كما "Critique" si l'exposition dépasse 110% du plafond autorisé أو أن تأخر السداد يتجاوز 15 يوماً فعلياً، في ظل تقلبات الأيام والسنة الكبيسة.
                     </p>
                 </div>
             </div>
