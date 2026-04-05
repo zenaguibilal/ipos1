@@ -1,4 +1,3 @@
-
 'use client';
 
 import { db } from '@/lib/db';
@@ -6,7 +5,7 @@ import { getSupabaseClient } from '@/lib/supabase';
 
 /**
  * Service de synchronisation souverain pour iPOS Luxury.
- * Gère le transfert bidirectionnel des données entre IndexedDB et Supabase.
+ * Gère le transfert bidirectionnel intelligent entre IndexedDB et Supabase.
  */
 class SupabaseSyncService {
     
@@ -69,7 +68,8 @@ class SupabaseSyncService {
                 .upsert(dataToSync, { onConflict: 'uuid' });
 
             if (error) {
-                throw new Error(`Échec Push [${item.name}]: ${error.message}`);
+                console.error(`Échec Push [${item.name}]: ${error.message}`);
+                // On continue pour les autres tables malgré l'erreur
             }
         }
     }
@@ -84,7 +84,10 @@ class SupabaseSyncService {
 
         for (const item of this.tableSyncOrder) {
             const { data, error } = await supabase.from(item.name).select('*');
-            if (error) throw new Error(`Échec Pull [${item.name}]: ${error.message}`);
+            if (error) {
+                console.error(`Échec Pull [${item.name}]: ${error.message}`);
+                continue;
+            }
             
             if (data && data.length > 0) {
                 await db.transaction('rw', item.table, async () => {
@@ -96,11 +99,13 @@ class SupabaseSyncService {
                             const localUpdate = localRecord.updatedAt ? new Date(localRecord.updatedAt).getTime() : 0;
                             const remoteUpdate = remoteRecord.updatedAt ? new Date(remoteRecord.updatedAt).getTime() : 0;
                             
+                            // On ne met à jour localement que si la version cloud est strictement plus récente
                             if (remoteUpdate > localUpdate) {
                                 const { id } = localRecord;
                                 await item.table.update(id, remoteRecord);
                             }
                         } else {
+                            // Nouvel enregistrement inexistant localement
                             await item.table.add(remoteRecord);
                         }
                     }

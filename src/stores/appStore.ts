@@ -1,4 +1,3 @@
-
 import { create } from 'zustand';
 import type { CompanyProfile, ReturnItem, StockIntakeItem } from '@/lib/types';
 import { toast } from 'sonner';
@@ -36,6 +35,7 @@ interface AppActions {
     
     performCloudSync: (mode: 'push' | 'pull') => Promise<void>;
     performBackgroundSync: () => Promise<void>;
+    triggerSmartSync: () => void;
 
     processReturn: (returnData: {
         originalSaleUuid: string,
@@ -75,6 +75,8 @@ const initialState: Omit<AppState, 'actions'> = {
     salesViewMode: 'grid',
 };
 
+let syncDebounceTimeout: NodeJS.Timeout | null = null;
+
 export const useAppStore = create<AppState>()(
     persist(
         (set, get) => ({
@@ -95,7 +97,7 @@ export const useAppStore = create<AppState>()(
                     const updatedProfile = await companyProfileService.updateProfile(profileData);
                     set({ companyProfile: updatedProfile });
                     // Sync after profile update (if cloud credentials were added)
-                    get().actions.performBackgroundSync();
+                    get().actions.triggerSmartSync();
                 },
                 performCloudSync: async (mode) => {
                     const currentProfile = get().companyProfile;
@@ -137,18 +139,26 @@ export const useAppStore = create<AppState>()(
                     set({ isSyncing: true });
                     try {
                         const now = new Date();
-                        // Cycle complet : Récupérer d'abord les changements distants, puis envoyer les locaux
+                        // Cycle "Elite" : Pull d'abord pour récupérer les changements distants, puis Push pour envoyer les locaux
                         await supabaseSyncService.pullAllData(currentProfile.supabase_url, currentProfile.supabase_key);
                         await supabaseSyncService.pushAllData(currentProfile.supabase_url, currentProfile.supabase_key);
                         
+                        // Mise à jour locale du timestamp de succès
                         const updatedProfile = await companyProfileService.updateProfile({ last_sync_at: now });
                         set({ companyProfile: updatedProfile, lastSyncDate: now });
-                        console.log("iPOS Luxury: Auto-sync complete.");
+                        console.log("iPOS Luxury: Auto-sync Elite complete.");
                     } catch (error) {
                         console.error("iPOS Luxury: Background sync failed silently.", error);
                     } finally {
                         set({ isSyncing: false });
                     }
+                },
+                triggerSmartSync: () => {
+                    // Debounce de 10 secondes pour éviter de saturer le cloud lors d'opérations successives
+                    if (syncDebounceTimeout) clearTimeout(syncDebounceTimeout);
+                    syncDebounceTimeout = setTimeout(() => {
+                        get().actions.performBackgroundSync();
+                    }, 10000);
                 },
                 processReturn: async (returnData) => {
                      try {
@@ -164,8 +174,8 @@ export const useAppStore = create<AppState>()(
                             }
                         });
                         toast.success("Retour de marchandise validé.");
-                        // Trigger proactive background sync
-                        get().actions.performBackgroundSync();
+                        // Déclenchement automatique de la sync après mutation
+                        get().actions.triggerSmartSync();
                         return true;
                     } catch (error: any) {
                         toast.error("Échec du traitement du retour.");
@@ -239,8 +249,8 @@ export const useAppStore = create<AppState>()(
                         });
 
                         toast.success("Réception de stock enregistrée.");
-                        // Trigger proactive background sync
-                        get().actions.performBackgroundSync();
+                        // Déclenchement automatique de la sync après mutation
+                        get().actions.triggerSmartSync();
                         return true;
                     } catch (error: any) {
                         toast.error("Échec de la réception de stock.");

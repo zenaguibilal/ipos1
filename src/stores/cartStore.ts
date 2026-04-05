@@ -1,4 +1,3 @@
-
 import { create } from 'zustand';
 import { produce } from 'immer';
 import { persist, createJSONStorage } from 'zustand/middleware';
@@ -246,8 +245,8 @@ export const useCartStore = create<CartState>()(
                             await customerService.recalculateCustomerStatus(activeCart.customerUuid);
                         }
 
-                        // Trigger proactive background sync from AppStore
-                        useAppStore.getState().actions.performBackgroundSync();
+                        // Déclenchement automatique de la sync "Elite" après la vente
+                        useAppStore.getState().actions.triggerSmartSync();
 
                         return sale;
 
