@@ -1,3 +1,4 @@
+
 import { create } from 'zustand';
 import type { CompanyProfile, ReturnItem, StockIntakeItem } from '@/lib/types';
 import { toast } from 'sonner';
@@ -139,6 +140,8 @@ export const useAppStore = create<AppState>()(
                     set({ isSyncing: true });
                     try {
                         const now = new Date();
+                        console.log("iPOS Luxury: Lancement de la synchronisation automatique...");
+                        
                         // Cycle "Elite" : Pull d'abord pour récupérer les changements distants, puis Push pour envoyer les locaux
                         await supabaseSyncService.pullAllData(currentProfile.supabase_url, currentProfile.supabase_key);
                         await supabaseSyncService.pushAllData(currentProfile.supabase_url, currentProfile.supabase_key);
@@ -146,9 +149,9 @@ export const useAppStore = create<AppState>()(
                         // Mise à jour locale du timestamp de succès
                         const updatedProfile = await companyProfileService.updateProfile({ last_sync_at: now });
                         set({ companyProfile: updatedProfile, lastSyncDate: now });
-                        console.log("iPOS Luxury: Auto-sync Elite complete.");
-                    } catch (error) {
-                        console.error("iPOS Luxury: Background sync failed silently.", error);
+                        console.log("iPOS Luxury: Synchronisation Auto-Elite terminée.");
+                    } catch (error: any) {
+                        console.error("iPOS Luxury: Échec de la synchronisation en arrière-plan.", error);
                     } finally {
                         set({ isSyncing: false });
                     }

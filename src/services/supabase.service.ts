@@ -1,3 +1,4 @@
+
 'use client';
 
 import { db } from '@/lib/db';
@@ -27,6 +28,25 @@ class SupabaseSyncService {
         { name: 'inventory_logs', table: db.inventory_logs },
         { name: 'supplier_payments', table: db.supplier_payments },
     ];
+
+    /**
+     * Nettoie et formate les données pour le transport JSON vers Postgres.
+     * Convertit les objets Date en chaînes ISO et supprime les IDs locaux Dexie.
+     */
+    private sanitizeForCloud(data: any): any {
+        if (data === null || data === undefined) return data;
+        if (data instanceof Date) return data.toISOString();
+        if (Array.isArray(data)) return data.map(i => this.sanitizeForCloud(i));
+        if (typeof data === 'object') {
+            const clean: any = {};
+            for (const key in data) {
+                if (key === 'id') continue; // On ne pousse jamais l'ID auto-incrémenté local
+                clean[key] = this.sanitizeForCloud(data[key]);
+            }
+            return clean;
+        }
+        return data;
+    }
 
     /**
      * Teste la validité des identifiants Supabase.
@@ -59,11 +79,8 @@ class SupabaseSyncService {
             const records = await item.table.toArray();
             if (records.length === 0) continue;
 
-            // Préparation des données : on retire l'ID local Dexie (auto-incrémenté)
-            const dataToSync = records.map((r: any) => {
-                const { id, ...rest } = r;
-                return rest;
-            });
+            // Préparation et nettoyage des données pour Supabase
+            const dataToSync = this.sanitizeForCloud(records);
 
             // Upsert massif par table
             const { error } = await supabase
@@ -71,7 +88,11 @@ class SupabaseSyncService {
                 .upsert(dataToSync, { onConflict: 'uuid' });
 
             if (error) {
-                console.warn(`Échec Push [${item.name}]: ${error.message}`);
+                console.warn(`iPOS Sync Elite - Échec Push [${item.name}]: ${error.message}`);
+                // Si erreur de permission (RLS), on s'arrête ici pour informer
+                if (error.code === '42501') {
+                    throw new Error(`Permission refusée sur la table ${item.name}. Avez-vous exécuté le script SQL avec DISABLE RLS ?`);
+                }
             }
         }
     }
@@ -87,7 +108,7 @@ class SupabaseSyncService {
         for (const item of this.tableSyncOrder) {
             const { data, error } = await supabase.from(item.name).select('*');
             if (error) {
-                console.warn(`Échec Pull [${item.name}]: ${error.message}`);
+                console.warn(`iPOS Sync Elite - Échec Pull [${item.name}]: ${error.message}`);
                 continue;
             }
             

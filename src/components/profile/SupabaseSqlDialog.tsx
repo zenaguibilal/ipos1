@@ -16,7 +16,7 @@ import { toast } from 'sonner';
 
 const SUPABASE_SQL_SCRIPT = `-- iPOS Luxury - Elite Cloud Schema (Verified v1.9.2)
 -- Ce script initialise votre coffre-fort Cloud avec une précision de type absolue.
--- Toutes les colonnes camelCase sont citées pour garantir la compatibilité JS/Postgres.
+-- Note: La sécurité RLS est désactivée pour faciliter la synchronisation locale-first.
 
 -- 1. Identité de l'Etablissement
 CREATE TABLE IF NOT EXISTS company_profile (
@@ -38,6 +38,7 @@ CREATE TABLE IF NOT EXISTS company_profile (
     supabase_url TEXT,
     supabase_key TEXT
 );
+ALTER TABLE company_profile DISABLE ROW LEVEL SECURITY;
 
 -- 2. Réseau Partenaires (Fournisseurs)
 CREATE TABLE IF NOT EXISTS suppliers (
@@ -51,6 +52,7 @@ CREATE TABLE IF NOT EXISTS suppliers (
     "createdAt" TIMESTAMPTZ DEFAULT NOW(),
     "updatedAt" TIMESTAMPTZ DEFAULT NOW()
 );
+ALTER TABLE suppliers DISABLE ROW LEVEL SECURITY;
 
 -- 3. Fichier Clients & CRM
 CREATE TABLE IF NOT EXISTS customers (
@@ -74,6 +76,7 @@ CREATE TABLE IF NOT EXISTS customers (
     bread_quantite_defaut INTEGER,
     bread_jours_semaine JSONB
 );
+ALTER TABLE customers DISABLE ROW LEVEL SECURITY;
 
 -- 4. Catalogue Produits Elite
 CREATE TABLE IF NOT EXISTS products (
@@ -93,6 +96,7 @@ CREATE TABLE IF NOT EXISTS products (
     "updatedAt" TIMESTAMPTZ DEFAULT NOW(),
     "stockStatus" TEXT
 );
+ALTER TABLE products DISABLE ROW LEVEL SECURITY;
 
 -- 5. Registre des Charges
 CREATE TABLE IF NOT EXISTS expenses (
@@ -104,6 +108,7 @@ CREATE TABLE IF NOT EXISTS expenses (
     "createdAt" TIMESTAMPTZ DEFAULT NOW(),
     "updatedAt" TIMESTAMPTZ DEFAULT NOW()
 );
+ALTER TABLE expenses DISABLE ROW LEVEL SECURITY;
 
 -- 6. Manifestes de Réception Stock
 CREATE TABLE IF NOT EXISTS stock_intakes (
@@ -117,6 +122,7 @@ CREATE TABLE IF NOT EXISTS stock_intakes (
     "createdAt" TIMESTAMPTZ DEFAULT NOW(),
     "updatedAt" TIMESTAMPTZ DEFAULT NOW()
 );
+ALTER TABLE stock_intakes DISABLE ROW LEVEL SECURITY;
 
 -- 7. Grand Livre des Ventes
 CREATE TABLE IF NOT EXISTS sales (
@@ -135,6 +141,7 @@ CREATE TABLE IF NOT EXISTS sales (
     "createdAt" TIMESTAMPTZ DEFAULT NOW(),
     "updatedAt" TIMESTAMPTZ DEFAULT NOW()
 );
+ALTER TABLE sales DISABLE ROW LEVEL SECURITY;
 
 -- 8. Registre des Retours Clients
 CREATE TABLE IF NOT EXISTS product_returns (
@@ -149,6 +156,7 @@ CREATE TABLE IF NOT EXISTS product_returns (
     "createdAt" TIMESTAMPTZ DEFAULT NOW(),
     "updatedAt" TIMESTAMPTZ DEFAULT NOW()
 );
+ALTER TABLE product_returns DISABLE ROW LEVEL SECURITY;
 
 -- 9. Journal des Encaissements Clients
 CREATE TABLE IF NOT EXISTS payments (
@@ -160,6 +168,7 @@ CREATE TABLE IF NOT EXISTS payments (
     "createdAt" TIMESTAMPTZ DEFAULT NOW(),
     "updatedAt" TIMESTAMPTZ DEFAULT NOW()
 );
+ALTER TABLE payments DISABLE ROW LEVEL SECURITY;
 
 -- 10. Logistique du Pain
 CREATE TABLE IF NOT EXISTS bread_orders (
@@ -175,6 +184,7 @@ CREATE TABLE IF NOT EXISTS bread_orders (
     "createdAt" TIMESTAMPTZ DEFAULT NOW(),
     "updatedAt" TIMESTAMPTZ DEFAULT NOW()
 );
+ALTER TABLE bread_orders DISABLE ROW LEVEL SECURITY;
 
 -- 11. Journal d'Audit des Stocks
 CREATE TABLE IF NOT EXISTS inventory_logs (
@@ -186,6 +196,7 @@ CREATE TABLE IF NOT EXISTS inventory_logs (
     "relatedUuid" UUID,
     "createdAt" TIMESTAMPTZ DEFAULT NOW()
 );
+ALTER TABLE inventory_logs DISABLE ROW LEVEL SECURITY;
 
 -- 12. Journal des Règlements Fournisseurs
 CREATE TABLE IF NOT EXISTS supplier_payments (
@@ -196,7 +207,9 @@ CREATE TABLE IF NOT EXISTS supplier_payments (
     method TEXT NOT NULL,
     notes TEXT,
     "createdAt" TIMESTAMPTZ DEFAULT NOW()
-);`;
+);
+ALTER TABLE supplier_payments DISABLE ROW LEVEL SECURITY;
+`;
 
 export function SupabaseSqlDialog() {
     const [isOpen, setIsOpen] = useState(false);
