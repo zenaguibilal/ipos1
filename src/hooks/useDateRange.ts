@@ -1,7 +1,6 @@
-
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import type { DateRange } from 'react-day-picker';
 import { subDays, startOfDay, endOfDay } from 'date-fns';
 
@@ -18,13 +17,15 @@ export function useDateRange(defaultDays: number = 6) {
         setIsMounted(true);
     }, [defaultDays]);
 
-    const setRange = (newRange?: DateRange) => {
+    // FIX: wrapped in useCallback to stabilise the reference and avoid
+    // unnecessary re-renders in components that put setDate in dep arrays.
+    const setRange = useCallback((newRange?: DateRange) => {
         if (newRange?.from && newRange.to) {
             newRange.from = startOfDay(newRange.from);
-            newRange.to = endOfDay(newRange.to);
+            newRange.to   = endOfDay(newRange.to);
         }
         setDateRange(newRange);
-    }
+    }, []);
 
     return { dateRange, setDate: setRange, isMounted };
 }

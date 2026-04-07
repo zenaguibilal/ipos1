@@ -184,7 +184,7 @@ export function AddPaymentDialog({ isOpen, onOpenChange, customer, onPaymentSucc
           </Button>
           <Button 
             onClick={handleAddPayment} 
-            disabled={isLoading || paymentAmount <= 0}
+            disabled={isLoading || paymentAmount <= 0 || isOverpaying}
             className="flex-1 rounded-2xl h-12 font-bold shadow-lg shadow-primary/20 transition-all active:scale-95"
           >
             {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <CheckCircle2 className="mr-2 h-5 w-5" />}

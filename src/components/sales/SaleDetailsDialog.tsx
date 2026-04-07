@@ -81,7 +81,7 @@ export function SaleDetailsDialog({
                                 "font-black text-[10px] uppercase",
                                 sale.paymentStatus === 'paid' ? "text-emerald-500" : "text-destructive"
                             )}>
-                                {sale.paymentStatus === 'paid' ? 'Soldée' : 'Impayée'}
+                                {sale.paymentStatus === 'paid' ? 'Soldée' : sale.paymentStatus === 'partial' ? 'Partiel' : 'Impayée'}
                             </p>
                         </div>
                         <div className="p-4 rounded-2xl bg-primary text-primary-foreground shadow-lg shadow-primary/20">

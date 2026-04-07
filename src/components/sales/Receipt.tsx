@@ -91,7 +91,7 @@ export const Receipt = React.forwardRef<HTMLDivElement, ReceiptProps>(({ sale, p
                 </div>
                 <div className="flex justify-between"><p>Montant Payé:</p><p>{formatCurrency(sale.amountPaid)}</p></div>
                  <div className="flex justify-between font-bold">
-                     <p>{sale.remainingBalance >= 0 ? 'Monnaie Rendue:' : 'Solde Restant:'}</p>
+                     <p>{sale.remainingBalance > 0.01 ? 'Solde Restant:' : 'Monnaie Rendue:'}</p>
                      <p>{formatCurrency(Math.abs(sale.remainingBalance))}</p>
                  </div>
             </section>

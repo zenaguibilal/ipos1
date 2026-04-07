@@ -1,9 +1,9 @@
-import { type ClassValue, clsx } from "clsx"
-import { twMerge } from "tailwind-merge"
-import type { Product } from "./types";
- 
+import { type ClassValue, clsx } from 'clsx';
+import { twMerge } from 'tailwind-merge';
+import type { Product } from './types';
+
 export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs))
+    return twMerge(clsx(inputs));
 }
 
 /**
@@ -14,13 +14,9 @@ export const FINANCIAL_EPSILON = 0.00001;
 
 /**
  * Safely converts a Date object or an ISO string to a JavaScript Date.
- * @param date - The Date or string to convert.
- * @returns A JavaScript Date object.
  */
 export function safeToDate(date: Date | string): Date {
-    if (date instanceof Date) {
-        return date;
-    }
+    if (date instanceof Date) return date;
     return new Date(date);
 }
 
@@ -29,10 +25,12 @@ export function formatDateToYYYYMMDD(date: Date): string {
 }
 
 export function formatCurrency(value: number | string, currency = 'DA') {
-  const numValue = typeof value === 'string' ? parseFloat(value) : value;
-  // Use fixed precision for financial display
-  const formattedValue = (typeof numValue !== 'number' || isNaN(numValue)) ? '0.00' : numValue.toFixed(2);
-  return `${formattedValue} ${currency}`;
+    const numValue = typeof value === 'string' ? parseFloat(value) : value;
+    const formattedValue =
+        typeof numValue !== 'number' || isNaN(numValue)
+            ? '0.00'
+            : numValue.toFixed(2);
+    return `${formattedValue} ${currency}`;
 }
 
 interface CalculableCart {
@@ -45,9 +43,8 @@ interface CalculableCart {
  * Prevents IEEE 754 floating point errors common in JS.
  */
 export function calculateCartTotals(cart: CalculableCart) {
-    // Scaling factor for 3 decimal precision (useful for weights/grams)
     const SCALE = 1000;
-    
+
     const subtotalRaw = cart.items.reduce((acc, item) => {
         const priceCents = Math.round((item.price || 0) * SCALE);
         const qty = item.cartQuantity || 0;
@@ -55,25 +52,39 @@ export function calculateCartTotals(cart: CalculableCart) {
     }, 0);
 
     const subtotal = subtotalRaw / SCALE;
-    
+
     let discountAmountRaw = 0;
     if (cart.discount.type === 'percentage') {
-        discountAmountRaw = Math.round(subtotalRaw * ((cart.discount.value || 0) / 100));
+        discountAmountRaw = Math.round(
+            subtotalRaw * ((cart.discount.value || 0) / 100),
+        );
     } else {
         discountAmountRaw = Math.round((cart.discount.value || 0) * SCALE);
     }
-    
+
     const totalRaw = Math.max(0, subtotalRaw - discountAmountRaw);
 
-    return { 
-        subtotal: subtotal, 
-        discountAmount: discountAmountRaw / SCALE, 
-        total: totalRaw / SCALE 
+    return {
+        subtotal,
+        discountAmount: discountAmountRaw / SCALE,
+        total: totalRaw / SCALE,
     };
 }
 
-export function calculateStockStatus(quantity: number, minStockLevel: number): Product['stockStatus'] {
-  if (quantity <= 0) return 'out_of_stock';
-  if (quantity <= minStockLevel) return 'low_stock';
-  return 'in_stock';
+/**
+ * FIX #15: Always coerce inputs to Number before comparison.
+ * The product form stores input values as strings via handleInputChange;
+ * without Number() the comparison is lexicographic, which inverts the result:
+ *   "10" <= "5"  → true  (wrong: should be in_stock)
+ *   "5"  <= "10" → false (wrong: should be low_stock)
+ */
+export function calculateStockStatus(
+    quantity: number | string,
+    minStockLevel: number | string,
+): Product['stockStatus'] {
+    const qty = Number(quantity);
+    const min = Number(minStockLevel);
+    if (qty <= 0) return 'out_of_stock';
+    if (qty <= min) return 'low_stock';
+    return 'in_stock';
 }

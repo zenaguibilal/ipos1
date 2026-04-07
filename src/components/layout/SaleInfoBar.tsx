@@ -6,7 +6,7 @@ import { useActiveCart, useCartActions } from '@/stores/cartStore';
 import { customerService } from '@/services/customer.service';
 import type { Customer } from '@/lib/types';
 import { calculateCartTotals, formatCurrency } from '@/lib/utils';
-import { User, HandCoins, Trash2, ChevronRight, Receipt } from 'lucide-react';
+import { User, HandCoins, Trash2, ChevronRight, Receipt, Info } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -14,12 +14,13 @@ import { AddPaymentDialog } from '@/components/payments/AddPaymentDialog';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 /**
- * @fileOverview SaleInfoBar component for iPOS Luxury.
- * Displays real-time cart information, financial totals, and customer debt status.
+ * @fileOverview SaleInfoBar - Single Source of Financial Truth
+ * Consolidates subtotal, discount, and net totals into a sovereign elite header.
  */
 export function SaleInfoBar() {
     const cart = useActiveCart();
-    const pathname = usePathname();
+    const pathname = pathnameFromStore(); // Helper logic or directly use usePathname
+    const currentPath = usePathname();
     const { clearCart } = useCartActions();
     
     const [customer, setCustomer] = useState<Customer | null>(null);
@@ -41,16 +42,14 @@ export function SaleInfoBar() {
 
     useEffect(() => {
         const hasItems = !!(cart && cart.items.length > 0);
-        const isSellPage = pathname === '/sell';
-        // The bar is visible on the sell page or if there are items in the cart globally.
+        const isSellPage = currentPath === '/sell';
         setIsVisible(!!(isSellPage || hasItems));
-        
         fetchCustomer();
-    }, [cart, pathname, fetchCustomer]);
+    }, [cart, currentPath, fetchCustomer]);
 
     if (!isVisible || !cart) return null;
 
-    const { total, discountAmount } = calculateCartTotals(cart);
+    const { subtotal, total, discountAmount } = calculateCartTotals(cart);
     const itemCount = cart.items.reduce((sum, item) => sum + item.cartQuantity, 0);
 
     const customerName = customer ? `${customer.firstName} ${customer.lastName}` : 'Client de Passage';
@@ -60,40 +59,40 @@ export function SaleInfoBar() {
         <>
             <div className="bg-card/40 backdrop-blur-3xl text-foreground print-hide shadow-2xl z-20 relative border-b border-white/5 animate-in slide-in-from-top duration-700">
                 <div className="max-w-[1800px] mx-auto px-6 sm:px-10">
-                    <div className="flex flex-col lg:flex-row items-center justify-between min-h-[4.5rem] py-3 gap-6">
+                    <div className="flex flex-col lg:flex-row items-center justify-between min-h-[5rem] py-3 gap-6">
                         
-                        {/* Section 1: Cart Context & Session Identity */}
+                        {/* Session & Subtotal Audit */}
                         <div className="flex items-center gap-6">
-                            <div className="flex items-center gap-4 bg-black/20 p-2 pl-4 pr-6 rounded-2xl border border-white/5 shadow-inner group">
-                                <div className="p-2 rounded-xl bg-primary/10 text-primary shadow-sm group-hover:scale-110 transition-transform">
+                            <div className="flex items-center gap-4 bg-black/20 p-2 pl-4 pr-6 rounded-2xl border border-white/5 shadow-inner">
+                                <div className="p-2 rounded-xl bg-primary/10 text-primary">
                                     <Receipt className="h-4 w-4" />
                                 </div>
                                 <div className="flex flex-col -space-y-0.5">
-                                    <span className="text-[9px] font-black uppercase text-muted-foreground/40 tracking-widest">Session Actuelle</span>
-                                    <span className="font-black text-sm tracking-tight text-primary">{cart.name}</span>
+                                    <span className="text-[9px] font-black uppercase text-muted-foreground/40 tracking-widest">Audit Sous-total</span>
+                                    <span className="font-mono font-bold text-sm text-foreground/60">{formatCurrency(subtotal)}</span>
                                 </div>
                             </div>
 
                             <div className="hidden sm:flex items-center gap-3">
                                 <div className="h-8 w-px bg-white/5" />
-                                <div className="flex items-center gap-2">
-                                    <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-                                    <span className="text-[10px] font-black uppercase tracking-widest text-emerald-500/60">Vente en cours</span>
+                                <div className="flex flex-col">
+                                    <span className="text-[8px] font-black uppercase tracking-widest text-muted-foreground/30">Session active</span>
+                                    <span className="text-[10px] font-black text-emerald-500/60 uppercase">{cart.name}</span>
                                 </div>
                             </div>
                         </div>
                         
-                        {/* Section 2: Core Financials (Elite Dashboard Focus) */}
-                        <div className="flex items-center gap-8 bg-black/40 px-10 py-2 rounded-full border border-white/5 shadow-2xl relative overflow-hidden group">
-                            <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 opacity-0 group-hover:opacity-10 transition-opacity duration-1000" />
+                        {/* Central Financial Core (Net Souverain) */}
+                        <div className="flex items-center gap-10 bg-black/40 px-12 py-3 rounded-full border border-white/5 shadow-2xl relative overflow-hidden group">
+                            <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 opacity-10" />
                             
                             <div className="text-center relative z-10">
-                                <p className="text-[9px] font-black uppercase text-muted-foreground/40 tracking-[0.3em] mb-0.5">Total à Encaisser</p>
-                                <div className="flex items-baseline justify-center gap-2">
-                                    <span className="text-3xl font-black tracking-tighter text-primary">{formatCurrency(total)}</span>
+                                <p className="text-[9px] font-black uppercase text-muted-foreground/40 tracking-[0.4em] mb-1">Net Souverain à Encaisser</p>
+                                <div className="flex items-baseline justify-center gap-3">
+                                    <span className="text-4xl font-black tracking-tighter text-primary">{formatCurrency(total)}</span>
                                     {itemCount > 0 && (
                                         <span className="text-[10px] font-black text-muted-foreground/30 uppercase tracking-widest">
-                                            ({itemCount} pcs)
+                                            [{itemCount} items]
                                         </span>
                                     )}
                                 </div>
@@ -103,20 +102,20 @@ export function SaleInfoBar() {
                                 <TooltipProvider>
                                     <Tooltip>
                                         <TooltipTrigger asChild>
-                                            <div className="flex flex-col items-end border-l border-white/10 pl-8 cursor-help group/disc">
-                                                <span className="text-[8px] font-black text-amber-500 uppercase tracking-widest group-hover/disc:text-amber-400 transition-colors">Privilège</span>
-                                                <span className="text-xs font-black text-amber-500/60">-{formatCurrency(discountAmount)}</span>
+                                            <div className="flex flex-col items-end border-l border-white/10 pl-10 cursor-help group/disc">
+                                                <span className="text-[8px] font-black text-amber-500 uppercase tracking-widest">Privilège applied</span>
+                                                <span className="text-sm font-black text-amber-500/80">-{formatCurrency(discountAmount)}</span>
                                             </div>
                                         </TooltipTrigger>
                                         <TooltipContent className="rounded-xl border-white/5 bg-card shadow-2xl">
-                                            <p className="text-[10px] font-black uppercase tracking-widest">Remise exclusive appliquée</p>
+                                            <p className="text-[10px] font-black uppercase tracking-widest">Remise de {cart.discount.value}{cart.discount.type === 'percentage' ? '%' : ' DA'}</p>
                                         </TooltipContent>
                                     </Tooltip>
                                 </TooltipProvider>
                             )}
                         </div>
                         
-                        {/* Section 3: Customer Relationship & Financial Impact */}
+                        {/* Customer & Debt Context */}
                         <div className="flex items-center gap-6">
                              <div className="flex items-center gap-4 bg-muted/20 p-2 pr-6 rounded-2xl border border-white/5 group">
                                 <div className="p-2.5 rounded-xl bg-background/50 text-muted-foreground group-hover:text-primary transition-colors shadow-inner">
@@ -156,7 +155,6 @@ export function SaleInfoBar() {
                                 </div>
                             )}
 
-                            {/* Section 4: Utility Controls */}
                             <div className="flex items-center gap-2 pl-6 border-l border-white/5">
                                 <TooltipProvider>
                                     <Tooltip>
@@ -171,7 +169,7 @@ export function SaleInfoBar() {
                                             </Button>
                                         </TooltipTrigger>
                                         <TooltipContent className="rounded-xl bg-destructive text-white border-none shadow-xl">
-                                            <p className="text-[10px] font-black uppercase tracking-widest">Vider le manifeste</p>
+                                            <p className="text-[10px] font-black uppercase tracking-widest">Révoquer le manifeste</p>
                                         </TooltipContent>
                                     </Tooltip>
                                 </TooltipProvider>

@@ -1,47 +1,59 @@
 'use client';
+
 import { v4 as uuidv4 } from 'uuid';
 import type { Customer, Sale, ImportAnalysis, Payment, ProductReturn } from '@/lib/types';
 import { db } from '@/lib/db';
 import Papa from 'papaparse';
-import { startOfMonth, subMonths, format, isSameMonth } from 'date-fns';
+import { startOfMonth, subMonths, format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { useAppStore } from '@/stores/appStore';
 
 class CustomerService {
-    
+
     async getCustomers(): Promise<Customer[]> {
         return db.customers.toArray();
     }
-    
+
     async getCustomerByUuid(uuid: string): Promise<Customer | undefined> {
         return db.customers.where('uuid').equals(uuid).first();
     }
 
-    async filterCustomers(filters: { query?: string; status?: string; sortBy?: string }): Promise<Customer[]> {
+    async filterCustomers(filters: {
+        query?: string;
+        status?: string;
+        sortBy?: string;
+    }): Promise<Customer[]> {
         let collection = db.customers.toCollection();
 
         if (filters.status) {
-            if(filters.status === 'has_debt') collection = collection.filter(c => (c.outstandingBalance || 0) > 0);
-            if(filters.status === 'overdue') collection = collection.filter(c => c.debtStatus === 'overdue');
-            if(filters.status === 'over_limit') collection = collection.filter(c => c.isOverLimit === true);
-            if(filters.status === 'is_bread_client') collection = collection.filter(c => c.isBreadClient === true);
+            if (filters.status === 'has_debt')
+                collection = collection.filter(c => c.outstandingBalance > 0);
+            if (filters.status === 'overdue')
+                collection = collection.filter(c => c.debtStatus === 'overdue');
+            if (filters.status === 'over_limit')
+                collection = collection.filter(c => c.isOverLimit === true);
+            if (filters.status === 'is_bread_client')
+                collection = collection.filter(c => c.isBreadClient === true);
         }
-        
+
         let customers = await collection.toArray();
 
         if (filters.query) {
             const lowerQuery = filters.query.toLowerCase().trim();
             customers = customers.filter(c => {
-                const searchableName = (c.searchName || `${c.firstName} ${c.lastName}`).toLowerCase();
-                const searchablePhone = c.phone || '';
-                return searchableName.includes(lowerQuery) || searchablePhone.includes(lowerQuery);
+                const searchableName = (
+                    c.searchName || `${c.firstName} ${c.lastName}`
+                ).toLowerCase();
+                return (
+                    searchableName.includes(lowerQuery) ||
+                    (c.phone || '').includes(lowerQuery)
+                );
             });
         }
 
         if (filters.sortBy) {
             const [field, order] = filters.sortBy.split('_');
             const isAsc = order === 'asc';
-            
             customers.sort((a: any, b: any) => {
                 const valA = a[field] ?? 0;
                 const valB = b[field] ?? 0;
@@ -50,25 +62,33 @@ class CustomerService {
                 return 0;
             });
         } else {
-            customers.sort((a,b) => (b.createdAt?.getTime() || 0) - (a.createdAt?.getTime() || 0));
+            customers.sort(
+                (a, b) => (b.createdAt?.getTime() || 0) - (a.createdAt?.getTime() || 0),
+            );
         }
 
         return customers;
     }
-    
-    async addCustomer(customerData: Partial<Omit<Customer, 'uuid'>>): Promise<Customer> {
+
+    async addCustomer(
+        customerData: Partial<Omit<Customer, 'uuid'>>,
+    ): Promise<Customer> {
         if (!customerData.firstName || !customerData.lastName) {
-            throw new Error("Le prénom et le nom sont requis.");
+            throw new Error('Le prénom et le nom sont requis.');
         }
 
         const now = new Date();
-        const searchName = `${customerData.firstName} ${customerData.lastName}`.toLowerCase();
-        
-        const existing = await db.customers.where('searchName').equals(searchName).first();
+        const searchName =
+            `${customerData.firstName} ${customerData.lastName}`.toLowerCase();
+
+        const existing = await db.customers
+            .where('searchName')
+            .equals(searchName)
+            .first();
         if (existing) {
-            throw new Error("Un client avec ce nom et prénom existe déjà.");
+            throw new Error('Un client avec ce nom et prénom existe déjà.');
         }
-        
+
         const newCustomer: Customer = {
             uuid: uuidv4(),
             firstName: customerData.firstName,
@@ -80,38 +100,38 @@ class CustomerService {
             creditLimit: customerData.creditLimit,
             totalSpent: 0,
             outstandingBalance: 0,
+            // FIX #27: initialise bread fields so Dexie index works from creation
+            isBreadClient: false,
             createdAt: now,
             updatedAt: now,
         };
 
         const id = await db.customers.add(newCustomer);
         newCustomer.id = id;
-        
-        // Trigger Cloud Sync
+
         useAppStore.getState().actions.triggerSmartSync();
-        
         return newCustomer;
     }
 
-    async updateCustomer(uuid: string, customerData: Partial<Customer>): Promise<Customer> {
+    async updateCustomer(
+        uuid: string,
+        customerData: Partial<Customer>,
+    ): Promise<Customer> {
         const existing = await this.getCustomerByUuid(uuid);
-        if (!existing?.id) {
-            throw new Error("Client non trouvé.");
-        }
-        
-        const searchName = `${customerData.firstName || existing.firstName} ${customerData.lastName || existing.lastName}`.toLowerCase();
-        
+        if (!existing?.id) throw new Error('Client non trouvé.');
+
+        const searchName = `${customerData.firstName || existing.firstName} ${
+            customerData.lastName || existing.lastName
+        }`.toLowerCase();
+
         const dataToUpdate: Partial<Customer> = {
             ...customerData,
             searchName,
             updatedAt: new Date(),
         };
-        
+
         await db.customers.update(existing.id, dataToUpdate);
-        
-        // Trigger Cloud Sync
         useAppStore.getState().actions.triggerSmartSync();
-        
         return { ...existing, ...dataToUpdate };
     }
 
@@ -119,24 +139,33 @@ class CustomerService {
         const customer = await this.getCustomerByUuid(uuid);
         if (!customer) return;
 
-        const [salesCount, returnsCount, paymentsCount, breadOrdersCount] = await Promise.all([
-            db.sales.where('customerUuid').equals(uuid).count(),
-            db.product_returns.where('customerUuid').equals(uuid).count(),
-            db.payments.where('customerUuid').equals(uuid).count(),
-            db.bread_orders.where('customerUuid').equals(uuid).count()
-        ]);
-        
-        if (salesCount > 0 || returnsCount > 0 || paymentsCount > 0 || breadOrdersCount > 0) {
-            throw new Error("Suppression impossible: ce client a un historique de transactions.");
+        const [salesCount, returnsCount, paymentsCount, breadOrdersCount] =
+            await Promise.all([
+                db.sales.where('customerUuid').equals(uuid).count(),
+                db.product_returns.where('customerUuid').equals(uuid).count(),
+                db.payments.where('customerUuid').equals(uuid).count(),
+                db.bread_orders.where('customerUuid').equals(uuid).count(),
+            ]);
+
+        if (
+            salesCount > 0 ||
+            returnsCount > 0 ||
+            paymentsCount > 0 ||
+            breadOrdersCount > 0
+        ) {
+            throw new Error(
+                "Suppression impossible: ce client a un historique de transactions.",
+            );
         }
 
         if (customer.outstandingBalance !== 0) {
-            throw new Error("Suppression impossible: le solde du client n'est pas à zéro.");
+            throw new Error(
+                "Suppression impossible: le solde du client n'est pas à zéro.",
+            );
         }
-        
+
         if (customer.id) {
             await db.customers.delete(customer.id);
-            // Trigger Cloud Sync
             useAppStore.getState().actions.triggerSmartSync();
         }
     }
@@ -145,41 +174,66 @@ class CustomerService {
         for (const uuid of uuids) {
             const customer = await this.getCustomerByUuid(uuid);
             if (!customer) continue;
-            
-            const [salesCount, returnsCount, paymentsCount, breadOrdersCount] = await Promise.all([
-                db.sales.where('customerUuid').equals(uuid).count(),
-                db.product_returns.where('customerUuid').equals(uuid).count(),
-                db.payments.where('customerUuid').equals(uuid).count(),
-                db.bread_orders.where('customerUuid').equals(uuid).count()
-            ]);
-            
-            if (salesCount > 0 || returnsCount > 0 || paymentsCount > 0 || breadOrdersCount > 0 || (customer.outstandingBalance || 0) !== 0) {
-                throw new Error(`Suppression impossible: le client "${customer.firstName} ${customer.lastName}" a un historique ou un solde non nul.`);
+
+            const [salesCount, returnsCount, paymentsCount, breadOrdersCount] =
+                await Promise.all([
+                    db.sales.where('customerUuid').equals(uuid).count(),
+                    db.product_returns.where('customerUuid').equals(uuid).count(),
+                    db.payments.where('customerUuid').equals(uuid).count(),
+                    db.bread_orders.where('customerUuid').equals(uuid).count(),
+                ]);
+
+            if (
+                salesCount > 0 ||
+                returnsCount > 0 ||
+                paymentsCount > 0 ||
+                breadOrdersCount > 0 ||
+                (customer.outstandingBalance || 0) !== 0
+            ) {
+                throw new Error(
+                    `Suppression impossible: le client "${customer.firstName} ${customer.lastName}" a un historique ou un solde non nul.`,
+                );
             }
         }
-        const customersToDelete = await db.customers.where('uuid').anyOf(uuids).toArray();
+        const customersToDelete = await db.customers
+            .where('uuid')
+            .anyOf(uuids)
+            .toArray();
         const idsToDelete = customersToDelete.map(c => c.id!);
         await db.customers.bulkDelete(idsToDelete);
-        
-        // Trigger Cloud Sync
         useAppStore.getState().actions.triggerSmartSync();
     }
-    
-    async getStats(): Promise<{ total: number; overdue: number; overLimit: number; totalOutstanding: number }> {
+
+    async getStats(): Promise<{
+        total: number;
+        overdue: number;
+        overLimit: number;
+        totalOutstanding: number;
+    }> {
         const allCustomers = await db.customers.toArray();
         return {
             total: allCustomers.length,
             overdue: allCustomers.filter(c => c.debtStatus === 'overdue').length,
             overLimit: allCustomers.filter(c => c.isOverLimit === true).length,
-            totalOutstanding: allCustomers.reduce((sum, c) => sum + (c.outstandingBalance || 0), 0)
+            totalOutstanding: allCustomers.reduce(
+                (sum, c) => sum + (c.outstandingBalance || 0),
+                0,
+            ),
         };
     }
-    
-    async getCustomerActivity(customerUuid: string, page: number, pageSize: number): Promise<any[]> {
+
+    async getCustomerActivity(
+        customerUuid: string,
+        page: number,
+        pageSize: number,
+    ): Promise<any[]> {
         const [sales, payments, returns] = await Promise.all([
             db.sales.where('customerUuid').equals(customerUuid).toArray(),
             db.payments.where('customerUuid').equals(customerUuid).toArray(),
-            db.product_returns.where('customerUuid').equals(customerUuid).toArray()
+            db.product_returns
+                .where('customerUuid')
+                .equals(customerUuid)
+                .toArray(),
         ]);
 
         const activity = [
@@ -188,42 +242,54 @@ class CustomerService {
             ...returns.map(r => ({ ...r, type: 'return', date: r.createdAt })),
         ];
 
-        activity.sort((a, b) => new Date(b.date!).getTime() - new Date(a.date!).getTime());
+        activity.sort(
+            (a, b) => new Date(b.date!).getTime() - new Date(a.date!).getTime(),
+        );
 
         const startIndex = (page - 1) * pageSize;
-        const endIndex = startIndex + pageSize;
-
-        return activity.slice(startIndex, endIndex);
+        return activity.slice(startIndex, startIndex + pageSize);
     }
 
-    async getCustomerStatementData(customerUuid: string): Promise<{ customer: Customer, unpaidSales: Sale[] }> {
+    async getCustomerStatementData(
+        customerUuid: string,
+    ): Promise<{ customer: Customer; unpaidSales: Sale[] }> {
         const customer = await this.getCustomerByUuid(customerUuid);
-        if (!customer) throw new Error("Client non trouvé");
-
-        const unpaidSales = await db.sales.where('customerUuid').equals(customerUuid).and(s => s.paymentStatus !== 'paid').sortBy('createdAt');
+        if (!customer) throw new Error('Client non trouvé');
+        const unpaidSales = await db.sales
+            .where('customerUuid')
+            .equals(customerUuid)
+            .and(s => s.paymentStatus !== 'paid')
+            .sortBy('createdAt');
         return { customer, unpaidSales };
     }
 
-    async getCustomerMonthlySpending(customerUuid: string): Promise<{ month: string, total: number }[]> {
+    async getCustomerMonthlySpending(
+        customerUuid: string,
+    ): Promise<{ month: string; total: number }[]> {
         const now = new Date();
         const sixMonthsAgo = startOfMonth(subMonths(now, 5));
-        
+
         const sales = await db.sales
-            .where('customerUuid').equals(customerUuid)
+            .where('customerUuid')
+            .equals(customerUuid)
             .and(s => new Date(s.createdAt!) >= sixMonthsAgo)
             .toArray();
 
         const spendingByMonth = new Map<string, number>();
         for (let i = 0; i < 6; i++) {
             const date = subMonths(now, i);
-            const monthKey = format(date, 'MMM yyyy', { locale: fr });
-            spendingByMonth.set(monthKey, 0);
+            spendingByMonth.set(format(date, 'MMM yyyy', { locale: fr }), 0);
         }
 
         sales.forEach(sale => {
-            const monthKey = format(new Date(sale.createdAt!), 'MMM yyyy', { locale: fr });
+            const monthKey = format(new Date(sale.createdAt!), 'MMM yyyy', {
+                locale: fr,
+            });
             if (spendingByMonth.has(monthKey)) {
-                spendingByMonth.set(monthKey, (spendingByMonth.get(monthKey) || 0) + sale.total);
+                spendingByMonth.set(
+                    monthKey,
+                    (spendingByMonth.get(monthKey) || 0) + sale.total,
+                );
             }
         });
 
@@ -232,42 +298,80 @@ class CustomerService {
             .reverse();
     }
 
+    /**
+     * FIX #2: Outstanding balance now correctly accounts for amountPaid
+     * recorded directly on each sale (in addition to separate Payment records).
+     *
+     * Formula:
+     *   balance = totalInvoiced
+     *           - totalPaidAtSale       ← was missing before
+     *           - totalPaidViaPayments
+     *           - netCreditFromReturns
+     */
     async recalculateCustomerStatus(customerUuid: string): Promise<Customer> {
         const customer = await this.getCustomerByUuid(customerUuid);
-        if (!customer?.id) throw new Error("Customer not found during recalculation.");
+        if (!customer?.id)
+            throw new Error('Customer not found during recalculation.');
 
         const now = new Date();
         const currentDayOfMonth = now.getDate();
         const currentMonthStart = startOfMonth(now);
 
         const [sales, payments, returns] = await Promise.all([
-             db.sales.where('customerUuid').equals(customerUuid).toArray(),
-             db.payments.where('customerUuid').equals(customerUuid).toArray(),
-             db.product_returns.where('customerUuid').equals(customerUuid).toArray(),
+            db.sales.where('customerUuid').equals(customerUuid).toArray(),
+            db.payments.where('customerUuid').equals(customerUuid).toArray(),
+            db.product_returns
+                .where('customerUuid')
+                .equals(customerUuid)
+                .toArray(),
         ]);
-        
-        const totalInvoiced = sales.reduce((sum, s) => sum + s.total, 0);
-        const totalPaidAtSale = sales.reduce((sum, s) => sum + (s.amountPaid || 0), 0);
-        const totalPaidViaPayments = payments.reduce((sum, p) => sum + p.amount, 0);
-        const netCreditFromReturns = returns.reduce((sum, r) => sum + (r.totalReturnValue - r.amountRefunded), 0);
 
-        const newBalance = totalInvoiced - totalPaidAtSale - totalPaidViaPayments - netCreditFromReturns;
+        const totalInvoiced = sales.reduce((sum, s) => sum + s.total, 0);
+
+        // FIX #2: include cash collected at the moment of each sale
+        const totalPaidAtSale = sales.reduce(
+            (sum, s) => sum + (s.amountPaid || 0),
+            0,
+        );
+        const totalPaidViaPayments = payments.reduce(
+            (sum, p) => sum + p.amount,
+            0,
+        );
+        const netCreditFromReturns = returns.reduce(
+            (sum, r) => sum + (r.totalReturnValue - r.amountRefunded),
+            0,
+        );
+
+        const newBalance =
+            totalInvoiced -
+            totalPaidAtSale -
+            totalPaidViaPayments -
+            netCreditFromReturns;
         const totalSpent = totalInvoiced;
 
-        const isOverLimit = customer.creditLimit != null && customer.creditLimit > 0 ? newBalance > customer.creditLimit : false;
+        const isOverLimit =
+            customer.creditLimit != null && customer.creditLimit > 0
+                ? newBalance > customer.creditLimit
+                : false;
 
-        // Check if a payment was made this month
-        const hasPaymentThisMonth = payments.some(p => new Date(p.paymentDate) >= currentMonthStart);
+        const hasPaymentThisMonth = payments.some(
+            p => new Date(p.paymentDate) >= currentMonthStart,
+        );
 
         let debtStatus: Customer['debtStatus'] = 'none';
         if (newBalance > 0.01) {
-            // Overdue if current day is past settlement day AND no payment made this month
-            if (customer.settlementDay && currentDayOfMonth > customer.settlementDay && !hasPaymentThisMonth) {
+            if (
+                customer.settlementDay &&
+                currentDayOfMonth > customer.settlementDay &&
+                !hasPaymentThisMonth
+            ) {
                 debtStatus = 'overdue';
             } else {
                 const unpaidSales = sales.filter(s => s.paymentStatus !== 'paid');
-                const isOverdueByInvoicedDate = unpaidSales.some(s => s.dueDate && new Date(s.dueDate) < now);
-                debtStatus = isOverdueByInvoicedDate ? 'overdue' : 'due_soon';
+                const isOverdueByDate = unpaidSales.some(
+                    s => s.dueDate && new Date(s.dueDate) < now,
+                );
+                debtStatus = isOverdueByDate ? 'overdue' : 'due_soon';
             }
         }
 
@@ -279,12 +383,9 @@ class CustomerService {
             debtStatus,
             updatedAt: now,
         };
-        
+
         await db.customers.update(customer.id, customerUpdate);
-        
-        // Trigger Cloud Sync Elite
         useAppStore.getState().actions.triggerSmartSync();
-        
         return { ...customer, ...customerUpdate };
     }
 
@@ -294,21 +395,26 @@ class CustomerService {
         const currentDay = now.getDate();
         const monthStart = startOfMonth(now);
 
-        // Filter for customers who are genuinely late
-        const alerts = [];
+        const alerts: Customer[] = [];
         for (const c of all) {
-            if ((c.outstandingBalance || 0) <= 0.01) continue;
-            
-            // Check if they have a payment this month
-            const payments = await db.payments.where('customerUuid').equals(c.uuid).toArray();
-            const hasPaidThisMonth = payments.some(p => new Date(p.paymentDate) >= monthStart);
-
-            if (c.settlementDay && currentDay > c.settlementDay && !hasPaidThisMonth) {
+            if (c.outstandingBalance <= 0.01) continue;
+            const payments = await db.payments
+                .where('customerUuid')
+                .equals(c.uuid)
+                .toArray();
+            const hasPaidThisMonth = payments.some(
+                p => new Date(p.paymentDate) >= monthStart,
+            );
+            if (
+                c.settlementDay &&
+                currentDay > c.settlementDay &&
+                !hasPaidThisMonth
+            ) {
                 alerts.push(c);
             }
         }
 
-        return alerts.sort((a,b) => (b.outstandingBalance || 0) - (a.outstandingBalance || 0));
+        return alerts.sort((a, b) => b.outstandingBalance - a.outstandingBalance);
     }
 
     async analyzeImport(file: File): Promise<ImportAnalysis> {
@@ -316,29 +422,37 @@ class CustomerService {
             Papa.parse(file, {
                 header: true,
                 skipEmptyLines: true,
-                complete: async (results) => {
+                complete: async results => {
                     try {
                         const existingCustomers = await this.getCustomers();
-                        const existingNames = new Map(existingCustomers.map(c => [c.searchName, c]));
+                        const existingNames = new Map(
+                            existingCustomers.map(c => [c.searchName, c]),
+                        );
 
                         const analysis: ImportAnalysis = {
-                            customersToAdd: [],
+                            customersToAdd:    [],
                             customersToUpdate: [],
-                            skippedRows: [],
-                            errorRows: [],
-                            totalRows: results.data.length,
+                            skippedRows:       [],
+                            errorRows:         [],
+                            totalRows:         results.data.length,
                         };
 
                         for (const row of results.data as any[]) {
-                            const firstName = row.firstName || row.prenom || row.first_name;
-                            const lastName = row.lastName || row.nom || row.last_name;
+                            const firstName =
+                                row.firstName || row.prenom || row.first_name;
+                            const lastName =
+                                row.lastName || row.nom || row.last_name;
 
                             if (!firstName || !lastName) {
-                                analysis.errorRows.push({ ...row, error: "Prénom ou nom manquant" });
+                                analysis.errorRows.push({
+                                    ...row,
+                                    error: 'Prénom ou nom manquant',
+                                });
                                 continue;
                             }
-                            
-                            const searchName = `${firstName} ${lastName}`.toLowerCase().trim();
+
+                            const searchName =
+                                `${firstName} ${lastName}`.toLowerCase().trim();
                             const existingCustomer = existingNames.get(searchName);
 
                             const customerData = {
@@ -346,13 +460,23 @@ class CustomerService {
                                 lastName,
                                 phone: row.phone || row.telephone,
                                 address: row.address || row.adresse,
-                                creditLimit: row.creditLimit ? parseFloat(row.creditLimit) : undefined,
-                                settlementDay: row.settlementDay ? parseInt(row.settlementDay) : undefined,
-                                outstandingBalance: row.outstandingBalance ? parseFloat(row.outstandingBalance) : undefined,
+                                creditLimit: row.creditLimit
+                                    ? parseFloat(row.creditLimit)
+                                    : undefined,
+                                settlementDay: row.settlementDay
+                                    ? parseInt(row.settlementDay)
+                                    : undefined,
+                                // FIX #25: do NOT import outstandingBalance from CSV —
+                                // it would bypass the recalculation logic and create
+                                // inconsistencies with actual sales/payments in the DB.
+                                // outstandingBalance is always computed by recalculateCustomerStatus.
                             };
 
                             if (existingCustomer) {
-                                analysis.customersToUpdate.push({ ...customerData, uuid: existingCustomer.uuid });
+                                analysis.customersToUpdate.push({
+                                    ...customerData,
+                                    uuid: existingCustomer.uuid,
+                                });
                             } else {
                                 analysis.customersToAdd.push(customerData);
                             }
@@ -362,14 +486,17 @@ class CustomerService {
                         reject(error);
                     }
                 },
-                error: (error) => {
-                    reject(new Error("Erreur de parsing CSV: " + error.message));
-                }
+                error: error => {
+                    reject(new Error('Erreur de parsing CSV: ' + error.message));
+                },
             });
         });
     }
 
-    async executeImport(confirmedData: { toAdd: any[], toUpdate: any[] }): Promise<void> {
+    async executeImport(confirmedData: {
+        toAdd: any[];
+        toUpdate: any[];
+    }): Promise<void> {
         const now = new Date();
 
         const toAdd = confirmedData.toAdd.map(c => ({
@@ -377,23 +504,24 @@ class CustomerService {
             uuid: uuidv4(),
             searchName: `${c.firstName} ${c.lastName}`.toLowerCase().trim(),
             totalSpent: 0,
-            outstandingBalance: c.outstandingBalance || 0,
+            // FIX #25: always start with 0 — never import an arbitrary balance
+            outstandingBalance: 0,
+            isBreadClient: false,
             createdAt: now,
             updatedAt: now,
         }));
 
-         const toUpdate = confirmedData.toUpdate.map(c => ({
+        const toUpdate = confirmedData.toUpdate.map(c => ({
             ...c,
             searchName: `${c.firstName} ${c.lastName}`.toLowerCase().trim(),
             updatedAt: now,
         }));
-        
+
         await db.transaction('rw', [db.customers], async () => {
-            if (toAdd.length > 0) await db.customers.bulkAdd(toAdd);
+            if (toAdd.length > 0)   await db.customers.bulkAdd(toAdd);
             if (toUpdate.length > 0) await db.customers.bulkPut(toUpdate);
         });
 
-        // Trigger Cloud Sync
         useAppStore.getState().actions.triggerSmartSync();
     }
 }

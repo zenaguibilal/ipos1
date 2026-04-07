@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -33,6 +32,10 @@ export function SupplierPaymentDialog({ isOpen, onOpenChange, supplier, onSucces
         if (!supplier) return;
         if (isNaN(amountNum) || amountNum <= 0) {
             toast.error("Veuillez entrer un montant valide.");
+            return;
+        }
+        if (amountNum > supplier.balance) {
+            toast.error("Le montant dépasse la dette actuelle du fournisseur.");
             return;
         }
         if (!paymentDate) {

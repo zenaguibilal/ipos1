@@ -29,7 +29,7 @@ export function StockAdjustmentDialog({ isOpen, onOpenChange, onSuccess }: { isO
     };
 
     const handleSave = async () => {
-        const change = parseInt(adjustment);
+        const change = parseFloat(adjustment);
         if (!selectedProduct) {
             toast.error("Veuillez sélectionner un produit.");
             return;
@@ -63,7 +63,7 @@ export function StockAdjustmentDialog({ isOpen, onOpenChange, onSuccess }: { isO
         setAdjustment('');
     };
 
-    const changeVal = parseInt(adjustment) || 0;
+    const changeVal = parseFloat(adjustment) || 0;
     const finalStock = selectedProduct ? selectedProduct.quantity + changeVal : 0;
 
     return (

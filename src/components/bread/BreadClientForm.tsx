@@ -64,6 +64,9 @@ export function BreadClientForm({ isOpen, onOpenChange, customer, onSuccess }: B
                 bread_type_recurrence: formState.bread_type_recurrence,
             };
 
+            // FIX #22: clear stale data from previous recurrence type
+            dataToSave.bread_quantite_defaut = undefined;
+            dataToSave.bread_jours_semaine = undefined;
             if (formState.bread_type_recurrence === 'quotidien') {
                 dataToSave.bread_quantite_defaut = formState.bread_quantite_defaut;
             } else if (formState.bread_type_recurrence === 'jours_specifiques') {
@@ -92,7 +95,7 @@ export function BreadClientForm({ isOpen, onOpenChange, customer, onSuccess }: B
     };
 
     const handleDayQuantityChange = (day: keyof typeof BREAD_WEEK_DAY_LABELS_FULL, value: string) => {
-         const quantite = parseInt(value, 10) || 0;
+         const quantite = Math.max(0, Math.round(parseFloat(value) || 0));
          setFormState(prev => ({
             ...prev,
             bread_jours_semaine: {

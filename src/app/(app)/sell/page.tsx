@@ -3,7 +3,6 @@
 import { useEffect, useRef, useCallback, memo } from 'react';
 import { ProductSelector } from '@/components/sell/ProductSearch';
 import { CartDisplay } from '@/components/sell/CartDisplay';
-import { CartTotalBar } from '@/components/sell/CartTotalBar';
 import { SaleActions } from '@/components/sell/SaleActions';
 import { CustomerCombobox } from '@/components/sell/CustomerCombobox';
 import { useCartActions } from '@/stores/cartStore';
@@ -81,7 +80,7 @@ function SellPageContent() {
                     </div>
                     <CartDisplay />
                     <div className="mt-auto p-8 space-y-6 bg-muted/20 border-t border-white/5">
-                        <CartTotalBar />
+                        {/* CartTotalBar removed as per Elite UI centralization request */}
                         <SaleActions payButtonRef={payButtonRef} />
                     </div>
                 </div>

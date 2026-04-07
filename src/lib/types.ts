@@ -1,4 +1,3 @@
-
 export interface Product {
     id?: number;
     uuid: string;
@@ -6,7 +5,7 @@ export interface Product {
     category?: string;
     price: number;
     purchasePrice: number;
-    quantity: number; 
+    quantity: number;
     minStockLevel: number;
     barcodes?: string[];
     unite?: 'Pièce' | 'Kg' | 'Litre' | 'Boîte' | 'Carton' | 'Sachet' | 'Bouteille';
@@ -40,7 +39,7 @@ export interface Customer {
     bread_type_recurrence?: 'quotidien' | 'jours_specifiques' | 'aucun';
     bread_quantite_defaut?: number;
     bread_jours_semaine?: {
-        [key: string]: { actif: boolean, quantite: number };
+        [key: string]: { actif: boolean; quantite: number };
     };
 }
 
@@ -122,7 +121,7 @@ export interface CompanyProfile {
 
 export interface StockIntakeItem {
     id: string; // Unique ID for the item row in UI, not persisted
-    productUuid?: string; // UUID of the product if it exists
+    productUuid?: string;
     barcodes: string[];
     name: string;
     category?: string;
@@ -146,10 +145,10 @@ export interface StockIntake {
         productName: string;
         quantityReceived: number;
         quantityDamaged: number;
-        purchasePrice: number; 
-        landingCost: number; 
+        purchasePrice: number;
+        landingCost: number;
     }[];
-    totalValue: number; 
+    totalValue: number;
     createdAt?: Date;
     updatedAt?: Date;
 }
@@ -159,7 +158,7 @@ export interface ReturnItem {
     productUuid: string | null;
     productName: string;
     quantity: number;
-    price: number; 
+    price: number;
     purchasePrice: number;
     wasRestocked: boolean;
 }
@@ -178,7 +177,15 @@ export interface ProductReturn {
     notes?: string;
 }
 
-export type ExpenseCategory = 'Loyer' | 'Salaires' | 'Fournisseurs' | 'Services Publics' | 'Marketing' | 'Maintenance' | 'Autre' | string;
+export type ExpenseCategory =
+    | 'Loyer'
+    | 'Salaires'
+    | 'Fournisseurs'
+    | 'Services Publics'
+    | 'Marketing'
+    | 'Maintenance'
+    | 'Autre'
+    | string;
 
 export interface Expense {
     id?: number;
@@ -191,16 +198,21 @@ export interface Expense {
     updatedAt?: Date;
 }
 
-export type InventoryLogReason = 'sale' | 'return' | 'stock_intake' | 'cancellation' | 'manual_adjustment';
+export type InventoryLogReason =
+    | 'sale'
+    | 'return'
+    | 'stock_intake'
+    | 'cancellation'
+    | 'manual_adjustment';
 
 export interface InventoryLog {
     id?: number;
     uuid: string;
     productUuid: string;
-    change: number; 
+    change: number;
     newQuantity: number;
     reason: InventoryLogReason;
-    relatedUuid?: string; 
+    relatedUuid?: string;
     createdAt: Date;
     updatedAt?: Date;
 }
@@ -213,7 +225,7 @@ export interface Supplier {
     phone?: string;
     email?: string;
     address?: string;
-    balance: number; 
+    balance: number;
     createdAt?: Date;
     updatedAt?: Date;
 }
@@ -233,9 +245,9 @@ export interface SupplierPayment {
 export interface BreadOrder {
     id?: number;
     uuid: string;
-    customerUuid: string | null; 
-    customName?: string; 
-    date: string; 
+    customerUuid: string | null;
+    customName?: string;
+    date: string;
     quantite: number;
     quantite_origine?: number;
     est_paye: boolean;
@@ -265,11 +277,16 @@ export interface ProductImportAnalysis {
     totalRows: number;
 }
 
-export interface RecentSale extends Pick<Sale, 'uuid' | 'invoiceNumber' | 'total' | 'createdAt'> {
+export interface RecentSale
+    extends Pick<Sale, 'uuid' | 'invoiceNumber' | 'total' | 'createdAt'> {
     customerName: string;
 }
 
-export interface RecentReturn extends Pick<ProductReturn, 'uuid' | 'originalInvoiceNumber' | 'totalReturnValue' | 'createdAt'> {
+export interface RecentReturn
+    extends Pick<
+        ProductReturn,
+        'uuid' | 'originalInvoiceNumber' | 'totalReturnValue' | 'createdAt'
+    > {
     customerName: string;
 }
 
@@ -288,12 +305,16 @@ export interface TopProduct {
 }
 
 export interface TopCustomer {
-  customerUuid: string;
-  name: string;
-  totalSpent: number;
+    customerUuid: string;
+    name: string;
+    totalSpent: number;
 }
 
-export interface LowStockProduct extends Pick<Product, 'uuid' | 'name' | 'quantity' | 'minStockLevel' | 'category' | 'unite'> {}
+export interface LowStockProduct
+    extends Pick<
+        Product,
+        'uuid' | 'name' | 'quantity' | 'minStockLevel' | 'category' | 'unite'
+    > {}
 
 export interface DashboardData {
     stats: {

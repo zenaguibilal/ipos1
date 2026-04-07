@@ -51,7 +51,7 @@ export function DraftsDropdown() {
     }
 
     const handleSuspendAndNew = () => {
-        const newId = createCart();
+        createCart();
         toast.success("Vente actuelle mise en attente. Nouveau panier créé.");
     };
 

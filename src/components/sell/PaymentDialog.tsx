@@ -174,7 +174,7 @@ function PaymentDialogContent({ isOpen, onOpenChange }: { isOpen: boolean, onOpe
                                     {isOverLimit && (
                                         <div className="p-5 bg-destructive/10 border border-destructive/20 rounded-2xl space-y-4 shadow-inner">
                                             <div className="flex items-center gap-3 text-destructive font-black text-[10px] uppercase tracking-widest">
-                                                <ShieldAlert className="h-5 w-5" /> Alerte Plafوند Dépassé
+                                                <ShieldAlert className="h-5 w-5" /> Alerte Plafond Dépassé
                                             </div>
                                             <div className="flex items-center justify-between bg-black/20 p-4 rounded-xl">
                                                 <span className="text-[10px] font-black uppercase text-primary">Dérogation Souveraine</span>
