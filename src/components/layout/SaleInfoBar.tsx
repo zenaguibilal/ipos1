@@ -6,7 +6,7 @@ import { useActiveCart, useCartActions } from '@/stores/cartStore';
 import { customerService } from '@/services/customer.service';
 import type { Customer } from '@/lib/types';
 import { calculateCartTotals, formatCurrency } from '@/lib/utils';
-import { User, HandCoins, Trash2, ChevronRight, Receipt, Info } from 'lucide-react';
+import { User, HandCoins, Trash2, ChevronRight, Receipt, Info, Sparkles } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -19,7 +19,6 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
  */
 export function SaleInfoBar() {
     const cart = useActiveCart();
-    const pathname = pathnameFromStore(); // Helper logic or directly use usePathname
     const currentPath = usePathname();
     const { clearCart } = useCartActions();
     
