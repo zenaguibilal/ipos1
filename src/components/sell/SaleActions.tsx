@@ -17,13 +17,13 @@ function SaleActionsContent({ payButtonRef }: { payButtonRef: React.RefObject<HT
     const hasItems = !!(cart && cart.items.length > 0);
 
     return (
-        <div className="flex flex-col gap-2">
-            <div className="grid grid-cols-[auto_1fr_auto] gap-2">
+        <div className="flex flex-col gap-1.5">
+            <div className="grid grid-cols-[auto_1fr_auto] gap-1.5">
                 <DraftsDropdown />
                 <Button 
                     ref={payButtonRef}
                     size="lg" 
-                    className="h-12 text-base font-black shadow-lg shadow-primary/20 transition-all active:scale-95 rounded-xl group bg-primary hover:bg-primary/90"
+                    className="h-11 text-sm font-black shadow-lg shadow-primary/20 transition-all active:scale-95 rounded-xl group bg-primary hover:bg-primary/90"
                     onClick={() => setIsPaymentOpen(true)}
                     disabled={!hasItems}
                 >
@@ -33,7 +33,7 @@ function SaleActionsContent({ payButtonRef }: { payButtonRef: React.RefObject<HT
                 <Button 
                     variant="ghost" 
                     size="icon" 
-                    className="h-12 w-12 rounded-xl text-muted-foreground/20 hover:text-destructive hover:bg-destructive/10"
+                    className="h-11 w-11 rounded-xl text-muted-foreground/20 hover:text-destructive hover:bg-destructive/10"
                     onClick={() => setIsClearConfirmOpen(true)}
                     disabled={!hasItems}
                 >
@@ -47,7 +47,7 @@ function SaleActionsContent({ payButtonRef }: { payButtonRef: React.RefObject<HT
                 isOpen={isClearConfirmOpen}
                 onOpenChange={setIsClearConfirmOpen}
                 title="Vider le panier ?"
-                description="Cette action supprimera tous les articles de la session en كورس."
+                description="Cette action supprimera tous les articles de la session en cours."
                 onConfirm={async () => clearCart()}
                 confirmText="Vider"
             />

@@ -56,28 +56,28 @@ export default function BreadPage() {
     const isLoading = orders === undefined || !isMounted || !currentDate;
 
     return (
-        <div className="p-3 sm:p-4 space-y-4 max-w-[1600px] mx-auto animate-in fade-in duration-500">
+        <div className="p-2 sm:p-3 space-y-3 max-w-[1600px] mx-auto animate-in fade-in duration-500">
             <PageHeader 
                 title="Logistique Pain"
-                description={isMounted && currentDate ? format(currentDate, 'EEEE d MMMM yyyy', { locale: fr }) : 'Chargement...'}
+                description={isMounted && currentDate ? format(currentDate, 'EEEE d MMMM', { locale: fr }) : 'Chargement...'}
             >
                 <div className="flex items-center gap-2">
-                    <div className="flex gap-1 bg-white/50 p-1 rounded-lg border shadow-sm">
+                    <div className="flex gap-0.5 bg-white/50 p-0.5 rounded-lg border shadow-sm">
                         <Button variant="ghost" size="icon" onClick={() => handleDateChange(-1)} className="h-7 w-7 rounded-md"><ChevronLeft className="h-4 w-4" /></Button>
-                        <Button variant={isToday ? "secondary" : "ghost"} onClick={() => setCurrentDate(new Date())} disabled={isToday || !isMounted} className="h-7 px-2 font-bold text-[10px] uppercase">Aujourd'hui</Button>
+                        <Button variant={isToday ? "secondary" : "ghost"} onClick={() => setCurrentDate(new Date())} disabled={isToday || !isMounted} className="h-7 px-2 font-bold text-[9px] uppercase">Today</Button>
                         <Button variant="ghost" size="icon" onClick={() => handleDateChange(1)} className="h-7 w-7 rounded-md"><ChevronRight className="h-4 w-4" /></Button>
                     </div>
-                    <Button variant="outline" size="icon" onClick={() => formattedDate && checkAndGenerate(formattedDate)} disabled={isLoading} className="h-9 w-9 rounded-lg bg-white shadow-sm"><RefreshCw className={cn("h-4 w-4 text-primary", isLoading && "animate-spin")} /></Button>
+                    <Button variant="outline" size="icon" onClick={() => formattedDate && checkAndGenerate(formattedDate)} disabled={isLoading} className="h-8 w-8 rounded-lg bg-white shadow-sm"><RefreshCw className={cn("h-3.5 w-3.5 text-indigo-600", isLoading && "animate-spin")} /></Button>
                 </div>
             </PageHeader>
 
             <BreadStats date={formattedDate} isLoading={isLoading}/>
 
-            <div className="grid lg:grid-cols-12 gap-4 items-start">
-                <div className="lg:col-span-9">
+            <div className="grid lg:grid-cols-12 gap-3 items-start">
+                <div className="lg:col-span-9 h-full">
                     {isLoading ? (
-                        <div className="flex flex-col justify-center items-center h-80 bg-white/50 rounded-xl border border-dashed animate-pulse">
-                            <Loader2 className="h-8 w-8 animate-spin text-primary opacity-20" />
+                        <div className="flex flex-col justify-center items-center h-64 bg-white/50 rounded-xl border border-dashed animate-pulse">
+                            <Loader2 className="h-6 w-6 animate-spin text-indigo-600 opacity-20" />
                         </div>
                     ) : (
                         <BreadDayView orders={orders || []} currentDate={formattedDate} onOrdersChange={() => {}} />

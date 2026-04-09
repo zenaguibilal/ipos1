@@ -82,29 +82,39 @@ export default function StockPage() {
 
     useEffect(() => { fetchData(); }, [fetchData]);
 
+    const handleViewDetails = (intake: StockIntake) => {
+        setSelectedIntake(intake);
+        setIsDetailsOpen(true);
+    };
+
+    const handleCancelIntake = (intake: StockIntake) => {
+        setSelectedIntake(intake);
+        setIsCancelOpen(true);
+    };
+
     return (
-        <div className="p-3 sm:p-4 space-y-4 max-w-[1600px] mx-auto animate-in fade-in duration-500">
-            <PageHeader title="Mouvements & Fournisseurs" description="Audit des stocks">
+        <div className="p-3 sm:p-4 space-y-3 max-w-[1600px] mx-auto animate-in fade-in duration-500">
+            <PageHeader title="Flux & Stock" description="Inventaire et Fournisseurs">
                 <div className="flex gap-2">
-                    <Button variant="outline" size="sm" onClick={() => setIsAdjustmentOpen(true)} className="h-8 text-[10px] uppercase font-bold"><ArrowUpDown className="mr-1 h-3 w-3" /> Correction</Button>
-                    <Button asChild size="sm" className="h-8 text-[10px] uppercase font-bold"><Link href="/stock/intake"><Plus className="mr-1 h-3 w-3" /> Réception</Link></Button>
+                    <Button variant="outline" size="sm" onClick={() => setIsAdjustmentOpen(true)} className="h-8 text-[9px] uppercase font-bold px-3"><ArrowUpDown className="mr-1.5 h-3 w-3" /> Correction</Button>
+                    <Button asChild size="sm" className="h-8 text-[9px] uppercase font-bold px-3 bg-indigo-600 hover:bg-indigo-700 text-white"><Link href="/stock/intake"><Plus className="mr-1.5 h-3 w-3" /> Réception</Link></Button>
                 </div>
             </PageHeader>
 
-            <div className="flex gap-1 items-center bg-white/50 p-1 rounded-lg border shadow-sm w-fit">
-                <Button variant={activeTab === 'intakes' ? "secondary" : "ghost"} size="sm" className="h-7 text-[10px] uppercase font-bold px-3 rounded-md" onClick={() => setActiveTab('intakes')}>Réceptions</Button>
-                <Button variant={activeTab === 'suppliers' ? "secondary" : "ghost"} size="sm" className="h-7 text-[10px] uppercase font-bold px-3 rounded-md" onClick={() => setActiveTab('suppliers')}>Fournisseurs</Button>
-                <Button variant={activeTab === 'logs' ? "secondary" : "ghost"} size="sm" className="h-7 text-[10px] uppercase font-bold px-3 rounded-md" onClick={() => setActiveTab('logs')}>Audit</Button>
+            <div className="flex gap-1 items-center bg-white/50 p-1 rounded-lg border shadow-sm w-fit overflow-x-auto no-scrollbar">
+                <Button variant={activeTab === 'intakes' ? "secondary" : "ghost"} size="sm" className="h-7 text-[9px] uppercase font-black px-3 rounded-md" onClick={() => setActiveTab('intakes')}>Réceptions</Button>
+                <Button variant={activeTab === 'suppliers' ? "secondary" : "ghost"} size="sm" className="h-7 text-[9px] uppercase font-black px-3 rounded-md" onClick={() => setActiveTab('suppliers')}>Fournisseurs</Button>
+                <Button variant={activeTab === 'logs' ? "secondary" : "ghost"} size="sm" className="h-7 text-[9px] uppercase font-black px-3 rounded-md" onClick={() => setActiveTab('logs')}>Audit</Button>
             </div>
 
             <div className="min-h-[400px]">
                 {isLoading ? (
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">{[...Array(8)].map((_, i) => <Skeleton key={i} className="h-32 rounded-lg" />)}</div>
                 ) : activeTab === 'intakes' ? (
-                    <div className="space-y-4">
+                    <div className="space-y-3">
                         <StockIntakeStats intakes={stockIntakes} />
                         {viewMode === 'grid' ? (
-                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                            <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 gap-3">
                                 {stockIntakes?.map(i => <StockIntakeCard key={i.uuid} intake={i} supplierName={i.supplierUuid ? supplierMap.get(i.supplierUuid)?.name : undefined} onViewDetails={handleViewDetails} onCancelIntake={handleCancelIntake} />)}
                             </div>
                         ) : <StockIntakeTable intakes={stockIntakes!} supplierMap={supplierMap} onViewDetails={handleViewDetails} onCancelIntake={handleCancelIntake} />}
@@ -120,6 +130,3 @@ export default function StockPage() {
         </div>
     );
 }
-
-const handleViewDetails = (intake: StockIntake) => {};
-const handleCancelIntake = (intake: StockIntake) => {};

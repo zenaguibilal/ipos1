@@ -11,11 +11,11 @@ const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
     title: 'iPOS Smart - Point de Vente',
-    description: 'Système de فروش moderne و ذكي لشاشات POS',
+    description: 'Système de gestion moderne et intelligent',
 };
 
 export const viewport: Viewport = {
-    themeColor: '#2563eb',
+    themeColor: '#4f46e5',
     width: 'device-width',
     initialScale: 1,
     maximumScale: 1,
