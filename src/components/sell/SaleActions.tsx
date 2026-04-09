@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useState, memo, useCallback } from 'react';
+import React, { useState, memo } from 'react';
 import { Button } from '@/components/ui/button';
-import { Wallet, CheckCircle2, Trash2 } from 'lucide-react';
+import { Wallet, Trash2 } from 'lucide-react';
 import { PaymentDialog } from './PaymentDialog';
 import { DraftsDropdown } from './DraftsDropdown';
 import { useActiveCart, useCartActions } from '@/stores/cartStore';
@@ -23,21 +23,21 @@ function SaleActionsContent({ payButtonRef }: { payButtonRef: React.RefObject<HT
                 <Button 
                     ref={payButtonRef}
                     size="lg" 
-                    className="h-12 text-lg font-black shadow-lg shadow-primary/20 transition-all hover:scale-[1.01] active:scale-95 rounded-xl group bg-primary"
+                    className="h-11 text-base font-black shadow-lg shadow-primary/20 transition-all active:scale-95 rounded-xl group bg-primary"
                     onClick={() => setIsPaymentOpen(true)}
                     disabled={!hasItems}
                 >
-                    <Wallet className="mr-2 h-5 w-5" />
-                    <span>Payer [F2]</span>
+                    <Wallet className="mr-2 h-4 w-4" />
+                    <span>Encaisser [F2]</span>
                 </Button>
                 <Button 
                     variant="ghost" 
                     size="icon" 
-                    className="h-12 w-12 rounded-xl text-muted-foreground/20 hover:text-destructive hover:bg-destructive/5"
+                    className="h-11 w-11 rounded-xl text-muted-foreground/20 hover:text-destructive"
                     onClick={() => setIsClearConfirmOpen(true)}
                     disabled={!hasItems}
                 >
-                    <Trash2 className="h-5 w-5" />
+                    <Trash2 className="h-4 w-4" />
                 </Button>
             </div>
 

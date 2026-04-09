@@ -21,15 +21,15 @@ const CartItemRow = React.memo(({ item, onUpdate, onRemove }: { item: CartItem, 
 
     return (
         <div className={cn(
-            "grid grid-cols-[1fr_auto_auto_auto] gap-2 items-center p-1.5 rounded-lg bg-muted/10 border border-white/5 hover:bg-muted/20 transition-colors group",
-            item.flash && 'animate-flash ring-1 ring-primary/30'
+            "grid grid-cols-[1fr_auto_auto_auto] gap-2 items-center p-1.5 rounded-lg bg-muted/5 border border-transparent hover:border-primary/10 hover:bg-primary/5 transition-all group",
+            item.flash && 'animate-flash ring-1 ring-primary/20'
         )}>
             <div className="flex-grow min-w-0">
-                <div className="flex items-center gap-1.5 mb-0.5">
-                    <p className="font-black text-xs tracking-tight truncate group-hover:text-primary transition-colors">{item.name}</p>
+                <div className="flex items-center gap-1.5">
+                    <p className="font-bold text-[11px] tracking-tight truncate group-hover:text-primary transition-colors leading-tight">{item.name}</p>
                     {isCustom && <Tag className="h-2.5 w-2.5 text-amber-500 opacity-50" />}
                 </div>
-                <p className="text-[8px] font-bold text-muted-foreground/50 uppercase">
+                <p className="text-[8px] font-black text-muted-foreground/40 uppercase tracking-tighter">
                     {formatCurrency(item.price)} / {item.unite || 'pcs'}
                 </p>
             </div>
@@ -40,13 +40,13 @@ const CartItemRow = React.memo(({ item, onUpdate, onRemove }: { item: CartItem, 
                     step={stepValue}
                     value={item.cartQuantity}
                     onChange={(e) => handleQtyChange(e.target.value)}
-                    className="w-14 h-6 text-center rounded-md bg-background/50 border-none shadow-inner font-black text-xs text-primary p-0"
+                    className="w-12 h-6 text-center rounded-md bg-background border-none shadow-inner font-black text-[10px] text-primary p-0"
                     min="0"
                 />
             </div>
 
             <div className="w-16 text-right">
-                <p className="font-black text-xs tracking-tighter">
+                <p className="font-black text-[11px] tracking-tighter">
                     {formatCurrency(item.price * item.cartQuantity)}
                 </p>
             </div>
@@ -54,7 +54,7 @@ const CartItemRow = React.memo(({ item, onUpdate, onRemove }: { item: CartItem, 
             <Button 
                 variant="ghost" 
                 size="icon" 
-                className="text-muted-foreground/20 hover:text-destructive h-6 w-6 rounded-md"
+                className="text-muted-foreground/20 hover:text-destructive h-6 w-6 rounded-md transition-opacity opacity-0 group-hover:opacity-100"
                 onClick={() => onRemove(item.uuid)}
             >
                 <Trash2 className="h-3 w-3" />
@@ -77,16 +77,16 @@ export function CartDisplay() {
     
     if (!cart || cart.items.length === 0) {
         return (
-            <div className="flex-grow flex flex-col items-center justify-center p-6 space-y-3 opacity-20">
-                <ShoppingCart className="h-10 w-10" />
-                <p className="text-[9px] font-black uppercase tracking-widest">Panier Vide</p>
+            <div className="flex-grow flex flex-col items-center justify-center p-6 space-y-3 opacity-10">
+                <ShoppingCart className="h-8 w-8" />
+                <p className="text-[8px] font-black uppercase tracking-[0.3em]">Panier de vente vide</p>
             </div>
         )
     }
 
     return (
         <ScrollArea className="flex-grow">
-            <div className="p-2 space-y-1">
+            <div className="p-2 space-y-0.5">
                 {cart.items.map(item => (
                     <CartItemRow 
                         key={item.uuid} 

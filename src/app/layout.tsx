@@ -7,25 +7,11 @@ import { BottomNavBar } from '@/components/layout/bottom-navbar';
 import { SaleInfoBar } from '@/components/layout/SaleInfoBar';
 import { AppSyncManager } from '@/components/layout/AppSyncManager';
 
-const APP_NAME = 'iPOS Smart';
-const APP_DEFAULT_TITLE = 'iPOS Smart - Point de Vente';
-const APP_DESCRIPTION = "Système de vente moderne, rapide et intelligent pour le commerce de détail";
-
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-    applicationName: APP_NAME,
-    title: {
-        default: APP_DEFAULT_TITLE,
-        template: '%s - iPOS Smart',
-    },
-    description: APP_DESCRIPTION,
-    manifest: '/manifest.json',
-    appleWebApp: {
-        capable: true,
-        statusBarStyle: 'black-translucent',
-        title: APP_DEFAULT_TITLE,
-    },
+    title: 'iPOS Smart - Point de Vente',
+    description: 'Système de vente moderne et intelligent',
 };
 
 export const viewport: Viewport = {
@@ -36,7 +22,7 @@ export const viewport: Viewport = {
     userScalable: false,
 };
 
-export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
     return (
         <html lang="fr" suppressHydrationWarning>
             <body className={inter.className}>

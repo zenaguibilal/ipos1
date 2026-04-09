@@ -74,18 +74,18 @@ function SellPageContent() {
     return (
         <div className="h-full flex flex-col p-2 gap-2 overflow-hidden animate-in fade-in duration-500">
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-2 flex-grow min-h-0">
-                {/* Left: Cart - Optimized for 768px height */}
+                {/* Left: Cart - Density Optimized */}
                 <div className="lg:col-span-7 flex flex-col bg-white/80 backdrop-blur-md rounded-xl overflow-hidden border shadow-sm min-h-0">
                     <div className="p-2 bg-muted/20 border-b">
                         <CustomerCombobox ref={customerComboRef} />
                     </div>
                     <CartDisplay />
-                    <div className="mt-auto p-3 bg-muted/10 border-t">
+                    <div className="mt-auto p-2.5 bg-muted/10 border-t">
                         <SaleActions payButtonRef={payButtonRef} />
                     </div>
                 </div>
 
-                {/* Right: Product Selector */}
+                {/* Right: Product Selector - Density Optimized */}
                 <div className="lg:col-span-5 flex flex-col min-h-0">
                     <ProductSelector
                         searchInputRef={searchInputRef}
@@ -94,14 +94,14 @@ function SellPageContent() {
                 </div>
             </div>
 
-            {/* Compact Shortcut Bar */}
+            {/* Ultra Compact Shortcut Bar */}
             <div className="hidden md:flex flex-wrap items-center justify-center gap-4 py-1 px-4 bg-white/60 backdrop-blur-xl border rounded-full text-[9px] font-black tracking-tighter text-muted-foreground uppercase shadow-sm">
-                <span className="text-primary pr-3 border-r">Smart Protocol</span>
+                <span className="text-primary pr-3 border-r font-black">Smart Protocol</span>
                 {[
-                    { key: KEYS.SEARCH, label: 'Chercher' },
-                    { key: KEYS.PAY, label: 'Payer' },
+                    { key: KEYS.SEARCH, label: 'Search' },
+                    { key: KEYS.PAY, label: 'Pay' },
                     { key: KEYS.CUSTOMER, label: 'Client' },
-                    { key: KEYS.CUSTOM, label: 'Manuel' },
+                    { key: KEYS.CUSTOM, label: 'Manual' },
                 ].map(item => (
                     <div key={item.key} className="flex items-center gap-1.5 opacity-70">
                         <kbd className="bg-black/5 px-1.5 py-0.5 rounded border text-primary font-mono">{item.key}</kbd>
@@ -110,7 +110,7 @@ function SellPageContent() {
                 ))}
                 <div className="flex items-center gap-1.5 text-primary">
                     <kbd className="bg-primary text-white px-1.5 py-0.5 rounded shadow-sm font-mono">{KEYS.ENTER}</kbd>
-                    <span className="font-black">Valider</span>
+                    <span className="font-black">Validate</span>
                 </div>
             </div>
         </div>

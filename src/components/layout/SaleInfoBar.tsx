@@ -45,35 +45,35 @@ export function SaleInfoBar() {
 
     return (
         <div className="bg-primary text-primary-foreground print-hide shadow-sm z-20 relative border-t border-white/5 shrink-0">
-            <div className="max-w-[1600px] mx-auto px-3 h-6 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                    <div className="flex items-center gap-1.5">
-                        <ShoppingCart className="h-2.5 w-2.5 opacity-70" />
-                        <span className="text-[8px] font-black uppercase tracking-tight">{cart.name}</span>
-                        <span className="text-[7px] font-black bg-white/20 px-1 rounded-sm">{itemCount} items</span>
+            <div className="max-w-[1600px] mx-auto px-3 h-7 flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-2">
+                        <ShoppingCart className="h-3 w-3 opacity-70" />
+                        <span className="text-[9px] font-black uppercase tracking-tight">{cart.name}</span>
+                        <span className="text-[8px] font-black bg-white/20 px-1.5 py-0.5 rounded-sm">{itemCount} pos</span>
                     </div>
-                    <div className="h-2.5 w-px bg-white/20" />
-                    <div className="flex items-center gap-1.5">
-                        <User className="h-2.5 w-2.5 opacity-70" />
-                        <span className="text-[8px] font-bold">{customerName}</span>
+                    <div className="h-3 w-px bg-white/20" />
+                    <div className="flex items-center gap-2">
+                        <User className="h-3 w-3 opacity-70" />
+                        <span className="text-[9px] font-bold truncate max-w-[120px]">{customerName}</span>
                         {customer && customer.outstandingBalance > 0 && (
-                            <span className="text-[7px] font-black bg-rose-500/40 px-1 rounded-sm">Dette: {formatCurrency(customer.outstandingBalance)}</span>
+                            <span className="text-[8px] font-black bg-rose-500/40 px-1.5 py-0.5 rounded-sm">Debt: {formatCurrency(customer.outstandingBalance)}</span>
                         )}
                     </div>
                 </div>
 
-                <div className="flex items-center gap-3">
-                    <div className="flex items-center gap-1.5">
-                        <span className="text-[6px] font-black uppercase opacity-70">Total</span>
-                        <span className="text-xs font-black tracking-tight">{formatCurrency(total)}</span>
+                <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-2">
+                        <span className="text-[7px] font-black uppercase opacity-70">Manifest Total</span>
+                        <span className="text-sm font-black tracking-tighter">{formatCurrency(total)}</span>
                     </div>
                     <Button 
                         variant="ghost" 
                         size="icon" 
-                        className="h-4 w-4 text-white/40 hover:text-white hover:bg-white/10 rounded-sm"
+                        className="h-5 w-5 text-white/40 hover:text-white hover:bg-white/10 rounded-md"
                         onClick={() => clearCart()}
                     >
-                        <Trash2 className="h-2 w-2" />
+                        <Trash2 className="h-3 w-3" />
                     </Button>
                 </div>
             </div>

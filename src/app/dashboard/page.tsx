@@ -8,7 +8,7 @@ import { useDateRange } from '@/hooks/useDateRange';
 import { dashboardService } from '@/services/dashboard.service';
 import {
     TrendingUp, Receipt, Star, ArrowUpRight, ArrowDownRight, 
-    ShoppingCart, Wallet, Percent, Plus, Archive, CreditCard, Clock
+    ShoppingCart, Wallet, Percent, Plus, Archive, CreditCard, Clock, Sparkles
 } from 'lucide-react';
 import { formatCurrency, cn } from '@/lib/utils';
 import { format } from 'date-fns';
@@ -85,11 +85,12 @@ export default function DashboardPage() {
 
     return (
         <div className="p-3 sm:p-4 space-y-4 max-w-[1600px] mx-auto animate-in fade-in duration-500">
-            <PageHeader title="Smart Pulse" description="Analytique d'activité" className="mb-2">
+            <PageHeader title="Smart Pulse" description="Analytique d'activité en temps réel" className="mb-2">
                 <div className="flex items-center gap-2">
                     <Button asChild size="sm" className="rounded-lg font-bold h-8 text-[10px] uppercase tracking-tighter bg-primary hover:bg-primary/90">
-                        <Link href="/sell"><Plus className="mr-1.5 h-3 w-3" /> Vendre</Link>
+                        <Link href="/sell"><Plus className="mr-1.5 h-3 w-3" /> Nouvelle Vente</Link>
                     </Button>
+                    <div className="h-6 w-px bg-border mx-1" />
                     <DateRangePicker date={dateRange} setDate={setDate} />
                 </div>
             </PageHeader>
