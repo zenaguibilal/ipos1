@@ -96,12 +96,12 @@ function SellPageContent() {
 
             {/* Ultra Compact Shortcut Bar */}
             <div className="hidden md:flex flex-wrap items-center justify-center gap-4 py-1 px-4 bg-white/60 backdrop-blur-xl border rounded-full text-[9px] font-black tracking-tighter text-muted-foreground uppercase shadow-sm">
-                <span className="text-primary pr-3 border-r font-black">Smart Protocol</span>
+                <span className="text-primary pr-3 border-r font-black">Smart POS Protocol</span>
                 {[
-                    { key: KEYS.SEARCH, label: 'Search' },
-                    { key: KEYS.PAY, label: 'Pay' },
+                    { key: KEYS.SEARCH, label: 'Recherche' },
+                    { key: KEYS.PAY, label: 'Encaisser' },
                     { key: KEYS.CUSTOMER, label: 'Client' },
-                    { key: KEYS.CUSTOM, label: 'Manual' },
+                    { key: KEYS.CUSTOM, label: 'Manuel' },
                 ].map(item => (
                     <div key={item.key} className="flex items-center gap-1.5 opacity-70">
                         <kbd className="bg-black/5 px-1.5 py-0.5 rounded border text-primary font-mono">{item.key}</kbd>
@@ -110,7 +110,7 @@ function SellPageContent() {
                 ))}
                 <div className="flex items-center gap-1.5 text-primary">
                     <kbd className="bg-primary text-white px-1.5 py-0.5 rounded shadow-sm font-mono">{KEYS.ENTER}</kbd>
-                    <span className="font-black">Validate</span>
+                    <span className="font-black">Valider</span>
                 </div>
             </div>
         </div>

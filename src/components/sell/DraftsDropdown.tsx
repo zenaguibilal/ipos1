@@ -52,13 +52,13 @@ export function DraftsDropdown() {
 
     const handleSuspendAndNew = () => {
         createCart();
-        toast.success("Vente actuelle mise en attente. Nouveau panier créé.");
+        toast.success("Mise en attente réussie.");
     };
 
     if (!isMounted) {
         return (
-            <Button variant="outline" size="lg" className="h-14 text-base opacity-50 cursor-not-allowed">
-                <FileStack className="mr-2 h-5 w-5" />
+            <Button variant="outline" size="lg" className="h-12 text-sm opacity-50 cursor-not-allowed">
+                <FileStack className="mr-2 h-4 w-4" />
                 <span className="hidden sm:inline">Chargement...</span>
             </Button>
         );
@@ -68,22 +68,22 @@ export function DraftsDropdown() {
         <>
             <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                    <Button id="sell-drafts-button" variant="outline" size="lg" className="h-14 text-base border-primary/20 hover:bg-primary/5 transition-all shadow-sm">
-                        <FileStack className="mr-2 h-5 w-5 text-primary" />
-                        <span className="hidden sm:inline">Brouillons</span>
-                        <span className="ml-2 px-2 py-0.5 bg-primary/10 text-primary rounded-full text-xs font-bold">{carts.length}</span>
+                    <Button id="sell-drafts-button" variant="outline" size="lg" className="h-12 text-sm border shadow-sm bg-white/50">
+                        <FileStack className="mr-2 h-4 w-4 text-primary" />
+                        <span className="hidden sm:inline">Attente</span>
+                        <span className="ml-2 px-1.5 py-0.5 bg-primary/10 text-primary rounded-md text-[10px] font-black">{carts.length}</span>
                     </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-80 p-2 rounded-2xl shadow-xl border-primary/10">
-                    <DropdownMenuLabel className="flex items-center justify-between px-3 py-2">
-                        <span className="text-sm font-black uppercase tracking-tighter">Ventes en attente</span>
-                        <Button variant="ghost" size="sm" className="h-7 text-xs text-primary font-bold hover:bg-primary/10" onClick={() => createCart()}>
+                <DropdownMenuContent align="start" className="w-72 p-1.5 rounded-xl shadow-xl border">
+                    <DropdownMenuLabel className="flex items-center justify-between px-2 py-1.5">
+                        <span className="text-[10px] font-black uppercase tracking-tight text-muted-foreground">Sessions en cours</span>
+                        <Button variant="ghost" size="sm" className="h-6 text-[10px] text-primary font-bold hover:bg-primary/10" onClick={() => createCart()}>
                             <Plus className="mr-1 h-3 w-3" /> Nouveau
                         </Button>
                     </DropdownMenuLabel>
-                    <DropdownMenuSeparator className="opacity-50" />
+                    <DropdownMenuSeparator />
                     
-                    <div className="max-h-[350px] overflow-y-auto space-y-1 my-1 pr-1 custom-scrollbar">
+                    <div className="max-h-[280px] overflow-y-auto space-y-1 my-1 pr-1 custom-scrollbar">
                         {carts.map(cart => {
                             const { total } = calculateCartTotals(cart);
                             const isActive = cart.id === activeCartId;
@@ -93,27 +93,27 @@ export function DraftsDropdown() {
                                 <div 
                                     key={cart.id}
                                     className={cn(
-                                        "group flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all duration-200",
-                                        isActive ? "bg-primary/15 border-l-4 border-l-primary shadow-inner" : "hover:bg-muted/50"
+                                        "group flex items-center gap-2.5 p-2 rounded-lg cursor-pointer transition-all duration-200 border border-transparent",
+                                        isActive ? "bg-primary/10 border-primary/20 shadow-inner" : "hover:bg-muted/50"
                                     )}
                                     onClick={() => selectCart(cart.id)}
                                 >
                                     <div className={cn(
-                                        "flex-shrink-0 h-10 w-10 rounded-full flex items-center justify-center transition-colors",
+                                        "flex-shrink-0 h-8 w-8 rounded-md flex items-center justify-center transition-colors",
                                         isActive ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
                                     )}>
-                                        <ShoppingBag className="h-5 w-5" />
+                                        <ShoppingBag className="h-4 w-4" />
                                     </div>
 
                                     <div className="flex-grow min-w-0">
-                                        <div className="flex items-center gap-2">
-                                            <p className={cn("font-bold truncate text-sm tracking-tight", isActive ? "text-primary" : "")}>
+                                        <div className="flex items-center gap-1.5">
+                                            <p className={cn("font-bold truncate text-[11px] tracking-tight", isActive ? "text-primary" : "")}>
                                                 {cart.name}
                                             </p>
                                             {isActive && <Check className="h-3 w-3 text-primary animate-in zoom-in" />}
                                         </div>
-                                        <div className="flex items-center gap-3 text-[10px] text-muted-foreground font-bold uppercase tracking-widest opacity-70">
-                                            <span>{itemCount} Article{itemCount > 1 ? 's' : ''}</span>
+                                        <div className="flex items-center gap-2 text-[9px] text-muted-foreground font-bold uppercase tracking-tighter opacity-70">
+                                            <span>{itemCount} pos</span>
                                             <span className="text-primary font-black">{formatCurrency(total)}</span>
                                         </div>
                                     </div>
@@ -122,7 +122,7 @@ export function DraftsDropdown() {
                                         <Button 
                                             variant="ghost" 
                                             size="icon" 
-                                            className="h-8 w-8 hover:bg-background rounded-lg shadow-sm" 
+                                            className="h-7 w-7 hover:bg-white rounded-md border bg-white/50" 
                                             onClick={(e) => { 
                                                 e.stopPropagation(); 
                                                 setNewName(cart.name); 
@@ -130,22 +130,22 @@ export function DraftsDropdown() {
                                                 setRenameDialogOpen(true); 
                                             }}
                                         >
-                                            <Edit className="h-3.5 w-3.5" />
+                                            <Edit className="h-3 w-3" />
                                         </Button>
                                         <Button 
                                             variant="ghost" 
                                             size="icon" 
-                                            className="h-8 w-8 text-destructive hover:bg-destructive/10 hover:text-destructive rounded-lg shadow-sm" 
+                                            className="h-7 w-7 text-destructive hover:bg-destructive/10 rounded-md border bg-white/50" 
                                             onClick={(e) => { 
                                                 e.stopPropagation(); 
                                                 if (carts.length > 1) {
                                                     deleteCart(cart.id);
                                                 } else {
-                                                    toast.error("Impossible de supprimer le dernier panier.");
+                                                    toast.error("Action impossible.");
                                                 }
                                             }}
                                         >
-                                            <Trash2 className="h-3.5 w-3.5" />
+                                            <Trash2 className="h-3 w-3" />
                                         </Button>
                                     </div>
                                 </div>
@@ -153,42 +153,39 @@ export function DraftsDropdown() {
                         })}
                     </div>
 
-                    <DropdownMenuSeparator className="opacity-50" />
+                    <DropdownMenuSeparator />
                     <DropdownMenuItem 
                         onClick={handleSuspendAndNew}
-                        className="flex items-center justify-center gap-2 p-3 my-1 rounded-xl font-black text-xs uppercase tracking-widest text-primary focus:text-primary focus:bg-primary/10 cursor-pointer transition-all active:scale-95"
+                        className="flex items-center justify-center gap-2 p-2.5 my-1 rounded-lg font-black text-[10px] uppercase tracking-widest text-primary focus:text-primary focus:bg-primary/10 cursor-pointer"
                     >
-                        <PauseCircle className="h-4 w-4" />
-                        Suspendre et Nouveau
+                        <PauseCircle className="h-3.5 w-3.5" />
+                        Mettre en attente [F9]
                     </DropdownMenuItem>
                 </DropdownMenuContent>
             </DropdownMenu>
             
             {/* Rename Dialog */}
             <AlertDialog open={renameDialogOpen} onOpenChange={setRenameDialogOpen}>
-                <AlertDialogContent className="rounded-3xl border-none shadow-2xl bg-card">
+                <AlertDialogContent className="rounded-2xl border bg-card">
                     <AlertDialogHeader>
-                        <AlertDialogTitle className="text-xl font-black tracking-tighter">Identifier cette vente</AlertDialogTitle>
-                        <AlertDialogDescription className="text-muted-foreground font-medium">
-                           Entrez un nom pour ce brouillon (ex: n° table, nom client, etc.)
+                        <AlertDialogTitle className="text-lg font-black tracking-tight">Nommer la session</AlertDialogTitle>
+                        <AlertDialogDescription className="text-xs font-medium opacity-70">
+                           Entrez un identifiant pour ce brouillon.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
-                    <div className="py-6">
-                        <div className="relative">
-                            <Input 
-                                value={newName}
-                                onChange={(e) => setNewName(e.target.value)}
-                                onKeyDown={(e) => e.key === 'Enter' && handleRename()}
-                                className="h-14 text-xl font-bold rounded-2xl bg-muted/50 border-none px-6 focus-visible:ring-primary shadow-inner"
-                                placeholder="Nom du panier..."
-                                autoFocus
-                            />
-                            <ShoppingBag className="absolute right-5 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground/30" />
-                        </div>
+                    <div className="py-4">
+                        <Input 
+                            value={newName}
+                            onChange={(e) => setNewName(e.target.value)}
+                            onKeyDown={(e) => e.key === 'Enter' && handleRename()}
+                            className="h-11 font-bold rounded-xl bg-muted/50"
+                            placeholder="Nom..."
+                            autoFocus
+                        />
                     </div>
-                    <AlertDialogFooter className="gap-3">
-                        <AlertDialogCancel className="rounded-2xl font-bold border-none h-12 flex-1">Annuler</AlertDialogCancel>
-                        <AlertDialogAction onClick={handleRename} className="rounded-2xl font-bold px-8 h-12 flex-1 shadow-lg shadow-primary/20">
+                    <AlertDialogFooter className="gap-2">
+                        <AlertDialogCancel className="rounded-xl h-10 text-xs">Annuler</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleRename} className="rounded-xl h-10 text-xs font-bold">
                             Enregistrer
                         </AlertDialogAction>
                     </AlertDialogFooter>

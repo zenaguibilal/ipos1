@@ -14,9 +14,9 @@ import { useAppStore, useAppActions } from '@/stores/appStore';
 import { format } from 'date-fns';
 
 const navLinks = [
-  { href: '/dashboard', label: 'Home', icon: LayoutDashboard },
+  { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/sell', label: 'Vendre', icon: ShoppingCart },
-  { href: '/products', label: 'Catalog', icon: Package },
+  { href: '/products', label: 'Catalogue', icon: Package },
   { href: '/customers', label: 'Clients', icon: Users2 },
   { href: '/stock', label: 'Stock', icon: Archive },
   { href: '/bread', label: 'Pain', icon: Wheat },
@@ -33,20 +33,17 @@ export function AppHeader() {
   const lastSync = companyProfile?.last_sync_at;
 
   return (
-    <header className="flex h-10 items-center gap-2 bg-white border-b px-3 print-hide sticky top-0 z-40 shadow-sm shrink-0">
+    <header className="flex h-10 items-center gap-3 bg-white border-b px-4 print-hide sticky top-0 z-40 shadow-sm shrink-0">
       <div className="flex-shrink-0 flex items-center gap-2">
-         <Link href="/dashboard" className="flex items-center gap-1.5 transition-transform active:scale-95">
-            <div className="h-6 w-6 flex items-center justify-center bg-primary rounded-md shadow-sm">
-                <div className="w-3 h-3 border-2 border-white rounded-full animate-pulse" />
+         <Link href="/dashboard" className="flex items-center gap-2 transition-transform active:scale-95">
+            <div className="h-6 w-6 flex items-center justify-center bg-primary rounded shadow-sm">
+                <div className="w-2.5 h-2.5 border-2 border-white rounded-full animate-pulse" />
             </div>
-            <div className="flex flex-col -space-y-1">
-                <span className="text-xs font-black tracking-tighter">iPOS</span>
-                <span className="text-[7px] font-black text-primary uppercase">Smart POS</span>
-            </div>
+            <span className="text-sm font-black tracking-tighter">iPOS Smart</span>
          </Link>
       </div>
 
-      <nav className="hidden lg:flex items-center gap-0.5 flex-grow justify-center">
+      <nav className="hidden lg:flex items-center gap-1 flex-grow justify-center">
           {navLinks.map(link => {
               const isActive = pathname === link.href;
               return (
@@ -56,8 +53,8 @@ export function AppHeader() {
                       variant="ghost"
                       size="sm"
                       className={cn(
-                          "rounded-md font-bold px-2.5 h-7 text-[9px] uppercase tracking-tight",
-                          isActive ? "bg-primary/10 text-primary" : "text-muted-foreground hover:text-primary"
+                          "rounded-lg font-bold px-3 h-7 text-[9px] uppercase tracking-tight",
+                          isActive ? "bg-primary/10 text-primary" : "text-muted-foreground hover:text-primary hover:bg-muted/50"
                       )}
                   >
                       <Link href={link.href} className="flex items-center gap-1.5">
@@ -69,11 +66,11 @@ export function AppHeader() {
           })}
       </nav>
 
-      <div className="flex-shrink-0 flex items-center gap-2">
+      <div className="flex-shrink-0 flex items-center gap-3">
         <TooltipProvider>
             <Tooltip delayDuration={0}>
                 <TooltipTrigger asChild>
-                    <button onClick={() => performBackgroundSync()} disabled={isSyncing} className="hidden sm:flex items-center gap-1.5 text-muted-foreground hover:text-primary transition-colors pr-3 border-r h-5">
+                    <button onClick={() => performBackgroundSync()} disabled={isSyncing} className="hidden sm:flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors pr-3 border-r h-5">
                         {isSyncing ? (
                             <RefreshCw className="h-3 w-3 animate-spin text-primary" />
                         ) : lastSync ? (
@@ -86,18 +83,18 @@ export function AppHeader() {
                         </span>
                     </button>
                 </TooltipTrigger>
-                <TooltipContent><p className="text-[10px] font-bold">Cloud Sync Protocol</p></TooltipContent>
+                <TooltipContent><p className="text-[9px] font-bold">Cloud Health Status</p></TooltipContent>
             </Tooltip>
         </TooltipProvider>
 
         <Clock />
         
-        <div className="flex items-center gap-1 ml-1">
-            <Button asChild variant="ghost" size="icon" className="h-7 w-7 rounded-md hover:bg-primary/5">
-                <Link href="/profile"><Building className="h-4 w-4" /></Link>
+        <div className="flex items-center gap-1">
+            <Button asChild variant="ghost" size="icon" className="h-7 w-7 rounded-lg hover:bg-primary/5">
+                <Link href="/profile"><Building className="h-3.5 w-3.5" /></Link>
             </Button>
-            <Button asChild variant="ghost" size="icon" className="h-7 w-7 rounded-md hover:bg-primary/5">
-                <Link href="/settings"><Settings className="h-4 w-4" /></Link>
+            <Button asChild variant="ghost" size="icon" className="h-7 w-7 rounded-lg hover:bg-primary/5">
+                <Link href="/settings"><Settings className="h-3.5 w-3.5" /></Link>
             </Button>
         </div>
       </div>

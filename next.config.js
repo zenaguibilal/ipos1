@@ -16,7 +16,7 @@ const nextConfig = {
             },
         ],
     },
-    experimental: {}
+    experimental: {} // Removed unrecognized keys that caused server startup errors
 };
 
 module.exports = nextConfig;
