@@ -54,7 +54,7 @@ function SellPageContent() {
             case KEYS.SUSPEND:
                 e.preventDefault();
                 createCart();
-                toast.success('Session suspendue. Nouveau manifeste prêt.');
+                toast.success('Session suspendue.');
                 break;
             case KEYS.CUSTOM:
                 e.preventDefault();
@@ -72,21 +72,21 @@ function SellPageContent() {
     }, [handleKeyDown]);
 
     return (
-        <div className="h-full flex flex-col p-3 sm:p-4 gap-4 overflow-hidden animate-in slide-in-from-bottom-2 duration-700">
-            <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 flex-grow min-h-0">
-                {/* Left: Cart & Customer */}
-                <div className="lg:col-span-3 flex flex-col bg-card/60 backdrop-blur-md rounded-xl overflow-hidden border border-black/[0.03] shadow-sm min-h-0">
-                    <div className="p-4 bg-muted/30 border-b border-black/[0.03]">
+        <div className="h-full flex flex-col p-2 gap-2 overflow-hidden animate-in fade-in duration-500">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-2 flex-grow min-h-0">
+                {/* Left: Cart - Focused on density */}
+                <div className="lg:col-span-7 flex flex-col bg-white/80 backdrop-blur-md rounded-lg overflow-hidden border shadow-sm min-h-0">
+                    <div className="p-2 bg-muted/20 border-b">
                         <CustomerCombobox ref={customerComboRef} />
                     </div>
                     <CartDisplay />
-                    <div className="mt-auto p-6 space-y-4 bg-muted/20 border-t border-black/[0.03]">
+                    <div className="mt-auto p-3 bg-muted/10 border-t">
                         <SaleActions payButtonRef={payButtonRef} />
                     </div>
                 </div>
 
-                {/* Right: Product Catalog */}
-                <div className="lg:col-span-2 flex flex-col min-h-0">
+                {/* Right: Product Selector - Compact Grid */}
+                <div className="lg:col-span-5 flex flex-col min-h-0">
                     <ProductSelector
                         searchInputRef={searchInputRef}
                         customItemButtonRef={customItemButtonRef}
@@ -94,26 +94,22 @@ function SellPageContent() {
                 </div>
             </div>
 
-            {/* Protocols Footer */}
-            <div className="hidden md:flex flex-wrap items-center justify-center gap-6 py-2 px-6 bg-white/40 backdrop-blur-xl border border-black/[0.03] rounded-full text-[8px] font-black tracking-widest text-muted-foreground uppercase">
-                <div className="flex items-center justify-center gap-2 pr-4 border-r">
-                    <span className="text-primary">System Protocols</span>
-                </div>
+            {/* Lean Shortcuts Footer */}
+            <div className="hidden md:flex flex-wrap items-center justify-center gap-3 py-1 px-4 bg-white/60 backdrop-blur-xl border rounded-full text-[8px] font-black tracking-tighter text-muted-foreground uppercase">
+                <span className="text-primary pr-2 border-r">Smart Protocols</span>
                 {[
                     { key: KEYS.SEARCH, label: 'Search' },
                     { key: KEYS.PAY, label: 'Pay' },
                     { key: KEYS.CUSTOMER, label: 'Client' },
-                    { key: KEYS.SUSPEND, label: 'Suspend' },
                     { key: KEYS.CUSTOM, label: 'Custom' },
                 ].map(item => (
-                    <div key={item.key} className="flex items-center gap-2 opacity-60">
-                        <kbd className="bg-black/5 px-1.5 py-0.5 rounded border border-black/10 text-primary">{item.key}</kbd>
+                    <div key={item.key} className="flex items-center gap-1 opacity-60">
+                        <kbd className="bg-black/5 px-1 py-0.5 rounded border text-primary">{item.key}</kbd>
                         <span>{item.label}</span>
                     </div>
                 ))}
-                <div className="h-3 w-px bg-black/10" />
-                <div className="flex items-center gap-2 text-primary">
-                    <kbd className="bg-primary text-white px-1.5 py-0.5 rounded shadow-sm">{KEYS.ENTER}</kbd>
+                <div className="flex items-center gap-1 text-primary">
+                    <kbd className="bg-primary text-white px-1 py-0.5 rounded shadow-sm">{KEYS.ENTER}</kbd>
                     <span className="font-black">Validate</span>
                 </div>
             </div>

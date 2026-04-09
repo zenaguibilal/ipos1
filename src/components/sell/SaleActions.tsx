@@ -8,15 +8,7 @@ import { DraftsDropdown } from './DraftsDropdown';
 import { useActiveCart, useCartActions } from '@/stores/cartStore';
 import { ConfirmAlertDialog } from '../ui/ConfirmAlertDialog';
 
-interface SaleActionsProps {
-    payButtonRef: React.RefObject<HTMLButtonElement>;
-}
-
-/**
- * SaleActions - Finalization controllers.
- * Senior Review Note: Memoized to prevent button re-rendering on every cart tick.
- */
-function SaleActionsContent({ payButtonRef }: SaleActionsProps) {
+function SaleActionsContent({ payButtonRef }: { payButtonRef: React.RefObject<HTMLButtonElement> }) {
     const [isPaymentOpen, setIsPaymentOpen] = useState(false);
     const [isClearConfirmOpen, setIsClearConfirmOpen] = useState(false);
     
@@ -24,35 +16,28 @@ function SaleActionsContent({ payButtonRef }: SaleActionsProps) {
     const { clearCart } = useCartActions();
     const hasItems = !!(cart && cart.items.length > 0);
 
-    const handleClearCart = useCallback(async () => {
-        clearCart();
-    }, [clearCart]);
-    
     return (
-        <div className="flex flex-col gap-4">
-            <div className="grid grid-cols-[auto_1fr_auto] gap-4">
+        <div className="flex flex-col gap-2">
+            <div className="grid grid-cols-[auto_1fr_auto] gap-2">
                 <DraftsDropdown />
                 <Button 
                     ref={payButtonRef}
                     size="lg" 
-                    className="h-16 text-xl font-black shadow-xl shadow-primary/20 transition-all hover:scale-[1.02] active:scale-95 rounded-2xl group"
+                    className="h-12 text-lg font-black shadow-lg shadow-primary/20 transition-all hover:scale-[1.01] active:scale-95 rounded-xl group bg-primary"
                     onClick={() => setIsPaymentOpen(true)}
                     disabled={!hasItems}
-                    aria-label="Procéder au paiement final"
                 >
-                    <Wallet className="mr-3 h-6 w-6 transition-transform group-hover:scale-110" />
+                    <Wallet className="mr-2 h-5 w-5" />
                     <span>Payer [F2]</span>
-                    <CheckCircle2 className="ml-3 h-5 w-5 opacity-30 group-hover:opacity-100 transition-opacity" />
                 </Button>
                 <Button 
                     variant="ghost" 
                     size="icon" 
-                    className="h-16 w-16 rounded-2xl text-muted-foreground/20 hover:text-destructive hover:bg-destructive/10 transition-all"
+                    className="h-12 w-12 rounded-xl text-muted-foreground/20 hover:text-destructive hover:bg-destructive/5"
                     onClick={() => setIsClearConfirmOpen(true)}
                     disabled={!hasItems}
-                    title="Vider le manifeste"
                 >
-                    <Trash2 className="h-6 w-6" />
+                    <Trash2 className="h-5 w-5" />
                 </Button>
             </div>
 
@@ -61,10 +46,10 @@ function SaleActionsContent({ payButtonRef }: SaleActionsProps) {
             <ConfirmAlertDialog 
                 isOpen={isClearConfirmOpen}
                 onOpenChange={setIsClearConfirmOpen}
-                title="Vider le manifeste actuel ?"
-                description="Cette action supprimera tous les articles de la session en cours. Cette opération est irréversible."
-                onConfirm={handleClearCart}
-                confirmText="Vider le panier"
+                title="Vider le panier ?"
+                description="Cette action supprimera tous les articles de la session en cours."
+                onConfirm={async () => clearCart()}
+                confirmText="Vider"
             />
         </div>
     );

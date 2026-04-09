@@ -4,7 +4,6 @@
 
 @layer base {
   :root {
-    /* Modern Lean Palette - Crisp & Professional */
     --background: 210 40% 98%; 
     --foreground: 222 47% 11%;
 
@@ -33,7 +32,7 @@
     --input: 214.3 31.8% 91.4%;
     --ring: 221 83% 53%;
  
-    --radius: 0.75rem; /* Reduced for a leaner look */
+    --radius: 0.6rem; 
     
     --chart-primary: 221 83% 53%;
     --chart-secondary: 262 83% 58%;
@@ -49,28 +48,19 @@
   }
   body {
     @apply bg-background text-foreground antialiased;
-    background-image: radial-gradient(at 0% 0%, hsla(221,83%,95%,1) 0, transparent 50%);
+    background-image: radial-gradient(at 0% 0%, hsla(221,83%,93%,1) 0, transparent 50%);
     background-attachment: fixed;
   }
 }
 
-/* Lean Custom Scrollbar */
 .custom-scrollbar::-webkit-scrollbar {
   width: 4px;
-  height: 4px;
-}
-.custom-scrollbar::-webkit-scrollbar-track {
-  @apply bg-transparent;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb {
   @apply bg-primary/20 rounded-full;
 }
 
 @media print {
-    body {
-        -webkit-print-color-adjust: exact;
-        print-color-adjust: exact;
-        background: #fff !important;
-    }
+    body { background: #fff !important; }
     .print-hide { display: none !important; }
 }

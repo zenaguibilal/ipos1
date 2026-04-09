@@ -9,7 +9,7 @@ import { AppSyncManager } from '@/components/layout/AppSyncManager';
 
 const APP_NAME = 'iPOS Smart';
 const APP_DEFAULT_TITLE = 'iPOS Smart - Point de Vente';
-const APP_DESCRIPTION = "Système de vente moderne, rapide et intelligent";
+const APP_DESCRIPTION = "Système de vente moderne, سريع وذكي";
 
 const inter = Inter({ subsets: ['latin'] });
 
