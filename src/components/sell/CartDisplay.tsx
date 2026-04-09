@@ -6,8 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Trash2, ShoppingCart, Tag } from 'lucide-react';
-import { formatCurrency } from "@/lib/utils";
-import { cn } from "@/lib/utils";
+import { formatCurrency, cn } from "@/lib/utils";
 import type { CartItem } from "@/lib/types";
 
 const CartItemRow = React.memo(({ item, onUpdate, onRemove }: { item: CartItem, onUpdate: any, onRemove: any }) => {
@@ -22,7 +21,7 @@ const CartItemRow = React.memo(({ item, onUpdate, onRemove }: { item: CartItem, 
 
     return (
         <div className={cn(
-            "grid grid-cols-[1fr_auto_auto_auto] gap-2 items-center p-2 rounded-lg bg-muted/10 border border-white/5 hover:bg-muted/20 transition-colors group",
+            "grid grid-cols-[1fr_auto_auto_auto] gap-2 items-center p-1.5 rounded-lg bg-muted/10 border border-white/5 hover:bg-muted/20 transition-colors group",
             item.flash && 'animate-flash ring-1 ring-primary/30'
         )}>
             <div className="flex-grow min-w-0">
@@ -41,12 +40,12 @@ const CartItemRow = React.memo(({ item, onUpdate, onRemove }: { item: CartItem, 
                     step={stepValue}
                     value={item.cartQuantity}
                     onChange={(e) => handleQtyChange(e.target.value)}
-                    className="w-16 h-7 text-center rounded-md bg-background/50 border-none shadow-inner font-black text-xs text-primary p-0"
+                    className="w-14 h-6 text-center rounded-md bg-background/50 border-none shadow-inner font-black text-xs text-primary p-0"
                     min="0"
                 />
             </div>
 
-            <div className="w-20 text-right">
+            <div className="w-16 text-right">
                 <p className="font-black text-xs tracking-tighter">
                     {formatCurrency(item.price * item.cartQuantity)}
                 </p>
@@ -55,7 +54,7 @@ const CartItemRow = React.memo(({ item, onUpdate, onRemove }: { item: CartItem, 
             <Button 
                 variant="ghost" 
                 size="icon" 
-                className="text-muted-foreground/20 hover:text-destructive h-7 w-7 rounded-md"
+                className="text-muted-foreground/20 hover:text-destructive h-6 w-6 rounded-md"
                 onClick={() => onRemove(item.uuid)}
             >
                 <Trash2 className="h-3 w-3" />
@@ -80,14 +79,14 @@ export function CartDisplay() {
         return (
             <div className="flex-grow flex flex-col items-center justify-center p-6 space-y-3 opacity-20">
                 <ShoppingCart className="h-10 w-10" />
-                <p className="text-[9px] font-black uppercase tracking-widest">Manifeste Vide</p>
+                <p className="text-[9px] font-black uppercase tracking-widest">Panier Vide</p>
             </div>
         )
     }
 
     return (
         <ScrollArea className="flex-grow">
-            <div className="p-2 space-y-1.5">
+            <div className="p-2 space-y-1">
                 {cart.items.map(item => (
                     <CartItemRow 
                         key={item.uuid} 

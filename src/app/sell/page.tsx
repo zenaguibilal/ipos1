@@ -74,8 +74,8 @@ function SellPageContent() {
     return (
         <div className="h-full flex flex-col p-2 gap-2 overflow-hidden animate-in fade-in duration-500">
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-2 flex-grow min-h-0">
-                {/* Left: Cart - Focused on density */}
-                <div className="lg:col-span-7 flex flex-col bg-white/80 backdrop-blur-md rounded-lg overflow-hidden border shadow-sm min-h-0">
+                {/* Left: Cart - Optimized for 768px height */}
+                <div className="lg:col-span-7 flex flex-col bg-white/80 backdrop-blur-md rounded-xl overflow-hidden border shadow-sm min-h-0">
                     <div className="p-2 bg-muted/20 border-b">
                         <CustomerCombobox ref={customerComboRef} />
                     </div>
@@ -85,7 +85,7 @@ function SellPageContent() {
                     </div>
                 </div>
 
-                {/* Right: Product Selector - Compact Grid */}
+                {/* Right: Product Selector */}
                 <div className="lg:col-span-5 flex flex-col min-h-0">
                     <ProductSelector
                         searchInputRef={searchInputRef}
@@ -94,23 +94,23 @@ function SellPageContent() {
                 </div>
             </div>
 
-            {/* Lean Shortcuts Footer */}
-            <div className="hidden md:flex flex-wrap items-center justify-center gap-3 py-1 px-4 bg-white/60 backdrop-blur-xl border rounded-full text-[8px] font-black tracking-tighter text-muted-foreground uppercase">
-                <span className="text-primary pr-2 border-r">Smart Protocols</span>
+            {/* Compact Shortcut Bar */}
+            <div className="hidden md:flex flex-wrap items-center justify-center gap-4 py-1 px-4 bg-white/60 backdrop-blur-xl border rounded-full text-[9px] font-black tracking-tighter text-muted-foreground uppercase shadow-sm">
+                <span className="text-primary pr-3 border-r">Smart Protocol</span>
                 {[
-                    { key: KEYS.SEARCH, label: 'Search' },
-                    { key: KEYS.PAY, label: 'Pay' },
+                    { key: KEYS.SEARCH, label: 'Chercher' },
+                    { key: KEYS.PAY, label: 'Payer' },
                     { key: KEYS.CUSTOMER, label: 'Client' },
-                    { key: KEYS.CUSTOM, label: 'Custom' },
+                    { key: KEYS.CUSTOM, label: 'Manuel' },
                 ].map(item => (
-                    <div key={item.key} className="flex items-center gap-1 opacity-60">
-                        <kbd className="bg-black/5 px-1 py-0.5 rounded border text-primary">{item.key}</kbd>
+                    <div key={item.key} className="flex items-center gap-1.5 opacity-70">
+                        <kbd className="bg-black/5 px-1.5 py-0.5 rounded border text-primary font-mono">{item.key}</kbd>
                         <span>{item.label}</span>
                     </div>
                 ))}
-                <div className="flex items-center gap-1 text-primary">
-                    <kbd className="bg-primary text-white px-1 py-0.5 rounded shadow-sm">{KEYS.ENTER}</kbd>
-                    <span className="font-black">Validate</span>
+                <div className="flex items-center gap-1.5 text-primary">
+                    <kbd className="bg-primary text-white px-1.5 py-0.5 rounded shadow-sm font-mono">{KEYS.ENTER}</kbd>
+                    <span className="font-black">Valider</span>
                 </div>
             </div>
         </div>

@@ -32,7 +32,7 @@
     --input: 214.3 31.8% 91.4%;
     --ring: 221 83% 53%;
  
-    --radius: 0.6rem; 
+    --radius: 0.75rem;
     
     --chart-primary: 221 83% 53%;
     --chart-secondary: 262 83% 58%;
@@ -55,6 +55,7 @@
 
 .custom-scrollbar::-webkit-scrollbar {
   width: 4px;
+  height: 4px;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb {
   @apply bg-primary/20 rounded-full;
@@ -63,4 +64,13 @@
 @media print {
     body { background: #fff !important; }
     .print-hide { display: none !important; }
+}
+
+.animate-flash {
+  animation: flash 0.6s ease-out;
+}
+
+@keyframes flash {
+  0%, 100% { background-color: transparent; }
+  50% { background-color: hsl(var(--primary) / 0.1); }
 }
