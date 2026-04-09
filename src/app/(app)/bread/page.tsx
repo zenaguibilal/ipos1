@@ -10,9 +10,7 @@ import { BreadClientList } from '@/components/bread/BreadClientList';
 import { BreadDayView } from '@/components/bread/BreadDayView';
 import { BreadStats } from '@/components/bread/BreadStats';
 import { Loader2, RefreshCw, ChevronLeft, ChevronRight, CalendarDays } from 'lucide-react';
-import type { BreadOrderWithCustomer } from '@/lib/types';
 import { breadService } from '@/services/bread.service';
-import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { useLiveQuery } from '@/hooks/useLiveQuery';
 import { db } from '@/lib/db';
@@ -28,7 +26,6 @@ export default function BreadPage() {
 
     const formattedDate = currentDate ? formatDateToYYYYMMDD(currentDate) : '';
 
-    // Generate orders if they don't exist for the selected date
     const checkAndGenerate = useCallback(async (date: string) => {
         if (!date) return;
         const count = await db.bread_orders.where('date').equals(date).count();
@@ -43,7 +40,6 @@ export default function BreadPage() {
         }
     }, [isMounted, formattedDate, checkAndGenerate]);
 
-    // LIVE QUERY for orders to update the list in real-time
     const orders = useLiveQuery(
         async () => {
             if (!isMounted || !formattedDate) return undefined;
@@ -60,29 +56,26 @@ export default function BreadPage() {
     const isLoading = orders === undefined || !isMounted || !currentDate;
 
     return (
-        <div className="p-6 sm:p-10 space-y-10 max-w-[1800px] mx-auto animate-in fade-in duration-1000">
+        <div className="p-4 sm:p-6 space-y-6 max-w-[1600px] mx-auto animate-in fade-in duration-700">
             <PageHeader 
-                title="Logistique du Pain Elite"
+                title="Distribution de Pain"
                 description={isMounted && currentDate ? format(currentDate, 'EEEE d MMMM yyyy', { locale: fr }) : 'Synchronisation...'}
             >
-                <div className="flex items-center gap-4">
-                    <div className="flex gap-1.5 bg-black/20 p-1.5 rounded-2xl border border-white/5 shadow-inner">
+                <div className="flex items-center gap-3">
+                    <div className="flex gap-1 bg-muted/50 p-1 rounded-xl border">
                         <Button 
                             variant="ghost" 
                             size="icon" 
                             onClick={() => handleDateChange(-1)}
-                            className="rounded-xl h-10 w-10 hover:bg-white/5"
+                            className="h-9 w-9 rounded-lg hover:bg-background"
                         >
-                            <ChevronLeft className="h-5 w-5 text-primary" />
+                            <ChevronLeft className="h-4 w-4 text-primary" />
                         </Button>
                         <Button 
                             variant={isToday ? "secondary" : "ghost"} 
                             onClick={() => setCurrentDate(new Date())} 
                             disabled={isToday || !isMounted}
-                            className={cn(
-                                "rounded-xl h-10 px-6 font-black text-[10px] uppercase tracking-[0.2em] transition-all",
-                                isToday ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20" : "hover:text-primary"
-                            )}
+                            className="h-9 px-4 font-bold text-xs uppercase tracking-wider"
                         >
                             <CalendarDays className="mr-2 h-3.5 w-3.5" /> Aujourd'hui
                         </Button>
@@ -90,9 +83,9 @@ export default function BreadPage() {
                             variant="ghost" 
                             size="icon" 
                             onClick={() => handleDateChange(1)}
-                            className="rounded-xl h-10 w-10 hover:bg-white/5"
+                            className="h-9 w-9 rounded-lg hover:bg-background"
                         >
-                            <ChevronRight className="h-5 w-5 text-primary" />
+                            <ChevronRight className="h-4 w-4 text-primary" />
                         </Button>
                     </div>
                     
@@ -101,39 +94,32 @@ export default function BreadPage() {
                         size="icon" 
                         onClick={() => formattedDate && checkAndGenerate(formattedDate)}
                         disabled={isLoading}
-                        className="rounded-2xl h-14 w-14 border-white/5 bg-card hover:bg-primary/10 group transition-all duration-500"
+                        className="h-11 w-11 rounded-xl bg-card hover:bg-primary/5 transition-all"
                     >
-                        <RefreshCw className={cn("h-6 w-6 text-primary transition-all duration-1000", isLoading && "animate-spin")} />
+                        <RefreshCw className={cn("h-5 w-5 text-primary", isLoading && "animate-spin")} />
                     </Button>
                 </div>
             </PageHeader>
 
-            <div className="animate-in slide-in-from-top-4 duration-700">
-                <BreadStats date={formattedDate} isLoading={isLoading}/>
-            </div>
+            <BreadStats date={formattedDate} isLoading={isLoading}/>
 
-            <div className="grid lg:col-span-12 gap-10 items-stretch flex-grow min-h-0">
-                {/* Distribution View */}
-                <div className="lg:col-span-9 flex flex-col animate-in slide-in-from-left-4 duration-700 delay-200">
+            <div className="grid lg:grid-cols-12 gap-6 items-start">
+                <div className="lg:col-span-9">
                     {isLoading ? (
-                        <div className="flex flex-col justify-center items-center h-[600px] bg-card/40 backdrop-blur-xl rounded-[2.5rem] border border-white/5 animate-pulse">
-                            <div className="relative">
-                                <div className="absolute inset-0 bg-primary/20 blur-3xl animate-pulse rounded-full"></div>
-                                <Loader2 className="relative h-12 w-12 animate-spin text-primary opacity-40" />
-                            </div>
-                            <p className="mt-6 text-[10px] font-black uppercase tracking-[0.4em] text-muted-foreground opacity-30">Planification des livraisons...</p>
+                        <div className="flex flex-col justify-center items-center h-[500px] bg-card rounded-2xl border border-dashed border-border animate-pulse">
+                            <Loader2 className="h-10 w-10 animate-spin text-primary opacity-20" />
+                            <p className="mt-4 text-xs font-bold uppercase tracking-widest text-muted-foreground opacity-30">Planification des flux...</p>
                         </div>
                     ) : (
                         <BreadDayView 
                             orders={orders || []} 
                             currentDate={formattedDate}
-                            onOrdersChange={() => {}} // Now handled by LiveQuery
+                            onOrdersChange={() => {}} 
                         />
                     )}
                 </div>
 
-                {/* Subscribers Sidebar */}
-                <div className="lg:col-span-3 flex flex-col animate-in slide-in-from-right-4 duration-700 delay-300">
+                <div className="lg:col-span-3">
                     <BreadClientList onListChange={() => {}} />
                 </div>
             </div>

@@ -2,11 +2,14 @@ import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import { Inter } from 'next/font/google';
 import { ClientProviders } from '@/components/layout/ClientProviders';
+import { AppHeader } from '@/components/layout/header';
+import { BottomNavBar } from '@/components/layout/bottom-navbar';
+import { SaleInfoBar } from '@/components/layout/SaleInfoBar';
+import { AppSyncManager } from '@/components/layout/AppSyncManager';
 
-const APP_NAME = 'iPOS Luxury';
-const APP_DEFAULT_TITLE = 'iPOS Luxury - Point de Vente Premium';
-const APP_TITLE_TEMPLATE = '%s - iPOS Luxury';
-const APP_DESCRIPTION = "Application de point de vente intelligente et luxueuse pour le commerce de détail";
+const APP_NAME = 'iPOS Smart';
+const APP_DEFAULT_TITLE = 'iPOS Smart - Point de Vente';
+const APP_DESCRIPTION = "Système de vente moderne, rapide et intelligent";
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -14,7 +17,7 @@ export const metadata: Metadata = {
     applicationName: APP_NAME,
     title: {
         default: APP_DEFAULT_TITLE,
-        template: APP_TITLE_TEMPLATE,
+        template: '%s - iPOS Smart',
     },
     description: APP_DESCRIPTION,
     manifest: '/manifest.json',
@@ -23,42 +26,31 @@ export const metadata: Metadata = {
         statusBarStyle: 'black-translucent',
         title: APP_DEFAULT_TITLE,
     },
-    formatDetection: { telephone: false },
-    openGraph: {
-        type: 'website',
-        siteName: APP_NAME,
-        title: { default: APP_DEFAULT_TITLE, template: APP_TITLE_TEMPLATE },
-        description: APP_DESCRIPTION,
-    },
-    twitter: {
-        card: 'summary',
-        title: { default: APP_DEFAULT_TITLE, template: APP_TITLE_TEMPLATE },
-        description: APP_DESCRIPTION,
-    },
-    icons: {
-        icon: '/icon.svg',
-        shortcut: '/icon.svg',
-        apple: '/icon.svg',
-    },
 };
 
 export const viewport: Viewport = {
-    themeColor: [{ media: '(prefers-color-scheme: dark)', color: '#0a0806' }],
+    themeColor: '#2563eb',
     width: 'device-width',
     initialScale: 1,
     maximumScale: 1,
+    userScalable: false,
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
     return (
         <html lang="fr" suppressHydrationWarning>
-            <head>
-                <link rel="icon" href="/icon.svg" type="image/svg+xml" />
-                <link rel="apple-touch-icon" href="/icon.svg" />
-            </head>
             <body className={inter.className}>
                 <ClientProviders>
-                    {children}
+                    <AppSyncManager>
+                        <div className="flex h-screen flex-col bg-transparent overflow-hidden">
+                            <AppHeader />
+                            <SaleInfoBar />
+                            <main className="flex-1 overflow-y-auto pb-16 md:pb-0 custom-scrollbar">
+                                {children}
+                            </main>
+                            <BottomNavBar />
+                        </div>
+                    </AppSyncManager>
                 </ClientProviders>
             </body>
         </html>

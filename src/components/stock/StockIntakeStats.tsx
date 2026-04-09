@@ -15,24 +15,22 @@ interface StockIntakeStatsProps {
 }
 
 const StatCard = ({ title, value, icon: Icon, colorClass, subtitle }: { title: string, value: string, icon: any, colorClass: string, subtitle?: string }) => (
-    <Card className="luxury-card h-full bg-card/40 backdrop-blur-2xl border-white/5 rounded-[2rem] group overflow-hidden">
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3 p-6">
-            <CardTitle className="text-[10px] font-black uppercase tracking-[0.25em] text-muted-foreground group-hover:text-primary transition-all duration-500">{title}</CardTitle>
-            <div className={cn("p-3 rounded-2xl shadow-inner transition-all duration-500 group-hover:scale-110", colorClass)}>
-                <Icon className="h-5 w-5" />
+    <Card className="h-full bg-card border shadow-sm rounded-2xl group overflow-hidden transition-all hover:shadow-md">
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-5">
+            <CardTitle className="text-[10px] font-black uppercase tracking-wider text-muted-foreground group-hover:text-primary transition-colors">{title}</CardTitle>
+            <div className={cn("p-2 rounded-xl shadow-inner", colorClass)}>
+                <Icon className="h-4 w-4" />
             </div>
         </CardHeader>
-        <CardContent className="px-6 pb-6">
-            <div className="text-3xl font-black tracking-tighter text-foreground group-hover:scale-105 transition-transform duration-500 origin-left mb-1">{value}</div>
-            {subtitle && <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground/40">{subtitle}</p>}
+        <CardContent className="px-5 pb-5">
+            <div className="text-2xl font-black tracking-tight text-foreground mb-0.5">{value}</div>
+            {subtitle && <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground/40">{subtitle}</p>}
         </CardContent>
     </Card>
 );
 
 export const StockIntakeStats = ({ intakes: externalIntakes, isLoading: externalLoading }: StockIntakeStatsProps) => {
-    // Live query for stock intakes to update stats instantly using the internal hook
     const liveIntakes = useLiveQuery(() => db.stock_intakes.toArray());
-    
     const intakes = externalIntakes || liveIntakes;
 
     const stats = useMemo(() => {
@@ -47,16 +45,16 @@ export const StockIntakeStats = ({ intakes: externalIntakes, isLoading: external
 
     if (intakes === undefined || externalLoading) {
         return (
-             <div className="grid gap-6 md:grid-cols-3">
+             <div className="grid gap-4 md:grid-cols-3">
                 {[...Array(3)].map((_, i) => (
-                    <Skeleton key={i} className="h-32 w-full rounded-[2rem] bg-card/40" />
+                    <Skeleton key={i} className="h-28 w-full rounded-2xl bg-card" />
                 ))}
             </div>
         )
     }
 
     return (
-        <div className="grid gap-6 md:grid-cols-3">
+        <div className="grid gap-4 md:grid-cols-3">
             <StatCard 
                 title="Investissement Stock" 
                 value={formatCurrency(stats.totalValue)} 
@@ -69,14 +67,14 @@ export const StockIntakeStats = ({ intakes: externalIntakes, isLoading: external
                 value={String(stats.intakeCount)} 
                 icon={Archive} 
                 colorClass="bg-primary/10 text-primary"
-                subtitle="Opérations enregistrées"
+                subtitle="Bons enregistrés"
             />
             <StatCard 
-                title="Réseau Fournisseurs" 
+                title="Partenaires Actifs" 
                 value={String(stats.supplierCount)} 
                 icon={Building} 
                 colorClass="bg-amber-500/10 text-amber-500"
-                subtitle="Partenaires actifs"
+                subtitle="Fournisseurs sollicités"
             />
         </div>
     );

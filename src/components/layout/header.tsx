@@ -7,16 +7,11 @@ import {
   Package,
   Users2,
   History,
-  Undo2,
   Archive,
   Wallet,
   LayoutDashboard,
-  Wheat,
   ShoppingCart,
   Building,
-  Download,
-  Coins,
-  BellRing,
   Cloud,
   RefreshCw,
 } from 'lucide-react';
@@ -35,17 +30,13 @@ import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 
 const allNavLinks = [
-  { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { href: '/dashboard', label: 'Home', icon: LayoutDashboard },
   { href: '/sell', label: 'Vendre', icon: ShoppingCart },
-  { href: '/debt-alerts', label: 'Alertes', icon: BellRing },
   { href: '/stock', label: 'Stock', icon: Archive },
-  { href: '/products', label: 'Produits', icon: Package },
+  { href: '/products', label: 'Catalog', icon: Package },
   { href: '/customers', label: 'Clients', icon: Users2 },
   { href: '/sales-history', label: 'Ventes', icon: History },
-  { href: '/returns', label: 'Retours', icon: Undo2 },
-  { href: '/expenses', label: 'Dépenses', icon: Wallet },
-  { href: '/bread', label: 'Pain', icon: Wheat },
-  { href: '/zakat', label: 'Zakat', icon: Coins },
+  { href: '/expenses', label: 'Charges', icon: Wallet },
 ];
 
 export function AppHeader() {
@@ -59,153 +50,84 @@ export function AppHeader() {
   const lastSync = companyProfile?.last_sync_at;
 
   return (
-    <header className="flex h-20 items-center gap-4 bg-background/60 backdrop-blur-3xl px-6 sm:px-10 print-hide sticky top-0 z-40 border-b border-white/5">
+    <header className="flex h-14 items-center gap-4 bg-white border-b px-6 print-hide sticky top-0 z-40 shadow-sm">
       <div className="flex-1 flex justify-start items-center gap-4">
-         <div className="flex items-center gap-3">
-              <Link
-                  href="/dashboard"
-                  className="flex items-center gap-3 group"
-              >
-                  <div className="relative">
-                    <div className="absolute -inset-3 bg-primary/20 rounded-full blur-xl opacity-0 group-hover:opacity-10 transition-all duration-700 scale-50 group-hover:scale-100" />
-                    <div className="relative h-10 w-10 flex items-center justify-center bg-black/40 rounded-xl border border-white/5 shadow-2xl group-hover:border-primary/30 transition-colors">
-                        <Image 
-                            src="/icon.svg" 
-                            alt="iPOS Luxury Logo" 
-                            width={32} 
-                            height={32} 
-                            priority 
-                            className="relative drop-shadow-[0_0_8px_rgba(249,115,22,0.4)] transform transition-transform duration-500 group-hover:scale-110" 
-                        />
-                    </div>
-                  </div>
-                  <div className="flex flex-col -space-y-1">
-                    <span className="hidden lg:inline-block text-xl font-black tracking-tighter group-hover:text-primary transition-colors">iPOS</span>
-                    <span className="hidden lg:inline-block text-[10px] font-black uppercase tracking-[0.3em] text-primary/50">Luxury</span>
-                  </div>
-              </Link>
-          </div>
+         <Link href="/dashboard" className="flex items-center gap-2 group transition-transform active:scale-95">
+            <div className="h-7 w-7 flex items-center justify-center bg-primary rounded-lg shadow-sm group-hover:bg-primary/90">
+                <Image src="/icon.svg" alt="Logo" width={16} height={16} priority className="invert brightness-0" />
+            </div>
+            <div className="flex flex-col -space-y-1">
+                <span className="text-base font-black tracking-tighter">iPOS</span>
+                <span className="text-[8px] font-black text-primary uppercase">Smart</span>
+            </div>
+         </Link>
       </div>
 
-        <div className="flex-1 flex justify-center">
+      <div className="flex-1 flex justify-center">
+        <nav className="hidden md:flex items-center gap-0.5">
+            {allNavLinks.map(link => {
+                const isActive = pathname === link.href;
+                return (
+                    <Button 
+                        key={link.href}
+                        asChild
+                        variant="ghost"
+                        size="sm"
+                        className={cn(
+                            "rounded-lg font-bold px-3 h-8 text-[11px] uppercase tracking-tight",
+                            isActive ? "bg-primary/10 text-primary" : "text-muted-foreground hover:text-primary"
+                        )}
+                    >
+                        <Link href={link.href} className="flex items-center gap-1.5">
+                            <link.icon className="h-3.5 w-3.5" />
+                            <span>{link.label}</span>
+                        </Link>
+                    </Button>
+                );
+            })}
+        </nav>
+      </div>
+
+      <div className="flex-1 flex justify-end">
+        <div className="flex items-center gap-3">
             <TooltipProvider>
-                <nav className="hidden md:flex items-center gap-1.5 rounded-2xl border border-white/5 bg-black/40 p-1.5 shadow-2xl">
-                    {allNavLinks.map(link => {
-                        const isActive = pathname.startsWith(link.href);
-                        return (
-                            <Tooltip key={link.href} delayDuration={0}>
-                                <TooltipTrigger asChild>
-                                    <Button 
-                                        asChild
-                                        variant={isActive ? "secondary" : "ghost"}
-                                        size="icon"
-                                        className={cn(
-                                            "rounded-xl relative transition-all duration-300 h-10 w-10",
-                                            isActive ? "bg-primary/10 text-primary shadow-inner" : "hover:bg-white/5 hover:text-primary"
-                                        )}
-                                    >
-                                        <Link href={link.href}>
-                                            <link.icon className={cn("h-5 w-5", isActive && "scale-110")} />
-                                            {isActive && (
-                                                <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 bg-primary rounded-full" />
-                                            )}
-                                            <span className="sr-only">{link.label}</span>
-                                        </Link>
-                                    </Button>
-                                </TooltipTrigger>
-                                <TooltipContent className="rounded-xl border-white/5 shadow-2xl bg-card">
-                                    <p className="text-[10px] font-black uppercase tracking-widest">{link.label}</p>
-                                </TooltipContent>
-                            </Tooltip>
-                        );
-                    })}
-                </nav>
+                <Tooltip delayDuration={0}>
+                    <TooltipTrigger asChild>
+                        <button 
+                            onClick={() => performBackgroundSync()}
+                            disabled={isSyncing}
+                            className="hidden lg:flex items-center gap-1.5 text-muted-foreground hover:text-primary transition-colors"
+                        >
+                            {isSyncing ? (
+                                <RefreshCw className="h-3.5 w-3.5 animate-spin text-primary" />
+                            ) : lastSync ? (
+                                <Cloud className="h-3.5 w-3.5 text-emerald-500" />
+                            ) : (
+                                <Cloud className="h-3.5 w-3.5 opacity-30" />
+                            )}
+                            <span className="text-[9px] font-black uppercase tracking-tight">
+                                {isSyncing ? 'Sync' : lastSync ? format(new Date(lastSync), 'HH:mm') : 'Off'}
+                            </span>
+                        </button>
+                    </TooltipTrigger>
+                    <TooltipContent><p className="text-xs font-bold">Cloud Sync</p></TooltipContent>
+                </Tooltip>
             </TooltipProvider>
-        </div>
 
-
-        <div className="flex-1 flex justify-end">
-            <div className="flex items-center gap-6">
-                {/* Sync Status Badge */}
-                <TooltipProvider>
-                    <Tooltip delayDuration={0}>
-                        <TooltipTrigger asChild>
-                            <button 
-                                onClick={() => performBackgroundSync()}
-                                disabled={isSyncing}
-                                className="hidden md:flex flex-col items-end -space-y-1 hover:opacity-70 transition-opacity disabled:opacity-100"
-                            >
-                                {isSyncing ? (
-                                    <div className="flex items-center gap-2 text-primary animate-pulse">
-                                        <RefreshCw className="h-3.5 w-3.5 animate-spin" />
-                                        <span className="text-[9px] font-black uppercase tracking-widest">En cours...</span>
-                                    </div>
-                                ) : lastSync ? (
-                                    <div className="flex flex-col items-end">
-                                        <div className="flex items-center gap-1.5 text-emerald-500/60">
-                                            <Cloud className="h-3.5 w-3.5" />
-                                            <span className="text-[8px] font-black uppercase tracking-widest">Cloud Saphir OK</span>
-                                        </div>
-                                        <span className="text-[9px] font-bold text-muted-foreground/40 uppercase tracking-tighter">
-                                            {format(new Date(lastSync), 'HH:mm', { locale: fr })}
-                                        </span>
-                                    </div>
-                                ) : (
-                                    <div className="flex items-center gap-1.5 text-muted-foreground/20">
-                                        <Cloud className="h-3.5 w-3.5" />
-                                        <span className="text-[8px] font-black uppercase tracking-widest">Non synchronisé</span>
-                                    </div>
-                                )}
-                            </button>
-                        </TooltipTrigger>
-                        <TooltipContent className="rounded-xl border-white/5 bg-card">
-                            <p className="text-[10px] font-black uppercase tracking-widest">Forcer Mosaïque Cloud</p>
-                        </TooltipContent>
-                    </Tooltip>
-                </TooltipProvider>
-
-                <div className="hidden xl:block">
-                    <Clock />
-                </div>
-                
-                <div className="flex items-center gap-1.5 bg-muted/30 p-1.5 rounded-2xl border border-white/5 shadow-inner">
-                    <TooltipProvider>
-                        <Tooltip delayDuration={0}>
-                            <TooltipTrigger asChild>
-                                <Button asChild variant={pathname === '/install' ? "default" : "ghost"} size="icon" className="rounded-xl h-9 w-9">
-                                    <Link href="/install">
-                                        <Download className="h-4 w-4" />
-                                    </Link>
-                                </Button>
-                            </TooltipTrigger>
-                            <TooltipContent><p className="text-[10px] font-black uppercase">Installer</p></TooltipContent>
-                        </Tooltip>
-
-                        <Tooltip delayDuration={0}>
-                            <TooltipTrigger asChild>
-                                <Button asChild variant={pathname === '/profile' ? "default" : "ghost"} size="icon" className="rounded-xl h-9 w-9">
-                                    <Link href="/profile">
-                                        <Building className="h-4 w-4" />
-                                    </Link>
-                                </Button>
-                            </TooltipTrigger>
-                            <TooltipContent><p className="text-[10px] font-black uppercase">Profil</p></TooltipContent>
-                        </Tooltip>
-
-                        <Tooltip delayDuration={0}>
-                            <TooltipTrigger asChild>
-                                <Button asChild variant={pathname === '/settings' ? "default" : "ghost"} size="icon" className="rounded-xl h-9 w-9">
-                                    <Link href="/settings">
-                                        <Settings className="h-4 w-4" />
-                                    </Link>
-                                </Button>
-                            </TooltipTrigger>
-                            <TooltipContent><p className="text-[10px] font-black uppercase">Système</p></TooltipContent>
-                        </Tooltip>
-                    </TooltipProvider>
-                </div>
+            <div className="hidden xl:block">
+                <Clock />
+            </div>
+            
+            <div className="flex items-center gap-0.5">
+                <Button asChild variant="ghost" size="icon" className="h-8 w-8 rounded-lg hover:bg-primary/5 hover:text-primary">
+                    <Link href="/profile"><Building className="h-4 w-4" /></Link>
+                </Button>
+                <Button asChild variant="ghost" size="icon" className="h-8 w-8 rounded-lg hover:bg-primary/5 hover:text-primary">
+                    <Link href="/settings"><Settings className="h-4 w-4" /></Link>
+                </Button>
             </div>
         </div>
+      </div>
     </header>
   );
 }
