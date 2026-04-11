@@ -18,10 +18,10 @@ const QRCodeCanvas = ({ text }: { text: string }) => {
     const ref = React.useRef<HTMLCanvasElement>(null);
     React.useEffect(() => {
         if (ref.current && text) {
-            QRCode.toCanvas(ref.current, text, { width: 72, margin: 1 }, () => {});
+            QRCode.toCanvas(ref.current, text, { width: 80, margin: 1, color: { dark: '#000000', light: '#ffffff' } }, () => {});
         }
     }, [text]);
-    return <canvas ref={ref} />;
+    return <canvas ref={ref} className="mx-auto" />;
 };
 
 export const Receipt = React.forwardRef<HTMLDivElement, ReceiptProps>(
@@ -32,35 +32,34 @@ export const Receipt = React.forwardRef<HTMLDivElement, ReceiptProps>(
             <div
                 ref={ref}
                 className={cn(
-                    'bg-white text-black font-sans',
+                    'bg-white text-black font-sans leading-tight',
                     thermal
-                        ? 'w-[80mm] text-[9pt] px-3 py-2 thermal-receipt'
-                        : 'w-[190mm] mx-auto px-8 py-10 text-[11pt] shadow-sm',
+                        ? 'w-[80mm] text-[10pt] px-4 py-6 thermal-receipt'
+                        : 'w-[210mm] min-h-[297mm] mx-auto px-12 py-12 text-[11pt] shadow-sm border border-gray-100',
                 )}
             >
-                {/* Header */}
-                <header className="text-center mb-3">
-                    <p className={cn('font-bold', thermal ? 'text-base' : 'text-xl')}>
-                        {profile?.companyName || 'Mon Commerce'}
+                {/* Header Section */}
+                <header className="text-center mb-4">
+                    <p className={cn('font-bold uppercase tracking-tighter', thermal ? 'text-lg' : 'text-2xl')}>
+                        {profile?.companyName || 'SMART IPOS SYSTEM'}
                     </p>
-                    {profile?.address && (
-                        <p className="text-[9pt] text-gray-600">{profile.address}</p>
-                    )}
-                    {profile?.phone && (
-                        <p className="text-[9pt] text-gray-600">Tél: {profile.phone}</p>
-                    )}
+                    <div className="text-[9pt] text-gray-700 mt-1 space-y-0.5">
+                        {profile?.address && <p>{profile.address}</p>}
+                        {profile?.phone && <p className="font-semibold">Tél: {profile.phone}</p>}
+                        {profile?.email && <p>{profile.email}</p>}
+                    </div>
                 </header>
 
-                <hr className="border-dashed border-gray-400 my-2" />
+                <div className="border-b-2 border-black mb-4" />
 
-                {/* Meta */}
-                <section className="text-[8.5pt] mb-2 space-y-0.5">
-                    <div className="flex justify-between">
-                        <span>Facture #:</span>
-                        <span className="font-bold">{sale.invoiceNumber}</span>
+                {/* Metadata */}
+                <section className="text-[9pt] mb-4 space-y-1">
+                    <div className="flex justify-between font-bold">
+                        <span>FACTURE N°:</span>
+                        <span className="font-mono">{sale.invoiceNumber}</span>
                     </div>
                     <div className="flex justify-between">
-                        <span>Date:</span>
+                        <span>DATE & HEURE:</span>
                         <span>
                             {format(
                                 safeToDate(sale.createdAt!),
@@ -69,77 +68,76 @@ export const Receipt = React.forwardRef<HTMLDivElement, ReceiptProps>(
                             )}
                         </span>
                     </div>
+                    {sale.customerUuid && (
+                        <div className="flex justify-between italic">
+                            <span>CLIENT:</span>
+                            <span className="font-bold"># {sale.customerUuid.substring(0, 8)}</span>
+                        </div>
+                    )}
                 </section>
 
-                <hr className="border-dashed border-gray-400 my-2" />
+                <div className="border-b border-dashed border-gray-400 mb-2" />
 
-                {/* Items */}
-                <table className="w-full text-[8.5pt] mb-2">
+                {/* Items Table */}
+                <table className="w-full text-[9pt] mb-4 border-collapse">
                     <thead>
-                        <tr className="border-b border-dashed border-gray-400">
-                            <th className="text-left pb-1 font-semibold">Article</th>
-                            <th className="text-center pb-1 font-semibold w-8">Qté</th>
-                            <th className="text-right pb-1 font-semibold w-16">P.U</th>
-                            <th className="text-right pb-1 font-semibold w-16">Total</th>
+                        <tr className="border-b-2 border-black text-left">
+                            <th className="pb-1 font-bold">ARTICLE</th>
+                            <th className="pb-1 text-center font-bold w-10">QTÉ</th>
+                            {!thermal && <th className="pb-1 text-right font-bold w-20">P.U</th>}
+                            <th className="pb-1 text-right font-bold w-24">TOTAL</th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody className="divide-y divide-gray-200">
                         {sale.items.map((item, i) => (
-                            <tr key={i}>
-                                <td className="py-0.5">{item.name}</td>
-                                <td className="text-center py-0.5">{item.quantity}</td>
-                                <td className="text-right py-0.5">
-                                    {Number(item.price || 0).toFixed(1)}
-                                </td>
-                                <td className="text-right py-0.5 font-medium">
-                                    {(Number(item.price || 0) * Number(item.quantity || 0)).toFixed(1)}
+                            <tr key={i} className="align-top">
+                                <td className="py-2 pr-2 font-medium leading-none">{item.name}</td>
+                                <td className="py-2 text-center font-mono">{item.quantity}</td>
+                                {!thermal && <td className="py-2 text-right font-mono">{Number(item.price || 0).toFixed(2)}</td>}
+                                <td className="py-2 text-right font-bold font-mono">
+                                    {(Number(item.price || 0) * Number(item.quantity || 0)).toFixed(2)}
                                 </td>
                             </tr>
                         ))}
                     </tbody>
                 </table>
 
-                <hr className="border-dashed border-gray-400 my-2" />
-
-                {/* Totals */}
-                <section className="text-[9pt] space-y-0.5">
-                    <div className="flex justify-between">
-                        <span>Sous-total:</span>
-                        <span>{formatCurrency(sale.subtotal)}</span>
+                <div className="border-t-2 border-black pt-2 space-y-1.5">
+                    <div className="flex justify-between text-[9pt]">
+                        <span>SOUS-TOTAL:</span>
+                        <span className="font-mono">{formatCurrency(sale.subtotal)}</span>
                     </div>
                     {sale.discountAmount && sale.discountAmount > 0 && (
-                        <div className="flex justify-between text-gray-600">
-                            <span>Remise:</span>
-                            <span>-{formatCurrency(sale.discountAmount)}</span>
+                        <div className="flex justify-between text-[9pt] text-gray-600">
+                            <span>REMISE:</span>
+                            <span className="font-mono">-{formatCurrency(sale.discountAmount)}</span>
                         </div>
                     )}
-                    <div className="flex justify-between font-bold text-[10.5pt] border-t border-gray-400 pt-1 mt-1">
-                        <span>TOTAL:</span>
-                        <span>{formatCurrency(sale.total)}</span>
+                    <div className="flex justify-between font-extrabold text-[12pt] border-y border-black py-1 my-1">
+                        <span>TOTAL NET:</span>
+                        <span className="font-mono">{formatCurrency(sale.total)}</span>
                     </div>
-                    <div className="flex justify-between">
-                        <span>Montant payé:</span>
-                        <span>{formatCurrency(sale.amountPaid)}</span>
+                    <div className="flex justify-between text-[10pt] font-medium">
+                        <span>REÇU CLIENT:</span>
+                        <span className="font-mono">{formatCurrency(sale.amountPaid)}</span>
                     </div>
-                    {/* FIX #23: correct label logic */}
-                    <div className="flex justify-between font-medium">
+                    <div className="flex justify-between text-[10pt] font-bold">
                         <span>
-                            {sale.remainingBalance > 0.01
-                                ? 'Solde restant:'
-                                : 'Monnaie rendue:'}
+                            {sale.remainingBalance > 0.01 ? 'SOLDE DÛ (DETTE):' : 'MONNAIE RENDUE:'}
                         </span>
-                        <span>{formatCurrency(Math.abs(sale.remainingBalance))}</span>
+                        <span className="font-mono text-lg">
+                            {formatCurrency(Math.abs(sale.remainingBalance))}
+                        </span>
                     </div>
-                </section>
+                </div>
 
-                {/* Footer */}
-                <footer className="text-center mt-4 text-[8pt] text-gray-500">
-                    <p>Merci de votre visite !</p>
-                    {thermal && (
-                        <div className="mx-auto w-fit mt-2">
-                            <QRCodeCanvas text={sale.invoiceNumber} />
-                        </div>
-                    )}
+                {/* Footer with QR */}
+                <footer className="text-center mt-8 border-t border-dashed border-gray-300 pt-4">
+                    <p className="text-[8pt] font-bold italic mb-4">MERCI DE VOTRE VISITE ET À BIENTÔT !</p>
+                    <div className="flex flex-col items-center gap-2">
+                        <QRCodeCanvas text={sale.invoiceNumber} />
+                        <p className="text-[7pt] font-mono opacity-50 uppercase tracking-widest">Digital Auth Verified</p>
+                    </div>
                 </footer>
             </div>
         );

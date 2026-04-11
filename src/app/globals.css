@@ -3,130 +3,111 @@
 @tailwind utilities;
 
 @layer base {
-  /* ── Light Mode (default) ─────────────────────────────────────────────── */
   :root {
-    --background:        0 0% 97%;
-    --foreground:        220 13% 13%;
-
-    --card:              0 0% 100%;
-    --card-foreground:   220 13% 13%;
-
-    --popover:           0 0% 100%;
-    --popover-foreground:220 13% 13%;
-
-    --primary:           221 83% 53%;
-    --primary-foreground:0 0% 100%;
-
-    --secondary:         220 14% 96%;
-    --secondary-foreground:220 13% 30%;
-
-    --muted:             220 14% 94%;
-    --muted-foreground:  220 9% 52%;
-
-    --accent:            221 83% 53%;
+    --background: 0 0% 97%;
+    --foreground: 220 13% 13%;
+    --card: 0 0% 100%;
+    --card-foreground: 220 13% 13%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 220 13% 13%;
+    --primary: 221 83% 53%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 220 14% 96%;
+    --secondary-foreground: 220 13% 30%;
+    --muted: 220 14% 94%;
+    --muted-foreground: 220 9% 52%;
+    --accent: 221 83% 53%;
     --accent-foreground: 0 0% 100%;
-
-    --destructive:       0 72% 51%;
+    --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
-
-    --border:            220 13% 90%;
-    --input:             220 13% 91%;
-    --ring:              221 83% 53%;
-
-    --radius:            0.5rem;
-
-    --chart-primary:     221 83% 53%;
-    --chart-secondary:   262 83% 58%;
-    --chart-tertiary:    142 71% 45%;
-    --chart-quaternary:  32 95% 55%;
-    --chart-quinary:     0 72% 51%;
+    --border: 220 13% 90%;
+    --input: 220 13% 91%;
+    --ring: 221 83% 53%;
+    --radius: 0.5rem;
+    --chart-primary: 221 83% 53%;
+    --chart-secondary: 262 83% 58%;
+    --chart-tertiary: 142 71% 45%;
+    --chart-quaternary: 32 95% 55%;
+    --chart-quinary: 0 72% 51%;
   }
 
-  /* ── Dark Mode ────────────────────────────────────────────────────────── */
   .dark {
-    --background:        222 47% 9%;
-    --foreground:        213 31% 91%;
-
-    --card:              222 47% 11%;
-    --card-foreground:   213 31% 91%;
-
-    --popover:           222 47% 11%;
-    --popover-foreground:213 31% 91%;
-
-    --primary:           217 91% 60%;
-    --primary-foreground:222 47% 9%;
-
-    --secondary:         222 47% 15%;
-    --secondary-foreground:213 31% 80%;
-
-    --muted:             222 47% 14%;
-    --muted-foreground:  215 20% 55%;
-
-    --accent:            217 91% 60%;
+    --background: 222 47% 9%;
+    --foreground: 213 31% 91%;
+    --card: 222 47% 11%;
+    --card-foreground: 213 31% 91%;
+    --popover: 222 47% 11%;
+    --popover-foreground: 213 31% 91%;
+    --primary: 217 91% 60%;
+    --primary-foreground: 222 47% 9%;
+    --secondary: 222 47% 15%;
+    --secondary-foreground: 213 31% 80%;
+    --muted: 222 47% 14%;
+    --muted-foreground: 215 20% 55%;
+    --accent: 217 91% 60%;
     --accent-foreground: 222 47% 9%;
-
-    --destructive:       0 72% 51%;
+    --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
-
-    --border:            222 47% 18%;
-    --input:             222 47% 16%;
-    --ring:              217 91% 60%;
-
-    --chart-primary:     217 91% 60%;
-    --chart-secondary:   262 83% 65%;
-    --chart-tertiary:    142 71% 45%;
-    --chart-quaternary:  32 95% 55%;
-    --chart-quinary:     0 72% 51%;
+    --border: 222 47% 18%;
+    --input: 222 47% 16%;
+    --ring: 217 91% 60%;
   }
 }
 
 @layer base {
-  * {
-    @apply border-border;
-  }
+  * { @apply border-border; }
   body {
     @apply bg-background text-foreground antialiased;
-    font-size: 14px;
+    font-size: 13px;
   }
 }
 
-/* ── Scrollbar ──────────────────────────────────────────────────────────────── */
+/* ── Scrollbar ── */
 ::-webkit-scrollbar { width: 4px; height: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb {
   background: hsl(var(--border));
-  border-radius: 4px;
+  border-radius: 10px;
 }
-::-webkit-scrollbar-thumb:hover { background: hsl(var(--muted-foreground) / 0.4); }
+::-webkit-scrollbar-thumb:hover { background: hsl(var(--primary) / 0.2); }
 
-/* ── Card utility ───────────────────────────────────────────────────────────── */
-.app-card {
-  @apply bg-card border border-border rounded-lg shadow-sm transition-shadow duration-200;
-}
-.app-card:hover { @apply shadow-md; }
-
-/* ── Flash animation for cart items ────────────────────────────────────────── */
-.animate-flash { animation: flash 0.35s ease-out; }
-
-@keyframes flash {
-  0%,100% { background: transparent; }
-  40%      { background: hsl(var(--primary) / 0.12); }
-}
-
-/* ── Print styles ───────────────────────────────────────────────────────────── */
+/* ── Print Configuration ── */
 @media print {
+  @page {
+    margin: 0;
+    size: auto;
+  }
   body {
+    background: white !important;
+    color: black !important;
+    margin: 0;
+    padding: 0;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
-    background: #fff !important;
-    font-size: 11pt;
   }
   .print-hide { display: none !important; }
+  .print-only { display: block !important; }
+  
+  /* Reset transitions for printing */
+  * {
+    transition: none !important;
+    animation: none !important;
+    box-shadow: none !important;
+  }
 }
 
-/* ── Thermal receipt ────────────────────────────────────────────────────────── */
+.print-only { display: none; }
+
+/* ── Thermal Formatting ── */
 .thermal-receipt {
-  font-family: 'Courier New', monospace;
-  font-size: 9pt;
-  line-height: 1.3;
+  width: 80mm;
+  max-width: 100%;
+  margin: 0 auto;
+  padding: 5mm;
+  font-family: 'Courier New', Courier, monospace;
 }
+
+.app-card {
+  @apply bg-card border border-border rounded-lg shadow-sm transition-all duration-300;
+}
+.app-card:hover { @apply shadow-md border-primary/20; }

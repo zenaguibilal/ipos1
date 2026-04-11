@@ -1,4 +1,3 @@
-
 'use client';
 
 import React from 'react';
@@ -14,80 +13,101 @@ interface CustomerStatementProps {
 }
 
 export const CustomerStatement = React.forwardRef<HTMLDivElement, CustomerStatementProps>(({ customer, unpaidSales, profile }, ref) => {
+    const totalRemaining = unpaidSales.reduce((sum, s) => sum + s.remainingBalance, 0);
+
     return (
-        <div ref={ref} className="p-4 bg-white text-black font-sans">
+        <div ref={ref} className="p-12 bg-white text-black font-sans leading-normal">
             {/* Header */}
-            <header className="flex justify-between items-start pb-4 border-b-2 border-black">
-                <div>
-                    <h1 className="text-lg font-bold">{profile?.companyName || 'Mon Magasin'}</h1>
-                    <p>{profile?.address}</p>
-                    <p>{profile?.city}, {profile?.country}</p>
-                    <p>Tél: {profile?.phone}</p>
+            <header className="flex justify-between items-start pb-8 border-b-2 border-black mb-10">
+                <div className="space-y-1">
+                    <h1 className="text-2xl font-black uppercase tracking-tighter">{profile?.companyName || 'SMART IPOS'}</h1>
+                    <p className="text-sm font-medium opacity-70">{profile?.address}</p>
+                    <p className="text-sm font-medium opacity-70">{profile?.city}, {profile?.country}</p>
+                    <p className="text-sm font-bold mt-2">Tél: {profile?.phone}</p>
                 </div>
                 <div className="text-right">
-                    <h2 className="text-xl font-bold uppercase text-gray-700">Relevé de Compte</h2>
-                    <p className="text-sm">Date: {format(new Date(), 'd MMMM yyyy', { locale: fr })}</p>
+                    <h2 className="text-2xl font-black bg-black text-white px-6 py-2 inline-block mb-2">RELEVÉ DE COMPTE</h2>
+                    <p className="text-sm font-bold uppercase tracking-widest text-gray-500">Date d'émission: {format(new Date(), 'd MMMM yyyy', { locale: fr })}</p>
                 </div>
             </header>
 
-            {/* Customer Info */}
-            <section className="my-6 p-4 border border-gray-300 rounded">
-                <h3 className="text-lg font-semibold mb-2">Client</h3>
-                <p className="font-bold text-xl">{customer.firstName} {customer.lastName}</p>
-                {customer.address && <p>{customer.address}</p>}
-                {customer.phone && <p>Tél: {customer.phone}</p>}
-            </section>
+            {/* Customer & Summary */}
+            <div className="grid grid-cols-2 gap-10 mb-12">
+                <section className="p-6 border-2 border-black rounded-2xl space-y-4">
+                    <h3 className="text-xs font-black uppercase text-gray-400 tracking-widest">Destinataire / Client</h3>
+                    <div className="space-y-1">
+                        <p className="text-xl font-bold">{customer.firstName} {customer.lastName}</p>
+                        <p className="text-sm font-medium opacity-60 italic">{customer.address || '—'}</p>
+                        <p className="text-sm font-bold">Tel: {customer.phone || '—'}</p>
+                    </div>
+                </section>
 
-            {/* Financial Summary */}
-            <section className="my-6 flex justify-around bg-gray-100 p-4 rounded">
-                <div className="text-center">
-                    <p className="text-sm uppercase text-gray-600">Limite de Crédit</p>
-                    <p className="text-lg font-bold">{formatCurrency(customer.creditLimit || 0)}</p>
-                </div>
-                 <div className="text-center">
-                    <p className="text-sm uppercase text-gray-600">Solde Actuel</p>
-                    <p className="text-lg font-bold text-destructive">{formatCurrency(customer.outstandingBalance)}</p>
-                </div>
-            </section>
+                <section className="bg-gray-50 p-6 rounded-2xl border-2 border-black flex flex-col justify-center text-center space-y-4">
+                    <div>
+                        <p className="text-xs font-black uppercase text-gray-400 tracking-widest mb-1">Solde Débiteur Actuel</p>
+                        <p className="text-3xl font-black text-red-600 tracking-tighter">{formatCurrency(customer.outstandingBalance)}</p>
+                    </div>
+                    <div className="h-px bg-gray-200 w-1/2 mx-auto" />
+                    <div className="flex justify-around text-[10px] font-black uppercase opacity-40">
+                        <span>Limite: {formatCurrency(customer.creditLimit || 0)}</span>
+                        <span>Flux: {unpaidSales.length} Factures</span>
+                    </div>
+                </section>
+            </div>
 
-            {/* Unpaid Invoices */}
-            <section className="my-6">
-                <h3 className="text-lg font-semibold mb-2 border-b pb-1">Factures Impayées</h3>
-                {unpaidSales.length > 0 ? (
-                    <table className="w-full text-sm">
-                        <thead>
-                            <tr className="border-b">
-                                <th className="text-left p-2">Date Facture</th>
-                                <th className="text-left p-2">N° Facture</th>
-                                <th className="text-right p-2">Montant Total</th>
-                                <th className="text-right p-2">Montant Payé</th>
-                                <th className="text-right p-2 font-bold">Solde Restant</th>
-                                <th className="text-center p-2">Date d'échéance</th>
+            {/* Table */}
+            <section className="mb-12">
+                <h3 className="text-sm font-black uppercase mb-4 flex items-center gap-3">
+                    <div className="h-2 w-2 bg-black rounded-full" />
+                    Détail des Factures en Souffrance
+                </h3>
+                <table className="w-full border-collapse">
+                    <thead>
+                        <tr className="bg-black text-white">
+                            <th className="text-left p-4 text-xs font-black uppercase">Date</th>
+                            <th className="text-left p-4 text-xs font-black uppercase">N° Facture</th>
+                            <th className="text-right p-4 text-xs font-black uppercase">Total</th>
+                            <th className="text-right p-4 text-xs font-black uppercase">Payé</th>
+                            <th className="text-right p-4 text-xs font-black uppercase">Solde Dû</th>
+                        </tr>
+                    </thead>
+                    <tbody className="divide-y-2 divide-black/5">
+                        {unpaidSales.map(sale => (
+                            <tr key={sale.id} className="hover:bg-gray-50 transition-colors">
+                                <td className="p-4 text-sm font-bold">{format(safeToDate(sale.createdAt!), 'dd/MM/yyyy')}</td>
+                                <td className="p-4 text-sm font-mono font-bold">#{sale.invoiceNumber}</td>
+                                <td className="p-4 text-right text-sm font-medium">{formatCurrency(sale.total)}</td>
+                                <td className="p-4 text-right text-sm font-medium text-emerald-600">{formatCurrency(sale.amountPaid)}</td>
+                                <td className="p-4 text-right text-sm font-black tracking-tighter">{formatCurrency(sale.remainingBalance)}</td>
                             </tr>
-                        </thead>
-                        <tbody>
-                            {unpaidSales.map(sale => (
-                                <tr key={sale.id} className="border-b border-gray-200">
-                                    <td className="p-2">{format(safeToDate(sale.createdAt!), 'd/MM/yy')}</td>
-                                    <td className="p-2">{sale.invoiceNumber}</td>
-                                    <td className="text-right p-2">{formatCurrency(sale.total)}</td>
-                                    <td className="text-right p-2">{formatCurrency(sale.amountPaid)}</td>
-                                    <td className="text-right p-2 font-bold">{formatCurrency(sale.remainingBalance)}</td>
-                                    <td className="text-center p-2">{sale.dueDate ? format(safeToDate(sale.dueDate), 'd/MM/yy') : 'N/A'}</td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                ) : (
-                    <p className="text-gray-600 p-4 bg-gray-100 rounded text-center">Aucune facture impayée pour ce client.</p>
-                )}
+                        ))}
+                    </tbody>
+                    <tfoot>
+                        <tr className="border-t-4 border-black bg-gray-50">
+                            <td colSpan={4} className="p-4 text-right text-sm font-black uppercase">Total Cumulé des Créances</td>
+                            <td className="p-4 text-right text-xl font-black text-red-600 tracking-tighter">{formatCurrency(totalRemaining)}</td>
+                        </tr>
+                    </tfoot>
+                </table>
             </section>
 
-            {/* Footer */}
-            <footer className="mt-8 pt-4 border-t text-center text-xs text-gray-500">
-                <p>Merci de votre confiance.</p>
-                <p>{profile?.companyName}</p>
+            {/* Verification Footer */}
+            <footer className="mt-20 pt-10 border-t border-dashed border-gray-300 grid grid-cols-2 text-center">
+                <div className="space-y-16">
+                    <p className="text-[10px] font-black uppercase tracking-widest">Visa & Cachet Établissement</p>
+                    <div className="h-24 w-24 mx-auto border-4 border-gray-100 rounded-full flex items-center justify-center opacity-10">
+                        <span className="text-[8px]">STAMP</span>
+                    </div>
+                </div>
+                <div className="space-y-16 border-l border-gray-100">
+                    <p className="text-[10px] font-black uppercase tracking-widest">Signature du Client</p>
+                    <p className="text-xs italic text-gray-300">"Bon pour accord du solde cité ci-dessus"</p>
+                </div>
             </footer>
+
+            <p className="text-center mt-20 text-[8px] font-bold uppercase tracking-[0.3em] text-gray-300">
+                Ce document est généré informatiquement par iPOS SMART SYSTEM v1.9.5
+            </p>
         </div>
     );
 });

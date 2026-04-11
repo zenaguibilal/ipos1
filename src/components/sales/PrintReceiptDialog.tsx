@@ -1,20 +1,20 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Receipt } from './Receipt';
-import { Printer, X } from 'lucide-react';
+import { Printer, X, FileText, Smartphone } from 'lucide-react';
 import type { Sale } from '@/lib/types';
 import { useAppStore } from '@/stores/appStore';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+import { cn } from '@/lib/utils';
 
 interface PrintReceiptDialogProps {
     isOpen: boolean;
     onOpenChange: (open: boolean) => void;
     sale: Sale | null;
-    /** When true the dialog auto-triggers print and closes (autoprint mode) */
     autoPrint?: boolean;
 }
 
@@ -26,10 +26,8 @@ export function PrintReceiptDialog({
 }: PrintReceiptDialogProps) {
     const profile = useAppStore(state => state.companyProfile);
     const [receiptType, setReceiptType] = useState<'a4' | 'thermal'>('thermal');
-    const receiptRef = useRef<HTMLDivElement>(null);
     const hasPrinted = useRef(false);
 
-    /* AutoPrint: fire once when dialog opens with a sale */
     useEffect(() => {
         if (!autoPrint || !isOpen || !sale) return;
         if (hasPrinted.current) return;
@@ -38,15 +36,14 @@ export function PrintReceiptDialog({
         const timer = setTimeout(() => {
             window.print();
             onOpenChange(false);
-        }, 200);
+        }, 300);
 
         return () => clearTimeout(timer);
     }, [autoPrint, isOpen, sale, onOpenChange]);
 
-    /* Reset guard when sale changes */
     useEffect(() => {
-        hasPrinted.current = false;
-    }, [sale?.uuid]);
+        if (isOpen) hasPrinted.current = false;
+    }, [isOpen]);
 
     const handlePrint = () => window.print();
 
@@ -54,46 +51,57 @@ export function PrintReceiptDialog({
 
     return (
         <>
-            {/* Hidden receipt rendered for @media print */}
-            <div className="hidden print:block">
-                <Receipt ref={receiptRef} sale={sale} profile={profile} receiptType={receiptType} />
+            {/* Real printable container (hidden on UI) */}
+            <div className="hidden print:block fixed inset-0 z-[100] bg-white">
+                <Receipt sale={sale} profile={profile} receiptType={receiptType} />
             </div>
 
             <Dialog open={isOpen} onOpenChange={onOpenChange}>
-                <DialogContent className="max-w-2xl max-h-[90vh] overflow-auto">
-                    <DialogHeader>
-                        <DialogTitle className="flex items-center gap-2">
-                            <Printer className="h-4 w-4 text-primary" />
-                            Imprimer le reçu
-                        </DialogTitle>
+                <DialogContent className="sm:max-w-2xl h-auto max-h-[90vh] flex flex-col p-0 overflow-hidden border-none shadow-xl rounded-2xl bg-card">
+                    <DialogHeader className="p-4 bg-primary/5 border-b border-primary/10">
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 rounded-xl bg-primary text-primary-foreground shadow-lg">
+                                    <Printer className="h-5 w-5" />
+                                </div>
+                                <div>
+                                    <DialogTitle className="text-lg font-bold tracking-tight">Impression Facture</DialogTitle>
+                                    <DialogDescription className="text-[10px] uppercase font-semibold text-primary/50"># {sale.invoiceNumber}</DialogDescription>
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-4 bg-background/50 p-1.5 rounded-xl border border-primary/10">
+                                <div className={cn("flex items-center gap-2 px-3 py-1.5 rounded-lg transition-all", receiptType === 'thermal' ? "bg-primary text-primary-foreground shadow-sm" : "opacity-40")}>
+                                    <Smartphone className="h-3.5 w-3.5" />
+                                    <span className="text-[10px] font-bold uppercase">Ticket 80mm</span>
+                                </div>
+                                <Switch
+                                    checked={receiptType === 'a4'}
+                                    onCheckedChange={v => setReceiptType(v ? 'a4' : 'thermal')}
+                                />
+                                <div className={cn("flex items-center gap-2 px-3 py-1.5 rounded-lg transition-all", receiptType === 'a4' ? "bg-primary text-primary-foreground shadow-sm" : "opacity-40")}>
+                                    <FileText className="h-3.5 w-3.5" />
+                                    <span className="text-[10px] font-bold uppercase">Format A4</span>
+                                </div>
+                            </div>
+                        </div>
                     </DialogHeader>
 
-                    <div className="flex items-center gap-6 py-2 border-b border-border">
-                        <div className="flex items-center gap-2">
-                            <Switch
-                                id="receipt-type"
-                                checked={receiptType === 'thermal'}
-                                onCheckedChange={v => setReceiptType(v ? 'thermal' : 'a4')}
-                            />
-                            <Label htmlFor="receipt-type" className="text-sm">
-                                Ticket thermique 80mm
-                            </Label>
+                    {/* Preview Area - Zoomed out for context */}
+                    <div className="flex-grow overflow-y-auto bg-muted/30 p-6 custom-scrollbar flex justify-center">
+                        <div className="origin-top scale-[0.85] sm:scale-100 transition-transform shadow-2xl">
+                            <Receipt sale={sale} profile={profile} receiptType={receiptType} />
                         </div>
                     </div>
 
-                    {/* Preview */}
-                    <div className="overflow-auto border border-border rounded-lg bg-gray-50 p-4 flex justify-center">
-                        <Receipt sale={sale} profile={profile} receiptType={receiptType} />
-                    </div>
-
-                    <div className="flex gap-2 justify-end pt-2">
-                        <Button variant="ghost" size="sm" onClick={() => onOpenChange(false)}>
-                            <X className="h-4 w-4 mr-1" /> Fermer
+                    <DialogFooter className="p-4 bg-card border-t flex gap-3">
+                        <Button variant="ghost" onClick={() => onOpenChange(false)} className="rounded-xl h-10 font-bold flex-1">
+                            <X className="mr-2 h-4 w-4" /> Fermer
                         </Button>
-                        <Button size="sm" onClick={handlePrint}>
-                            <Printer className="h-4 w-4 mr-1" /> Imprimer
+                        <Button onClick={handlePrint} className="rounded-xl h-10 font-bold flex-1 shadow-lg shadow-sm transition-all active:scale-95 gap-2">
+                            <Printer className="h-4 w-4" /> 
+                            Lancer l'impression
                         </Button>
-                    </div>
+                    </DialogFooter>
                 </DialogContent>
             </Dialog>
         </>
