@@ -21,11 +21,22 @@ function SellPageContent() {
     const customItemButtonRef = useRef<HTMLButtonElement>(null);
 
     const handleKeyDown = useCallback((e: KeyboardEvent) => {
+        // Safety check to prevent "startsWith of undefined" errors
+        if (!e || !e.key) return;
+
         if (e.isComposing || e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return;
+        
         const target   = e.target as HTMLElement;
         const isTyping = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.contentEditable === 'true';
 
-        if (e.key === KEYS.SEARCH) { e.preventDefault(); searchInputRef.current?.focus(); return; }
+        // Handle Global Search Focus (F1)
+        if (e.key === KEYS.SEARCH) { 
+            e.preventDefault(); 
+            searchInputRef.current?.focus(); 
+            return; 
+        }
+
+        // If typing in another input (not search), don't trigger shortcuts unless they are function keys
         if (isTyping && target !== searchInputRef.current && !e.key.startsWith('F')) return;
 
         switch (e.key) {
@@ -43,12 +54,12 @@ function SellPageContent() {
     }, [handleKeyDown]);
 
     return (
-        <div className="h-full flex flex-col p-2 gap-2 overflow-hidden">
+        <div className="h-full flex flex-col p-2 gap-2 overflow-hidden bg-background">
             <div className="grid grid-cols-1 lg:grid-cols-5 gap-2 flex-grow min-h-0">
                 {/* Cart panel */}
-                <div className="lg:col-span-3 flex flex-col bg-card border border-border rounded-lg overflow-hidden min-h-0">
+                <div className="lg:col-span-3 flex flex-col bg-card border border-border rounded-lg overflow-hidden min-h-0 shadow-sm">
                     <CartDisplay />
-                    <div className="mt-auto p-3 space-y-2 border-t border-border bg-muted/30">
+                    <div className="mt-auto p-3 space-y-3 border-t border-border bg-muted/20">
                         <CartTotalBar />
                         <SaleActions 
                             payButtonRef={payButtonRef} 
@@ -67,17 +78,17 @@ function SellPageContent() {
             </div>
 
             {/* Keyboard shortcuts bar */}
-            <div className="hidden md:flex items-center justify-center gap-4 py-1.5 text-[10px] text-muted-foreground border-t border-border">
+            <div className="hidden md:flex items-center justify-center gap-4 py-1.5 text-[10px] text-muted-foreground/60 border-t border-border/50">
                 {[
                     { key: 'F1', label: 'Chercher' }, { key: 'F2', label: 'Payer' },
                     { key: 'F4', label: 'Client' },   { key: 'F9', label: 'Suspendre' },
                     { key: 'F10', label: 'Perso' },   { key: 'Enter', label: 'Valider', primary: true },
                 ].map(k => (
-                    <div key={k.key} className="flex items-center gap-1">
-                        <kbd className={`px-1.5 py-0.5 rounded border text-[10px] font-mono ${k.primary ? 'bg-primary text-primary-foreground border-primary' : 'bg-muted border-border'}`}>
+                    <div key={k.key} className="flex items-center gap-1.5">
+                        <kbd className={`px-1.5 py-0.5 rounded border text-[9px] font-mono shadow-sm ${k.primary ? 'bg-primary text-primary-foreground border-primary' : 'bg-muted border-border'}`}>
                             {k.key}
                         </kbd>
-                        <span>{k.label}</span>
+                        <span className="font-semibold uppercase">{k.label}</span>
                     </div>
                 ))}
             </div>
