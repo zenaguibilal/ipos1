@@ -5,7 +5,6 @@ import { ProductSelector } from '@/components/sell/ProductSearch';
 import { CartDisplay } from '@/components/sell/CartDisplay';
 import { CartTotalBar } from '@/components/sell/CartTotalBar';
 import { SaleActions } from '@/components/sell/SaleActions';
-import { CustomerCombobox } from '@/components/sell/CustomerCombobox';
 import { useCartActions } from '@/stores/cartStore';
 import { toast } from 'sonner';
 
@@ -48,13 +47,13 @@ function SellPageContent() {
             <div className="grid grid-cols-1 lg:grid-cols-5 gap-2 flex-grow min-h-0">
                 {/* Cart panel */}
                 <div className="lg:col-span-3 flex flex-col bg-card border border-border rounded-lg overflow-hidden min-h-0">
-                    <div className="p-2 border-b border-border">
-                        <CustomerCombobox ref={customerComboRef} />
-                    </div>
                     <CartDisplay />
                     <div className="mt-auto p-3 space-y-2 border-t border-border bg-muted/30">
                         <CartTotalBar />
-                        <SaleActions payButtonRef={payButtonRef} />
+                        <SaleActions 
+                            payButtonRef={payButtonRef} 
+                            customerComboRef={customerComboRef}
+                        />
                     </div>
                 </div>
 

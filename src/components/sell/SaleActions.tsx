@@ -5,13 +5,15 @@ import { Button } from '@/components/ui/button';
 import { Wallet } from 'lucide-react';
 import { PaymentDialog } from './PaymentDialog';
 import { DraftsDropdown } from './DraftsDropdown';
+import { CustomerCombobox } from './CustomerCombobox';
 import { useActiveCart } from '@/stores/cartStore';
 
 interface SaleActionsProps {
     payButtonRef: React.RefObject<HTMLButtonElement>;
+    customerComboRef: React.RefObject<HTMLButtonElement>;
 }
 
-function SaleActionsContent({ payButtonRef }: SaleActionsProps) {
+function SaleActionsContent({ payButtonRef, customerComboRef }: SaleActionsProps) {
     const [isPaymentOpen, setIsPaymentOpen] = useState(false);
     const cart    = useActiveCart();
     const hasItems = !!(cart && cart.items.length > 0);
@@ -19,9 +21,10 @@ function SaleActionsContent({ payButtonRef }: SaleActionsProps) {
     return (
         <div className="flex items-center gap-2">
             <DraftsDropdown />
+            <CustomerCombobox ref={customerComboRef} />
             <Button
                 ref={payButtonRef}
-                className="flex-1 h-9 font-semibold gap-2"
+                className="flex-1 h-9 font-semibold gap-2 shadow-lg shadow-primary/20 active:scale-95 transition-all"
                 onClick={() => setIsPaymentOpen(true)}
                 disabled={!hasItems}
             >
