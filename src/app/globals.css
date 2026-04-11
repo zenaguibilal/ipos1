@@ -4,26 +4,27 @@
 
 @layer base {
   :root {
-    --background: 0 0% 97%;
-    --foreground: 220 13% 13%;
+    /* Smart Slate Palette - Light Mode */
+    --background: 210 40% 98%;
+    --foreground: 222 47% 11%;
     --card: 0 0% 100%;
-    --card-foreground: 220 13% 13%;
+    --card-foreground: 222 47% 11%;
     --popover: 0 0% 100%;
-    --popover-foreground: 220 13% 13%;
+    --popover-foreground: 222 47% 11%;
     --primary: 221 83% 53%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 220 14% 96%;
-    --secondary-foreground: 220 13% 30%;
-    --muted: 220 14% 94%;
-    --muted-foreground: 220 9% 52%;
+    --secondary: 210 40% 96%;
+    --secondary-foreground: 222 47% 31%;
+    --muted: 210 40% 94%;
+    --muted-foreground: 215 16% 47%;
     --accent: 221 83% 53%;
     --accent-foreground: 0 0% 100%;
-    --destructive: 0 72% 51%;
+    --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
-    --border: 220 13% 90%;
-    --input: 220 13% 91%;
+    --border: 214 32% 91%;
+    --input: 214 32% 91%;
     --ring: 221 83% 53%;
-    --radius: 0.5rem;
+    --radius: 0.75rem;
     --chart-primary: 221 83% 53%;
     --chart-secondary: 262 83% 58%;
     --chart-tertiary: 142 71% 45%;
@@ -32,24 +33,25 @@
   }
 
   .dark {
-    --background: 222 47% 9%;
+    /* Deep Space Navy - Dark Mode */
+    --background: 222 47% 6%;
     --foreground: 213 31% 91%;
-    --card: 222 47% 11%;
+    --card: 222 47% 10%;
     --card-foreground: 213 31% 91%;
-    --popover: 222 47% 11%;
+    --popover: 222 47% 10%;
     --popover-foreground: 213 31% 91%;
     --primary: 217 91% 60%;
-    --primary-foreground: 222 47% 9%;
-    --secondary: 222 47% 15%;
+    --primary-foreground: 222 47% 6%;
+    --secondary: 222 47% 14%;
     --secondary-foreground: 213 31% 80%;
     --muted: 222 47% 14%;
     --muted-foreground: 215 20% 55%;
     --accent: 217 91% 60%;
-    --accent-foreground: 222 47% 9%;
-    --destructive: 0 72% 51%;
-    --destructive-foreground: 0 0% 100%;
+    --accent-foreground: 222 47% 6%;
+    --destructive: 0 62% 30%;
+    --destructive-foreground: 213 31% 91%;
     --border: 222 47% 18%;
-    --input: 222 47% 16%;
+    --input: 222 47% 18%;
     --ring: 217 91% 60%;
   }
 }
@@ -59,17 +61,20 @@
   body {
     @apply bg-background text-foreground antialiased;
     font-size: 13px;
+    background-image: radial-gradient(circle at top right, rgba(37, 99, 235, 0.03), transparent 400px),
+                      radial-gradient(circle at bottom left, rgba(37, 99, 235, 0.03), transparent 400px);
+    background-attachment: fixed;
   }
 }
 
 /* ── Scrollbar ── */
-::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar { width: 5px; height: 5px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb {
   background: hsl(var(--border));
   border-radius: 10px;
 }
-::-webkit-scrollbar-thumb:hover { background: hsl(var(--primary) / 0.2); }
+::-webkit-scrollbar-thumb:hover { background: hsl(var(--primary) / 0.3); }
 
 /* ── Print Configuration ── */
 @media print {
@@ -88,7 +93,6 @@
   .print-hide { display: none !important; }
   .print-only { display: block !important; }
   
-  /* Reset transitions for printing */
   * {
     transition: none !important;
     animation: none !important;
@@ -98,16 +102,19 @@
 
 .print-only { display: none; }
 
-/* ── Thermal Formatting ── */
-.thermal-receipt {
-  width: 80mm;
-  max-width: 100%;
-  margin: 0 auto;
-  padding: 5mm;
-  font-family: 'Courier New', Courier, monospace;
-}
-
+/* ── UI Elements ── */
 .app-card {
-  @apply bg-card border border-border rounded-lg shadow-sm transition-all duration-300;
+  @apply bg-card border border-border rounded-xl shadow-sm transition-all duration-300;
 }
 .app-card:hover { @apply shadow-md border-primary/20; }
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: hsl(var(--primary) / 0.1);
+  border-radius: 10px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--primary) / 0.3);
+}
