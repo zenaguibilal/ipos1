@@ -93,7 +93,7 @@ function PaymentDialogContent({
             if (sale) {
                 setLastSale(sale);
                 onOpenChange(false);
-                setIsReceiptOpen(true); // AutoPrint is handled inside PrintReceiptDialog
+                setIsReceiptOpen(true);
             }
         } finally {
             setIsLoading(false);
@@ -109,16 +109,16 @@ function PaymentDialogContent({
                     <DialogHeader>
                         <DialogTitle className="flex items-center gap-2 text-base">
                             <Wallet className="h-4 w-4 text-primary" />
-                            Encaissement — {cart.name}
+                            إتمام الدفع — {cart.name}
                         </DialogTitle>
                         <DialogDescription className="text-xs">
-                            Saisissez le montant reçu du client.
+                            أدخل المبلغ المستلم من الزبون.
                         </DialogDescription>
                     </DialogHeader>
 
                     {/* Total */}
                     <div className="text-center py-3 bg-muted/50 rounded-lg">
-                        <p className="text-xs text-muted-foreground mb-0.5">Net à encaisser</p>
+                        <p className="text-xs text-muted-foreground mb-0.5">الصافي للدفع</p>
                         <p className="text-3xl font-bold text-primary tabular-nums">
                             {formatCurrency(total)}
                         </p>
@@ -127,7 +127,7 @@ function PaymentDialogContent({
                     {/* Amount paid + change */}
                     <div className="grid grid-cols-2 gap-3">
                         <div className="space-y-1.5">
-                            <Label htmlFor="amount-paid" className="text-xs">Reçu (DA)</Label>
+                            <Label htmlFor="amount-paid" className="text-xs">المستلم (DA)</Label>
                             <Input
                                 id="amount-paid"
                                 type="text"
@@ -141,7 +141,7 @@ function PaymentDialogContent({
                             />
                         </div>
                         <div className="space-y-1.5">
-                            <Label className="text-xs">Monnaie rendue</Label>
+                            <Label className="text-xs">الفكة (الصرف)</Label>
                             <div className={cn(
                                 'h-10 flex items-center justify-center rounded-md border text-lg font-bold tabular-nums',
                                 change >= 0.01
@@ -159,19 +159,18 @@ function PaymentDialogContent({
                             <div className="flex items-start gap-2">
                                 <AlertCircle className="h-4 w-4 text-amber-600 mt-0.5 shrink-0" />
                                 <p className="text-amber-700 dark:text-amber-400 text-xs">
-                                    Crédit de {formatCurrency(total - amountPaid)} inscrit au compte client.
+                                    سيتم تسجيل مبلغ {formatCurrency(total - amountPaid)} كدين في حساب الزبون.
                                 </p>
                             </div>
 
-                            {/* FIX #8: Plafond (not Plafوند) */}
                             {isOverLimit && (
                                 <div className="p-2.5 bg-destructive/10 border border-destructive/20 rounded-md space-y-2">
                                     <div className="flex items-center gap-1.5 text-destructive text-xs font-medium">
                                         <ShieldAlert className="h-3.5 w-3.5" />
-                                        Plafond de crédit dépassé
+                                        تجاوز سقف الائتمان المسموح
                                     </div>
                                     <div className="flex items-center justify-between">
-                                        <span className="text-xs text-muted-foreground">Autoriser dérogation</span>
+                                        <span className="text-xs text-muted-foreground">السماح بالاستثناء</span>
                                         <Switch
                                             checked={approveOverLimit}
                                             onCheckedChange={setApproveOverLimit}
@@ -182,7 +181,7 @@ function PaymentDialogContent({
 
                             <div className="space-y-1">
                                 <Label className="text-xs flex items-center gap-1.5">
-                                    <Calendar className="h-3 w-3" /> Échéance de règlement
+                                    <Calendar className="h-3 w-3" /> تاريخ الاستحقاق
                                 </Label>
                                 <DatePicker date={dueDate} setDate={setDueDate} />
                             </div>
@@ -196,7 +195,7 @@ function PaymentDialogContent({
                             onClick={() => onOpenChange(false)}
                             disabled={isLoading}
                         >
-                            Annuler
+                            إلغاء
                         </Button>
                         <Button
                             className="flex-1"
@@ -208,18 +207,16 @@ function PaymentDialogContent({
                             ) : (
                                 <CheckCircle2 className="h-4 w-4 mr-1" />
                             )}
-                            Valider [Enter]
+                            تأكيد [Enter]
                         </Button>
                     </div>
                 </DialogContent>
             </Dialog>
 
-            {/* AutoPrint=true: dialog prints automatically after sale then closes */}
             <PrintReceiptDialog
                 isOpen={isReceiptOpen}
                 onOpenChange={setIsReceiptOpen}
                 sale={lastSale}
-                autoPrint={true}
             />
         </>
     );

@@ -8,42 +8,21 @@ import { Printer, X, FileText, Smartphone } from 'lucide-react';
 import type { Sale } from '@/lib/types';
 import { useAppStore } from '@/stores/appStore';
 import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 
 interface PrintReceiptDialogProps {
     isOpen: boolean;
     onOpenChange: (open: boolean) => void;
     sale: Sale | null;
-    autoPrint?: boolean;
 }
 
 export function PrintReceiptDialog({
     isOpen,
     onOpenChange,
     sale,
-    autoPrint = false,
 }: PrintReceiptDialogProps) {
     const profile = useAppStore(state => state.companyProfile);
     const [receiptType, setReceiptType] = useState<'a4' | 'thermal'>('thermal');
-    const hasPrinted = useRef(false);
-
-    useEffect(() => {
-        if (!autoPrint || !isOpen || !sale) return;
-        if (hasPrinted.current) return;
-        hasPrinted.current = true;
-
-        const timer = setTimeout(() => {
-            window.print();
-            onOpenChange(false);
-        }, 300);
-
-        return () => clearTimeout(timer);
-    }, [autoPrint, isOpen, sale, onOpenChange]);
-
-    useEffect(() => {
-        if (isOpen) hasPrinted.current = false;
-    }, [isOpen]);
 
     const handlePrint = () => window.print();
 
@@ -65,14 +44,14 @@ export function PrintReceiptDialog({
                                     <Printer className="h-5 w-5" />
                                 </div>
                                 <div>
-                                    <DialogTitle className="text-lg font-bold tracking-tight">Impression Facture</DialogTitle>
+                                    <DialogTitle className="text-lg font-bold tracking-tight">إصدار الفاتورة</DialogTitle>
                                     <DialogDescription className="text-[10px] uppercase font-semibold text-primary/50"># {sale.invoiceNumber}</DialogDescription>
                                 </div>
                             </div>
                             <div className="flex items-center gap-4 bg-background/50 p-1.5 rounded-xl border border-primary/10">
                                 <div className={cn("flex items-center gap-2 px-3 py-1.5 rounded-lg transition-all", receiptType === 'thermal' ? "bg-primary text-primary-foreground shadow-sm" : "opacity-40")}>
                                     <Smartphone className="h-3.5 w-3.5" />
-                                    <span className="text-[10px] font-bold uppercase">Ticket 80mm</span>
+                                    <span className="text-[10px] font-bold uppercase">80mm</span>
                                 </div>
                                 <Switch
                                     checked={receiptType === 'a4'}
@@ -80,13 +59,13 @@ export function PrintReceiptDialog({
                                 />
                                 <div className={cn("flex items-center gap-2 px-3 py-1.5 rounded-lg transition-all", receiptType === 'a4' ? "bg-primary text-primary-foreground shadow-sm" : "opacity-40")}>
                                     <FileText className="h-3.5 w-3.5" />
-                                    <span className="text-[10px] font-bold uppercase">Format A4</span>
+                                    <span className="text-[10px] font-bold uppercase">A4</span>
                                 </div>
                             </div>
                         </div>
                     </DialogHeader>
 
-                    {/* Preview Area - Zoomed out for context */}
+                    {/* Preview Area */}
                     <div className="flex-grow overflow-y-auto bg-muted/30 p-6 custom-scrollbar flex justify-center">
                         <div className="origin-top scale-[0.85] sm:scale-100 transition-transform shadow-2xl">
                             <Receipt sale={sale} profile={profile} receiptType={receiptType} />
@@ -95,11 +74,11 @@ export function PrintReceiptDialog({
 
                     <DialogFooter className="p-4 bg-card border-t flex gap-3">
                         <Button variant="ghost" onClick={() => onOpenChange(false)} className="rounded-xl h-10 font-bold flex-1">
-                            <X className="mr-2 h-4 w-4" /> Fermer
+                            <X className="mr-2 h-4 w-4" /> إغلاق
                         </Button>
                         <Button onClick={handlePrint} className="rounded-xl h-10 font-bold flex-1 shadow-lg shadow-sm transition-all active:scale-95 gap-2">
                             <Printer className="h-4 w-4" /> 
-                            Lancer l'impression
+                            طباعة [P]
                         </Button>
                     </DialogFooter>
                 </DialogContent>
