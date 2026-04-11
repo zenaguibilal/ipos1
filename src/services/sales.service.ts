@@ -1,4 +1,4 @@
-'use server';
+'use client';
 
 import { v4 as uuidv4 } from 'uuid';
 import type { Sale, CartItem, SaleItem } from '@/lib/types';
@@ -118,7 +118,6 @@ class SalesService {
             dueDate: saleData.dueDate,
         };
 
-        // FIX: Expanded scope to include all tables accessed by recalculateCustomerStatus
         await db.transaction(
             'rw',
             [db.sales, db.products, db.inventory_logs, db.customers, db.payments, db.product_returns],
