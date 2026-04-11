@@ -55,12 +55,16 @@ export function SaleInfoBar() {
 
                 <div className="h-4 w-px bg-border" />
 
-                {/* Total */}
-                <div className="flex items-baseline gap-1.5">
-                    <span className="text-xs text-muted-foreground">Total:</span>
-                    <span className="font-bold text-primary text-sm tabular-nums">{formatCurrency(total)}</span>
+                {/* Total Section - Enlarged */}
+                <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-semibold uppercase text-muted-foreground opacity-60">Total</span>
+                    <span className="font-black text-primary text-xl tabular-nums tracking-tighter">
+                        {formatCurrency(total)}
+                    </span>
                     {discountAmount > 0 && (
-                        <span className="text-xs text-amber-500 hidden sm:inline">(-{formatCurrency(discountAmount)})</span>
+                        <span className="text-[10px] font-bold text-amber-500 bg-amber-500/10 px-1.5 py-0.5 rounded-md hidden sm:inline">
+                            -{formatCurrency(discountAmount)}
+                        </span>
                     )}
                 </div>
 
@@ -114,7 +118,7 @@ export function SaleInfoBar() {
             </div>
 
             {customer && (
-                <AddPaymentDialog
+                <AddPaymentDialog 
                     isOpen={isPaymentDialogOpen}
                     onOpenChange={setIsPaymentDialogOpen}
                     customer={customer}
