@@ -24,7 +24,9 @@ class iPOSDatabase extends Dexie {
 
     constructor() {
         super('iPOSDatabase');
-        this.version(1).stores({
+        // ترقية الإصدار إلى 2 لفرض تحديث الجداول في المتصفح.
+        // هذا يحل مشكلة "The specified object store was not found" عند محاولة الوصول لجداول تمت إضافتها حديثاً.
+        this.version(2).stores({
             products:         '++id, &uuid, name, *barcodes, category, supplierUuid, stockStatus, dateExpiration',
             customers:        '++id, &uuid, searchName, debtStatus, isOverLimit, isBreadClient, bread_type_recurrence, outstandingBalance',
             sales:            '++id, &uuid, invoiceNumber, customerUuid, createdAt, paymentStatus',
