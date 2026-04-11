@@ -1,4 +1,4 @@
-'use client';
+'use server';
 
 import { v4 as uuidv4 } from 'uuid';
 import type { Sale, CartItem, SaleItem } from '@/lib/types';
@@ -97,7 +97,6 @@ class SalesService {
             quantity: item.cartQuantity,
         }));
 
-        // FIX #5: 4-digit suffix → 9 000 possible values per day vs. 900
         const datePrefix = now.toISOString().slice(2, 10).replace(/-/g, '');
         const randomSuffix = Math.floor(1000 + Math.random() * 9000);
         const invoiceNumber = `${datePrefix}-${randomSuffix}`;
@@ -119,12 +118,10 @@ class SalesService {
             dueDate: saleData.dueDate,
         };
 
-        // FIX #3: removed db.payments and db.product_returns from the transaction
-        // scope — they are never written inside this transaction, so locking them
-        // was wasting resources and increasing deadlock risk.
+        // FIX: Expanded scope to include all tables accessed by recalculateCustomerStatus
         await db.transaction(
             'rw',
-            [db.sales, db.products, db.inventory_logs, db.customers],
+            [db.sales, db.products, db.inventory_logs, db.customers, db.payments, db.product_returns],
             async () => {
                 await db.sales.add(newSale);
 
@@ -152,7 +149,7 @@ class SalesService {
     async processSaleCancellation(uuid: string): Promise<void> {
         await db.transaction(
             'rw',
-            [db.sales, db.products, db.customers, db.inventory_logs],
+            [db.sales, db.products, db.customers, db.inventory_logs, db.payments, db.product_returns],
             async () => {
                 const sale = await this.getSaleByUuid(uuid);
                 if (!sale || !sale.id) throw new Error('Vente non trouvée.');

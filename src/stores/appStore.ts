@@ -1,4 +1,3 @@
-
 import { create } from 'zustand';
 import type { CompanyProfile, ReturnItem, StockIntakeItem } from '@/lib/types';
 import { toast } from 'sonner';
@@ -97,7 +96,6 @@ export const useAppStore = create<AppState>()(
                 updateCompanyProfile: async (profileData) => {
                     const updatedProfile = await companyProfileService.updateProfile(profileData);
                     set({ companyProfile: updatedProfile });
-                    // Sync instantanée après mise à jour profil
                     get().actions.performBackgroundSync();
                 },
                 performCloudSync: async (mode) => {
@@ -140,7 +138,6 @@ export const useAppStore = create<AppState>()(
                     set({ isSyncing: true });
                     try {
                         const now = new Date();
-                        // Cycle "Elite" instantané : Pull puis Push
                         await supabaseSyncService.pullAllData(currentProfile.supabase_url, currentProfile.supabase_key);
                         await supabaseSyncService.pushAllData(currentProfile.supabase_url, currentProfile.supabase_key);
                         
@@ -153,7 +150,6 @@ export const useAppStore = create<AppState>()(
                     }
                 },
                 triggerSmartSync: () => {
-                    // Délai réduit à 500ms pour une sensation de "Temps Réel" tout en évitant les micro-conflits
                     if (syncDebounceTimeout) clearTimeout(syncDebounceTimeout);
                     syncDebounceTimeout = setTimeout(() => {
                         get().actions.performBackgroundSync();
@@ -161,7 +157,8 @@ export const useAppStore = create<AppState>()(
                 },
                 processReturn: async (returnData) => {
                      try {
-                        await db.transaction('rw', [db.product_returns, db.products, db.customers, db.inventory_logs], async () => {
+                        // FIX: Added missing tables sales and payments to the transaction scope for balance recalculation
+                        await db.transaction('rw', [db.product_returns, db.products, db.customers, db.inventory_logs, db.sales, db.payments], async () => {
                             const newReturn = await returnService.addReturn(returnData);
                             for (const item of newReturn.items) {
                                 if (item.wasRestocked && item.productUuid) {

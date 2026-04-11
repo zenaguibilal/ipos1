@@ -77,20 +77,14 @@ class ReturnService {
         const id = await db.product_returns.add(newReturn);
         newReturn.id = id;
 
-        // FIX #4: triggerSmartSync removed from here.
-        // This method is called from appStore.processReturn() which runs inside a
-        // db.transaction(). Calling triggerSmartSync() (which schedules a
-        // setTimeout) before the parent transaction commits risks syncing
-        // incomplete data to the cloud. The appStore wrapper calls
-        // triggerSmartSync() after the transaction completes — that is sufficient.
-
         return newReturn;
     }
 
     async processReturnCancellation(uuid: string): Promise<void> {
+        // FIX: Expanded scope to include sales and payments tables accessed by recalculateCustomerStatus
         await db.transaction(
             'rw',
-            [db.product_returns, db.products, db.customers, db.inventory_logs],
+            [db.product_returns, db.products, db.customers, db.inventory_logs, db.sales, db.payments],
             async () => {
                 const productReturn = await this.getReturnByUuid(uuid);
                 if (!productReturn || !productReturn.id)

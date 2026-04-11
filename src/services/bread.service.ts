@@ -9,20 +9,9 @@ import { useAppStore } from '@/stores/appStore';
 
 class BreadService {
 
-    /**
-     * FIX #16: The original code checked `count === 0` over ALL orders for the date,
-     * which meant a single manually-added order would prevent auto-generation for
-     * ALL bread-subscription clients on that day.
-     *
-     * Fix: auto-generation is skipped only when orders that originated from a
-     * subscription already exist (customerUuid is NOT NULL and venteUuid is NULL,
-     * i.e. auto-generated but not yet billed). Manual orders (customName set,
-     * no customerUuid) do not block auto-generation.
-     */
     async generateAndGetOrdersForDate(
         date: string,
     ): Promise<BreadOrderWithCustomer[]> {
-        // Count subscription-based (auto) orders only
         const autoCount = await db.bread_orders
             .where('date')
             .equals(date)
@@ -64,8 +53,6 @@ class BreadService {
         const dayIndex = new Date(date.replace(/-/g, '/')).getDay();
         const dayOfWeek = BREAD_WEEK_DAYS[dayIndex];
 
-        // FIX #6: use equals(1) which is correct for Dexie boolean indexes,
-        // but document why: Dexie stores boolean true as 1 in IndexedDB.
         const activeBreadClients = await db.customers
             .where('isBreadClient')
             .equals(1)
@@ -192,18 +179,14 @@ class BreadService {
         }
     }
 
-    /**
-     * FIX #13: Removed db.payments and db.product_returns from the transaction
-     * scope — they are never written here and their inclusion only increases
-     * the lock surface and deadlock risk.
-     */
     async convertBreadOrdersToSales(
         orderUuids: string[],
         breadPrice: number,
     ): Promise<void> {
+        // FIX: Expanded scope to include all tables accessed during sale creation and balance recalculation
         await db.transaction(
             'rw',
-            [db.bread_orders, db.sales, db.products, db.inventory_logs, db.customers],
+            [db.bread_orders, db.sales, db.products, db.inventory_logs, db.customers, db.payments, db.product_returns],
             async () => {
                 const orders = await db.bread_orders
                     .where('uuid')
