@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -117,7 +118,7 @@ const CommandShortcut = ({
   return (
     <span
       className={cn(
-        "ml-auto text-xs tracking-widest text-muted-foreground",
+        "ml-auto text-xs tracking-wide text-muted-foreground",
         className
       )}
       {...props}

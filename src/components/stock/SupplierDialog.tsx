@@ -71,14 +71,14 @@ export function SupplierDialog({ isOpen, onOpenChange, supplier, onSuccess }: Su
 
     return (
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-md rounded-3xl border-none shadow-2xl">
+            <DialogContent className="sm:max-w-md rounded-3xl border-none shadow-sm">
                 <form onSubmit={handleSubmit}>
                     <DialogHeader>
                         <div className="flex items-center gap-3 mb-2">
                             <div className="p-2.5 rounded-2xl bg-primary/10 text-primary">
                                 <Building className="h-5 w-5" />
                             </div>
-                            <DialogTitle className="text-xl font-black tracking-tight">
+                            <DialogTitle className="text-xl font-semibold tracking-tight">
                                 {supplier ? 'Modifier le Fournisseur' : 'Nouveau Fournisseur'}
                             </DialogTitle>
                         </div>
@@ -89,7 +89,7 @@ export function SupplierDialog({ isOpen, onOpenChange, supplier, onSuccess }: Su
                     
                     <div className="grid gap-4 py-6">
                         <div className="space-y-2">
-                            <Label htmlFor="name" className="text-xs font-black uppercase tracking-widest text-muted-foreground ml-1">Nom de l'établissement *</Label>
+                            <Label htmlFor="name" className="text-xs font-semibold uppercase tracking-wide text-muted-foreground ml-1">Nom de l'établissement *</Label>
                             <div className="relative">
                                 <Building className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/50" />
                                 <Input 
@@ -105,7 +105,7 @@ export function SupplierDialog({ isOpen, onOpenChange, supplier, onSuccess }: Su
 
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
-                                <Label htmlFor="contact" className="text-xs font-black uppercase tracking-widest text-muted-foreground ml-1">Contact (Nom)</Label>
+                                <Label htmlFor="contact" className="text-xs font-semibold uppercase tracking-wide text-muted-foreground ml-1">Contact (Nom)</Label>
                                 <div className="relative">
                                     <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/50" />
                                     <Input 
@@ -117,7 +117,7 @@ export function SupplierDialog({ isOpen, onOpenChange, supplier, onSuccess }: Su
                                 </div>
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="phone" className="text-xs font-black uppercase tracking-widest text-muted-foreground ml-1">Téléphone</Label>
+                                <Label htmlFor="phone" className="text-xs font-semibold uppercase tracking-wide text-muted-foreground ml-1">Téléphone</Label>
                                 <div className="relative">
                                     <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/50" />
                                     <Input 
@@ -132,7 +132,7 @@ export function SupplierDialog({ isOpen, onOpenChange, supplier, onSuccess }: Su
                         </div>
 
                         <div className="space-y-2">
-                            <Label htmlFor="email" className="text-xs font-black uppercase tracking-widest text-muted-foreground ml-1">E-mail</Label>
+                            <Label htmlFor="email" className="text-xs font-semibold uppercase tracking-wide text-muted-foreground ml-1">E-mail</Label>
                             <div className="relative">
                                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/50" />
                                 <Input 
@@ -146,7 +146,7 @@ export function SupplierDialog({ isOpen, onOpenChange, supplier, onSuccess }: Su
                         </div>
 
                         <div className="space-y-2">
-                            <Label htmlFor="address" className="text-xs font-black uppercase tracking-widest text-muted-foreground ml-1">Adresse</Label>
+                            <Label htmlFor="address" className="text-xs font-semibold uppercase tracking-wide text-muted-foreground ml-1">Adresse</Label>
                             <div className="relative">
                                 <MapPin className="absolute left-3 top-3 h-4 w-4 text-muted-foreground/50" />
                                 <Input 
@@ -161,7 +161,7 @@ export function SupplierDialog({ isOpen, onOpenChange, supplier, onSuccess }: Su
 
                     <DialogFooter className="gap-3">
                         <Button type="button" variant="ghost" onClick={() => onOpenChange(false)} className="rounded-xl h-12 font-bold flex-1">Annuler</Button>
-                        <Button type="submit" disabled={isLoading} className="rounded-xl h-12 font-bold flex-1 shadow-lg shadow-primary/20">
+                        <Button type="submit" disabled={isLoading} className="rounded-xl h-12 font-bold flex-1 shadow-lg shadow-sm">
                             {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                             Enregistrer
                         </Button>

@@ -1,18 +1,24 @@
-# iPOS - Point de Vente Intelligent
+# iPOS Smart - Système de Vente Local-First
 
-**iPOS** est une application de point de vente (POS) complète, simplifiée pour une utilisation en mode mono-poste, conçue pour la vente au détail. Elle utilise la base de données de votre navigateur (IndexedDB) pour un stockage local, privé et entièrement hors ligne.
+**iPOS Smart** هو تطبيق نقطة بيع (POS) متطور مصمم للعمل كلياً داخل المتصفح مع إعطاء الأولوية لخصوصية البيانات وسرعة الأداء. يعتمد النظام فلسفة **Local-First**، حيث يتم تخزين كافة البيانات ومعالجتها محلياً لضمان استمرارية العمل حتى في حالة انقطاع الإنترنت.
 
-## ✨ Fonctionnalités Principales
+## 🚀 المميزات الأساسية (المكتشفة في الكود)
 
-*   **Gestion des Ventes :** Historique des ventes et des retours.
-*   **Gestion des Produits :** Créez, modifiez, et suivez votre inventaire avec des alertes de stock faible et importation CSV.
-*   **Gestion des Clients :** Suivez les dettes, les limites de crédit, l'historique d'achat et importez vos clients via CSV.
-*   **Gestion des Stocks :** Enregistrez les réceptions de stock et suivez l'évolution de votre inventaire.
-*   **Fonctionnalités Avancées :** Gestion des dépenses, commandes de pain, retours et annulations.
-*   **Persistance des Données :** Toutes vos données sont gérées localement sur votre appareil.
-*   **Sauvegarde et Restauration :** Créez et restaurez des sauvegardes complètes de vos données.
-*   **PWA Ready :** L'application est installable, rapide et fonctionne hors ligne.
+*   **محرك بيع متعدد المهام:** دعم فتح عدة سلال تسوق في وقت واحد (Brouillons) مع إمكانية تعليق المبيعات واستئنافها.
+*   **إدارة الديون والائتمان:** تتبع دقيق لمديونية العملاء مع إعادة حساب الرصيد ديناميكياً بناءً على (المبيعات - المدفوعات - المرتجعات).
+*   **نظام لوجستيات الخبز:** ميزة فريدة لإدارة الطلبات المتكررة (يومية أو مجدولة) وتحويلها آلياً إلى ديون مسجلة.
+*   **الرقابة المخزنية الصارمة:** سجل تدقيق (Audit Trail) كامل لكل حركة مخزنية، مما يمنع التلاعب ويضمن دقة الكميات.
+*   **ذكاء اصطناعي مدمج (OCR):** مسح فواتير الموردين وتحويلها إلى بيانات رقمية فورية باستخدام Claude AI API.
+*   **دقة مالية متناهية:** استخدام حسابات الأعداد الصحيحة الموسعة لتجنب أخطاء الفاصلة العائمة في العمليات الحسابية.
+*   **المزامنة السحابية السيادية:** إمكانية ربط التطبيق بـ Supabase الخاص بالمستخدم لعمل نسخ احتياطي ومزامنة الأجهزة.
 
-Pour une liste détaillée de toutes les fonctionnalités et des informations techniques, veuillez consulter la documentation complète.
+## 🛠 التكنولوجيا المستخدمة
 
-**[📄 DOCUMENTATION.md](./DOCUMENTATION.md)**
+*   **Framework:** Next.js 14 (App Router).
+*   **Database:** IndexedDB (via Dexie.js) - تخزين محلي كامل.
+*   **State Management:** Zustand (مع persistance).
+*   **UI Engine:** Tailwind CSS & ShadCN UI (مُحسّن لشاشات 1360x768).
+*   **Sync:** Supabase (اختياري).
+
+## 💻 ملاءمة الأجهزة
+تم تصميم واجهة المستخدم بعناية فائقة لتناسب أجهزة الـ POS المعيارية، مع تقليص الهوامش وزيادة كثافة البيانات لضمان الرؤية الشاملة دون الحاجة للتمرير.

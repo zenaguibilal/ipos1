@@ -74,11 +74,11 @@ export function AddPaymentDialog({ isOpen, onOpenChange, customer, onPaymentSucc
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px] overflow-hidden border-none shadow-2xl p-0 gap-0 bg-card">
+      <DialogContent className="sm:max-w-[500px] overflow-hidden border-none shadow-sm p-0 gap-0 bg-card">
         <div className="bg-primary/5 p-6 border-b border-primary/10">
             <DialogHeader className="space-y-1">
                 <div className="flex items-center gap-3">
-                    <div className="p-3 rounded-2xl bg-primary text-primary-foreground shadow-lg shadow-primary/20">
+                    <div className="p-3 rounded-2xl bg-primary text-primary-foreground shadow-lg shadow-sm">
                         <Wallet className="h-6 w-6" />
                     </div>
                     <div>
@@ -96,7 +96,7 @@ export function AddPaymentDialog({ isOpen, onOpenChange, customer, onPaymentSucc
           <div className="grid grid-cols-2 gap-4">
             <div className="p-4 rounded-2xl border bg-background/50 shadow-sm">
                 <p className="text-[10px] uppercase font-bold text-muted-foreground mb-1 tracking-wider">Dette Actuelle</p>
-                <p className="text-xl font-black text-destructive">{formatCurrency(customer.outstandingBalance)}</p>
+                <p className="text-xl font-semibold text-destructive">{formatCurrency(customer.outstandingBalance)}</p>
             </div>
             <div className={cn(
                 "p-4 rounded-2xl border transition-all duration-300",
@@ -105,7 +105,7 @@ export function AddPaymentDialog({ isOpen, onOpenChange, customer, onPaymentSucc
                 <p className="text-[10px] uppercase font-bold text-muted-foreground mb-1 tracking-wider">Nouveau Solde</p>
                 <div className="flex items-center gap-2">
                     <p className={cn(
-                        "text-xl font-black",
+                        "text-xl font-semibold",
                         newBalance <= 0 ? "text-green-500" : "text-foreground"
                     )}>
                         {formatCurrency(Math.max(0, newBalance))}
@@ -137,11 +137,11 @@ export function AddPaymentDialog({ isOpen, onOpenChange, customer, onPaymentSucc
                     value={amount} 
                     onChange={(e) => setAmount(e.target.value)} 
                     placeholder="0.00"
-                    className="text-4xl h-20 text-center font-black pr-14 focus-visible:ring-primary border-2 border-transparent focus-visible:border-primary/20 bg-background rounded-2xl shadow-sm transition-all"
+                    className="text-xl h-20 text-center font-semibold pr-14 focus-visible:ring-primary border-2 border-transparent focus-visible:border-primary/20 bg-background rounded-2xl shadow-sm transition-all"
                     autoFocus
                     onKeyDown={(e) => { if(e.key === 'Enter') handleAddPayment() }}
                 />
-                <div className="absolute right-5 top-1/2 -translate-y-1/2 text-muted-foreground font-black text-lg">
+                <div className="absolute right-5 top-1/2 -translate-y-1/2 text-muted-foreground font-semibold text-lg">
                     DA
                 </div>
               </div>
@@ -184,8 +184,8 @@ export function AddPaymentDialog({ isOpen, onOpenChange, customer, onPaymentSucc
           </Button>
           <Button 
             onClick={handleAddPayment} 
-            disabled={isLoading || paymentAmount <= 0 || isOverpaying}
-            className="flex-1 rounded-2xl h-12 font-bold shadow-lg shadow-primary/20 transition-all active:scale-95"
+            disabled={isLoading || paymentAmount <= 0}
+            className="flex-1 rounded-2xl h-12 font-bold shadow-lg shadow-sm transition-all active:scale-95"
           >
             {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <CheckCircle2 className="mr-2 h-5 w-5" />}
             Confirmer [Enter]

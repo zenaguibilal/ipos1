@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -18,13 +19,13 @@ export function CustomerMetrics({ customer }: CustomerMetricsProps) {
         <div className="space-y-6">
             {/* Main Debt Card - High Impact */}
             <Card className={cn(
-                "rounded-[2.5rem] border-none shadow-2xl overflow-hidden relative group transition-all duration-700",
+                "rounded-lg border-none shadow-sm overflow-hidden relative group transition-all duration-700",
                 balance > 0 ? "bg-destructive/10 border-destructive/20" : "bg-emerald-500/10 border-emerald-500/20"
             )}>
                 <div className="absolute -right-6 -bottom-6 opacity-[0.03] group-hover:opacity-10 transition-opacity duration-1000">
                     <Landmark className="h-48 w-48 rotate-12" />
                 </div>
-                <CardContent className="p-8 relative z-10">
+                <CardContent className="p-4 relative z-10">
                     <div className="flex justify-between items-start mb-6">
                         <div className={cn(
                             "p-4 rounded-2xl shadow-inner",
@@ -33,9 +34,9 @@ export function CustomerMetrics({ customer }: CustomerMetricsProps) {
                             <Landmark className="h-8 w-8" />
                         </div>
                         <div className="text-right">
-                            <span className="text-[10px] font-black uppercase tracking-[0.2em] opacity-40">Statut Financier</span>
+                            <span className="text-[10px] font-semibold uppercase opacity-40">Statut Financier</span>
                             <p className={cn(
-                                "text-[10px] font-black uppercase tracking-widest mt-1",
+                                "text-[10px] font-semibold uppercase tracking-wide mt-1",
                                 balance > 0 ? "text-destructive" : "text-emerald-500"
                             )}>
                                 {balance > 0 ? 'Dette Active' : 'Solde Équilibré'}
@@ -44,10 +45,10 @@ export function CustomerMetrics({ customer }: CustomerMetricsProps) {
                     </div>
                     
                     <div className="space-y-1">
-                        <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground opacity-50">Solde Débiteur</span>
+                        <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground opacity-50">Solde Débiteur</span>
                         <div className="flex items-baseline gap-2">
                             <p className={cn(
-                                "text-5xl font-black tracking-tighter",
+                                "text-lg font-semibold tracking-tighter",
                                 balance > 0 ? "text-destructive" : "text-foreground"
                             )}>
                                 {formatCurrency(balance)}
@@ -57,7 +58,7 @@ export function CustomerMetrics({ customer }: CustomerMetricsProps) {
 
                     {limit > 0 && (
                         <div className="mt-8 space-y-3">
-                            <div className="flex justify-between text-[9px] font-black uppercase tracking-widest">
+                            <div className="flex justify-between text-[9px] font-semibold uppercase tracking-wide">
                                 <span className="text-muted-foreground/60">Utilisation du Crédit</span>
                                 <span className={cn(creditUsage > 90 ? "text-destructive" : "text-primary")}>{creditUsage.toFixed(1)}%</span>
                             </div>
@@ -74,7 +75,7 @@ export function CustomerMetrics({ customer }: CustomerMetricsProps) {
 
             {/* Secondary Metrics Grid */}
             <div className="grid grid-cols-2 gap-6">
-                <Card className="rounded-[2rem] border-none shadow-xl bg-card/40 backdrop-blur-md overflow-hidden group">
+                <Card className="rounded-lg border-none shadow-xl bg-card/40 backdrop-blur-md overflow-hidden group">
                     <CardContent className="p-6">
                         <div className="flex justify-between items-start mb-4">
                             <div className="p-3 rounded-xl bg-primary/10 text-primary shadow-inner">
@@ -82,13 +83,13 @@ export function CustomerMetrics({ customer }: CustomerMetricsProps) {
                             </div>
                         </div>
                         <div className="space-y-0.5">
-                            <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground/40">Volume Achats</p>
-                            <p className="text-xl font-black tracking-tight">{formatCurrency(customer.totalSpent)}</p>
+                            <p className="text-[9px] font-semibold uppercase tracking-wide text-muted-foreground/40">Volume Achats</p>
+                            <p className="text-xl font-semibold tracking-tight">{formatCurrency(customer.totalSpent)}</p>
                         </div>
                     </CardContent>
                 </Card>
 
-                <Card className="rounded-[2rem] border-none shadow-xl bg-card/40 backdrop-blur-md overflow-hidden group">
+                <Card className="rounded-lg border-none shadow-xl bg-card/40 backdrop-blur-md overflow-hidden group">
                     <CardContent className="p-6">
                         <div className="flex justify-between items-start mb-4">
                             <div className="p-3 rounded-xl bg-amber-500/10 text-amber-500 shadow-inner">
@@ -96,8 +97,8 @@ export function CustomerMetrics({ customer }: CustomerMetricsProps) {
                             </div>
                         </div>
                         <div className="space-y-0.5">
-                            <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground/40">Limite Autorisée</p>
-                            <p className="text-xl font-black tracking-tight">
+                            <p className="text-[9px] font-semibold uppercase tracking-wide text-muted-foreground/40">Limite Autorisée</p>
+                            <p className="text-xl font-semibold tracking-tight">
                                 {limit > 0 ? formatCurrency(limit) : '∞'}
                             </p>
                         </div>

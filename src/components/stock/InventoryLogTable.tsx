@@ -1,3 +1,4 @@
+
 'use client';
 
 import React from 'react';
@@ -23,16 +24,16 @@ const reasonConfig: Record<string, { label: string, icon: React.ElementType, col
 
 export function InventoryLogTable({ logs }: InventoryLogTableProps) {
     return (
-        <div className="rounded-[2.5rem] border border-white/5 bg-card/40 backdrop-blur-xl overflow-hidden shadow-2xl">
+        <div className="rounded-lg border border-white/5 bg-card/40 backdrop-blur-sm overflow-hidden shadow-sm">
             <Table>
                 <TableHeader className="bg-muted/30">
                     <TableRow className="border-none">
-                        <TableHead className="p-6 font-black text-[10px] uppercase tracking-[0.2em] text-muted-foreground/60">Horodatage</TableHead>
-                        <TableHead className="p-6 font-black text-[10px] uppercase tracking-[0.2em] text-muted-foreground/60">Désignation Produit</TableHead>
-                        <TableHead className="p-6 font-black text-[10px] uppercase tracking-[0.2em] text-muted-foreground/60">Nature Flux</TableHead>
-                        <TableHead className="p-6 font-black text-[10px] uppercase tracking-[0.2em] text-muted-foreground/60">Référence</TableHead>
-                        <TableHead className="p-6 text-center font-black text-[10px] uppercase tracking-[0.2em] text-muted-foreground/60">Variation</TableHead>
-                        <TableHead className="p-6 text-center font-black text-[10px] uppercase tracking-[0.2em] text-primary">Solde Elite</TableHead>
+                        <TableHead className="p-6 font-semibold text-[10px] uppercase text-muted-foreground/60">Horodatage</TableHead>
+                        <TableHead className="p-6 font-semibold text-[10px] uppercase text-muted-foreground/60">Désignation Produit</TableHead>
+                        <TableHead className="p-6 font-semibold text-[10px] uppercase text-muted-foreground/60">Nature Flux</TableHead>
+                        <TableHead className="p-6 font-semibold text-[10px] uppercase text-muted-foreground/60">Référence</TableHead>
+                        <TableHead className="p-6 text-center font-semibold text-[10px] uppercase text-muted-foreground/60">Variation</TableHead>
+                        <TableHead className="p-6 text-center font-semibold text-[10px] uppercase text-primary">Solde Elite</TableHead>
                     </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -49,7 +50,7 @@ export function InventoryLogTable({ logs }: InventoryLogTableProps) {
                                         </div>
                                         <div className="flex flex-col -space-y-0.5">
                                             <span className="font-bold text-xs">{format(new Date(log.createdAt), 'dd MMM yyyy', { locale: fr })}</span>
-                                            <span className="text-[9px] text-muted-foreground/40 uppercase font-black tracking-widest">{format(new Date(log.createdAt), 'HH:mm:ss')}</span>
+                                            <span className="text-[9px] text-muted-foreground/40 uppercase font-semibold tracking-wide">{format(new Date(log.createdAt), 'HH:mm:ss')}</span>
                                         </div>
                                     </div>
                                 </TableCell>
@@ -58,11 +59,11 @@ export function InventoryLogTable({ logs }: InventoryLogTableProps) {
                                         <div className="p-2 rounded-xl bg-primary/5 text-primary/40">
                                             <Package className="h-4 w-4" />
                                         </div>
-                                        <span className="font-black tracking-tight text-sm group-hover:text-primary transition-colors">{log.productName}</span>
+                                        <span className="font-semibold tracking-tight text-sm group-hover:text-primary transition-colors">{log.productName}</span>
                                     </div>
                                 </TableCell>
                                 <TableCell className="p-6">
-                                    <Badge variant="outline" className={cn("gap-2 px-3 py-1.5 rounded-xl border font-black text-[9px] uppercase tracking-widest shadow-sm", config.color)}>
+                                    <Badge variant="outline" className={cn("gap-2 px-3 py-1.5 rounded-xl border font-semibold text-[9px] uppercase tracking-wide shadow-sm", config.color)}>
                                         <config.icon className="h-3.5 w-3.5" />
                                         {config.label}
                                     </Badge>
@@ -79,7 +80,7 @@ export function InventoryLogTable({ logs }: InventoryLogTableProps) {
                                 </TableCell>
                                 <TableCell className="p-6 text-center">
                                     <div className={cn(
-                                        "inline-flex items-center gap-1 font-black text-sm px-4 py-1.5 rounded-full shadow-inner",
+                                        "inline-flex items-center gap-1 font-semibold text-sm px-4 py-1.5 rounded-full shadow-inner",
                                         isPositive ? "text-emerald-500 bg-emerald-500/5" : "text-destructive bg-destructive/5"
                                     )}>
                                         {isPositive ? <ArrowUpRight className="h-3.5 w-3.5" /> : <ArrowDownLeft className="h-3.5 w-3.5" />}
@@ -87,7 +88,7 @@ export function InventoryLogTable({ logs }: InventoryLogTableProps) {
                                     </div>
                                 </TableCell>
                                 <TableCell className="p-6 text-center">
-                                    <div className="inline-flex items-center justify-center px-4 py-2 rounded-2xl bg-black/40 border border-white/5 font-mono font-black text-sm shadow-2xl text-primary min-w-[70px]">
+                                    <div className="inline-flex items-center justify-center px-4 py-2 rounded-2xl bg-black/40 border border-white/5 font-mono font-semibold text-sm shadow-sm text-primary min-w-[70px]">
                                         {log.newQuantity}
                                     </div>
                                 </TableCell>

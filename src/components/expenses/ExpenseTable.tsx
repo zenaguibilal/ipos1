@@ -1,3 +1,4 @@
+
 'use client';
 
 import React from 'react';
@@ -30,7 +31,7 @@ export function ExpenseTable({
     onToggleSelectAll 
 }: ExpenseTableProps) {
     return (
-        <div className="rounded-[2.5rem] border border-white/5 bg-card/40 backdrop-blur-xl overflow-hidden shadow-2xl">
+        <div className="rounded-lg border border-white/5 bg-card/40 backdrop-blur-sm overflow-hidden shadow-sm">
             <Table>
                 <TableHeader className="bg-muted/30">
                     <TableRow className="border-none">
@@ -41,10 +42,10 @@ export function ExpenseTable({
                                 className="border-primary data-[state=checked]:bg-primary"
                             />
                         </TableHead>
-                        <TableHead className="p-6 font-black text-[10px] uppercase tracking-[0.2em] text-muted-foreground/60">Horodatage</TableHead>
-                        <TableHead className="p-6 font-black text-[10px] uppercase tracking-[0.2em] text-muted-foreground/60">Désignation de la Charge</TableHead>
-                        <TableHead className="p-6 font-black text-[10px] uppercase tracking-[0.2em] text-muted-foreground/60">Poste Analytique</TableHead>
-                        <TableHead className="p-6 text-right font-black text-[10px] uppercase tracking-[0.2em] text-destructive">Montant Décaissé</TableHead>
+                        <TableHead className="p-6 font-semibold text-[10px] uppercase text-muted-foreground/60">Horodatage</TableHead>
+                        <TableHead className="p-6 font-semibold text-[10px] uppercase text-muted-foreground/60">Désignation de la Charge</TableHead>
+                        <TableHead className="p-6 font-semibold text-[10px] uppercase text-muted-foreground/60">Poste Analytique</TableHead>
+                        <TableHead className="p-6 text-right font-semibold text-[10px] uppercase text-destructive">Montant Décaissé</TableHead>
                         <TableHead className="p-6 w-[80px]"></TableHead>
                     </TableRow>
                 </TableHeader>
@@ -75,7 +76,7 @@ export function ExpenseTable({
                                         </div>
                                         <div className="flex flex-col -space-y-0.5">
                                             <span className="font-bold text-xs">{format(safeToDate(expense.expenseDate), 'dd MMM yyyy', { locale: fr })}</span>
-                                            <span className="text-[9px] text-muted-foreground/40 uppercase font-black tracking-widest">Flux validé</span>
+                                            <span className="text-[9px] text-muted-foreground/40 uppercase font-semibold tracking-wide">Flux validé</span>
                                         </div>
                                     </div>
                                 </TableCell>
@@ -84,18 +85,18 @@ export function ExpenseTable({
                                         <div className="p-2 rounded-xl bg-destructive/5 text-destructive/40 shadow-inner">
                                             <Banknote className="h-4 w-4" />
                                         </div>
-                                        <span className="font-black tracking-tight text-sm group-hover:text-primary transition-colors">
+                                        <span className="font-semibold tracking-tight text-sm group-hover:text-primary transition-colors">
                                             {expense.description}
                                         </span>
                                     </div>
                                 </TableCell>
                                 <TableCell className="p-6">
-                                    <Badge variant="outline" className="gap-2 px-3 py-1.5 rounded-xl border-white/10 bg-muted/20 text-[9px] font-black uppercase tracking-widest text-muted-foreground/60">
+                                    <Badge variant="outline" className="gap-2 px-3 py-1.5 rounded-xl border-white/10 bg-muted/20 text-[9px] font-semibold uppercase tracking-wide text-muted-foreground/60">
                                         <Tag className="h-3 w-3 opacity-40" /> {expense.category}
                                     </Badge>
                                 </TableCell>
                                 <TableCell className="p-6 text-right">
-                                    <span className="font-black text-destructive text-base tracking-tighter font-mono">
+                                    <span className="font-semibold text-destructive text-base tracking-tighter font-mono">
                                         {formatCurrency(expense.amount)}
                                     </span>
                                 </TableCell>
@@ -106,7 +107,7 @@ export function ExpenseTable({
                                                 <MoreHorizontal className="h-5 w-5" />
                                             </Button>
                                         </DropdownMenuTrigger>
-                                        <DropdownMenuContent align="end" className="rounded-2xl border-none shadow-2xl bg-card">
+                                        <DropdownMenuContent align="end" className="rounded-2xl border-none shadow-sm bg-card">
                                             <DropdownMenuItem onClick={() => onEdit(expense)} className="rounded-xl p-3">
                                                 <Edit className="mr-2 h-4 w-4" /> Modifier
                                             </DropdownMenuItem>

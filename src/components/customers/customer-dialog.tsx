@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -87,21 +88,21 @@ export function CustomerDialog({ isOpen, onOpenChange, customer, onSuccess }: Cu
             <div className="p-1.5 rounded-lg bg-primary/10 text-primary shadow-inner">
                 <Icon className="h-3 w-3" />
             </div>
-            <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground opacity-60">{title}</h4>
+            <h4 className="text-[10px] font-semibold uppercase text-muted-foreground opacity-60">{title}</h4>
         </div>
     );
 
     return (
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-2xl rounded-[3rem] border-none shadow-2xl p-0 overflow-hidden bg-card">
+            <DialogContent className="sm:max-w-2xl rounded-lg border-none shadow-sm p-0 overflow-hidden bg-card">
                 <form onSubmit={handleSubmit}>
-                    <DialogHeader className="bg-primary/5 p-8 border-b border-primary/10">
+                    <DialogHeader className="bg-primary/5 p-4 border-b border-primary/10">
                         <div className="flex items-center gap-4">
-                            <div className="p-3 rounded-2xl bg-primary text-primary-foreground shadow-lg shadow-primary/20">
+                            <div className="p-3 rounded-2xl bg-primary text-primary-foreground shadow-lg shadow-sm">
                                 <User className="h-6 w-6" />
                             </div>
                             <div>
-                                <DialogTitle className="text-2xl font-black tracking-tight">
+                                <DialogTitle className="text-lg font-semibold tracking-tight">
                                     {customer ? 'Édition du Profil' : 'Inscrire un Nouveau Client'}
                                 </DialogTitle>
                                 <DialogDescription className="font-medium">Configuration souveraine de la fiche partenaire.</DialogDescription>
@@ -109,18 +110,18 @@ export function CustomerDialog({ isOpen, onOpenChange, customer, onSuccess }: Cu
                         </div>
                     </DialogHeader>
 
-                    <div className="p-8 space-y-10 max-h-[60vh] overflow-y-auto custom-scrollbar">
+                    <div className="p-4 space-y-4 max-h-[60vh] overflow-y-auto custom-scrollbar">
                         {error && <div className="p-4 bg-destructive/10 text-destructive rounded-2xl text-xs font-bold border border-destructive/20 text-center">{error}</div>}
                         
                         <div>
                             <SectionTitle title="Identité Civile" icon={User} />
                             <div className="grid grid-cols-2 gap-6">
                                 <div className="space-y-2">
-                                    <Label htmlFor="firstName" className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Prénom *</Label>
+                                    <Label htmlFor="firstName" className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground ml-1">Prénom *</Label>
                                     <Input id="firstName" value={formState.firstName} onChange={(e) => setFormState(s => ({...s, firstName: e.target.value}))} className="h-12 rounded-xl bg-muted/20 border-none shadow-inner font-bold" required />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label htmlFor="lastName" className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Nom *</Label>
+                                    <Label htmlFor="lastName" className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground ml-1">Nom *</Label>
                                     <Input id="lastName" value={formState.lastName} onChange={(e) => setFormState(s => ({...s, lastName: e.target.value}))} className="h-12 rounded-xl bg-muted/20 border-none shadow-inner font-bold" required />
                                 </div>
                             </div>
@@ -130,14 +131,14 @@ export function CustomerDialog({ isOpen, onOpenChange, customer, onSuccess }: Cu
                             <SectionTitle title="Coordonnées" icon={Phone} />
                             <div className="grid gap-6">
                                 <div className="space-y-2">
-                                    <Label htmlFor="phone" className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Ligne Mobile</Label>
+                                    <Label htmlFor="phone" className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground ml-1">Ligne Mobile</Label>
                                     <div className="relative">
                                         <Phone className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/30" />
                                         <Input id="phone" type="tel" value={formState.phone} onChange={(e) => setFormState(s => ({...s, phone: e.target.value}))} className="pl-11 h-12 rounded-xl bg-muted/20 border-none shadow-inner font-mono font-bold" placeholder="0XXXXXXXXX" />
                                     </div>
                                 </div>
                                 <div className="space-y-2">
-                                    <Label htmlFor="address" className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Adresse Physique</Label>
+                                    <Label htmlFor="address" className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground ml-1">Adresse Physique</Label>
                                     <div className="relative">
                                         <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/30" />
                                         <Input id="address" value={formState.address} onChange={(e) => setFormState(s => ({...s, address: e.target.value}))} className="pl-11 h-12 rounded-xl bg-muted/20 border-none shadow-inner font-medium" placeholder="Localisation..." />
@@ -148,20 +149,20 @@ export function CustomerDialog({ isOpen, onOpenChange, customer, onSuccess }: Cu
 
                         <div>
                             <SectionTitle title="Paramètres de Crédit" icon={ShieldCheck} />
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 p-8 bg-muted/20 rounded-[2.5rem] border border-white/5 shadow-inner">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-4 bg-muted/20 rounded-lg border border-white/5 shadow-inner">
                                 <div className="space-y-4">
-                                    <Label htmlFor="settlementDay" className="text-[10px] font-black uppercase tracking-widest text-primary ml-1">Jour de règlement (Mensuel)</Label>
+                                    <Label htmlFor="settlementDay" className="text-[10px] font-semibold uppercase tracking-wide text-primary ml-1">Jour de règlement (Mensuel)</Label>
                                     <div className="relative">
                                         <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-primary/30" />
-                                        <Input id="settlementDay" type="number" min="1" max="31" placeholder="Ex: 14" value={formState.settlementDay} onChange={(e) => setFormState(s => ({...s, settlementDay: e.target.value}))} className="pl-11 h-14 rounded-2xl bg-background border-none shadow-sm font-black text-xl text-primary" />
+                                        <Input id="settlementDay" type="number" min="1" max="31" placeholder="Ex: 14" value={formState.settlementDay} onChange={(e) => setFormState(s => ({...s, settlementDay: e.target.value}))} className="pl-11 h-9 rounded-2xl bg-background border-none shadow-sm font-semibold text-xl text-primary" />
                                     </div>
                                     <p className="text-[9px] text-muted-foreground font-medium italic">Le client doit payer chaque mois le jour indiqué.</p>
                                 </div>
                                 <div className="space-y-4">
-                                    <Label htmlFor="creditLimit" className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Plafond de Crédit (DA)</Label>
+                                    <Label htmlFor="creditLimit" className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground ml-1">Plafond de Crédit (DA)</Label>
                                     <div className="relative">
                                         <Coins className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/30" />
-                                        <Input id="creditLimit" type="number" placeholder="Ex: 50000" value={formState.creditLimit} onChange={(e) => setFormState(s => ({...s, creditLimit: e.target.value}))} className="pl-11 h-14 rounded-2xl bg-background border-none shadow-sm font-black text-xl" />
+                                        <Input id="creditLimit" type="number" placeholder="Ex: 50000" value={formState.creditLimit} onChange={(e) => setFormState(s => ({...s, creditLimit: e.target.value}))} className="pl-11 h-9 rounded-2xl bg-background border-none shadow-sm font-semibold text-xl" />
                                     </div>
                                     <p className="text-[9px] text-muted-foreground font-medium italic">Limite maximale autorisée avant blocage.</p>
                                 </div>
@@ -169,9 +170,9 @@ export function CustomerDialog({ isOpen, onOpenChange, customer, onSuccess }: Cu
                         </div>
                     </div>
 
-                    <DialogFooter className="p-8 bg-card border-t border-white/5 flex gap-4">
-                        <Button type="button" variant="ghost" onClick={() => onOpenChange(false)} className="h-14 rounded-2xl font-black text-xs uppercase tracking-widest px-8" disabled={isLoading}>Annuler</Button>
-                        <Button type="submit" disabled={isLoading} className="flex-1 h-14 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-primary/20 transition-all active:scale-95 gap-3">
+                    <DialogFooter className="p-4 bg-card border-t border-white/5 flex gap-4">
+                        <Button type="button" variant="ghost" onClick={() => onOpenChange(false)} className="h-9 rounded-2xl font-semibold text-xs uppercase tracking-wide px-8" disabled={isLoading}>Annuler</Button>
+                        <Button type="submit" disabled={isLoading} className="flex-1 h-9 rounded-2xl font-semibold text-xs uppercase tracking-wide shadow-xl shadow-sm transition-all active:scale-95 gap-3">
                              {isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <ShieldCheck className="h-5 w-5" />}
                             {customer ? 'Mettre à jour le Dossier' : 'Confirmer Inscription Elite'}
                         </Button>

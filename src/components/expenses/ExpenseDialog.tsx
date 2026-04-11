@@ -108,21 +108,21 @@ export default function ExpenseDialog({ isOpen, onOpenChange, expense, onSuccess
             <div className="p-1.5 rounded-lg bg-primary/10 text-primary shadow-inner">
                 <Icon className="h-3 w-3" />
             </div>
-            <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground opacity-60">{title}</h4>
+            <h4 className="text-[10px] font-semibold uppercase text-muted-foreground opacity-60">{title}</h4>
         </div>
     );
 
     return (
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-2xl rounded-[3rem] border-none shadow-2xl p-0 overflow-hidden bg-card">
+            <DialogContent className="sm:max-w-2xl rounded-lg border-none shadow-sm p-0 overflow-hidden bg-card">
                 <form onSubmit={handleSubmit}>
-                    <DialogHeader className="bg-primary/5 p-8 border-b border-primary/10">
+                    <DialogHeader className="bg-primary/5 p-4 border-b border-primary/10">
                         <div className="flex items-center gap-4">
-                            <div className="p-3 rounded-2xl bg-primary text-primary-foreground shadow-lg shadow-primary/20">
+                            <div className="p-3 rounded-2xl bg-primary text-primary-foreground shadow-lg shadow-sm">
                                 <Banknote className="h-6 w-6" />
                             </div>
                             <div>
-                                <DialogTitle className="text-2xl font-black tracking-tight">
+                                <DialogTitle className="text-lg font-semibold tracking-tight">
                                     {expense ? 'Édition du Flux' : 'Nouvelle Charge Elite'}
                                 </DialogTitle>
                                 <DialogDescription className="font-medium">Gestion souveraine des sorties de trésorerie.</DialogDescription>
@@ -130,19 +130,19 @@ export default function ExpenseDialog({ isOpen, onOpenChange, expense, onSuccess
                         </div>
                     </DialogHeader>
 
-                    <div className="p-8 space-y-10 max-h-[60vh] overflow-y-auto custom-scrollbar">
+                    <div className="p-4 space-y-4 max-h-[60vh] overflow-y-auto custom-scrollbar">
                         {error && <div className="p-4 bg-destructive/10 text-destructive rounded-2xl text-xs font-bold border border-destructive/20 text-center">{error}</div>}
                         
                         <div>
                             <SectionTitle title="Description du Flux" icon={FileText} />
                             <div className="space-y-4">
                                 <div className="space-y-2">
-                                    <Label htmlFor="description" className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Intitulé de la dépense *</Label>
+                                    <Label htmlFor="description" className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground ml-1">Intitulé de la dépense *</Label>
                                     <Input 
                                         id="description" 
                                         value={formState.description} 
                                         onChange={handleInputChange} 
-                                        className="h-14 rounded-2xl bg-muted/20 border-none shadow-inner text-lg font-black tracking-tight focus-visible:ring-primary/20" 
+                                        className="h-9 rounded-2xl bg-muted/20 border-none shadow-inner text-lg font-semibold tracking-tight focus-visible:ring-primary/20" 
                                         placeholder="Ex: Facture électricité Janvier"
                                         required 
                                         autoFocus 
@@ -150,7 +150,7 @@ export default function ExpenseDialog({ isOpen, onOpenChange, expense, onSuccess
                                 </div>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                                     <div className="space-y-2">
-                                        <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Poste de Dépense</Label>
+                                        <Label className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground ml-1">Poste de Dépense</Label>
                                         <Combobox 
                                             options={categoryOptions}
                                             value={formState.category}
@@ -161,7 +161,7 @@ export default function ExpenseDialog({ isOpen, onOpenChange, expense, onSuccess
                                         />
                                     </div>
                                     <div className="space-y-2">
-                                        <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Date d'Opération</Label>
+                                        <Label className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground ml-1">Date d'Opération</Label>
                                         <DatePicker date={formState.expenseDate} setDate={handleDateChange} />
                                     </div>
                                 </div>
@@ -170,12 +170,12 @@ export default function ExpenseDialog({ isOpen, onOpenChange, expense, onSuccess
 
                         <div>
                             <SectionTitle title="Audit Financier" icon={Coins} />
-                            <div className="p-8 bg-destructive/5 rounded-[2.5rem] border border-destructive/10 space-y-4 group hover:bg-destructive/10 transition-all duration-500 shadow-inner">
+                            <div className="p-4 bg-destructive/5 rounded-lg border border-destructive/10 space-y-4 group hover:bg-destructive/10 transition-all duration-500 shadow-inner">
                                 <div className="flex items-center gap-3 text-destructive">
                                     <div className="p-2.5 rounded-xl bg-destructive/10 shadow-sm">
                                         <Coins className="h-5 w-5" />
                                     </div>
-                                    <Label htmlFor="amount" className="text-[10px] font-black uppercase tracking-[0.2em]">Montant décaissé (DA)</Label>
+                                    <Label htmlFor="amount" className="text-[10px] font-semibold uppercase ">Montant décaissé (DA)</Label>
                                 </div>
                                 <div className="relative">
                                     <Input 
@@ -184,11 +184,11 @@ export default function ExpenseDialog({ isOpen, onOpenChange, expense, onSuccess
                                         step="0.1" 
                                         value={formState.amount || ''} 
                                         onChange={handleInputChange} 
-                                        className="h-20 rounded-2xl bg-background border-none shadow-sm font-black text-4xl text-destructive text-center focus-visible:ring-destructive/20 px-8" 
+                                        className="h-20 rounded-2xl bg-background border-none shadow-sm font-semibold text-xl text-destructive text-center focus-visible:ring-destructive/20 px-8" 
                                         placeholder="0.0"
                                         required 
                                     />
-                                    <span className="absolute right-8 top-1/2 -translate-y-1/2 font-black text-xs text-destructive opacity-40 uppercase tracking-widest">DA</span>
+                                    <span className="absolute right-8 top-1/2 -translate-y-1/2 font-semibold text-xs text-destructive opacity-40 uppercase tracking-wide">DA</span>
                                 </div>
                                 <p className="text-[9px] text-muted-foreground/50 text-center italic">
                                     Déduit immédiatement de la trésorerie globale.
@@ -197,9 +197,9 @@ export default function ExpenseDialog({ isOpen, onOpenChange, expense, onSuccess
                         </div>
                     </div>
 
-                    <DialogFooter className="p-8 bg-card border-t border-white/5 flex gap-4">
-                        <Button type="button" variant="ghost" onClick={() => onOpenChange(false)} className="h-14 rounded-2xl font-black text-xs uppercase tracking-widest px-8" disabled={isLoading}>Annuler</Button>
-                        <Button type="submit" disabled={isLoading} className="flex-1 h-14 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-primary/20 transition-all active:scale-95 gap-3">
+                    <DialogFooter className="p-4 bg-card border-t border-white/5 flex gap-4">
+                        <Button type="button" variant="ghost" onClick={() => onOpenChange(false)} className="h-9 rounded-2xl font-semibold text-xs uppercase tracking-wide px-8" disabled={isLoading}>Annuler</Button>
+                        <Button type="submit" disabled={isLoading} className="flex-1 h-9 rounded-2xl font-semibold text-xs uppercase tracking-wide shadow-xl shadow-sm transition-all active:scale-95 gap-3">
                              {isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <CheckCircle2 className="h-5 w-5" />}
                             {expense ? 'Mettre à jour le Flux' : 'Valider le Décaissement'}
                         </Button>

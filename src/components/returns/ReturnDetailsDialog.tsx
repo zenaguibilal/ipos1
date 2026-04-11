@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useRef } from 'react';
@@ -34,10 +35,10 @@ interface ReturnDetailsDialogProps {
 
 const PrintableReturn = React.forwardRef<HTMLDivElement, { productReturn: ProductReturn, customerName: string, profile: CompanyProfile | null }>(({ productReturn, customerName, profile }, ref) => {
     return (
-        <div ref={ref} className="p-10 bg-white text-black font-sans w-[210mm] min-h-[297mm]">
+        <div ref={ref} className="p-4 bg-white text-black font-sans w-[210mm] min-h-[297mm]">
             <div className="flex justify-between items-start border-b-2 border-black pb-6 mb-6">
                 <div>
-                    <h1 className="text-3xl font-black uppercase">{profile?.companyName || 'iPOS Manager'}</h1>
+                    <h1 className="text-xl font-semibold uppercase">{profile?.companyName || 'iPOS Manager'}</h1>
                     <p className="text-sm">{profile?.address}</p>
                     <p className="text-sm">{profile?.phone}</p>
                 </div>
@@ -84,14 +85,14 @@ const PrintableReturn = React.forwardRef<HTMLDivElement, { productReturn: Produc
                         <span>Montant Remboursé:</span>
                         <span>{formatCurrency(productReturn.amountRefunded)}</span>
                     </div>
-                    <div className="flex justify-between text-lg font-black border-t-2 border-black pt-2">
+                    <div className="flex justify-between text-lg font-semibold border-t-2 border-black pt-2">
                         <span>CRÉDIT CLIENT:</span>
                         <span>{formatCurrency(productReturn.totalReturnValue - productReturn.amountRefunded)}</span>
                     </div>
                 </div>
             </div>
 
-            <div className="mt-20 flex justify-between px-10 italic text-sm text-gray-400">
+            <div className="mt-20 flex justify-between px-4 italic text-sm text-gray-400">
                 <div className="text-center border-t border-dashed border-gray-300 pt-2 w-40">Visa Magasin</div>
                 <div className="text-center border-t border-dashed border-gray-300 pt-2 w-40">Signature Client</div>
             </div>
@@ -126,7 +127,7 @@ export function ReturnDetailsDialog({
 
     return (
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
-            <DialogContent className="max-w-3xl h-[90vh] flex flex-col p-0 overflow-hidden border-none shadow-2xl rounded-3xl">
+            <DialogContent className="max-w-3xl h-[90vh] flex flex-col p-0 overflow-hidden border-none shadow-sm rounded-3xl">
                 <DialogHeader className="bg-amber-500/10 p-6 border-b border-amber-500/20">
                     <div className="flex items-center gap-4">
                         <div className="p-3 rounded-2xl bg-amber-500 text-white shadow-lg shadow-amber-500/20">
@@ -147,22 +148,22 @@ export function ReturnDetailsDialog({
                     {/* Summary Info */}
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                         <div className="p-4 rounded-2xl bg-muted/30 border border-border/50">
-                            <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest mb-1 flex items-center gap-1">
+                            <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-wide mb-1 flex items-center gap-1">
                                 <Calendar className="h-3 w-3" /> Date Retour
                             </p>
                             <p className="font-bold text-xs">{format(safeToDate(productReturn.createdAt!), 'dd MMM yyyy', { locale: fr })}</p>
                         </div>
                         <div className="p-4 rounded-2xl bg-muted/30 border border-border/50">
-                            <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest mb-1">Articles</p>
+                            <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-wide mb-1">Articles</p>
                             <p className="font-bold text-xs">{productReturn.items.length} article(s)</p>
                         </div>
                         <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20">
-                            <p className="text-[10px] uppercase font-bold text-emerald-600 tracking-widest mb-1">Remboursé</p>
-                            <p className="font-black text-emerald-600">{formatCurrency(productReturn.amountRefunded)}</p>
+                            <p className="text-[10px] uppercase font-bold text-emerald-600 tracking-wide mb-1">Remboursé</p>
+                            <p className="font-semibold text-emerald-600">{formatCurrency(productReturn.amountRefunded)}</p>
                         </div>
-                        <div className="p-4 rounded-2xl bg-primary text-primary-foreground shadow-lg shadow-primary/20">
-                            <p className="text-[10px] uppercase font-bold opacity-70 tracking-widest mb-1">Valeur Retour</p>
-                            <p className="text-lg font-black">{formatCurrency(productReturn.totalReturnValue)}</p>
+                        <div className="p-4 rounded-2xl bg-primary text-primary-foreground shadow-lg shadow-sm">
+                            <p className="text-[10px] uppercase font-bold opacity-70 tracking-wide mb-1">Valeur Retour</p>
+                            <p className="text-lg font-semibold">{formatCurrency(productReturn.totalReturnValue)}</p>
                         </div>
                     </div>
 
@@ -193,11 +194,11 @@ export function ReturnDetailsDialog({
                                         </TableCell>
                                         <TableCell className="text-center">
                                             {item.wasRestocked ? (
-                                                <div className="flex items-center justify-center text-emerald-500 gap-1 text-[10px] font-black uppercase">
+                                                <div className="flex items-center justify-center text-emerald-500 gap-1 text-[10px] font-semibold uppercase">
                                                     <PackageCheck className="h-3 w-3" /> Réintégré
                                                 </div>
                                             ) : (
-                                                <div className="flex items-center justify-center text-destructive gap-1 text-[10px] font-black uppercase">
+                                                <div className="flex items-center justify-center text-destructive gap-1 text-[10px] font-semibold uppercase">
                                                     <PackageX className="h-3 w-3" /> Perte/Talon
                                                 </div>
                                             )}
@@ -210,7 +211,7 @@ export function ReturnDetailsDialog({
 
                     {productReturn.notes && (
                         <div className="p-4 bg-muted/20 rounded-2xl border border-dashed border-border/50">
-                            <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-2">Observations / Motifs</p>
+                            <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground mb-2">Observations / Motifs</p>
                             <p className="text-sm italic text-muted-foreground">{productReturn.notes}</p>
                         </div>
                     )}

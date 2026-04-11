@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -40,10 +41,10 @@ export function ProductHistoryDialog({ isOpen, onOpenChange, product }: ProductH
 
     return (
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
-            <DialogContent className="max-w-4xl h-[80vh] flex flex-col p-0 overflow-hidden border-none shadow-2xl rounded-3xl">
+            <DialogContent className="max-w-4xl h-[80vh] flex flex-col p-0 overflow-hidden border-none shadow-sm rounded-3xl">
                 <DialogHeader className="bg-primary/5 p-6 border-b border-primary/10">
                     <div className="flex items-center gap-4">
-                        <div className="p-3 rounded-2xl bg-primary text-primary-foreground shadow-lg shadow-primary/20">
+                        <div className="p-3 rounded-2xl bg-primary text-primary-foreground shadow-lg shadow-sm">
                             <History className="h-6 w-6" />
                         </div>
                         <div>
@@ -59,13 +60,13 @@ export function ProductHistoryDialog({ isOpen, onOpenChange, product }: ProductH
                     {isLoading ? (
                         <div className="flex flex-col items-center justify-center h-full gap-4 text-muted-foreground">
                             <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                            <p className="font-bold text-sm uppercase tracking-widest">Chargement de l'historique...</p>
+                            <p className="font-bold text-sm uppercase tracking-wide">Chargement de l'historique...</p>
                         </div>
                     ) : logs.length > 0 ? (
                         <InventoryLogTable logs={logs} />
                     ) : (
-                        <div className="flex flex-col items-center justify-center h-full text-center p-12 bg-muted/10 rounded-3xl border-2 border-dashed border-border/50">
-                            <History className="h-16 w-16 text-muted-foreground/20" />
+                        <div className="flex flex-col items-center justify-center h-full text-center p-4 bg-muted/10 rounded-3xl border-2 border-dashed border-border/50">
+                            <History className="h-9 w-16 text-muted-foreground/20" />
                             <h3 className="mt-4 text-lg font-bold">Aucun mouvement</h3>
                             <p className="text-muted-foreground text-sm max-w-xs mx-auto">Ce produit n'a pas encore de transactions enregistrées (ventes, achats, etc.).</p>
                         </div>

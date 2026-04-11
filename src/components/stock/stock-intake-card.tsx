@@ -25,7 +25,7 @@ const StockIntakeCardComponent = ({ intake, supplierName, onViewDetails, onCance
     };
 
     return (
-        <Card onClick={handleCardClick} className="luxury-card group flex flex-col justify-between transition-all duration-500 bg-card/40 backdrop-blur-xl border-white/5 relative overflow-hidden rounded-[2.5rem] cursor-pointer">
+        <Card onClick={handleCardClick} className="app-card group flex flex-col justify-between transition-all duration-500 bg-card/40 backdrop-blur-sm border-white/5 relative overflow-hidden rounded-lg cursor-pointer">
             <div className="absolute -right-4 -top-4 opacity-[0.02] group-hover:opacity-10 transition-opacity duration-700 pointer-events-none">
                 <Archive className="h-32 w-32 rotate-12" />
             </div>
@@ -41,7 +41,7 @@ const StockIntakeCardComponent = ({ intake, supplierName, onViewDetails, onCance
                             <MoreHorizontal className="h-5 w-5" />
                         </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="rounded-2xl border-none shadow-2xl bg-card">
+                    <DropdownMenuContent align="end" className="rounded-2xl border-none shadow-sm bg-card">
                         <DropdownMenuItem onClick={() => onViewDetails(intake)} className="rounded-xl p-3">
                             <FileText className="mr-2 h-4 w-4" /> Détails du bon
                         </DropdownMenuItem>
@@ -58,10 +58,10 @@ const StockIntakeCardComponent = ({ intake, supplierName, onViewDetails, onCance
                         <Building className="h-5 w-5" />
                     </div>
                     <div className="min-w-0 pr-10">
-                        <CardTitle className="text-lg font-black tracking-tight group-hover:text-primary transition-colors truncate">
+                        <CardTitle className="text-lg font-semibold tracking-tight group-hover:text-primary transition-colors truncate">
                             {name}
                         </CardTitle>
-                        <p className="text-[10px] font-mono font-black uppercase text-muted-foreground/40 mt-1 flex items-center gap-1 tracking-widest">
+                        <p className="text-[10px] font-mono font-semibold uppercase text-muted-foreground/40 mt-1 flex items-center gap-1 tracking-wide">
                             <Hash className="h-2.5 w-2.5" /> {intake.invoiceNumber || 'No ID'}
                         </p>
                     </div>
@@ -71,13 +71,13 @@ const StockIntakeCardComponent = ({ intake, supplierName, onViewDetails, onCance
             <CardContent className="p-6 pt-2 space-y-4">
                 <div className="grid grid-cols-2 gap-3">
                     <div className="p-3 rounded-2xl bg-muted/20 border border-white/5">
-                        <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground/40 mb-1 flex items-center gap-1">
+                        <p className="text-[9px] font-semibold uppercase tracking-wide text-muted-foreground/40 mb-1 flex items-center gap-1">
                             <Calendar className="h-2.5 w-2.5" /> Date
                         </p>
                         <p className="text-xs font-bold">{format(safeToDate(intake.createdAt!), 'dd MMM yyyy', { locale: fr })}</p>
                     </div>
                     <div className="p-3 rounded-2xl bg-muted/20 border border-white/5">
-                        <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground/40 mb-1 flex items-center gap-1">
+                        <p className="text-[9px] font-semibold uppercase tracking-wide text-muted-foreground/40 mb-1 flex items-center gap-1">
                             <ShoppingBag className="h-2.5 w-2.5" /> Articles
                         </p>
                         <p className="text-xs font-bold">{intake.items.length} Types</p>
@@ -87,13 +87,13 @@ const StockIntakeCardComponent = ({ intake, supplierName, onViewDetails, onCance
 
             <CardFooter className="p-6 pt-3 border-t border-white/5 bg-muted/5 flex items-center justify-between">
                 <div className="space-y-0.5">
-                    <p className="text-2xl font-black text-primary tracking-tighter leading-none">{formatCurrency(intake.totalValue)}</p>
-                    <p className="text-[9px] text-muted-foreground font-black uppercase tracking-tight opacity-40">Investissement Total</p>
+                    <p className="text-lg font-semibold text-primary tracking-tighter leading-none">{formatCurrency(intake.totalValue)}</p>
+                    <p className="text-[9px] text-muted-foreground font-semibold uppercase tracking-tight opacity-40">Investissement Total</p>
                 </div>
                 <Button 
                     variant="ghost" 
                     size="sm" 
-                    className="h-9 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-primary/10 hover:text-primary transition-all px-4"
+                    className="h-9 rounded-xl font-semibold text-[10px] uppercase tracking-wide hover:bg-primary/10 hover:text-primary transition-all px-4"
                 >
                     Examiner
                 </Button>

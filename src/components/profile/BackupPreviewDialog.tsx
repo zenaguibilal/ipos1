@@ -281,23 +281,23 @@ export function BackupPreviewDialog({ isOpen, onOpenChange, initialData }: Backu
 
     return (
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
-            <DialogContent className="max-w-[95vw] w-[1400px] h-[90vh] flex flex-col p-0 overflow-hidden border-none shadow-2xl rounded-[3rem] bg-card">
-                <DialogHeader className="bg-primary/5 p-8 border-b border-primary/10">
+            <DialogContent className="max-w-[95vw] w-[1400px] h-[90vh] flex flex-col p-0 overflow-hidden border-none shadow-sm rounded-lg bg-card">
+                <DialogHeader className="bg-primary/5 p-4 border-b border-primary/10">
                     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
                         <div className="flex items-center gap-4">
-                            <div className="p-3.5 rounded-2xl bg-primary text-primary-foreground shadow-2xl shadow-primary/20">
+                            <div className="p-3.5 rounded-2xl bg-primary text-primary-foreground shadow-sm shadow-sm">
                                 <Database className="h-6 w-6" />
                             </div>
                             <div>
-                                <DialogTitle className="text-2xl font-black tracking-tighter">Déploiement Sélectif & Mapping</DialogTitle>
-                                <DialogDescription className="text-[10px] font-black uppercase tracking-[0.3em] text-primary/50">Liez les colonnes de votre fichier aux champs de l'application</DialogDescription>
+                                <DialogTitle className="text-lg font-semibold tracking-tighter">Déploiement Sélectif & Mapping</DialogTitle>
+                                <DialogDescription className="text-[10px] font-semibold uppercase text-primary/50">Liez les colonnes de votre fichier aux champs de l'application</DialogDescription>
                             </div>
                         </div>
                         <div className="flex gap-3 w-full sm:w-auto">
-                            <Button type="button" variant="ghost" onClick={() => onOpenChange(false)} className="rounded-2xl h-12 px-6 font-black text-xs uppercase tracking-widest" disabled={isRestoring}>
+                            <Button type="button" variant="ghost" onClick={() => onOpenChange(false)} className="rounded-2xl h-12 px-6 font-semibold text-xs uppercase tracking-wide" disabled={isRestoring}>
                                 Annuler
                             </Button>
-                            <Button type="button" onClick={handleRestore} disabled={isRestoring || selectedTables.size === 0} className="flex-1 sm:flex-none h-12 px-10 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-primary/20 gap-3">
+                            <Button type="button" onClick={handleRestore} disabled={isRestoring || selectedTables.size === 0} className="flex-1 sm:flex-none h-12 px-4 rounded-2xl font-semibold text-xs uppercase tracking-wide shadow-xl shadow-sm gap-3">
                                 {isRestoring ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
                                 Valider & Injecter
                             </Button>
@@ -308,7 +308,7 @@ export function BackupPreviewDialog({ isOpen, onOpenChange, initialData }: Backu
                 <div className="flex-grow flex flex-col lg:flex-row overflow-hidden">
                     {/* Sidebar */}
                     <div className="w-full lg:w-80 bg-muted/20 border-r border-white/5 p-6 space-y-2 shrink-0 overflow-y-auto custom-scrollbar">
-                        <p className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground/40 mb-6 px-4">Segments du Manifeste</p>
+                        <p className="text-[10px] font-semibold uppercase text-muted-foreground/40 mb-6 px-4">Segments du Manifeste</p>
                         {categories.map(cat => (
                             <div key={cat.id} className="flex items-center gap-2 group">
                                 <Checkbox 
@@ -320,9 +320,9 @@ export function BackupPreviewDialog({ isOpen, onOpenChange, initialData }: Backu
                                     type="button"
                                     onClick={() => setActiveCategory(cat.id as Category)}
                                     className={cn(
-                                        "flex-grow flex items-center justify-between p-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all duration-500",
+                                        "flex-grow flex items-center justify-between p-4 rounded-2xl text-[10px] font-semibold uppercase tracking-wide transition-all duration-500",
                                         activeCategory === cat.id 
-                                            ? "bg-primary text-primary-foreground shadow-xl shadow-primary/20 scale-[1.02]" 
+                                            ? "bg-primary text-primary-foreground shadow-xl shadow-sm scale-[1.02]" 
                                             : "text-muted-foreground/60 hover:text-foreground hover:bg-white/5"
                                     )}
                                 >
@@ -339,10 +339,10 @@ export function BackupPreviewDialog({ isOpen, onOpenChange, initialData }: Backu
                         ))}
 
                         {availableCols.length > 0 && (
-                            <div className="mt-10 p-6 bg-primary/5 rounded-[2rem] border border-dashed border-primary/20 animate-in fade-in slide-in-from-bottom-2 duration-500">
+                            <div className="mt-10 p-6 bg-primary/5 rounded-lg border border-dashed border-primary/20 animate-in fade-in slide-in-from-bottom-2 duration-500">
                                 <div className="flex items-center gap-2 text-primary mb-4">
                                     <Eye className="h-4 w-4" />
-                                    <span className="text-[10px] font-black uppercase tracking-widest">Surveillance Colonnes</span>
+                                    <span className="text-[10px] font-semibold uppercase tracking-wide">Surveillance Colonnes</span>
                                 </div>
                                 <div className="space-y-3">
                                     {availableCols.map(col => (
@@ -353,7 +353,7 @@ export function BackupPreviewDialog({ isOpen, onOpenChange, initialData }: Backu
                                                 onCheckedChange={() => toggleColumn(activeCategory, col)}
                                                 className="h-4 w-4 border-primary/40 data-[state=checked]:bg-primary"
                                             />
-                                            <label htmlFor={`col-${col}`} className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground/60 group-hover/col:text-primary transition-colors cursor-pointer truncate">
+                                            <label htmlFor={`col-${col}`} className="text-[9px] font-bold uppercase tracking-wide text-muted-foreground/60 group-hover/col:text-primary transition-colors cursor-pointer truncate">
                                                 {col}
                                             </label>
                                         </div>
@@ -378,19 +378,19 @@ export function BackupPreviewDialog({ isOpen, onOpenChange, initialData }: Backu
                         </div>
 
                         <ScrollArea className="flex-grow">
-                            <div className="p-8">
+                            <div className="p-4">
                                 {!selectedTables.has(activeCategory) ? (
                                     <div className="h-full py-40 flex flex-col items-center justify-center text-center space-y-4 opacity-20">
-                                        <X className="h-16 w-16" />
-                                        <p className="text-[10px] font-black uppercase tracking-[0.4em]">Segment exclu du déploiement</p>
+                                        <X className="h-9 w-16" />
+                                        <p className="text-[10px] font-semibold uppercase ">Segment exclu du déploiement</p>
                                     </div>
                                 ) : filteredData.length === 0 ? (
                                     <div className="h-full py-40 flex flex-col items-center justify-center text-center space-y-4 opacity-20">
-                                        <X className="h-16 w-16" />
-                                        <p className="text-[10px] font-black uppercase tracking-[0.4em]">Aucune donnée trouvée</p>
+                                        <X className="h-9 w-16" />
+                                        <p className="text-[10px] font-semibold uppercase ">Aucune donnée trouvée</p>
                                     </div>
                                 ) : (
-                                    <div className="rounded-[2rem] border border-white/5 bg-black/40 overflow-hidden shadow-2xl">
+                                    <div className="rounded-lg border border-white/5 bg-black/40 overflow-hidden shadow-sm">
                                         <Table>
                                             <TableHeader className="bg-muted/30">
                                                 <TableRow className="border-white/5">
@@ -405,14 +405,14 @@ export function BackupPreviewDialog({ isOpen, onOpenChange, initialData }: Backu
                                                                 isExcluded && "opacity-20"
                                                             )}>
                                                                 <div className="flex flex-col">
-                                                                    <div className="p-4 bg-muted/20 font-mono text-[10px] font-black text-muted-foreground/60 uppercase truncate">
+                                                                    <div className="p-4 bg-muted/20 font-mono text-[10px] font-semibold text-muted-foreground/60 uppercase truncate">
                                                                         {col}
                                                                     </div>
                                                                     <div className="p-2 bg-black/20">
                                                                         <DropdownMenu>
                                                                             <DropdownMenuTrigger asChild>
                                                                                 <button className={cn(
-                                                                                    "w-full flex items-center justify-between px-3 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all",
+                                                                                    "w-full flex items-center justify-between px-3 py-2 rounded-xl text-[9px] font-semibold uppercase tracking-wide transition-all",
                                                                                     mappedKey ? "bg-primary/10 text-primary border border-primary/20" : "bg-muted/20 text-muted-foreground/40"
                                                                                 )}>
                                                                                     <div className="flex items-center gap-2">
@@ -422,8 +422,8 @@ export function BackupPreviewDialog({ isOpen, onOpenChange, initialData }: Backu
                                                                                     <ChevronDown className="h-3 w-3 opacity-30" />
                                                                                 </button>
                                                                             </DropdownMenuTrigger>
-                                                                            <DropdownMenuContent className="w-56 rounded-2xl border-white/5 bg-card/95 backdrop-blur-xl shadow-2xl">
-                                                                                <DropdownMenuLabel className="text-[9px] font-black uppercase tracking-widest text-muted-foreground p-3">Destination App</DropdownMenuLabel>
+                                                                            <DropdownMenuContent className="w-56 rounded-2xl border-white/5 bg-card/95 backdrop-blur-sm shadow-sm">
+                                                                                <DropdownMenuLabel className="text-[9px] font-semibold uppercase tracking-wide text-muted-foreground p-3">Destination App</DropdownMenuLabel>
                                                                                 <DropdownMenuSeparator className="opacity-10" />
                                                                                 <DropdownMenuRadioGroup value={mappedKey} onValueChange={(val) => handleUpdateMapping(col, val)}>
                                                                                     {APP_FIELDS[activeCategory]?.map(p => (
@@ -490,7 +490,7 @@ export function BackupPreviewDialog({ isOpen, onOpenChange, initialData }: Backu
                     </div>
                 </div>
 
-                <DialogFooter className="bg-black/40 p-8 border-t border-white/5 flex justify-between items-center text-[9px] text-muted-foreground font-black uppercase tracking-[0.3em] opacity-30">
+                <DialogFooter className="bg-black/40 p-4 border-t border-white/5 flex justify-between items-center text-[9px] text-muted-foreground font-semibold uppercase opacity-30">
                     <span className="flex items-center gap-2 italic"><CheckCircle2 className="h-3 w-3" /> Audit en cours : {selectedTables.size} segments surveillés</span>
                     <span>iPOS Luxury Elite Restore Engine v1.9.2</span>
                 </DialogFooter>

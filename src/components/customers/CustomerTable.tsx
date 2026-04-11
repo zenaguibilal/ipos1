@@ -1,3 +1,4 @@
+
 'use client';
 
 import React from 'react';
@@ -28,7 +29,7 @@ export function CustomerTable({
     onToggleSelectAll 
 }: CustomerTableProps) {
     return (
-        <div className="rounded-[2.5rem] border border-white/5 bg-card/40 backdrop-blur-xl overflow-hidden shadow-2xl">
+        <div className="rounded-lg border border-white/5 bg-card/40 backdrop-blur-sm overflow-hidden shadow-sm">
             <Table>
                 <TableHeader className="bg-muted/30">
                     <TableRow className="border-none">
@@ -39,10 +40,10 @@ export function CustomerTable({
                                 className="border-primary data-[state=checked]:bg-primary"
                             />
                         </TableHead>
-                        <TableHead className="p-6 font-black text-[10px] uppercase tracking-[0.2em] text-muted-foreground/60">Identité Client</TableHead>
-                        <TableHead className="p-6 font-black text-[10px] uppercase tracking-[0.2em] text-muted-foreground/60">Coordonnées</TableHead>
-                        <TableHead className="p-6 text-right font-black text-[10px] uppercase tracking-[0.2em] text-muted-foreground/60">Total Consommé</TableHead>
-                        <TableHead className="p-6 text-right font-black text-[10px] uppercase tracking-[0.2em] text-destructive">Solde Débiteur</TableHead>
+                        <TableHead className="p-6 font-semibold text-[10px] uppercase text-muted-foreground/60">Identité Client</TableHead>
+                        <TableHead className="p-6 font-semibold text-[10px] uppercase text-muted-foreground/60">Coordonnées</TableHead>
+                        <TableHead className="p-6 text-right font-semibold text-[10px] uppercase text-muted-foreground/60">Total Consommé</TableHead>
+                        <TableHead className="p-6 text-right font-semibold text-[10px] uppercase text-destructive">Solde Débiteur</TableHead>
                         <TableHead className="p-6 w-[80px]"></TableHead>
                     </TableRow>
                 </TableHeader>
@@ -74,12 +75,12 @@ export function CustomerTable({
                                         </div>
                                         <div className="flex flex-col -space-y-0.5">
                                             <div className="flex items-center gap-2">
-                                                <span className="font-black text-base tracking-tighter group-hover:text-primary transition-colors">
+                                                <span className="font-semibold text-base tracking-tighter group-hover:text-primary transition-colors">
                                                     {customer.firstName} {customer.lastName}
                                                 </span>
                                                 {customer.isBreadClient && <Wheat className="h-3 w-3 text-primary/40" />}
                                             </div>
-                                            <span className="text-[9px] font-black uppercase text-muted-foreground/40 tracking-widest">
+                                            <span className="text-[9px] font-semibold uppercase text-muted-foreground/40 tracking-wide">
                                                 ID: {customer.uuid.substring(0,8)}
                                             </span>
                                         </div>
@@ -101,7 +102,7 @@ export function CustomerTable({
                                 </TableCell>
                                 <TableCell className="p-6 text-right">
                                     <div className={cn(
-                                        "inline-flex items-center gap-2 px-4 py-1.5 rounded-2xl font-mono font-black text-sm shadow-inner border transition-all",
+                                        "inline-flex items-center gap-2 px-4 py-1.5 rounded-2xl font-mono font-semibold text-sm shadow-inner border transition-all",
                                         balance > 0 ? "bg-destructive/5 text-destructive border-destructive/20" : "bg-emerald-500/5 text-emerald-500 border-emerald-500/20"
                                     )}>
                                         {balance > 0 && <Landmark className="h-3 w-3" />}
@@ -115,7 +116,7 @@ export function CustomerTable({
                                                 <MoreHorizontal className="h-5 w-5" />
                                             </Button>
                                         </DropdownMenuTrigger>
-                                        <DropdownMenuContent align="end" className="rounded-2xl border-none shadow-2xl bg-card">
+                                        <DropdownMenuContent align="end" className="rounded-2xl border-none shadow-sm bg-card">
                                             <DropdownMenuItem asChild className="rounded-xl p-3">
                                                 <Link href={`/customers/${customer.uuid}`}>
                                                     <FileText className="mr-2 h-4 w-4" /> Voir dossier

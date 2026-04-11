@@ -64,9 +64,6 @@ export function BreadClientForm({ isOpen, onOpenChange, customer, onSuccess }: B
                 bread_type_recurrence: formState.bread_type_recurrence,
             };
 
-            // FIX #22: clear stale data from previous recurrence type
-            dataToSave.bread_quantite_defaut = undefined;
-            dataToSave.bread_jours_semaine = undefined;
             if (formState.bread_type_recurrence === 'quotidien') {
                 dataToSave.bread_quantite_defaut = formState.bread_quantite_defaut;
             } else if (formState.bread_type_recurrence === 'jours_specifiques') {
@@ -95,7 +92,7 @@ export function BreadClientForm({ isOpen, onOpenChange, customer, onSuccess }: B
     };
 
     const handleDayQuantityChange = (day: keyof typeof BREAD_WEEK_DAY_LABELS_FULL, value: string) => {
-         const quantite = Math.max(0, Math.round(parseFloat(value) || 0));
+         const quantite = parseInt(value, 10) || 0;
          setFormState(prev => ({
             ...prev,
             bread_jours_semaine: {
@@ -112,38 +109,38 @@ export function BreadClientForm({ isOpen, onOpenChange, customer, onSuccess }: B
             <div className="p-1.5 rounded-lg bg-primary/10 text-primary shadow-inner">
                 <Icon className="h-3 w-3" />
             </div>
-            <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground opacity-60">{title}</h4>
+            <h4 className="text-[10px] font-semibold uppercase text-muted-foreground opacity-60">{title}</h4>
         </div>
     );
 
     return (
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-2xl rounded-[3rem] border-none shadow-2xl p-0 overflow-hidden bg-card">
+            <DialogContent className="sm:max-w-2xl rounded-lg border-none shadow-sm p-0 overflow-hidden bg-card">
                 <form onSubmit={handleSubmit}>
-                    <DialogHeader className="bg-primary/5 p-8 border-b border-primary/10">
+                    <DialogHeader className="bg-primary/5 p-4 border-b border-primary/10">
                         <div className="flex items-center gap-4">
-                            <div className="p-3 rounded-2xl bg-primary text-primary-foreground shadow-lg shadow-primary/20">
+                            <div className="p-3 rounded-2xl bg-primary text-primary-foreground shadow-lg shadow-sm">
                                 <Wheat className="h-6 w-6" />
                             </div>
                             <div>
-                                <DialogTitle className="text-2xl font-black tracking-tight">Paramétrage VIP Pain</DialogTitle>
+                                <DialogTitle className="text-lg font-semibold tracking-tight">Paramétrage VIP Pain</DialogTitle>
                                 <DialogDescription className="font-medium">Gestion souveraine des commandes récurrentes pour {customer.firstName} {customer.lastName}.</DialogDescription>
                             </div>
                         </div>
                     </DialogHeader>
 
-                    <div className="p-8 space-y-10 max-h-[60vh] overflow-y-auto custom-scrollbar">
+                    <div className="p-4 space-y-4 max-h-[60vh] overflow-y-auto custom-scrollbar">
                         {/* Section: Statut & Type */}
                         <div>
                             <SectionTitle title="Abonnement & Fréquence" icon={Settings} />
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 p-8 bg-muted/20 rounded-[2.5rem] border border-white/5 shadow-inner">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-4 bg-muted/20 rounded-lg border border-white/5 shadow-inner">
                                 <div className="space-y-4">
-                                    <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 ml-1">Statut du Programme</Label>
+                                    <Label className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground/60 ml-1">Statut du Programme</Label>
                                     <div className={cn(
                                         "flex items-center justify-between p-4 rounded-2xl border transition-all duration-500",
                                         formState.isBreadClient ? "bg-emerald-500/5 border-emerald-500/20" : "bg-muted/20 border-white/5 opacity-40"
                                     )}>
-                                        <span className={cn("text-xs font-black uppercase", formState.isBreadClient ? "text-emerald-500" : "text-muted-foreground")}>
+                                        <span className={cn("text-xs font-semibold uppercase", formState.isBreadClient ? "text-emerald-500" : "text-muted-foreground")}>
                                             {formState.isBreadClient ? 'ACTIF' : 'INACTIF'}
                                         </span>
                                         <Switch 
@@ -154,12 +151,12 @@ export function BreadClientForm({ isOpen, onOpenChange, customer, onSuccess }: B
                                     </div>
                                 </div>
                                 <div className="space-y-4">
-                                    <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 ml-1">Récurence Elite</Label>
+                                    <Label className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground/60 ml-1">Récurence Elite</Label>
                                     <Select value={formState.bread_type_recurrence} onValueChange={(value) => setFormState(s => ({ ...s, bread_type_recurrence: value as any }))}>
                                         <SelectTrigger className="h-12 rounded-xl bg-background border-none shadow-sm font-bold">
                                             <SelectValue />
                                         </SelectTrigger>
-                                        <SelectContent className="rounded-2xl shadow-2xl border-white/5">
+                                        <SelectContent className="rounded-2xl shadow-sm border-white/5">
                                             <SelectItem value="quotidien" className="font-bold">Quotidien (Stable)</SelectItem>
                                             <SelectItem value="jours_specifiques" className="font-bold">Calendrier (Variable)</SelectItem>
                                             <SelectItem value="aucun" className="font-bold">Manuel (À la demande)</SelectItem>
@@ -173,16 +170,16 @@ export function BreadClientForm({ isOpen, onOpenChange, customer, onSuccess }: B
                         {formState.bread_type_recurrence === 'quotidien' && (
                             <div className="animate-in slide-in-from-top-4 duration-500">
                                 <SectionTitle title="Configuration Unitaire" icon={Package} />
-                                <div className="p-8 bg-primary/5 rounded-[2.5rem] border border-primary/10 space-y-4 text-center">
-                                    <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Quantité Fixe par Jour</Label>
+                                <div className="p-4 bg-primary/5 rounded-lg border border-primary/10 space-y-4 text-center">
+                                    <Label className="text-[10px] font-semibold uppercase text-primary">Quantité Fixe par Jour</Label>
                                     <div className="relative max-w-[200px] mx-auto">
                                         <Input 
                                             type="number" 
                                             value={formState.bread_quantite_defaut} 
                                             onChange={(e) => setFormState(s => ({ ...s, bread_quantite_defaut: parseInt(e.target.value) || 0 }))} 
-                                            className="h-20 rounded-2xl bg-background border-none shadow-xl font-black text-4xl text-primary text-center focus-visible:ring-primary/20"
+                                            className="h-20 rounded-2xl bg-background border-none shadow-xl font-semibold text-xl text-primary text-center focus-visible:ring-primary/20"
                                         />
-                                        <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-black text-primary opacity-30 uppercase">PCS</span>
+                                        <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-semibold text-primary opacity-30 uppercase">PCS</span>
                                     </div>
                                 </div>
                             </div>
@@ -191,7 +188,7 @@ export function BreadClientForm({ isOpen, onOpenChange, customer, onSuccess }: B
                         {formState.bread_type_recurrence === 'jours_specifiques' && (
                             <div className="animate-in slide-in-from-top-4 duration-500">
                                 <SectionTitle title="Calendrier Hebdomadaire" icon={Calendar} />
-                                <div className="grid gap-3 p-2 bg-muted/10 rounded-[2.5rem] border border-white/5">
+                                <div className="grid gap-3 p-2 bg-muted/10 rounded-lg border border-white/5">
                                     {Object.entries(BREAD_WEEK_DAY_LABELS_FULL).map(([key, label]) => {
                                         const dayData = formState.bread_jours_semaine![key];
                                         return (
@@ -204,16 +201,16 @@ export function BreadClientForm({ isOpen, onOpenChange, customer, onSuccess }: B
                                                     onCheckedChange={() => handleDayToggle(key as keyof typeof BREAD_WEEK_DAY_LABELS_FULL)} 
                                                     className="data-[state=checked]:bg-primary"
                                                 />
-                                                <Label className="flex-grow font-black text-[10px] uppercase tracking-widest">{label}</Label>
+                                                <Label className="flex-grow font-semibold text-[10px] uppercase tracking-wide">{label}</Label>
                                                 <div className="relative w-32">
                                                     <Input 
                                                         type="number" 
-                                                        className="h-10 text-center font-black rounded-xl bg-black/20 border-none shadow-inner" 
+                                                        className="h-10 text-center font-semibold rounded-xl bg-black/20 border-none shadow-inner" 
                                                         value={dayData.quantite}
                                                         onChange={e => handleDayQuantityChange(key as keyof typeof BREAD_WEEK_DAY_LABELS_FULL, e.target.value)}
                                                         disabled={!dayData.actif}
                                                     />
-                                                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[8px] font-black opacity-20 uppercase">PCS</span>
+                                                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[8px] font-semibold opacity-20 uppercase">PCS</span>
                                                 </div>
                                             </div>
                                         )
@@ -223,9 +220,9 @@ export function BreadClientForm({ isOpen, onOpenChange, customer, onSuccess }: B
                         )}
                     </div>
 
-                    <DialogFooter className="p-8 bg-card border-t border-white/5 flex gap-4">
-                        <Button type="button" variant="ghost" onClick={() => onOpenChange(false)} className="h-14 rounded-2xl font-black text-xs uppercase tracking-widest px-8" disabled={isLoading}>Annuler</Button>
-                        <Button type="submit" disabled={isLoading} className="flex-1 h-14 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-primary/20 transition-all active:scale-95 gap-3">
+                    <DialogFooter className="p-4 bg-card border-t border-white/5 flex gap-4">
+                        <Button type="button" variant="ghost" onClick={() => onOpenChange(false)} className="h-9 rounded-2xl font-semibold text-xs uppercase tracking-wide px-8" disabled={isLoading}>Annuler</Button>
+                        <Button type="submit" disabled={isLoading} className="flex-1 h-9 rounded-2xl font-semibold text-xs uppercase tracking-wide shadow-xl shadow-sm transition-all active:scale-95 gap-3">
                              {isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <CheckCircle2 className="h-5 w-5" />}
                             Enregistrer les paramètres Elite
                         </Button>

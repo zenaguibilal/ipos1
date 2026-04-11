@@ -31,7 +31,7 @@ export function ReturnTable({ returns, customerMap, selectedReturns, onToggleSel
     };
 
     return (
-        <div className="rounded-[2.5rem] border border-white/5 bg-card/40 backdrop-blur-xl overflow-hidden shadow-2xl">
+        <div className="rounded-lg border border-white/5 bg-card/40 backdrop-blur-sm overflow-hidden shadow-sm">
             <Table>
                 <TableHeader className="bg-muted/30">
                     <TableRow className="border-none">
@@ -42,11 +42,11 @@ export function ReturnTable({ returns, customerMap, selectedReturns, onToggleSel
                                 className="border-primary data-[state=checked]:bg-primary"
                             />
                         </TableHead>
-                        <TableHead className="p-6 font-black text-[10px] uppercase tracking-[0.2em] text-muted-foreground/60">Date & Flux</TableHead>
-                        <TableHead className="p-6 font-black text-[10px] uppercase tracking-[0.2em] text-muted-foreground/60">Origine Facture</TableHead>
-                        <TableHead className="p-6 font-black text-[10px] uppercase tracking-[0.2em] text-muted-foreground/60">Partenaire Client</TableHead>
-                        <TableHead className="p-6 text-right font-black text-[10px] uppercase tracking-[0.2em] text-muted-foreground/60">Remboursé</TableHead>
-                        <TableHead className="p-6 text-right font-black text-[10px] uppercase tracking-[0.2em] text-primary">Valeur Retour</TableHead>
+                        <TableHead className="p-6 font-semibold text-[10px] uppercase text-muted-foreground/60">Date & Flux</TableHead>
+                        <TableHead className="p-6 font-semibold text-[10px] uppercase text-muted-foreground/60">Origine Facture</TableHead>
+                        <TableHead className="p-6 font-semibold text-[10px] uppercase text-muted-foreground/60">Partenaire Client</TableHead>
+                        <TableHead className="p-6 text-right font-semibold text-[10px] uppercase text-muted-foreground/60">Remboursé</TableHead>
+                        <TableHead className="p-6 text-right font-semibold text-[10px] uppercase text-primary">Valeur Retour</TableHead>
                         <TableHead className="p-6 w-[80px]"></TableHead>
                     </TableRow>
                 </TableHeader>
@@ -78,7 +78,7 @@ export function ReturnTable({ returns, customerMap, selectedReturns, onToggleSel
                                         </div>
                                         <div className="flex flex-col -space-y-0.5">
                                             <span className="font-bold text-xs">{format(safeToDate(r.createdAt!), 'dd MMM yyyy', { locale: fr })}</span>
-                                            <span className="text-[9px] text-muted-foreground/40 uppercase font-black tracking-widest">{format(safeToDate(r.createdAt!), 'HH:mm')}</span>
+                                            <span className="text-[9px] text-muted-foreground/40 uppercase font-semibold tracking-wide">{format(safeToDate(r.createdAt!), 'HH:mm')}</span>
                                         </div>
                                     </div>
                                 </TableCell>
@@ -93,7 +93,7 @@ export function ReturnTable({ returns, customerMap, selectedReturns, onToggleSel
                                         <div className="p-2 rounded-xl bg-primary/5 text-primary/40">
                                             <User className="h-4 w-4" />
                                         </div>
-                                        <span className="font-black tracking-tight text-sm group-hover:text-primary transition-colors">
+                                        <span className="font-semibold tracking-tight text-sm group-hover:text-primary transition-colors">
                                             {customer ? `${customer.firstName} ${customer.lastName}` : 'Client de passage'}
                                         </span>
                                     </div>
@@ -102,7 +102,7 @@ export function ReturnTable({ returns, customerMap, selectedReturns, onToggleSel
                                     {formatCurrency(r.amountRefunded)}
                                 </TableCell>
                                 <TableCell className="p-6 text-right">
-                                    <span className="font-black text-primary text-base tracking-tighter font-mono">
+                                    <span className="font-semibold text-primary text-base tracking-tighter font-mono">
                                         {formatCurrency(r.totalReturnValue)}
                                     </span>
                                 </TableCell>
@@ -113,7 +113,7 @@ export function ReturnTable({ returns, customerMap, selectedReturns, onToggleSel
                                                 <MoreHorizontal className="h-5 w-5" />
                                             </Button>
                                         </DropdownMenuTrigger>
-                                        <DropdownMenuContent align="end" className="rounded-2xl border-none shadow-2xl bg-card">
+                                        <DropdownMenuContent align="end" className="rounded-2xl border-none shadow-sm bg-card">
                                             <DropdownMenuItem onClick={() => onViewDetails(r)} className="rounded-xl p-3">
                                                 <FileText className="mr-2 h-4 w-4" /> Details Elite
                                             </DropdownMenuItem>

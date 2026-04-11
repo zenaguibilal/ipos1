@@ -14,7 +14,7 @@ export function SupplierMetrics({ supplier, totalPurchases }: SupplierMetricsPro
     return (
         <Card className="rounded-3xl border-none shadow-sm bg-card overflow-hidden">
             <CardHeader className="bg-primary/5 border-b border-primary/10">
-                <CardTitle className="text-sm font-black uppercase tracking-widest text-primary/70">Résumé Financier</CardTitle>
+                <CardTitle className="text-sm font-semibold uppercase tracking-wide text-primary/70">Résumé Financier</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4 p-6">
                 <div className="flex items-center justify-between p-4 bg-muted/30 rounded-2xl border border-border/50 group hover:border-primary/20 transition-all">
@@ -23,8 +23,8 @@ export function SupplierMetrics({ supplier, totalPurchases }: SupplierMetricsPro
                             <History className="h-6 w-6" />
                         </div>
                         <div>
-                            <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Matière Achetée</p>
-                            <p className="text-xl font-black">{formatCurrency(totalPurchases)}</p>
+                            <p className="text-[10px] font-semibold uppercase text-muted-foreground tracking-wide">Matière Achetée</p>
+                            <p className="text-xl font-semibold">{formatCurrency(totalPurchases)}</p>
                         </div>
                     </div>
                 </div>
@@ -35,8 +35,8 @@ export function SupplierMetrics({ supplier, totalPurchases }: SupplierMetricsPro
                             <Landmark className="h-6 w-6" />
                         </div>
                         <div>
-                            <p className="text-[10px] font-black uppercase text-destructive/70 tracking-widest">Dette à Régler</p>
-                            <p className="text-2xl font-black text-destructive">{formatCurrency(supplier.balance)}</p>
+                            <p className="text-[10px] font-semibold uppercase text-destructive/70 tracking-wide">Dette à Régler</p>
+                            <p className="text-lg font-semibold text-destructive">{formatCurrency(supplier.balance)}</p>
                         </div>
                     </div>
                 </div>

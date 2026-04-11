@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -239,33 +240,33 @@ export function SupabaseSqlDialog() {
             </Button>
 
             <Dialog open={isOpen} onOpenChange={setIsOpen}>
-                <DialogContent className="max-w-4xl h-[80vh] flex flex-col p-0 overflow-hidden border-none shadow-2xl rounded-[2.5rem] bg-card">
-                    <DialogHeader className="bg-primary/5 p-8 border-b border-primary/10">
+                <DialogContent className="max-w-4xl h-[80vh] flex flex-col p-0 overflow-hidden border-none shadow-sm rounded-lg bg-card">
+                    <DialogHeader className="bg-primary/5 p-4 border-b border-primary/10">
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-4">
                                 <div className="p-3 rounded-2xl bg-primary text-primary-foreground shadow-lg">
                                     <Database className="h-6 w-6" />
                                 </div>
                                 <div>
-                                    <DialogTitle className="text-2xl font-black tracking-tight">Initialisation Supabase</DialogTitle>
+                                    <DialogTitle className="text-lg font-semibold tracking-tight">Initialisation Supabase</DialogTitle>
                                     <DialogDescription className="font-medium">Script SQL Elite certifié pour votre coffre-fort Cloud.</DialogDescription>
                                 </div>
                             </div>
-                            <Button onClick={handleCopy} className="rounded-2xl h-12 px-6 font-black text-xs uppercase tracking-widest shadow-xl shadow-primary/20 gap-2 transition-all active:scale-95">
+                            <Button onClick={handleCopy} className="rounded-2xl h-12 px-6 font-semibold text-xs uppercase tracking-wide shadow-xl shadow-sm gap-2 transition-all active:scale-95">
                                 {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
                                 {copied ? 'Copié !' : 'Copier le script'}
                             </Button>
                         </div>
                     </DialogHeader>
 
-                    <div className="flex-grow p-8 bg-black/40 overflow-hidden">
+                    <div className="flex-grow p-4 bg-black/40 overflow-hidden">
                         <ScrollArea className="h-full rounded-2xl border border-white/5 bg-black/60 p-6 font-mono text-sm leading-relaxed text-emerald-500/80 custom-scrollbar">
                             <pre className="whitespace-pre-wrap">{SUPABASE_SQL_SCRIPT}</pre>
                         </ScrollArea>
                     </div>
 
                     <div className="p-6 bg-muted/5 border-t border-white/5 text-center">
-                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground opacity-40">
+                        <p className="text-[10px] font-semibold uppercase text-muted-foreground opacity-40">
                             Précision de type absolue : Garanti compatible avec le moteur de synchronisation iPOS Luxury.
                         </p>
                     </div>

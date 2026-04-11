@@ -52,11 +52,11 @@ export function BreadClientList({ onListChange }: BreadClientListProps) {
         
         switch (client.bread_type_recurrence) {
             case 'quotidien':
-                return <Badge variant="outline" className="bg-emerald-500/10 text-emerald-600 border-emerald-500/20 text-[8px] font-black uppercase px-2 py-0.5">QUOTIDIEN</Badge>;
+                return <Badge variant="outline" className="bg-emerald-500/10 text-emerald-600 border-emerald-500/20 text-[8px] font-semibold uppercase px-2 py-0.5">QUOTIDIEN</Badge>;
             case 'jours_specifiques':
-                return <Badge variant="outline" className="bg-amber-500/10 text-amber-600 border-amber-500/20 text-[8px] font-black uppercase px-2 py-0.5">PROGRAMMÉ</Badge>;
+                return <Badge variant="outline" className="bg-amber-500/10 text-amber-600 border-amber-500/20 text-[8px] font-semibold uppercase px-2 py-0.5">PROGRAMMÉ</Badge>;
             case 'aucun':
-                return <Badge variant="outline" className="bg-muted/20 text-muted-foreground/60 border-white/5 text-[8px] font-black uppercase px-2 py-0.5">MANUEL</Badge>;
+                return <Badge variant="outline" className="bg-muted/20 text-muted-foreground/60 border-white/5 text-[8px] font-semibold uppercase px-2 py-0.5">MANUEL</Badge>;
             default:
                 return null;
         }
@@ -64,15 +64,15 @@ export function BreadClientList({ onListChange }: BreadClientListProps) {
 
     return (
         <>
-            <Card className="flex flex-col h-full rounded-[2.5rem] border-none shadow-2xl bg-card/40 backdrop-blur-3xl overflow-hidden group">
-                <CardHeader className="bg-muted/20 border-b border-white/5 p-8">
+            <Card className="flex flex-col h-full rounded-lg border-none shadow-sm bg-card/40 backdrop-blur-sm overflow-hidden group">
+                <CardHeader className="bg-muted/20 border-b border-white/5 p-4">
                     <div className="flex items-center gap-4">
-                        <div className="p-3 rounded-2xl bg-primary text-primary-foreground shadow-lg shadow-primary/20">
+                        <div className="p-3 rounded-2xl bg-primary text-primary-foreground shadow-lg shadow-sm">
                             <Star className="h-5 w-5" />
                         </div>
                         <div>
-                            <CardTitle className="text-xl font-black tracking-tight">Abonnés Elite</CardTitle>
-                            <p className="text-[9px] font-black uppercase tracking-[0.2em] text-primary/50 mt-1">Membres du programme Pain</p>
+                            <CardTitle className="text-xl font-semibold tracking-tight">Abonnés Elite</CardTitle>
+                            <p className="text-[9px] font-semibold uppercase text-primary/50 mt-1">Membres du programme Pain</p>
                         </div>
                     </div>
                 </CardHeader>
@@ -85,16 +85,16 @@ export function BreadClientList({ onListChange }: BreadClientListProps) {
                                 <div 
                                     key={client.uuid} 
                                     onClick={() => handleEdit(client)}
-                                    className="group/item flex items-center p-4 rounded-[1.5rem] bg-black/20 border border-transparent hover:border-primary/20 hover:bg-primary/5 transition-all duration-500 cursor-pointer shadow-inner"
+                                    className="group/item flex items-center p-4 rounded-lg bg-black/20 border border-transparent hover:border-primary/20 hover:bg-primary/5 transition-all duration-500 cursor-pointer shadow-inner"
                                 >
                                     <div className="flex-grow min-w-0">
-                                        <p className="font-black text-sm tracking-tight truncate group-hover/item:text-primary transition-colors">
+                                        <p className="font-semibold text-sm tracking-tight truncate group-hover/item:text-primary transition-colors">
                                             {client.firstName} {client.lastName}
                                         </p>
                                         <div className="flex items-center gap-3 mt-2">
                                             {getRecurrenceBadge(client)}
                                             {client.bread_type_recurrence === 'quotidien' && (
-                                                <span className="text-[10px] font-black text-muted-foreground/40 uppercase tracking-widest">×{client.bread_quantite_defaut} pcs</span>
+                                                <span className="text-[10px] font-semibold text-muted-foreground/40 uppercase tracking-wide">×{client.bread_quantite_defaut} pcs</span>
                                             )}
                                         </div>
                                     </div>
@@ -107,14 +107,14 @@ export function BreadClientList({ onListChange }: BreadClientListProps) {
                              {!isLoading && clients?.length === 0 && (
                                 <div className="text-center py-20 opacity-20 flex flex-col items-center gap-4">
                                     <Wheat className="h-12 w-12" />
-                                    <p className="text-[10px] font-black uppercase tracking-[0.4em]">Aucun abonné</p>
+                                    <p className="text-[10px] font-semibold uppercase ">Aucun abonné</p>
                                 </div>
                             )}
                         </div>
                     </ScrollArea>
                 </CardContent>
                 <div className="p-6 bg-primary/5 border-t border-white/5">
-                    <div className="flex items-center justify-center gap-2 text-emerald-500 font-black text-[9px] uppercase tracking-widest bg-emerald-500/10 py-3 rounded-2xl border border-emerald-500/20">
+                    <div className="flex items-center justify-center gap-2 text-emerald-500 font-semibold text-[9px] uppercase tracking-wide bg-emerald-500/10 py-3 rounded-2xl border border-emerald-500/20">
                         <UserCheck className="h-3.5 w-3.5" /> Système Actif & Sécurisé
                     </div>
                 </div>

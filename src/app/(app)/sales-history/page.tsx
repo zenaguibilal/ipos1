@@ -318,16 +318,16 @@ export default function SalesHistoryPage() {
     const isFiltered = searchQuery !== '' || filterStatus !== 'all';
     
     return (
-        <div className="p-6 sm:p-10 space-y-10 max-w-[1800px] mx-auto animate-in fade-in duration-1000">
+        <div className="p-6 sm:p-4 space-y-4 max-w-[1800px] mx-auto animate-in fade-in duration-1000">
             <PageHeader
                 title="Registre des Ventes"
                 description="Suivi souverain des flux de trésorerie et gestion des créances"
             >
                 <div className="flex gap-3 w-full sm:w-auto">
-                    <Button variant="outline" onClick={handlePrintSummary} className="flex-1 sm:flex-none h-12 rounded-2xl font-black text-xs uppercase tracking-widest border-primary/20 hover:bg-primary/5 transition-all">
+                    <Button variant="outline" onClick={handlePrintSummary} className="flex-1 sm:flex-none h-12 rounded-2xl font-semibold text-xs uppercase tracking-wide border-primary/20 hover:bg-primary/5 transition-all">
                         <Printer className="mr-2 h-4 w-4 text-primary" /> Rapport
                     </Button>
-                    <Button variant="outline" onClick={handleExportCsv} className="flex-1 sm:flex-none h-12 rounded-2xl font-black text-xs uppercase tracking-widest border-primary/20 hover:bg-primary/5 transition-all">
+                    <Button variant="outline" onClick={handleExportCsv} className="flex-1 sm:flex-none h-12 rounded-2xl font-semibold text-xs uppercase tracking-wide border-primary/20 hover:bg-primary/5 transition-all">
                         <FileUp className="mr-2 h-4 w-4 text-primary" /> Exporter
                     </Button>
                     <Button 
@@ -342,49 +342,49 @@ export default function SalesHistoryPage() {
                 </div>
             </PageHeader>
 
-            <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-                <div className="lg:col-span-1 space-y-8">
-                    <Card className="luxury-card rounded-[2.5rem] bg-card/40 backdrop-blur-3xl border-white/5 overflow-hidden">
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-3">
+                <div className="lg:col-span-1 space-y-4">
+                    <Card className="app-card rounded-lg bg-card/40 backdrop-blur-sm border-white/5 overflow-hidden">
                         <CardHeader className="bg-primary/5 border-b border-white/5 p-6">
-                            <CardTitle className="text-[10px] font-black uppercase tracking-[0.3em] text-primary flex items-center gap-2">
+                            <CardTitle className="text-[10px] font-semibold uppercase text-primary flex items-center gap-2">
                                 <Sparkles className="h-3 w-3" /> État des Lieux
                             </CardTitle>
                         </CardHeader>
-                        <CardContent className="p-8 space-y-8">
+                        <CardContent className="p-4 space-y-4">
                             <div className="space-y-1">
-                                <p className="text-[10px] font-black text-muted-foreground/40 uppercase tracking-widest">Revenue Global</p>
-                                <p className="text-4xl font-black tracking-tighter text-primary">{formatCurrency(stats.total)}</p>
+                                <p className="text-[10px] font-semibold text-muted-foreground/40 uppercase tracking-wide">Revenue Global</p>
+                                <p className="text-xl font-semibold tracking-tighter text-primary">{formatCurrency(stats.total)}</p>
                                 <p className="text-[10px] font-bold text-muted-foreground/60">{stats.count} transactions validées</p>
                             </div>
                             
                             <div className="grid grid-cols-1 gap-4">
                                 <div className="p-5 rounded-3xl bg-emerald-500/5 border border-emerald-500/10 group hover:bg-emerald-500/10 transition-all duration-500 shadow-inner">
-                                    <p className="text-[9px] font-black uppercase text-emerald-600 mb-1 flex items-center gap-2">
+                                    <p className="text-[9px] font-semibold uppercase text-emerald-600 mb-1 flex items-center gap-2">
                                         <CheckCircle2 className="h-3 w-3" /> Recettes Réelles
                                     </p>
-                                    <p className="font-black text-xl text-emerald-600 tracking-tight">{formatCurrency(stats.received)}</p>
+                                    <p className="font-semibold text-xl text-emerald-600 tracking-tight">{formatCurrency(stats.received)}</p>
                                 </div>
                                 <div className="p-5 rounded-3xl bg-destructive/5 border border-destructive/10 group hover:bg-destructive/10 transition-all duration-500 shadow-inner">
-                                    <p className="text-[9px] font-black uppercase text-destructive mb-1 flex items-center gap-2">
+                                    <p className="text-[9px] font-semibold uppercase text-destructive mb-1 flex items-center gap-2">
                                         <Landmark className="h-3 w-3" /> Créances Clients
                                     </p>
-                                    <p className="font-black text-xl text-destructive tracking-tight">{formatCurrency(stats.debt)}</p>
+                                    <p className="font-semibold text-xl text-destructive tracking-tight">{formatCurrency(stats.debt)}</p>
                                 </div>
                             </div>
 
                             <div className="p-4 rounded-2xl bg-amber-500/5 border border-amber-500/10 flex justify-between items-center group hover:bg-amber-500/10 transition-all duration-500">
                                 <div className="flex items-center gap-3">
                                     <div className="p-2 rounded-xl bg-amber-500/10 text-amber-600"><RefreshCw className="h-3.5 w-3.5" /></div>
-                                    <span className="text-[10px] font-black uppercase tracking-widest text-amber-600/70">Remises Accordées</span>
+                                    <span className="text-[10px] font-semibold uppercase tracking-wide text-amber-600/70">Remises Accordées</span>
                                 </div>
-                                <span className="font-black text-sm text-amber-600">{formatCurrency(stats.discount)}</span>
+                                <span className="font-semibold text-sm text-amber-600">{formatCurrency(stats.discount)}</span>
                             </div>
                         </CardContent>
                     </Card>
 
-                    <Card className="luxury-card rounded-[2.5rem] bg-card/40 backdrop-blur-3xl border-white/5 overflow-hidden">
+                    <Card className="app-card rounded-lg bg-card/40 backdrop-blur-sm border-white/5 overflow-hidden">
                         <CardHeader className="p-6 pb-2">
-                            <CardTitle className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground opacity-40">Options de Tri</CardTitle>
+                            <CardTitle className="text-[10px] font-semibold uppercase text-muted-foreground opacity-40">Options de Tri</CardTitle>
                         </CardHeader>
                         <CardContent className="p-6 space-y-6">
                             <div className="relative group">
@@ -400,7 +400,7 @@ export default function SalesHistoryPage() {
                             <div className="space-y-4">
                                 <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
-                                        <Button variant="outline" className="w-full justify-between rounded-xl h-12 bg-black/20 border-white/5 text-xs font-black uppercase tracking-widest hover:bg-white/5">
+                                        <Button variant="outline" className="w-full justify-between rounded-xl h-12 bg-black/20 border-white/5 text-xs font-semibold uppercase tracking-wide hover:bg-white/5">
                                             <div className="flex items-center gap-3">
                                                 <Banknote className="h-4 w-4 text-primary" />
                                                 {filterStatus === 'all' ? 'Tous les paiements' : filterStatus === 'paid' ? 'Payés' : filterStatus === 'partial' ? 'Partiels' : 'Impayés'}
@@ -408,8 +408,8 @@ export default function SalesHistoryPage() {
                                             <ChevronRight className="h-3 w-3 opacity-30" />
                                         </Button>
                                     </DropdownMenuTrigger>
-                                    <DropdownMenuContent className="w-[240px] rounded-2xl border-none shadow-2xl bg-card">
-                                        <DropdownMenuLabel className="text-[10px] font-black uppercase text-muted-foreground p-4">Statut de Règlement</DropdownMenuLabel>
+                                    <DropdownMenuContent className="w-[240px] rounded-2xl border-none shadow-sm bg-card">
+                                        <DropdownMenuLabel className="text-[10px] font-semibold uppercase text-muted-foreground p-4">Statut de Règlement</DropdownMenuLabel>
                                         <DropdownMenuSeparator className="opacity-10" />
                                         <DropdownMenuCheckboxItem className="p-3 font-bold" checked={filterStatus === 'all'} onCheckedChange={() => setFilterStatus('all')}>Toutes les factures</DropdownMenuCheckboxItem>
                                         <DropdownMenuCheckboxItem className="p-3 font-bold" checked={filterStatus === 'paid'} onCheckedChange={() => setFilterStatus('paid')}>Entièrement payées</DropdownMenuCheckboxItem>
@@ -424,7 +424,7 @@ export default function SalesHistoryPage() {
                             </div>
 
                             {isFiltered && (
-                                <Button variant="ghost" onClick={resetFilters} className="w-full text-destructive hover:bg-destructive/10 text-[10px] font-black uppercase tracking-[0.2em] rounded-xl h-12">
+                                <Button variant="ghost" onClick={resetFilters} className="w-full text-destructive hover:bg-destructive/10 text-[10px] font-semibold uppercase rounded-xl h-12">
                                     Réinitialiser <FilterX className="ml-2 h-3.5 w-3.5" />
                                 </Button>
                             )}
@@ -432,19 +432,19 @@ export default function SalesHistoryPage() {
                     </Card>
                 </div>
 
-                <div className="lg:col-span-3 space-y-8">
-                    <Card className="luxury-card rounded-[2.5rem] bg-card/40 backdrop-blur-3xl border-white/5 overflow-hidden">
-                        <CardHeader className="flex flex-row items-center justify-between p-8 border-b border-white/5 bg-muted/20">
+                <div className="lg:col-span-3 space-y-4">
+                    <Card className="app-card rounded-lg bg-card/40 backdrop-blur-sm border-white/5 overflow-hidden">
+                        <CardHeader className="flex flex-row items-center justify-between p-4 border-b border-white/5 bg-muted/20">
                             <div className="flex items-center gap-4">
-                                <div className="p-3 rounded-2xl bg-primary text-primary-foreground shadow-2xl shadow-primary/20 transition-transform duration-700 hover:rotate-12">
+                                <div className="p-3 rounded-2xl bg-primary text-primary-foreground shadow-sm shadow-sm transition-transform duration-700 hover:rotate-12">
                                     <TrendingUp className="h-6 w-6" />
                                 </div>
                                 <div>
-                                    <CardTitle className="text-xl font-black tracking-tighter">Flux Chronologique</CardTitle>
-                                    <p className="text-[10px] font-black uppercase tracking-[0.3em] text-primary/50">Recettes vs Crédit</p>
+                                    <CardTitle className="text-xl font-semibold tracking-tighter">Flux Chronologique</CardTitle>
+                                    <p className="text-[10px] font-semibold uppercase text-primary/50">Recettes vs Crédit</p>
                                 </div>
                             </div>
-                            <div className="flex items-center gap-1.5 p-1.5 bg-black/20 rounded-[1.5rem] border border-white/5 shadow-inner">
+                            <div className="flex items-center gap-1.5 p-1.5 bg-black/20 rounded-lg border border-white/5 shadow-inner">
                                 <Button 
                                     variant={viewMode === 'grid' ? 'secondary': 'ghost'} 
                                     size="icon" 
@@ -463,7 +463,7 @@ export default function SalesHistoryPage() {
                                 </Button>
                             </div>
                         </CardHeader>
-                        <CardContent className="h-64 p-8">
+                        <CardContent className="h-64 p-4">
                             {isLoading ? (
                                 <div className="h-full flex items-center justify-center opacity-20"><RefreshCw className="animate-spin h-10 w-10 text-primary" /></div>
                             ) : (
@@ -520,8 +520,8 @@ export default function SalesHistoryPage() {
 
                     <div className="min-h-[600px] animate-in fade-in slide-in-from-bottom-4 duration-1000">
                         {isLoading ? (
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-                                {[...Array(6)].map((_, i) => <Skeleton key={`skel-sales-${i}`} className="h-56 w-full rounded-[2.5rem] bg-card/40 animate-pulse" />)}
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                                {[...Array(6)].map((_, i) => <Skeleton key={`skel-sales-${i}`} className="h-56 w-full rounded-lg bg-card/40 animate-pulse" />)}
                             </div>
                         ) : sales.length > 0 ? (
                             viewMode === 'list' ? (
@@ -533,7 +533,7 @@ export default function SalesHistoryPage() {
                                             onCheckedChange={handleSelectAll}
                                             className="h-5 w-5 border-primary data-[state=checked]:bg-primary"
                                         />
-                                        <label htmlFor="select-all-sales" className="text-[10px] font-black uppercase tracking-[0.2em] text-primary cursor-pointer select-none">
+                                        <label htmlFor="select-all-sales" className="text-[10px] font-semibold uppercase text-primary cursor-pointer select-none">
                                             Tout sélectionner ({selectedSales.size})
                                         </label>
                                     </div>
@@ -548,7 +548,7 @@ export default function SalesHistoryPage() {
                                     />
                                 </div>
                             ) : (
-                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                                     {sales.map(s => {
                                         const customer = s.customerUuid ? customerMap.get(s.customerUuid) : undefined;
                                         return (
@@ -580,21 +580,21 @@ export default function SalesHistoryPage() {
 
             {selectedSales.size > 0 && (
                 <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 animate-in slide-in-from-bottom-10 duration-500">
-                    <div className="bg-card/80 backdrop-blur-3xl border-2 border-primary/20 shadow-2xl rounded-full px-8 py-4 flex items-center gap-10">
+                    <div className="bg-card/80 backdrop-blur-sm border-2 border-primary/20 shadow-sm rounded-full px-8 py-4 flex items-center gap-4">
                         <div className="flex items-center gap-4 pr-8 border-r border-white/10">
-                            <div className="h-10 w-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-black shadow-lg shadow-primary/20">
+                            <div className="h-10 w-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-semibold shadow-lg shadow-sm">
                                 {selectedSales.size}
                             </div>
                             <div className="flex flex-col">
-                                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Commandes Elite</span>
-                                <span className="text-xs font-black text-primary">{formatCurrency(stats.total)}</span>
+                                <span className="text-[10px] font-semibold uppercase text-muted-foreground">Commandes Elite</span>
+                                <span className="text-xs font-semibold text-primary">{formatCurrency(stats.total)}</span>
                             </div>
                         </div>
                         <div className="flex items-center gap-4">
-                            <Button variant="ghost" size="sm" onClick={handleExportCsv} className="rounded-full h-12 px-6 font-black text-[10px] uppercase tracking-widest hover:bg-primary/10 hover:text-primary transition-all">
+                            <Button variant="ghost" size="sm" onClick={handleExportCsv} className="rounded-full h-12 px-6 font-semibold text-[10px] uppercase tracking-wide hover:bg-primary/10 hover:text-primary transition-all">
                                 <FileUp className="mr-2 h-4 w-4" /> Exporter (.csv)
                             </Button>
-                            <Button variant="ghost" size="sm" onClick={() => setIsBulkCancelConfirmOpen(true)} className="rounded-full h-12 px-6 font-black text-[10px] uppercase tracking-widest text-destructive hover:bg-destructive/10 transition-all">
+                            <Button variant="ghost" size="sm" onClick={() => setIsBulkCancelConfirmOpen(true)} className="rounded-full h-12 px-6 font-semibold text-[10px] uppercase tracking-wide text-destructive hover:bg-destructive/10 transition-all">
                                 <Trash2 className="mr-2 h-4 w-4" /> Annuler Flux
                             </Button>
                             <Button variant="ghost" size="icon" onClick={() => setSelectedSales(new Set())} className="rounded-full h-12 w-12 hover:bg-white/5 transition-all">

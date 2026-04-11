@@ -30,7 +30,7 @@ export function SupplierTable({
     onToggleSelectAll 
 }: SupplierTableProps) {
     return (
-        <div className="rounded-[2.5rem] border border-white/5 bg-card/40 backdrop-blur-xl overflow-hidden shadow-2xl">
+        <div className="rounded-lg border border-white/5 bg-card/40 backdrop-blur-sm overflow-hidden shadow-sm">
             <Table>
                 <TableHeader className="bg-muted/30">
                     <TableRow className="border-none">
@@ -41,10 +41,10 @@ export function SupplierTable({
                                 className="border-primary data-[state=checked]:bg-primary"
                             />
                         </TableHead>
-                        <TableHead className="p-6 font-black text-[10px] uppercase tracking-[0.2em] text-muted-foreground/60">Partenaire</TableHead>
-                        <TableHead className="p-6 font-black text-[10px] uppercase tracking-[0.2em] text-muted-foreground/60">Contact Elite</TableHead>
-                        <TableHead className="p-6 text-right font-black text-[10px] uppercase tracking-[0.2em] text-destructive">Solde Du (Dette)</TableHead>
-                        <TableHead className="p-6 w-[150px] text-right font-black text-[10px] uppercase tracking-[0.2em] text-muted-foreground/60">Gestion</TableHead>
+                        <TableHead className="p-6 font-semibold text-[10px] uppercase text-muted-foreground/60">Partenaire</TableHead>
+                        <TableHead className="p-6 font-semibold text-[10px] uppercase text-muted-foreground/60">Contact Elite</TableHead>
+                        <TableHead className="p-6 text-right font-semibold text-[10px] uppercase text-destructive">Solde Du (Dette)</TableHead>
+                        <TableHead className="p-6 w-[150px] text-right font-semibold text-[10px] uppercase text-muted-foreground/60">Gestion</TableHead>
                     </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -72,8 +72,8 @@ export function SupplierTable({
                                             <Building className="h-5 w-5" />
                                         </div>
                                         <div className="flex flex-col -space-y-0.5">
-                                            <span className="font-black text-base tracking-tighter group-hover:text-primary transition-colors">{supplier.name}</span>
-                                            <Link href={`/stock/suppliers/${supplier.uuid}`} className="text-[9px] font-black uppercase text-muted-foreground/40 tracking-widest flex items-center gap-1 hover:text-primary/60 transition-colors">
+                                            <span className="font-semibold text-base tracking-tighter group-hover:text-primary transition-colors">{supplier.name}</span>
+                                            <Link href={`/stock/suppliers/${supplier.uuid}`} className="text-[9px] font-semibold uppercase text-muted-foreground/40 tracking-wide flex items-center gap-1 hover:text-primary/60 transition-colors">
                                                 Dossier Complet <ChevronRight className="h-2.5 w-2.5" />
                                             </Link>
                                         </div>
@@ -91,7 +91,7 @@ export function SupplierTable({
                                 </TableCell>
                                 <TableCell className="p-6 text-right">
                                     <div className={cn(
-                                        "inline-flex items-center justify-center px-5 py-2 rounded-2xl font-mono font-black text-sm shadow-2xl border transition-all duration-500",
+                                        "inline-flex items-center justify-center px-5 py-2 rounded-2xl font-mono font-semibold text-sm shadow-sm border transition-all duration-500",
                                         supplier.balance > 0 
                                             ? "bg-destructive/5 text-destructive border-destructive/20 group-hover:bg-destructive/10" 
                                             : "bg-emerald-500/5 text-emerald-500 border-emerald-500/20"
@@ -137,7 +137,7 @@ export function SupplierTable({
                             <TableCell colSpan={5} className="p-24 text-center">
                                 <div className="flex flex-col items-center gap-4 opacity-20">
                                     <Building className="h-16 w-16" />
-                                    <p className="text-[10px] font-black uppercase tracking-[0.4em]">Annuaire vide</p>
+                                    <p className="text-[10px] font-semibold uppercase ">Annuaire vide</p>
                                 </div>
                             </TableCell>
                         </TableRow>

@@ -42,7 +42,7 @@ export const CustomerCombobox = forwardRef<HTMLButtonElement>((_, ref) => {
             subLabel: c.outstandingBalance > 0 
                 ? `Flux dû: ${formatCurrency(c.outstandingBalance)} • ${formatCurrency(c.totalSpent)} total` 
                 : `Elite • ${formatCurrency(c.totalSpent)} d'achats`,
-            subLabelClassName: c.debtStatus === 'overdue' ? 'text-destructive font-black' : 'text-muted-foreground font-medium',
+            subLabelClassName: c.debtStatus === 'overdue' ? 'text-destructive font-semibold' : 'text-muted-foreground font-medium',
         }));
 
         options.unshift({
@@ -75,10 +75,10 @@ export const CustomerCombobox = forwardRef<HTMLButtonElement>((_, ref) => {
     return (
         <div className="space-y-4">
             <div className="flex items-center justify-between px-2 mb-1">
-                <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-primary/60 flex items-center gap-2">
+                <h3 className="text-[10px] font-semibold uppercase text-primary/60 flex items-center gap-2">
                     <Sparkles className="h-3 w-3" /> Relation Client Elite
                 </h3>
-                <span className="text-[9px] font-black text-muted-foreground/30 uppercase tracking-widest">
+                <span className="text-[9px] font-semibold text-muted-foreground/30 uppercase tracking-wide">
                     {customers.length} Partenaires Enregistrés
                 </span>
             </div>
@@ -99,13 +99,13 @@ export const CustomerCombobox = forwardRef<HTMLButtonElement>((_, ref) => {
                         </div>
                         <div className="text-center space-y-1">
                             <p className="text-sm font-bold">Aucun partenaire trouvé</p>
-                            <p className="text-[10px] uppercase font-black tracking-widest text-muted-foreground/40">Inscrire un nouveau profil ?</p>
+                            <p className="text-[10px] uppercase font-semibold tracking-wide text-muted-foreground/40">Inscrire un nouveau profil ?</p>
                         </div>
                         <Button 
                             variant="outline" 
                             size="sm" 
                             onClick={() => setIsDialogOpen(true)}
-                            className="rounded-xl h-10 px-6 font-black text-[10px] uppercase tracking-widest border-primary/20 hover:bg-primary hover:text-primary-foreground transition-all"
+                            className="rounded-xl h-10 px-6 font-semibold text-[10px] uppercase tracking-wide border-primary/20 hover:bg-primary hover:text-primary-foreground transition-all"
                         >
                             <UserPlus className="mr-2 h-3.5 w-3.5" /> Création Express
                         </Button>

@@ -1,30 +1,32 @@
-# iPOS - Point de Vente Intelligent (Version Ultra-Clean)
+# التوثيق التقني لنظام iPOS Smart
 
-**iPOS** est une application de point de vente (POS) avancée, fonctionnant entièrement dans le navigateur (Client-side) en utilisant la technologie **IndexedDB**. Ce projet a été entièrement épuré pour être idéal en termes de performance et de propreté du code.
+هذا المستند يشرح الهيكلية البرمجية والمنطق الداخلي للنظام بناءً على فحص الأكواد المصدرية.
 
-## 🚀 Architecture Technique Finale
+## 🏗 المعمارية التقنية (Technical Architecture)
 
-*   **Framework:** Next.js 14 (App Router)
-*   **Base de Données:** IndexedDB (via Dexie.js) - 100% locale et sécurisée.
-*   **Gestion d'état:** Zustand (avec persistance LocalStorage) pour les paniers et le profil.
-*   **UI:** ShadCN UI & Tailwind CSS (Dark Mode premium).
-*   **Offline-first:** L'application fonctionne totalement sans internet après le premier chargement.
+### 1. طبقة البيانات (Data Layer)
+يعمل النظام كمحرك بيانات مستقل داخل المتصفح:
+*   **Schema Logic:** يتم استخدام `UUID` كمفتاح أساسي لكافة السجلات لضمان فرادة البيانات عند المزامنة بين أجهزة متعددة.
+*   **Transactions:** كافة العمليات الحساسة (مثل `processSale` و `processReturn`) مغلفة داخل `db.transaction` لضمان سلامة البيانات ومنع حدوث أخطاء ناتجة عن عمليات غير مكتملة.
 
-## 📁 Structure du Projet
+### 2. الخدمات المنطقية (Business Services)
+*   **Sales Service:** مسؤول عن توليد أرقام فواتير فريدة (YYMMDD-Random) ومعالجة الخصومات واحتساب الضرائب.
+*   **Inventory Service:** لا يقوم النظام بمسح البيانات، بل يعتمد على "التعديلات النسبية". كل تغيير في المخزون يُسجل في جدول `inventory_logs` لربط الحركة بمصدرها (بيع، إرجاع، أو استقبال بضاعة).
+*   **Bread Service:** يدير منطق الجدولة الأسبوعية. يقوم الخادم المحلي بتوليد طلبات لكل يوم بناءً على مصفوفة الأيام (`lundi`, `mardi`, ...).
+*   **Zakat Service:** محرك حسابي متطور يقيم الأصول (Stock Value + Receivables - Payables) ويقارنها بنصاب الذهب المخزن في ملف التعريف.
 
-- `src/app/`: Routes et pages (Tableau de bord, Vente, Produits, Clients...).
-- `src/services/`: Logique métier isolée (Ventes, Stocks, Clients, Dépenses, Pain).
-- `src/lib/db.ts`: Définition de la base de données locale.
-- `src/stores/`: Gestion de l'état global (App Store, Cart Store).
-- `src/components/`: Composants UI organisés.
+### 3. محرك المزامنة (The Sync Engine)
+يتبع النظام بروتوكول مزامنة ثنائي الاتجاه:
+1.  **Pull:** جلب البيانات الأحدث من السحاب.
+2.  **Merge:** مقارنة طابع `updatedAt`. السجل الأحدث زمنياً هو الذي يُعتمد.
+3.  **Push:** دفع التعديلات المحلية الجديدة.
 
-## ✨ Fonctionnalités Principales Stables
+## 📏 تصميم الواجهة (UI Engineering)
+تمت هندسة الواجهة خصيصاً لدقة **1360x768**:
+*   **Data Density:** استخدام الارتفاعات `h-9` و `h-10` للعناصر التفاعلية.
+*   **Zero-Scroll Policy:** تم تقليص الهيدر وشريط المعلومات العلوي لتوفير مساحة رأسية تسمح بظهور 15 صنفاً على الأقل في سلة البيع دون تمرير.
+*   **Keyboard First:** دعم كامل لاختصارات لوحة المفاتيح (F1-F10) لتسريع عملية البيع في المحلات المزدحمة.
 
-1.  **Système de Vente Rapide:** Support multi-paniers, vérification de stock en temps réel et ajout d'articles personnalisés.
-2.  **Gestion de Stock Avancée:** Suivi précis des mouvements (Logs d'inventaire) et alertes d'expiration.
-3.  **Dettes et Clients:** Historique complet pour chaque client avec relevés de compte professionnels imprimables.
-4.  **Système de Pain:** Gestion unique des commandes quotidiennes récurrentes avec conversion en ventes en un clic.
-5.  **Sécurité et Sauvegarde:** Système d'exportation et d'importation manuelle des données pour garantir la pleine propriété de vos informations.
-
-## 🗑️ Nettoyage Appliqué
-Toutes les dépendances inutilisées ont été supprimées, et les styles ou animations superflus ont été élagués pour garantir un temps de réponse ultra-rapide. Le projet est désormais exempt de "code mort".
+## 🔐 الأمن والخصوصية
+*   **Client-Side Execution:** لا يتم إرسال أي بيانات تجارية إلى خوادم خارجية إلا إذا قام المستخدم بتهيئة إعدادات Supabase الخاصة به.
+*   **Sanitized Transport:** يتم تنظيف البيانات من المعرفات المحلية (Local IDs) قبل رفعها للسحاب لمنع تعارض قواعد البيانات.

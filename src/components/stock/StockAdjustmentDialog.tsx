@@ -29,7 +29,7 @@ export function StockAdjustmentDialog({ isOpen, onOpenChange, onSuccess }: { isO
     };
 
     const handleSave = async () => {
-        const change = parseFloat(adjustment);
+        const change = parseInt(adjustment);
         if (!selectedProduct) {
             toast.error("Veuillez sélectionner un produit.");
             return;
@@ -63,20 +63,20 @@ export function StockAdjustmentDialog({ isOpen, onOpenChange, onSuccess }: { isO
         setAdjustment('');
     };
 
-    const changeVal = parseFloat(adjustment) || 0;
+    const changeVal = parseInt(adjustment) || 0;
     const finalStock = selectedProduct ? selectedProduct.quantity + changeVal : 0;
 
     return (
         <Dialog open={isOpen} onOpenChange={(open) => { onOpenChange(open); if(!open) resetForm(); }}>
-            <DialogContent className="sm:max-w-[450px] rounded-3xl border-none shadow-2xl p-0 gap-0 overflow-hidden">
+            <DialogContent className="sm:max-w-[450px] rounded-3xl border-none shadow-sm p-0 gap-0 overflow-hidden">
                 <div className="bg-primary/5 p-6 border-b border-primary/10">
                     <DialogHeader>
                         <div className="flex items-center gap-3">
-                            <div className="p-3 rounded-2xl bg-primary text-primary-foreground shadow-lg shadow-primary/20">
+                            <div className="p-3 rounded-2xl bg-primary text-primary-foreground shadow-lg shadow-sm">
                                 <ArrowUpDown className="h-6 w-6" />
                             </div>
                             <div>
-                                <DialogTitle className="text-xl font-black tracking-tight">Correction de Stock</DialogTitle>
+                                <DialogTitle className="text-xl font-semibold tracking-tight">Correction de Stock</DialogTitle>
                                 <DialogDescription className="font-medium">Ajustez le stock sans facture (perte, don, erreur...)</DialogDescription>
                             </div>
                         </div>
@@ -85,7 +85,7 @@ export function StockAdjustmentDialog({ isOpen, onOpenChange, onSuccess }: { isO
 
                 <div className="p-6 space-y-6">
                     <div className="space-y-2">
-                        <Label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest ml-1">1. Sélection du Produit</Label>
+                        <Label className="text-[10px] font-semibold uppercase text-muted-foreground tracking-wide ml-1">1. Sélection du Produit</Label>
                         <ProductIntakeCombobox 
                             onProductSelected={handleProductSelect}
                             onNewProductCreated={() => {}} // Disabled here
@@ -98,25 +98,25 @@ export function StockAdjustmentDialog({ isOpen, onOpenChange, onSuccess }: { isO
                                 <div className="flex justify-between items-center px-1">
                                     <span className="text-sm font-bold tracking-tight">{selectedProduct.name}</span>
                                     <div className="flex items-center gap-2">
-                                        <span className="text-[10px] font-black uppercase text-muted-foreground">Actuel:</span>
-                                        <span className="font-black px-2 py-0.5 bg-muted rounded-md text-xs">{selectedProduct.quantity}</span>
+                                        <span className="text-[10px] font-semibold uppercase text-muted-foreground">Actuel:</span>
+                                        <span className="font-semibold px-2 py-0.5 bg-muted rounded-md text-xs">{selectedProduct.quantity}</span>
                                     </div>
                                 </div>
 
                                 <div className="space-y-2">
-                                    <Label htmlFor="adj-qty" className="text-[10px] font-black uppercase text-muted-foreground tracking-widest ml-1">2. Variation (Quantité)</Label>
+                                    <Label htmlFor="adj-qty" className="text-[10px] font-semibold uppercase text-muted-foreground tracking-wide ml-1">2. Variation (Quantité)</Label>
                                     <div className="relative">
                                         <Input
                                             id="adj-qty"
                                             type="number"
                                             placeholder="Ex: -5 ou +10"
-                                            className="h-14 text-2xl font-black text-center rounded-xl bg-background shadow-inner border-2 border-transparent focus-visible:border-primary/20 transition-all"
+                                            className="h-9 text-lg font-semibold text-center rounded-xl bg-background shadow-inner border-2 border-transparent focus-visible:border-primary/20 transition-all"
                                             value={adjustment}
                                             onChange={(e) => setAdjustment(e.target.value)}
                                             autoFocus
                                             onKeyDown={(e) => e.key === 'Enter' && handleSave()}
                                         />
-                                        <div className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground font-black text-xs uppercase opacity-30">
+                                        <div className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground font-semibold text-xs uppercase opacity-30">
                                             PCS
                                         </div>
                                     </div>
@@ -134,9 +134,9 @@ export function StockAdjustmentDialog({ isOpen, onOpenChange, onSuccess }: { isO
                                 )}>
                                     <div className="flex items-center gap-2">
                                         <CheckCircle2 className="h-4 w-4" />
-                                        <span className="text-xs font-black uppercase tracking-wider">Stock final :</span>
+                                        <span className="text-xs font-semibold uppercase tracking-wider">Stock final :</span>
                                     </div>
-                                    <span className="text-xl font-black">{finalStock}</span>
+                                    <span className="text-xl font-semibold">{finalStock}</span>
                                 </div>
                             )}
                         </div>
@@ -148,7 +148,7 @@ export function StockAdjustmentDialog({ isOpen, onOpenChange, onSuccess }: { isO
                     <Button 
                         onClick={handleSave} 
                         disabled={isLoading || !selectedProduct || !adjustment || changeVal === 0}
-                        className="rounded-xl h-12 font-bold flex-1 shadow-lg shadow-primary/20 transition-all active:scale-95"
+                        className="rounded-xl h-12 font-bold flex-1 shadow-lg shadow-sm transition-all active:scale-95"
                     >
                         {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                         Appliquer [Enter]

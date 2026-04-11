@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useMemo } from 'react';
@@ -11,16 +12,16 @@ import { useLiveQuery } from '@/hooks/useLiveQuery';
 import { db } from '@/lib/db';
 
 const StatCard = ({ title, value, icon: Icon, colorClass, subtitle }: { title: string, value: string, icon: any, colorClass: string, subtitle?: string }) => (
-    <Card className="luxury-card h-full bg-card/40 backdrop-blur-2xl border-white/5 rounded-[2rem] group overflow-hidden">
+    <Card className="app-card h-full bg-card/40 backdrop-blur-sm border-white/5 rounded-lg group overflow-hidden">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3 p-6">
-            <CardTitle className="text-[10px] font-black uppercase tracking-[0.25em] text-muted-foreground group-hover:text-primary transition-all duration-500">{title}</CardTitle>
+            <CardTitle className="text-[10px] font-semibold uppercase text-muted-foreground group-hover:text-primary transition-all duration-500">{title}</CardTitle>
             <div className={cn("p-3 rounded-2xl shadow-inner transition-all duration-500 group-hover:scale-110", colorClass)}>
                 <Icon className="h-5 w-5" />
             </div>
         </CardHeader>
         <CardContent className="px-6 pb-6">
-            <div className="text-3xl font-black tracking-tighter text-foreground group-hover:scale-105 transition-transform duration-500 origin-left mb-1">{value}</div>
-            {subtitle && <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground/40">{subtitle}</p>}
+            <div className="text-xl font-semibold tracking-tighter text-foreground group-hover:scale-105 transition-transform duration-500 origin-left mb-1">{value}</div>
+            {subtitle && <p className="text-[9px] font-semibold uppercase tracking-wide text-muted-foreground/40">{subtitle}</p>}
         </CardContent>
     </Card>
 );
@@ -45,7 +46,7 @@ export const InventoryStats = ({ isLoading: externalLoading }: { isLoading?: boo
         return (
              <div className="grid gap-6 grid-cols-2 lg:grid-cols-5">
                 {[...Array(5)].map((_, i) => (
-                    <Skeleton key={i} className="h-32 w-full rounded-[2rem] bg-card/40" />
+                    <Skeleton key={i} className="h-32 w-full rounded-lg bg-card/40" />
                 ))}
             </div>
         )

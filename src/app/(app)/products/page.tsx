@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useCallback, Suspense } from 'react';
@@ -234,23 +235,23 @@ function ProductsContent() {
     const isFiltered = searchQuery !== '' || selectedCategory !== 'all' || selectedSupplier !== 'all' || stockStatus !== 'all' || sortBy !== 'createdAt_desc';
     
     return (
-        <div className="p-6 sm:p-10 space-y-10 max-w-[1800px] mx-auto animate-in fade-in duration-1000">
+        <div className="p-6 sm:p-4 space-y-4 max-w-[1800px] mx-auto animate-in fade-in duration-1000">
             <PageHeader
                 title="Catalogue Elite"
                 description="Maîtrise absolue du catalogue et des flux de marchandises"
             >
                 <div className="flex gap-3 w-full sm:w-auto">
-                    <Button variant="outline" onClick={handleExportCsv} className="flex-1 sm:flex-none h-12 rounded-2xl font-black text-xs uppercase tracking-widest border-primary/20 hover:bg-primary/5">
+                    <Button variant="outline" onClick={handleExportCsv} className="flex-1 sm:flex-none h-12 rounded-2xl font-semibold text-xs uppercase tracking-wide border-primary/20 hover:bg-primary/5">
                         <FileUp className="mr-2 h-4 w-4 text-primary" /> Exporter
                     </Button>
-                    <Button asChild variant="outline" disabled={isAnalyzing} className="flex-1 sm:flex-none h-12 rounded-2xl font-black text-xs uppercase tracking-widest border-primary/20 hover:bg-primary/5">
+                    <Button asChild variant="outline" disabled={isAnalyzing} className="flex-1 sm:flex-none h-12 rounded-2xl font-semibold text-xs uppercase tracking-wide border-primary/20 hover:bg-primary/5">
                         <label htmlFor="csv-product-importer" className="cursor-pointer flex items-center">
                             {isAnalyzing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileDown className="mr-2 h-4 w-4 text-primary" />}
                             Importer
                             <input type="file" id="csv-product-importer" accept=".csv" className="sr-only" onChange={handleFileSelected} />
                         </label>
                     </Button>
-                    <Button onClick={() => { setSelectedProduct(null); setIsProductDialogOpen(true); }} className="flex-1 sm:flex-none h-12 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-primary/20 transition-all active:scale-95">
+                    <Button onClick={() => { setSelectedProduct(null); setIsProductDialogOpen(true); }} className="flex-1 sm:flex-none h-12 rounded-2xl font-semibold text-xs uppercase tracking-wide shadow-xl shadow-sm transition-all active:scale-95">
                         <Plus className="mr-2 h-4 w-4" /> Nouveau Produit
                     </Button>
                 </div>
@@ -258,12 +259,12 @@ function ProductsContent() {
 
             <InventoryStats isLoading={isLoading} />
 
-            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 bg-card/20 p-2 rounded-[2.5rem] border border-white/5 backdrop-blur-xl">
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 bg-card/20 p-2 rounded-lg border border-white/5 backdrop-blur-sm">
                 <div className="relative group flex-grow max-w-xl px-4">
                     <Search className="absolute left-8 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground group-focus-within:text-primary transition-colors duration-500" />
                     <Input 
                         placeholder="Rechercher par nom ou code-barres..."
-                        className="pl-14 h-14 rounded-2xl bg-black/20 border-none shadow-inner focus-visible:ring-primary/20 font-bold text-lg"
+                        className="pl-14 h-9 rounded-2xl bg-black/20 border-none shadow-inner focus-visible:ring-primary/20 font-bold text-lg"
                         value={searchQuery}
                         onChange={e => setSearchQuery(e.target.value)}
                     />
@@ -277,8 +278,8 @@ function ProductsContent() {
                                 {selectedCategory === 'all' ? 'Tous les Rayons' : selectedCategory}
                             </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent className="rounded-2xl border-white/5 shadow-2xl min-w-[200px] max-h-80 overflow-y-auto">
-                            <DropdownMenuLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Rayon / Catégorie</DropdownMenuLabel>
+                        <DropdownMenuContent className="rounded-2xl border-white/5 shadow-sm min-w-[200px] max-h-80 overflow-y-auto">
+                            <DropdownMenuLabel className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Rayon / Catégorie</DropdownMenuLabel>
                             <DropdownMenuSeparator className="opacity-10" />
                             <DropdownMenuCheckboxItem checked={selectedCategory === 'all'} onCheckedChange={() => setSelectedCategory('all')}>Toutes les catégories</DropdownMenuCheckboxItem>
                             {categories?.map(cat => (
@@ -294,8 +295,8 @@ function ProductsContent() {
                                 {sortOptions[sortBy] || 'Trier par'}
                             </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent className="rounded-2xl border-white/5 shadow-2xl min-w-[200px]">
-                            <DropdownMenuLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Trier par</DropdownMenuLabel>
+                        <DropdownMenuContent className="rounded-2xl border-white/5 shadow-sm min-w-[200px]">
+                            <DropdownMenuLabel className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Trier par</DropdownMenuLabel>
                             <DropdownMenuSeparator className="opacity-10" />
                             <DropdownMenuRadioGroup value={sortBy} onValueChange={setSortBy}>
                                 {Object.entries(sortOptions).map(([key, value]) => (
@@ -318,7 +319,7 @@ function ProductsContent() {
 
             {selectedProducts.size > 0 && (
                 <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 animate-in slide-in-from-bottom-10 duration-500">
-                    <div className="bg-card/80 backdrop-blur-3xl border-2 border-primary/20 shadow-2xl rounded-full px-8 py-4 flex items-center gap-10">
+                    <div className="bg-card/80 backdrop-blur-sm border-2 border-primary/20 shadow-sm rounded-full px-8 py-4 flex items-center gap-4">
                         <div className="flex items-center gap-4 pr-8 border-r border-white/10">
                             <Checkbox
                                 id="select-all-products"
@@ -327,18 +328,18 @@ function ProductsContent() {
                                 className="h-5 w-5 border-primary data-[state=checked]:bg-primary"
                             />
                             <div className="flex flex-col">
-                                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Sélection Elite</span>
-                                <span className="text-xs font-black text-primary">{selectedProducts.size} produit(s)</span>
+                                <span className="text-[10px] font-semibold uppercase text-muted-foreground">Sélection Elite</span>
+                                <span className="text-xs font-semibold text-primary">{selectedProducts.size} produit(s)</span>
                             </div>
                         </div>
                         <div className="flex items-center gap-4">
-                            <Button variant="ghost" onClick={() => setIsPrintDialogOpen(true)} className="rounded-full h-12 px-6 font-black text-[10px] uppercase tracking-widest hover:bg-primary/10 hover:text-primary">
+                            <Button variant="ghost" onClick={() => setIsPrintDialogOpen(true)} className="rounded-full h-12 px-6 font-semibold text-[10px] uppercase tracking-wide hover:bg-primary/10 hover:text-primary">
                                 <Printer className="mr-2 h-4 w-4" /> Étiquettes
                             </Button>
-                            <Button variant="ghost" onClick={handleExportCsv} className="rounded-full h-12 px-6 font-black text-[10px] uppercase tracking-widest hover:bg-primary/10 hover:text-primary">
+                            <Button variant="ghost" onClick={handleExportCsv} className="rounded-full h-12 px-6 font-semibold text-[10px] uppercase tracking-wide hover:bg-primary/10 hover:text-primary">
                                 <FileUp className="mr-2 h-4 w-4" /> Exporter (.csv)
                             </Button>
-                            <Button variant="ghost" onClick={() => setIsBulkDeleteDialogOpen(true)} className="rounded-full h-12 px-6 font-black text-[10px] uppercase tracking-widest text-destructive hover:bg-destructive/10">
+                            <Button variant="ghost" onClick={() => setIsBulkDeleteDialogOpen(true)} className="rounded-full h-12 px-6 font-semibold text-[10px] uppercase tracking-wide text-destructive hover:bg-destructive/10">
                                 <Trash2 className="mr-2 h-4 w-4" /> Supprimer
                             </Button>
                             <Button variant="ghost" size="icon" onClick={() => setSelectedProducts(new Set())} className="rounded-full h-12 w-12 hover:bg-white/5 transition-all">
@@ -356,7 +357,7 @@ function ProductsContent() {
                     <EmptyState icon={Package} title="Silence dans le Rayon" description={isFiltered ? "Ajustez vos filtres pour trouver ce que vous cherchez." : "Commencez à bâtir votre catalogue de luxe."} />
                ) : (
                     viewMode === 'grid' ? (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-8">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3">
                             {products.map(p => (
                                 <ProductCard 
                                     key={p.uuid} 
@@ -389,9 +390,9 @@ function ProductsContent() {
 
 function ProductGridSkeleton() {
     return (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3">
             {[...Array(10)].map((_, i) => (
-                <div key={i} className="h-[220px] rounded-[2.5rem] bg-card/40 border-white/5 animate-pulse" />
+                <div key={i} className="h-[220px] rounded-lg bg-card/40 border-white/5 animate-pulse" />
             ))}
         </div>
     );
@@ -399,7 +400,7 @@ function ProductGridSkeleton() {
 
 export default function ProductsPage() {
     return (
-        <Suspense fallback={<div className="p-10 text-center text-[10px] font-black uppercase tracking-[0.4em] opacity-20 animate-pulse">Chargement du catalogue Elite...</div>}>
+        <Suspense fallback={<div className="p-4 text-center text-[10px] font-semibold uppercase opacity-20 animate-pulse">Chargement du catalogue Elite...</div>}>
             <ProductsContent />
         </Suspense>
     );

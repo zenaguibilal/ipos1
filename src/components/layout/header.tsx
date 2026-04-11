@@ -1,101 +1,153 @@
 'use client';
 
-import Link from 'next/navigation';
+import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
-  Settings, Package, Users2, Archive, LayoutDashboard,
-  ShoppingCart, Building, Cloud, RefreshCw, Wheat
+    Settings, Package, Users2, History, Undo2, Archive,
+    Wallet, LayoutDashboard, Wheat, ShoppingCart, Building,
+    Download, Coins, BellRing, Cloud, RefreshCw,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Clock } from '@/components/layout/clock';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { ThemeToggle } from '@/components/layout/theme-toggle';
+import {
+    Tooltip, TooltipContent, TooltipProvider, TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { useAppStore, useAppActions } from '@/stores/appStore';
 import { format } from 'date-fns';
+import { fr } from 'date-fns/locale';
 
 const navLinks = [
-  { href: '/dashboard', label: 'Board', icon: LayoutDashboard },
-  { href: '/sell', label: 'Vendre', icon: ShoppingCart },
-  { href: '/products', label: 'Catalogue', icon: Package },
-  { href: '/customers', label: 'Clients', icon: Users2 },
-  { href: '/stock', label: 'Stock', icon: Archive },
-  { href: '/bread', label: 'Pain', icon: Wheat },
+    { href: '/dashboard',    label: 'Dashboard', icon: LayoutDashboard },
+    { href: '/sell',         label: 'Vendre',    icon: ShoppingCart },
+    { href: '/debt-alerts',  label: 'Alertes',   icon: BellRing },
+    { href: '/stock',        label: 'Stock',     icon: Archive },
+    { href: '/products',     label: 'Produits',  icon: Package },
+    { href: '/customers',    label: 'Clients',   icon: Users2 },
+    { href: '/sales-history',label: 'Ventes',    icon: History },
+    { href: '/returns',      label: 'Retours',   icon: Undo2 },
+    { href: '/expenses',     label: 'Dépenses',  icon: Wallet },
+    { href: '/bread',        label: 'Pain',      icon: Wheat },
+    { href: '/zakat',        label: 'Zakat',     icon: Coins },
 ];
 
 export function AppHeader() {
-  const pathname = usePathname();
-  const { performBackgroundSync } = useAppActions();
-  const { companyProfile, isSyncing } = useAppStore(state => ({
-      companyProfile: state.companyProfile,
-      isSyncing: state.isSyncing
-  }));
+    const pathname = usePathname();
+    const { performBackgroundSync } = useAppActions();
+    const { companyProfile, isSyncing } = useAppStore(state => ({
+        companyProfile: state.companyProfile,
+        isSyncing:      state.isSyncing,
+    }));
 
-  const lastSync = companyProfile?.last_sync_at;
+    const lastSync = companyProfile?.last_sync_at;
 
-  return (
-    <header className="flex h-10 items-center gap-3 bg-white border-b px-3 print-hide sticky top-0 z-40 shadow-sm shrink-0">
-      <div className="flex-shrink-0 flex items-center gap-2">
-         <Link href="/dashboard" className="flex items-center gap-2 transition-transform active:scale-95">
-            <div className="h-6 w-6 flex items-center justify-center bg-indigo-600 rounded shadow-sm">
-                <div className="w-2 h-2 border-2 border-white rounded-full animate-pulse" />
-            </div>
-            <span className="text-sm font-black tracking-tighter hidden sm:inline">iPOS Smart</span>
-         </Link>
-      </div>
+    return (
+        <header className="print-hide sticky top-0 z-40 flex h-12 items-center gap-3 border-b border-border bg-background/95 backdrop-blur px-4">
+            {/* Logo */}
+            <Link href="/dashboard" className="flex items-center gap-2 font-bold text-sm text-foreground hover:text-primary transition-colors shrink-0">
+                <span className="text-primary font-extrabold">iPOS</span>
+                <span className="text-muted-foreground font-normal hidden lg:inline">Zen</span>
+            </Link>
 
-      <nav className="flex items-center gap-0.5 flex-grow justify-center overflow-x-auto no-scrollbar">
-          {navLinks.map(link => {
-              const isActive = pathname === link.href;
-              return (
-                  <Button 
-                      key={link.href}
-                      asChild
-                      variant="ghost"
-                      size="sm"
-                      className={cn(
-                          "rounded-md font-bold px-2.5 h-7 text-[9px] uppercase tracking-tight",
-                          isActive ? "bg-indigo-50 text-indigo-600" : "text-muted-foreground hover:text-indigo-600 hover:bg-muted/50"
-                      )}
-                  >
-                      <Link href={link.href} className="flex items-center gap-1.5">
-                          <link.icon className="h-3.5 w-3.5" />
-                          <span className="hidden xl:inline">{link.label}</span>
-                      </Link>
-                  </Button>
-              );
-          })}
-      </nav>
+            <div className="h-5 w-px bg-border mx-1 shrink-0" />
 
-      <div className="flex-shrink-0 flex items-center gap-2">
-        <TooltipProvider>
-            <Tooltip delayDuration={0}>
-                <TooltipTrigger asChild>
-                    <button onClick={() => performBackgroundSync()} disabled={isSyncing} className="flex items-center gap-1.5 text-muted-foreground hover:text-indigo-600 transition-colors pr-2 border-r h-5">
-                        {isSyncing ? (
-                            <RefreshCw className="h-3 w-3 animate-spin text-indigo-600" />
-                        ) : (
-                            <Cloud className={cn("h-3 w-3", lastSync ? "text-emerald-500" : "opacity-30")} />
-                        )}
-                        <span className="text-[8px] font-black uppercase hidden lg:inline">
-                            {isSyncing ? 'Sync' : lastSync ? format(new Date(lastSync), 'HH:mm') : 'Offline'}
-                        </span>
-                    </button>
-                </TooltipTrigger>
-                <TooltipContent><p className="text-[9px] font-bold">Cloud Status</p></TooltipContent>
-            </Tooltip>
-        </TooltipProvider>
+            {/* Main nav */}
+            <TooltipProvider delayDuration={0}>
+                <nav className="flex items-center gap-0.5 overflow-x-auto flex-1 min-w-0">
+                    {navLinks.map(link => {
+                        const isActive = pathname.startsWith(link.href);
+                        return (
+                            <Tooltip key={link.href}>
+                                <TooltipTrigger asChild>
+                                    <Button
+                                        asChild
+                                        variant={isActive ? 'secondary' : 'ghost'}
+                                        size="sm"
+                                        className={cn(
+                                            'h-8 w-8 p-0 rounded-md shrink-0',
+                                            isActive && 'text-primary bg-primary/10',
+                                        )}
+                                    >
+                                        <Link href={link.href}>
+                                            <link.icon className="h-4 w-4" />
+                                            <span className="sr-only">{link.label}</span>
+                                        </Link>
+                                    </Button>
+                                </TooltipTrigger>
+                                <TooltipContent side="bottom">
+                                    <p className="text-xs">{link.label}</p>
+                                </TooltipContent>
+                            </Tooltip>
+                        );
+                    })}
+                </nav>
 
-        <Clock />
-        
-        <div className="flex items-center gap-0.5 ml-1">
-            <Button asChild variant="ghost" size="icon" className="h-7 w-7 rounded-md hover:bg-indigo-50">
-                <Link href="/profile"><Building className="h-3.5 w-3.5" /></Link>
-            </Button>
-            <Button asChild variant="ghost" size="icon" className="h-7 w-7 rounded-md hover:bg-indigo-50">
-                <Link href="/settings"><Settings className="h-3.5 w-3.5" /></Link>
-            </Button>
-        </div>
-      </div>
-    </header>
-  );
+                {/* Right side */}
+                <div className="flex items-center gap-1 shrink-0">
+                    {/* Sync status */}
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <button
+                                onClick={() => performBackgroundSync()}
+                                disabled={isSyncing}
+                                className="hidden md:flex items-center gap-1.5 text-xs text-muted-foreground hover:text-primary transition-colors px-2 py-1 rounded-md hover:bg-muted disabled:opacity-60"
+                            >
+                                {isSyncing ? (
+                                    <RefreshCw className="h-3 w-3 animate-spin text-primary" />
+                                ) : lastSync ? (
+                                    <Cloud className="h-3 w-3 text-emerald-500" />
+                                ) : (
+                                    <Cloud className="h-3 w-3" />
+                                )}
+                                <span className="hidden xl:inline text-xs">
+                                    {isSyncing
+                                        ? 'Sync...'
+                                        : lastSync
+                                        ? format(new Date(lastSync), 'HH:mm', { locale: fr })
+                                        : 'Non sync'}
+                                </span>
+                            </button>
+                        </TooltipTrigger>
+                        <TooltipContent side="bottom">
+                            <p className="text-xs">Synchroniser maintenant</p>
+                        </TooltipContent>
+                    </Tooltip>
+
+                    <Clock />
+
+                    <ThemeToggle />
+
+                    <div className="h-5 w-px bg-border mx-1" />
+
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <Button asChild variant={pathname === '/install' ? 'secondary' : 'ghost'} size="icon" className="h-8 w-8 rounded-md">
+                                <Link href="/install"><Download className="h-4 w-4" /></Link>
+                            </Button>
+                        </TooltipTrigger>
+                        <TooltipContent side="bottom"><p className="text-xs">Installer PWA</p></TooltipContent>
+                    </Tooltip>
+
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <Button asChild variant={pathname === '/profile' ? 'secondary' : 'ghost'} size="icon" className="h-8 w-8 rounded-md">
+                                <Link href="/profile"><Building className="h-4 w-4" /></Link>
+                            </Button>
+                        </TooltipTrigger>
+                        <TooltipContent side="bottom"><p className="text-xs">Profil</p></TooltipContent>
+                    </Tooltip>
+
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <Button asChild variant={pathname === '/settings' ? 'secondary' : 'ghost'} size="icon" className="h-8 w-8 rounded-md">
+                                <Link href="/settings"><Settings className="h-4 w-4" /></Link>
+                            </Button>
+                        </TooltipTrigger>
+                        <TooltipContent side="bottom"><p className="text-xs">Paramètres</p></TooltipContent>
+                    </Tooltip>
+                </div>
+            </TooltipProvider>
+        </header>
+    );
 }

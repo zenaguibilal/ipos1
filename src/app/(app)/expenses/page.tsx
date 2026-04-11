@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
@@ -71,16 +72,16 @@ const sortOptions = {
 };
 
 const StatCard = ({ title, value, icon: Icon, colorClass, subtitle }: { title: string, value: string, icon: any, colorClass: string, subtitle?: string }) => (
-    <Card className="luxury-card h-full bg-card/40 backdrop-blur-2xl border-white/5 rounded-[2rem] group overflow-hidden">
+    <Card className="app-card h-full bg-card/40 backdrop-blur-sm border-white/5 rounded-lg group overflow-hidden">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3 p-6">
-            <CardTitle className="text-[10px] font-black uppercase tracking-[0.25em] text-muted-foreground group-hover:text-primary transition-all duration-500">{title}</CardTitle>
+            <CardTitle className="text-[10px] font-semibold uppercase text-muted-foreground group-hover:text-primary transition-all duration-500">{title}</CardTitle>
             <div className={cn("p-3 rounded-2xl shadow-inner transition-all duration-500 group-hover:scale-110", colorClass)}>
                 <Icon className="h-5 w-5" />
             </div>
         </CardHeader>
         <CardContent className="px-6 pb-6">
-            <div className="text-3xl font-black tracking-tighter text-foreground group-hover:scale-105 transition-transform duration-500 origin-left mb-1">{value}</div>
-            {subtitle && <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground/40">{subtitle}</p>}
+            <div className="text-xl font-semibold tracking-tighter text-foreground group-hover:scale-105 transition-transform duration-500 origin-left mb-1">{value}</div>
+            {subtitle && <p className="text-[9px] font-semibold uppercase tracking-wide text-muted-foreground/40">{subtitle}</p>}
         </CardContent>
     </Card>
 );
@@ -361,21 +362,21 @@ export default function ExpensesPage() {
     const isFiltered = searchQuery !== '' || selectedCategory !== 'all' || sortBy !== 'date_desc';
     
     return (
-        <div className="p-6 sm:p-10 space-y-10 max-w-[1800px] mx-auto animate-in fade-in duration-1000">
+        <div className="p-6 sm:p-4 space-y-4 max-w-[1800px] mx-auto animate-in fade-in duration-1000">
             <PageHeader
                 title="Registre des Charges"
                 description="Pilotage souverain des flux sortants et de la trésorerie"
             >
                 <div className="flex gap-3 w-full sm:w-auto">
-                    <Button variant="outline" onClick={handlePrintSummary} className="flex-1 sm:flex-none h-12 rounded-2xl font-black text-xs uppercase tracking-widest border-primary/20 hover:bg-primary/5 transition-all">
+                    <Button variant="outline" onClick={handlePrintSummary} className="flex-1 sm:flex-none h-12 rounded-2xl font-semibold text-xs uppercase tracking-wide border-primary/20 hover:bg-primary/5 transition-all">
                         <Printer className="mr-2 h-4 w-4 text-primary" /> Rapport
                     </Button>
-                    <Button variant="outline" onClick={handleExportCsv} className="flex-1 sm:flex-none h-12 rounded-2xl font-black text-xs uppercase tracking-widest border-primary/20 hover:bg-primary/5 transition-all">
+                    <Button variant="outline" onClick={handleExportCsv} className="flex-1 sm:flex-none h-12 rounded-2xl font-semibold text-xs uppercase tracking-wide border-primary/20 hover:bg-primary/5 transition-all">
                         <FileUp className="mr-2 h-4 w-4 text-primary" /> Exporter
                     </Button>
                     <Button 
                         onClick={() => { setSelectedExpense(null); setIsExpenseDialogOpen(true); }}
-                        className="flex-1 sm:flex-none h-12 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-primary/20 transition-all active:scale-95 gap-3"
+                        className="flex-1 sm:flex-none h-12 rounded-2xl font-semibold text-xs uppercase tracking-wide shadow-xl shadow-sm transition-all active:scale-95 gap-3"
                     >
                         <Plus className="mr-2 h-4 w-4" /> Nouvelle Dépense
                     </Button>
@@ -413,22 +414,22 @@ export default function ExpensesPage() {
                 />
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
-                <Card className="lg:col-span-3 luxury-card bg-card/40 backdrop-blur-3xl border-white/5 overflow-hidden rounded-[2.5rem]">
-                    <CardHeader className="bg-muted/20 border-b border-white/5 p-8">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                <Card className="lg:col-span-3 app-card bg-card/40 backdrop-blur-sm border-white/5 overflow-hidden rounded-lg">
+                    <CardHeader className="bg-muted/20 border-b border-white/5 p-4">
                         <div className="flex items-center gap-4">
-                            <div className="p-3.5 rounded-2xl bg-primary text-primary-foreground shadow-2xl shadow-primary/20">
+                            <div className="p-3.5 rounded-2xl bg-primary text-primary-foreground shadow-sm shadow-sm">
                                 <BarChart3 className="h-6 w-6" />
                             </div>
                             <div>
-                                <CardTitle className="text-2xl font-black tracking-tighter">Analyse par Poste</CardTitle>
-                                <CardDescription className="text-[10px] font-black uppercase tracking-[0.3em] text-primary/50">Répartition budgétaire par catégorie</CardDescription>
+                                <CardTitle className="text-lg font-semibold tracking-tighter">Analyse par Poste</CardTitle>
+                                <CardDescription className="text-[10px] font-semibold uppercase text-primary/50">Répartition budgétaire par catégorie</CardDescription>
                             </div>
                         </div>
                     </CardHeader>
-                    <CardContent className="p-8 h-[350px]">
+                    <CardContent className="p-4 h-[350px]">
                         {isLoading ? (
-                            <Skeleton className="h-full w-full rounded-[2rem] bg-card/40" />
+                            <Skeleton className="h-full w-full rounded-lg bg-card/40" />
                         ) : stats.chartData.length > 0 ? (
                             <ResponsiveContainer width="100%" height="100%">
                                 <RechartsBarChart data={stats.chartData} layout="vertical" margin={{ left: 40, right: 40, top: 10, bottom: 10 }}>
@@ -455,7 +456,7 @@ export default function ExpensesPage() {
                                 </RechartsBarChart>
                             </ResponsiveContainer>
                         ) : (
-                            <div className="h-full flex items-center justify-center text-muted-foreground/30 font-black uppercase tracking-widest text-[10px]">
+                            <div className="h-full flex items-center justify-center text-muted-foreground/30 font-semibold uppercase tracking-wide text-[10px]">
                                 <Sparkles className="mr-2 h-4 w-4" /> Aucun flux détecté
                             </div>
                         )}
@@ -463,12 +464,12 @@ export default function ExpensesPage() {
                 </Card>
             </div>
 
-            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 bg-card/20 p-2 rounded-[2.5rem] border border-white/5 backdrop-blur-xl">
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 bg-card/20 p-2 rounded-lg border border-white/5 backdrop-blur-sm">
                 <div className="relative group flex-grow max-w-xl px-4">
                     <Search className="absolute left-8 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground group-focus-within:text-primary transition-colors duration-500" />
                     <Input 
                         placeholder="Rechercher par description..."
-                        className="pl-14 h-14 rounded-2xl bg-black/20 border-none shadow-inner focus-visible:ring-primary/20 font-bold text-lg"
+                        className="pl-14 h-9 rounded-2xl bg-black/20 border-none shadow-inner focus-visible:ring-primary/20 font-bold text-lg"
                         value={searchQuery}
                         onChange={e => setSearchQuery(e.target.value)}
                     />
@@ -482,8 +483,8 @@ export default function ExpensesPage() {
                                 {selectedCategory === 'all' ? 'Toutes Catégories' : selectedCategory}
                             </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent className="rounded-2xl border-white/5 shadow-2xl min-w-[200px] max-h-80 overflow-y-auto">
-                            <DropdownMenuLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Filtrer par Poste</DropdownMenuLabel>
+                        <DropdownMenuContent className="rounded-2xl border-white/5 shadow-sm min-w-[200px] max-h-80 overflow-y-auto">
+                            <DropdownMenuLabel className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Filtrer par Poste</DropdownMenuLabel>
                             <DropdownMenuSeparator className="opacity-10" />
                             <DropdownMenuCheckboxItem checked={selectedCategory === 'all'} onCheckedChange={() => setSelectedCategory('all')}>Toutes les catégories</DropdownMenuCheckboxItem>
                             {categories?.map(cat => (
@@ -499,8 +500,8 @@ export default function ExpensesPage() {
                                 {sortOptions[sortBy as keyof typeof sortOptions]}
                             </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent className="rounded-2xl border-white/5 shadow-2xl min-w-[200px]">
-                            <DropdownMenuLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Trier par</DropdownMenuLabel>
+                        <DropdownMenuContent className="rounded-2xl border-white/5 shadow-sm min-w-[200px]">
+                            <DropdownMenuLabel className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Trier par</DropdownMenuLabel>
                             <DropdownMenuSeparator className="opacity-10" />
                             <DropdownMenuRadioGroup value={sortBy} onValueChange={setSortBy}>
                                 {Object.entries(sortOptions).map(([key, value]) => (
@@ -556,21 +557,21 @@ export default function ExpensesPage() {
             
             {selectedExpenses.size > 0 && (
                 <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 animate-in slide-in-from-bottom-10 duration-500">
-                    <div className="bg-card/80 backdrop-blur-3xl border-2 border-primary/20 shadow-2xl rounded-full px-8 py-4 flex items-center gap-10">
+                    <div className="bg-card/80 backdrop-blur-sm border-2 border-primary/20 shadow-sm rounded-full px-8 py-4 flex items-center gap-4">
                         <div className="flex items-center gap-4 pr-8 border-r border-white/10">
-                            <div className="h-10 w-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-black shadow-lg shadow-primary/20">
+                            <div className="h-10 w-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-semibold shadow-lg shadow-sm">
                                 {selectedExpenses.size}
                             </div>
                             <div className="flex flex-col">
-                                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Sélection Elite</span>
-                                <span className="text-xs font-black text-primary">{formatCurrency(selectedTotal)}</span>
+                                <span className="text-[10px] font-semibold uppercase text-muted-foreground">Sélection Elite</span>
+                                <span className="text-xs font-semibold text-primary">{formatCurrency(selectedTotal)}</span>
                             </div>
                         </div>
                         <div className="flex items-center gap-4">
-                            <Button variant="ghost" onClick={handleExportCsv} className="rounded-full h-12 px-6 font-black text-[10px] uppercase tracking-widest hover:bg-primary/10 hover:text-primary transition-all">
+                            <Button variant="ghost" onClick={handleExportCsv} className="rounded-full h-12 px-6 font-semibold text-[10px] uppercase tracking-wide hover:bg-primary/10 hover:text-primary transition-all">
                                 <FileUp className="mr-2 h-4 w-4" /> Exporter (.csv)
                             </Button>
-                            <Button variant="ghost" onClick={() => setIsBulkDeleteDialogOpen(true)} className="rounded-full h-12 px-6 font-black text-[10px] uppercase tracking-widest text-destructive hover:bg-destructive/10 transition-all">
+                            <Button variant="ghost" onClick={() => setIsBulkDeleteDialogOpen(true)} className="rounded-full h-12 px-6 font-semibold text-[10px] uppercase tracking-wide text-destructive hover:bg-destructive/10 transition-all">
                                 <Trash2 className="mr-2 h-4 w-4" /> Supprimer Flux
                             </Button>
                             <Button variant="ghost" size="icon" onClick={() => setSelectedExpenses(new Set())} className="rounded-full h-12 w-12 hover:bg-white/5 transition-all">
@@ -583,8 +584,8 @@ export default function ExpensesPage() {
 
             <div className="min-h-[600px] animate-in fade-in slide-in-from-bottom-4 duration-1000">
                {isLoading ? (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-                        {[...Array(6)].map((_, i) => <Skeleton key={`skel-exp-${i}`} className="h-56 w-full rounded-[2.5rem] bg-card/40 animate-pulse" />)}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                        {[...Array(6)].map((_, i) => <Skeleton key={`skel-exp-${i}`} className="h-56 w-full rounded-lg bg-card/40 animate-pulse" />)}
                     </div>
                ) : expenses.length === 0 ? (
                     <EmptyState
@@ -595,7 +596,7 @@ export default function ExpensesPage() {
                         {isFiltered ? (
                             <Button variant="outline" onClick={resetFilters} className="rounded-2xl h-12 font-bold px-8 border-primary/20 hover:bg-primary/5">Réinitialiser</Button>
                         ) : (
-                            <Button onClick={() => { setSelectedExpense(null); setIsExpenseDialogOpen(true); }} className="rounded-[1.5rem] h-14 px-10 font-black text-xs uppercase tracking-widest shadow-xl shadow-primary/20 transition-all active:scale-95 gap-3">
+                            <Button onClick={() => { setSelectedExpense(null); setIsExpenseDialogOpen(true); }} className="rounded-lg h-14 px-4 font-semibold text-xs uppercase tracking-wide shadow-xl shadow-sm transition-all active:scale-95 gap-3">
                                 <Plus className="h-5 w-5" /> Enregistrer un Flux
                             </Button>
                         )}
@@ -611,7 +612,7 @@ export default function ExpensesPage() {
                             onToggleSelectAll={handleToggleSelectAll}
                         />
                     ) : (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
                             {expenses.map(e => (
                                 <ExpenseCard 
                                     key={e.uuid} 

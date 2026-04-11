@@ -46,7 +46,7 @@ export function SupplierActivity({ activity, onIntakeClick }: SupplierActivityPr
                         <Hash className="h-2.5 w-2.5" /> {intake.invoiceNumber || intake.uuid.substring(0,8)}
                     </span>
                 </TimelineTitle>
-                 <span className="text-[10px] font-black uppercase tracking-tighter text-muted-foreground/50 ml-auto">{formattedDate}</span>
+                 <span className="text-[10px] font-semibold uppercase tracking-tighter text-muted-foreground/50 ml-auto">{formattedDate}</span>
               </TimelineHeader>
               <TimelineBody>
                 <div 
@@ -54,8 +54,8 @@ export function SupplierActivity({ activity, onIntakeClick }: SupplierActivityPr
                   onClick={() => onIntakeClick(intake)}
                 >
                     <div className="flex justify-between items-center mb-2">
-                        <span className="font-black text-lg group-hover:text-primary transition-colors">{formatCurrency(intake.totalValue)}</span>
-                        <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+                        <span className="font-semibold text-lg group-hover:text-primary transition-colors">{formatCurrency(intake.totalValue)}</span>
+                        <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
                             {intake.items.length} Article(s)
                         </span>
                     </div>
@@ -76,13 +76,13 @@ export function SupplierActivity({ activity, onIntakeClick }: SupplierActivityPr
                   <HandCoins className="h-5 w-5 text-emerald-500" />
                 </TimelineIcon>
                 <TimelineTitle>Versement effectué</TimelineTitle>
-                 <span className="text-[10px] font-black uppercase tracking-tighter text-muted-foreground/50 ml-auto">{formattedDate}</span>
+                 <span className="text-[10px] font-semibold uppercase tracking-tighter text-muted-foreground/50 ml-auto">{formattedDate}</span>
               </TimelineHeader>
                <TimelineBody>
                 <div className="p-4 bg-emerald-500/5 rounded-2xl border border-emerald-500/10">
-                     <p className="font-black text-lg text-emerald-500">{formatCurrency(payment.amount)}</p>
+                     <p className="font-semibold text-lg text-emerald-500">{formatCurrency(payment.amount)}</p>
                      <div className="flex items-center gap-2 mt-1">
-                        <span className="text-[10px] font-black uppercase bg-emerald-500/10 text-emerald-600 px-2 py-0.5 rounded-md">
+                        <span className="text-[10px] font-semibold uppercase bg-emerald-500/10 text-emerald-600 px-2 py-0.5 rounded-md">
                             {payment.method === 'cash' ? 'Espèces' : payment.method === 'check' ? 'Chèque' : 'Virement'}
                         </span>
                         <p className="text-xs text-muted-foreground font-medium">{payment.notes || 'Aucune note.'}</p>

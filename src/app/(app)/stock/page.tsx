@@ -213,22 +213,22 @@ export default function StockPage() {
     }, [suppliers]);
 
     return (
-        <div className="p-6 sm:p-10 space-y-10 max-w-[1600px] mx-auto animate-in fade-in duration-1000">
+        <div className="p-6 sm:p-4 space-y-4 max-w-[1600px] mx-auto animate-in fade-in duration-1000">
             <PageHeader
                 title="Elite Inventory"
                 description="Contrôle absolu des flux de marchandises & Partenaires"
             >
                 <div className="flex gap-3 w-full sm:w-auto">
                     {activeTab === 'suppliers' ? (
-                        <Button onClick={handleAddSupplier} className="flex-1 sm:flex-none h-12 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-primary/20 transition-all active:scale-95">
+                        <Button onClick={handleAddSupplier} className="flex-1 sm:flex-none h-12 rounded-2xl font-semibold text-xs uppercase tracking-wide shadow-xl shadow-sm transition-all active:scale-95">
                             <UserPlus className="mr-2 h-4 w-4" /> Nouveau Fournisseur
                         </Button>
                     ) : (
                         <>
-                            <Button variant="outline" onClick={() => setIsAdjustmentOpen(true)} className="flex-1 sm:flex-none h-12 rounded-2xl font-black text-xs uppercase tracking-widest border-primary/20 hover:bg-primary/5 transition-all">
+                            <Button variant="outline" onClick={() => setIsAdjustmentOpen(true)} className="flex-1 sm:flex-none h-12 rounded-2xl font-semibold text-xs uppercase tracking-wide border-primary/20 hover:bg-primary/5 transition-all">
                                 <ArrowUpDown className="mr-2 h-4 w-4 text-primary" /> Correction
                             </Button>
-                            <Button asChild className="flex-1 sm:flex-none h-12 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-primary/20 transition-all active:scale-95">
+                            <Button asChild className="flex-1 sm:flex-none h-12 rounded-2xl font-semibold text-xs uppercase tracking-wide shadow-xl shadow-sm transition-all active:scale-95">
                                 <Link href="/stock/intake">
                                     <Plus className="mr-2 h-4 w-4" /> Réception
                                 </Link>
@@ -242,22 +242,22 @@ export default function StockPage() {
                 {activeTab === 'suppliers' ? (
                     <div className="grid gap-6 md:grid-cols-3">
                         {isLoading ? (
-                            [...Array(3)].map((_, i) => <Skeleton key={i} className="h-32 w-full rounded-[2rem] bg-card/40" />)
+                            [...Array(3)].map((_, i) => <Skeleton key={i} className="h-32 w-full rounded-lg bg-card/40" />)
                         ) : (
                             <>
-                                <div className="luxury-card p-8 rounded-[2rem] bg-card/40 backdrop-blur-xl border-white/5 flex items-center justify-between">
+                                <div className="app-card p-4 rounded-lg bg-card/40 backdrop-blur-sm border-white/5 flex items-center justify-between">
                                     <div>
-                                        <p className="text-[10px] font-black uppercase text-muted-foreground tracking-[0.2em] mb-2">Total Partenaires</p>
-                                        <p className="text-4xl font-black tracking-tighter">{suppliers?.length}</p>
+                                        <p className="text-[10px] font-semibold uppercase text-muted-foreground mb-2">Total Partenaires</p>
+                                        <p className="text-xl font-semibold tracking-tighter">{suppliers?.length}</p>
                                     </div>
                                     <div className="p-4 rounded-2xl bg-primary/10 text-primary shadow-inner">
                                         <Building className="h-8 w-8" />
                                     </div>
                                 </div>
-                                <div className="luxury-card p-8 rounded-[2rem] bg-card/40 backdrop-blur-xl border-white/5 flex items-center justify-between col-span-2">
+                                <div className="app-card p-4 rounded-lg bg-card/40 backdrop-blur-sm border-white/5 flex items-center justify-between col-span-2">
                                     <div>
-                                        <p className="text-[10px] font-black uppercase text-destructive tracking-[0.2em] mb-2">Dette Globale Fournisseurs</p>
-                                        <p className="text-4xl font-black tracking-tighter text-destructive">{formatCurrency(totalSuppliersDebt)}</p>
+                                        <p className="text-[10px] font-semibold uppercase text-destructive mb-2">Dette Globale Fournisseurs</p>
+                                        <p className="text-xl font-semibold tracking-tighter text-destructive">{formatCurrency(totalSuppliersDebt)}</p>
                                     </div>
                                     <div className="p-4 rounded-2xl bg-destructive/10 text-destructive shadow-inner">
                                         <Wallet className="h-8 w-8" />
@@ -271,14 +271,14 @@ export default function StockPage() {
                 )}
             </div>
 
-            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 bg-card/20 p-2 rounded-[2.5rem] border border-white/5 backdrop-blur-xl">
-                <div className="flex items-center gap-2 p-1.5 bg-black/20 rounded-[2rem] border border-white/5 shadow-inner">
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 bg-card/20 p-2 rounded-lg border border-white/5 backdrop-blur-sm">
+                <div className="flex items-center gap-2 p-1.5 bg-black/20 rounded-lg border border-white/5 shadow-inner">
                     <button 
                         onClick={() => setActiveTab('intakes')}
                         className={cn(
-                            "flex items-center gap-3 px-8 py-3 rounded-[1.5rem] text-[10px] font-black uppercase tracking-[0.2em] transition-all duration-500",
+                            "flex items-center gap-3 px-8 py-3 rounded-lg text-[10px] font-semibold uppercase transition-all duration-500",
                             activeTab === 'intakes' 
-                                ? "bg-primary text-primary-foreground shadow-2xl shadow-primary/20 scale-105" 
+                                ? "bg-primary text-primary-foreground shadow-sm shadow-sm scale-105" 
                                 : "text-muted-foreground/60 hover:text-foreground hover:bg-white/5"
                         )}
                     >
@@ -288,9 +288,9 @@ export default function StockPage() {
                     <button 
                         onClick={() => setActiveTab('suppliers')}
                         className={cn(
-                            "flex items-center gap-3 px-8 py-3 rounded-[1.5rem] text-[10px] font-black uppercase tracking-[0.2em] transition-all duration-500",
+                            "flex items-center gap-3 px-8 py-3 rounded-lg text-[10px] font-semibold uppercase transition-all duration-500",
                             activeTab === 'suppliers' 
-                                ? "bg-primary text-primary-foreground shadow-2xl shadow-primary/20 scale-105" 
+                                ? "bg-primary text-primary-foreground shadow-sm shadow-sm scale-105" 
                                 : "text-muted-foreground/60 hover:text-foreground hover:bg-white/5"
                         )}
                     >
@@ -300,9 +300,9 @@ export default function StockPage() {
                     <button 
                         onClick={() => setActiveTab('logs')}
                         className={cn(
-                            "flex items-center gap-3 px-8 py-3 rounded-[1.5rem] text-[10px] font-black uppercase tracking-[0.2em] transition-all duration-500",
+                            "flex items-center gap-3 px-8 py-3 rounded-lg text-[10px] font-semibold uppercase transition-all duration-500",
                             activeTab === 'logs' 
-                                ? "bg-primary text-primary-foreground shadow-2xl shadow-primary/20 scale-105" 
+                                ? "bg-primary text-primary-foreground shadow-sm shadow-sm scale-105" 
                                 : "text-muted-foreground/60 hover:text-foreground hover:bg-white/5"
                         )}
                     >
@@ -337,18 +337,18 @@ export default function StockPage() {
             {/* Selection Action Bar for Suppliers */}
             {activeTab === 'suppliers' && selectedSuppliers.size > 0 && (
                 <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 animate-in slide-in-from-bottom-10 duration-500">
-                    <div className="bg-card/80 backdrop-blur-3xl border-2 border-primary/20 shadow-2xl rounded-full px-8 py-4 flex items-center gap-10">
+                    <div className="bg-card/80 backdrop-blur-sm border-2 border-primary/20 shadow-sm rounded-full px-8 py-4 flex items-center gap-4">
                         <div className="flex items-center gap-4 pr-8 border-r border-white/10">
-                            <div className="h-10 w-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-black shadow-lg shadow-primary/20">
+                            <div className="h-10 w-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-semibold shadow-lg shadow-sm">
                                 {selectedSuppliers.size}
                             </div>
-                            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Sélection Elite</span>
+                            <span className="text-[10px] font-semibold uppercase text-muted-foreground">Sélection Elite</span>
                         </div>
                         <div className="flex items-center gap-4">
-                            <Button variant="ghost" onClick={handleExportSuppliers} className="rounded-full h-12 px-6 font-black text-[10px] uppercase tracking-widest hover:bg-primary/10 hover:text-primary transition-all">
+                            <Button variant="ghost" onClick={handleExportSuppliers} className="rounded-full h-12 px-6 font-semibold text-[10px] uppercase tracking-wide hover:bg-primary/10 hover:text-primary transition-all">
                                 <FileUp className="mr-2 h-4 w-4" /> Exporter (.csv)
                             </Button>
-                            <Button variant="ghost" onClick={() => setIsBulkDeleteSupplierOpen(true)} className="rounded-full h-12 px-6 font-black text-[10px] uppercase tracking-widest text-destructive hover:bg-destructive/10 transition-all">
+                            <Button variant="ghost" onClick={() => setIsBulkDeleteSupplierOpen(true)} className="rounded-full h-12 px-6 font-semibold text-[10px] uppercase tracking-wide text-destructive hover:bg-destructive/10 transition-all">
                                 <Trash2 className="mr-2 h-4 w-4" /> Révoquer Comptes
                             </Button>
                             <Button variant="ghost" size="icon" onClick={() => setSelectedSuppliers(new Set())} className="rounded-full h-12 w-12 hover:bg-white/5 transition-all">
@@ -361,13 +361,13 @@ export default function StockPage() {
 
             <div className="min-h-[500px] animate-in fade-in slide-in-from-bottom-4 duration-1000">
                 {isLoading ? (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-                        {[...Array(6)].map((_, i) => <Skeleton key={i} className="h-48 w-full rounded-[2.5rem] bg-card/40" />)}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                        {[...Array(6)].map((_, i) => <Skeleton key={i} className="h-48 w-full rounded-lg bg-card/40" />)}
                     </div>
                 ) : (
                     <>
                         {activeTab === 'intakes' && (
-                            <div className="space-y-8">
+                            <div className="space-y-4">
                                 <div className="flex justify-end px-4">
                                     <div className="flex items-center gap-1 p-1 bg-black/20 rounded-2xl border border-white/5 shadow-inner">
                                         <Button variant={viewMode === 'grid' ? 'secondary': 'ghost'} size="icon" className="rounded-xl h-9 w-9" onClick={() => setViewMode('grid')}><LayoutGrid className="h-4 w-4"/></Button>
@@ -379,7 +379,7 @@ export default function StockPage() {
                                 ) : viewMode === 'list' ? (
                                     <StockIntakeTable intakes={stockIntakes!} supplierMap={supplierMap} onViewDetails={handleViewDetails} onCancelIntake={handleCancelIntake} />
                                 ) : (
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                                         {stockIntakes!.map(s => (
                                             <StockIntakeCard key={s.uuid} intake={s} supplierName={s.supplierUuid ? supplierMap.get(s.supplierUuid)?.name : undefined} onViewDetails={handleViewDetails} onCancelIntake={handleCancelIntake} />
                                         ))}

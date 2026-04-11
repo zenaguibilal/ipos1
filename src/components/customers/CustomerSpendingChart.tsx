@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -11,19 +12,19 @@ interface CustomerSpendingChartProps {
 
 export function CustomerSpendingChart({ data }: CustomerSpendingChartProps) {
     return (
-        <Card className="luxury-card bg-card/40 backdrop-blur-3xl border-white/5 overflow-hidden rounded-[2.5rem]">
-            <CardHeader className="bg-muted/20 border-b border-white/5 p-8">
+        <Card className="app-card bg-card/40 backdrop-blur-sm border-white/5 overflow-hidden rounded-lg">
+            <CardHeader className="bg-muted/20 border-b border-white/5 p-4">
                 <div className="flex items-center gap-4">
-                    <div className="p-3.5 rounded-2xl bg-emerald-500 text-white shadow-2xl shadow-emerald-500/20">
+                    <div className="p-3.5 rounded-2xl bg-emerald-500 text-white shadow-sm shadow-emerald-500/20">
                         <TrendingUp className="h-6 w-6" />
                     </div>
                     <div>
-                        <CardTitle className="text-2xl font-black tracking-tighter">Courbe de Fidélité</CardTitle>
-                        <CardDescription className="text-[10px] font-black uppercase tracking-[0.3em] text-emerald-500/50">Analyse des flux financiers (6 mois)</CardDescription>
+                        <CardTitle className="text-lg font-semibold tracking-tighter">Courbe de Fidélité</CardTitle>
+                        <CardDescription className="text-[10px] font-semibold uppercase text-emerald-500/50">Analyse des flux financiers (6 mois)</CardDescription>
                     </div>
                 </div>
             </CardHeader>
-            <CardContent className="p-8 h-80 w-full">
+            <CardContent className="p-4 h-80 w-full">
                 <ResponsiveContainer width="100%" height="100%">
                     <AreaChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                         <defs>

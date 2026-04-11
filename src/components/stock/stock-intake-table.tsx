@@ -18,15 +18,15 @@ interface StockIntakeTableProps {
 
 export function StockIntakeTable({ intakes, supplierMap, onViewDetails, onCancelIntake }: StockIntakeTableProps) {
     return (
-        <div className="rounded-[2rem] border border-white/5 bg-card/40 backdrop-blur-xl overflow-hidden shadow-2xl">
+        <div className="rounded-lg border border-white/5 bg-card/40 backdrop-blur-sm overflow-hidden shadow-sm">
             <Table>
                 <TableHeader className="bg-muted/30">
                     <TableRow className="border-none">
-                        <TableHead className="p-6 font-black text-[10px] uppercase tracking-[0.2em] text-muted-foreground/60">Fournisseur</TableHead>
-                        <TableHead className="p-6 font-black text-[10px] uppercase tracking-[0.2em] text-muted-foreground/60">Identifiant Bon</TableHead>
-                        <TableHead className="p-6 font-black text-[10px] uppercase tracking-[0.2em] text-muted-foreground/60 text-center">Date</TableHead>
-                        <TableHead className="p-6 font-black text-[10px] uppercase tracking-[0.2em] text-muted-foreground/60 text-center">Volume</TableHead>
-                        <TableHead className="p-6 text-right font-black text-[10px] uppercase tracking-[0.2em] text-primary">Valeur Elite</TableHead>
+                        <TableHead className="p-6 font-semibold text-[10px] uppercase text-muted-foreground/60">Fournisseur</TableHead>
+                        <TableHead className="p-6 font-semibold text-[10px] uppercase text-muted-foreground/60">Identifiant Bon</TableHead>
+                        <TableHead className="p-6 font-semibold text-[10px] uppercase text-muted-foreground/60 text-center">Date</TableHead>
+                        <TableHead className="p-6 font-semibold text-[10px] uppercase text-muted-foreground/60 text-center">Volume</TableHead>
+                        <TableHead className="p-6 text-right font-semibold text-[10px] uppercase text-primary">Valeur Elite</TableHead>
                         <TableHead className="p-6 w-[80px]"></TableHead>
                     </TableRow>
                 </TableHeader>
@@ -40,7 +40,7 @@ export function StockIntakeTable({ intakes, supplierMap, onViewDetails, onCancel
                                         <div className="p-2 rounded-xl bg-muted text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary transition-colors shadow-inner">
                                             <Building className="h-4 w-4" />
                                         </div>
-                                        <span className="font-black text-sm tracking-tight group-hover:text-primary transition-colors">{supplierName}</span>
+                                        <span className="font-semibold text-sm tracking-tight group-hover:text-primary transition-colors">{supplierName}</span>
                                     </div>
                                 </TableCell>
                                 <TableCell className="p-6">
@@ -55,11 +55,11 @@ export function StockIntakeTable({ intakes, supplierMap, onViewDetails, onCancel
                                 <TableCell className="p-6 text-center">
                                     <div className="inline-flex items-center gap-2 px-3 py-1 rounded-xl bg-muted/50 border border-white/5 shadow-inner">
                                         <ShoppingBag className="h-3 w-3 opacity-30" />
-                                        <span className="text-xs font-black">{intake.items.length}</span>
+                                        <span className="text-xs font-semibold">{intake.items.length}</span>
                                     </div>
                                 </TableCell>
                                 <TableCell className="p-6 text-right">
-                                    <span className="text-base font-black text-primary tracking-tighter">{formatCurrency(intake.totalValue)}</span>
+                                    <span className="text-base font-semibold text-primary tracking-tighter">{formatCurrency(intake.totalValue)}</span>
                                 </TableCell>
                                 <TableCell className="p-6 text-right">
                                     <DropdownMenu>
@@ -68,7 +68,7 @@ export function StockIntakeTable({ intakes, supplierMap, onViewDetails, onCancel
                                                 <MoreHorizontal className="h-5 w-5" />
                                             </Button>
                                         </DropdownMenuTrigger>
-                                        <DropdownMenuContent align="end" className="rounded-2xl border-none shadow-2xl bg-card">
+                                        <DropdownMenuContent align="end" className="rounded-2xl border-none shadow-sm bg-card">
                                             <DropdownMenuItem onClick={() => onViewDetails(intake)} className="rounded-xl p-3">
                                                 <FileText className="mr-2 h-4 w-4" /> Voir détails
                                             </DropdownMenuItem>

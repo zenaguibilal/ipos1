@@ -1,3 +1,4 @@
+
 'use client';
 
 import React from 'react';
@@ -18,13 +19,13 @@ export const CustomerStatement = React.forwardRef<HTMLDivElement, CustomerStatem
             {/* Header */}
             <header className="flex justify-between items-start pb-4 border-b-2 border-black">
                 <div>
-                    <h1 className="text-2xl font-bold">{profile?.companyName || 'Mon Magasin'}</h1>
+                    <h1 className="text-lg font-bold">{profile?.companyName || 'Mon Magasin'}</h1>
                     <p>{profile?.address}</p>
                     <p>{profile?.city}, {profile?.country}</p>
                     <p>Tél: {profile?.phone}</p>
                 </div>
                 <div className="text-right">
-                    <h2 className="text-3xl font-bold uppercase text-gray-700">Relevé de Compte</h2>
+                    <h2 className="text-xl font-bold uppercase text-gray-700">Relevé de Compte</h2>
                     <p className="text-sm">Date: {format(new Date(), 'd MMMM yyyy', { locale: fr })}</p>
                 </div>
             </header>
@@ -41,11 +42,11 @@ export const CustomerStatement = React.forwardRef<HTMLDivElement, CustomerStatem
             <section className="my-6 flex justify-around bg-gray-100 p-4 rounded">
                 <div className="text-center">
                     <p className="text-sm uppercase text-gray-600">Limite de Crédit</p>
-                    <p className="text-2xl font-bold">{formatCurrency(customer.creditLimit || 0)}</p>
+                    <p className="text-lg font-bold">{formatCurrency(customer.creditLimit || 0)}</p>
                 </div>
                  <div className="text-center">
                     <p className="text-sm uppercase text-gray-600">Solde Actuel</p>
-                    <p className="text-2xl font-bold text-destructive">{formatCurrency(customer.outstandingBalance)}</p>
+                    <p className="text-lg font-bold text-destructive">{formatCurrency(customer.outstandingBalance)}</p>
                 </div>
             </section>
 

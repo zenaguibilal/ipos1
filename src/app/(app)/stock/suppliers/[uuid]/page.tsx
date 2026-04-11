@@ -76,7 +76,7 @@ export default function SupplierDetailPage() {
                     </div>
                     <div className="space-y-6">
                         <Skeleton className="h-60 w-full rounded-3xl" />
-                         <Skeleton className="h-14 w-full rounded-2xl" />
+                         <Skeleton className="h-9 w-full rounded-2xl" />
                     </div>
                 </div>
             </div>
@@ -104,7 +104,7 @@ export default function SupplierDetailPage() {
                 <div className="md:col-span-2">
                      <Card className="rounded-3xl border-none shadow-sm bg-card overflow-hidden">
                         <CardHeader className="bg-muted/30 border-b border-border/50">
-                            <CardTitle className="text-xl font-black tracking-tight">Historique d'activité</CardTitle>
+                            <CardTitle className="text-xl font-semibold tracking-tight">Historique d'activité</CardTitle>
                             <CardDescription className="font-medium">
                                 Liste chronologique des achats et des règlements financiers.
                             </CardDescription>
@@ -123,7 +123,7 @@ export default function SupplierDetailPage() {
                     
                     <Button 
                         size="lg" 
-                        className="w-full rounded-2xl h-14 font-black shadow-lg shadow-primary/20 text-lg gap-3"
+                        className="w-full rounded-2xl h-9 font-semibold shadow-lg shadow-sm text-lg gap-3"
                         onClick={() => setIsPayDialogOpen(true)}
                         disabled={supplier.balance <= 0}
                     >
@@ -131,7 +131,7 @@ export default function SupplierDetailPage() {
                     </Button>
 
                     <div className="p-6 bg-primary/5 rounded-3xl border border-primary/10 space-y-3">
-                        <h4 className="text-xs font-black uppercase tracking-widest text-primary">Contact Fournisseur</h4>
+                        <h4 className="text-xs font-semibold uppercase tracking-wide text-primary">Contact Fournisseur</h4>
                         <div className="space-y-2 text-sm">
                             <div className="flex justify-between"><span className="text-muted-foreground">Responsable:</span> <span className="font-bold">{supplier.contactPerson || '-'}</span></div>
                             <div className="flex justify-between"><span className="text-muted-foreground">Téléphone:</span> <span className="font-bold">{supplier.phone || '-'}</span></div>

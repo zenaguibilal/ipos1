@@ -44,8 +44,8 @@ const SalesHistoryCardComponent = ({
         <Card 
             onClick={handleCardClick}
             className={cn(
-                "luxury-card group flex flex-col transition-all duration-500 bg-card/40 backdrop-blur-xl border-white/5 relative overflow-hidden rounded-[2.5rem] cursor-pointer",
-                isSelected ? "ring-2 ring-primary border-primary/30 shadow-2xl scale-[1.02]" : "hover:bg-primary/5"
+                "app-card group flex flex-col transition-all duration-500 bg-card/40 backdrop-blur-sm border-white/5 relative overflow-hidden rounded-lg cursor-pointer",
+                isSelected ? "ring-2 ring-primary border-primary/30 shadow-sm scale-[1.02]" : "hover:bg-primary/5"
             )}
         >
             <div className="absolute -right-4 -top-4 opacity-[0.02] group-hover:opacity-10 transition-opacity duration-700 pointer-events-none">
@@ -70,7 +70,7 @@ const SalesHistoryCardComponent = ({
                             <MoreHorizontal className="h-5 w-5" />
                         </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="rounded-2xl border-none shadow-2xl bg-card">
+                    <DropdownMenuContent align="end" className="rounded-2xl border-none shadow-sm bg-card">
                         <DropdownMenuItem onClick={() => onViewDetails(sale)} className="rounded-xl p-3">
                             <FileText className="mr-2 h-4 w-4" /> Examiner détails
                         </DropdownMenuItem>
@@ -83,40 +83,40 @@ const SalesHistoryCardComponent = ({
 
             <CardHeader className="p-6 pb-2 space-y-3 relative z-10">
                 <div className="flex items-center gap-2">
-                    <Badge variant="outline" className={cn("rounded-lg font-black uppercase text-[8px] tracking-[0.2em] px-2 py-0.5 border shadow-sm", status.bg, status.color)}>
+                    <Badge variant="outline" className={cn("rounded-lg font-semibold uppercase text-[8px] px-2 py-0.5 border shadow-sm", status.bg, status.color)}>
                         <status.icon className="h-2.5 w-2.5 mr-1" />
                         {status.text}
                     </Badge>
-                    <span className="text-[10px] font-mono font-black text-muted-foreground/30 flex items-center gap-1 uppercase tracking-tighter">
+                    <span className="text-[10px] font-mono font-semibold text-muted-foreground/30 flex items-center gap-1 uppercase tracking-tighter">
                         <Hash className="h-2.5 w-2.5" /> {sale.invoiceNumber}
                     </span>
                 </div>
-                <CardTitle className="text-xl font-black leading-tight tracking-tighter group-hover:text-primary transition-colors truncate pr-12">
+                <CardTitle className="text-xl font-semibold leading-tight tracking-tighter group-hover:text-primary transition-colors truncate pr-12">
                     {customerName || 'Client de passage'}
                 </CardTitle>
-                <div className="flex items-center gap-2 text-[10px] text-muted-foreground/40 font-black uppercase tracking-widest">
+                <div className="flex items-center gap-2 text-[10px] text-muted-foreground/40 font-semibold uppercase tracking-wide">
                     <Clock className="h-3 w-3 opacity-50" />
                     {format(safeToDate(sale.createdAt!), 'd MMMM, HH:mm', { locale: fr })}
                 </div>
             </CardHeader>
 
             <CardContent className="p-6 py-4 space-y-5 relative z-10">
-                <div className="flex items-center justify-between text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground/60 border-b border-white/5 pb-2">
+                <div className="flex items-center justify-between text-[9px] font-semibold uppercase text-muted-foreground/60 border-b border-white/5 pb-2">
                     <span className="text-foreground">Recu: {formatCurrency(sale.amountPaid)}</span>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                     <div className="p-4 rounded-3xl bg-black/20 border border-white/5 shadow-inner">
-                        <p className="text-[8px] font-black uppercase tracking-[0.2em] text-muted-foreground/40 mb-1.5">Volume Items</p>
-                        <p className="font-black text-sm tracking-tight">{sale.items?.length || 0} Positions</p>
+                        <p className="text-[8px] font-semibold uppercase text-muted-foreground/40 mb-1.5">Volume Items</p>
+                        <p className="font-semibold text-sm tracking-tight">{sale.items?.length || 0} Positions</p>
                     </div>
                     <div className={cn(
                         "p-4 rounded-3xl border transition-all duration-500 shadow-inner",
                         sale.remainingBalance > 0 ? "bg-destructive/5 border-destructive/20" : "bg-emerald-500/5 border-emerald-500/20"
                     )}>
-                        <p className={cn("text-[8px] font-black uppercase tracking-[0.2em] mb-1.5", sale.remainingBalance > 0 ? "text-destructive/70" : "text-emerald-600/70")}>
+                        <p className={cn("text-[8px] font-semibold uppercase mb-1.5", sale.remainingBalance > 0 ? "text-destructive/70" : "text-emerald-600/70")}>
                             {sale.remainingBalance > 0 ? 'Reste à Payé' : 'Vente Solder'}
                         </p>
-                        <p className={cn("font-black text-sm tracking-tight", sale.remainingBalance > 0 ? "text-destructive" : "text-emerald-500")}>
+                        <p className={cn("font-semibold text-sm tracking-tight", sale.remainingBalance > 0 ? "text-destructive" : "text-emerald-500")}>
                             {formatCurrency(Math.max(0, sale.remainingBalance))}
                         </p>
                     </div>
@@ -125,10 +125,10 @@ const SalesHistoryCardComponent = ({
 
             <CardFooter className="p-6 pt-4 border-t border-white/5 bg-muted/5 flex items-center justify-between relative z-10">
                  <div className="space-y-0.5">
-                    <p className="text-[9px] font-black text-muted-foreground/40 uppercase tracking-widest">Valeur Transaction</p>
-                    <p className="text-2xl font-black text-primary tracking-tighter leading-none">{formatCurrency(sale.total)}</p>
+                    <p className="text-[9px] font-semibold text-muted-foreground/40 uppercase tracking-wide">Valeur Transaction</p>
+                    <p className="text-lg font-semibold text-primary tracking-tighter leading-none">{formatCurrency(sale.total)}</p>
                 </div>
-                <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); onViewDetails(sale); }} className="h-9 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-primary/10 hover:text-primary transition-all px-4">
+                <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); onViewDetails(sale); }} className="h-9 rounded-xl font-semibold text-[10px] uppercase tracking-wide hover:bg-primary/10 hover:text-primary transition-all px-4">
                     Details <ChevronRight className="ml-1 h-3 w-3 opacity-50" />
                 </Button>
             </CardFooter>

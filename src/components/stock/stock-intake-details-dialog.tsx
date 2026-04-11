@@ -34,10 +34,10 @@ interface StockIntakeDetailsDialogProps {
 
 const PrintableIntake = React.forwardRef<HTMLDivElement, { intake: StockIntake, supplierName: string, profile: CompanyProfile | null }>(({ intake, supplierName, profile }, ref) => {
     return (
-        <div ref={ref} className="p-8 bg-white text-black font-sans w-[210mm] min-h-[297mm]">
+        <div ref={ref} className="p-4 bg-white text-black font-sans w-[210mm] min-h-[297mm]">
             <div className="flex justify-between items-start border-b-2 border-black pb-6 mb-6">
                 <div>
-                    <h1 className="text-3xl font-black uppercase">{profile?.companyName || 'iPOS Manager'}</h1>
+                    <h1 className="text-xl font-semibold uppercase">{profile?.companyName || 'iPOS Manager'}</h1>
                     <p className="text-sm">{profile?.address}</p>
                     <p className="text-sm">{profile?.phone}</p>
                 </div>
@@ -86,14 +86,14 @@ const PrintableIntake = React.forwardRef<HTMLDivElement, { intake: StockIntake, 
                         <span>Frais de Transport:</span>
                         <span>{formatCurrency(intake.shippingCost || 0)}</span>
                     </div>
-                    <div className="flex justify-between text-lg font-black border-t-2 border-black pt-2">
+                    <div className="flex justify-between text-lg font-semibold border-t-2 border-black pt-2">
                         <span>TOTAL GÉNÉRAL:</span>
                         <span>{formatCurrency(intake.totalValue)}</span>
                     </div>
                 </div>
             </div>
 
-            <div className="mt-20 flex justify-between px-10 italic text-sm text-gray-400">
+            <div className="mt-20 flex justify-between px-4 italic text-sm text-gray-400">
                 <div className="text-center border-t border-dashed border-gray-300 pt-2 w-40">Cachet & Signature</div>
                 <div className="text-center border-t border-dashed border-gray-300 pt-2 w-40">Signature Fournisseur</div>
             </div>
@@ -128,10 +128,10 @@ export function StockIntakeDetailsDialog({
 
     return (
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
-            <DialogContent className="max-w-3xl h-[90vh] flex flex-col p-0 overflow-hidden border-none shadow-2xl rounded-3xl">
+            <DialogContent className="max-w-3xl h-[90vh] flex flex-col p-0 overflow-hidden border-none shadow-sm rounded-3xl">
                 <DialogHeader className="bg-primary/5 p-6 border-b border-primary/10">
                     <div className="flex items-center gap-4">
-                        <div className="p-3 rounded-2xl bg-primary text-primary-foreground shadow-lg shadow-primary/20">
+                        <div className="p-3 rounded-2xl bg-primary text-primary-foreground shadow-lg shadow-sm">
                             <Archive className="h-6 w-6" />
                         </div>
                         <div>
@@ -149,24 +149,24 @@ export function StockIntakeDetailsDialog({
                     {/* Summary Info */}
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                         <div className="p-4 rounded-2xl bg-muted/30 border border-border/50">
-                            <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest mb-1 flex items-center gap-1">
+                            <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-wide mb-1 flex items-center gap-1">
                                 <Calendar className="h-3 w-3" /> Date Facture
                             </p>
                             <p className="font-bold text-xs">{format(safeToDate(intake.invoiceDate), 'dd MMM yyyy', { locale: fr })}</p>
                         </div>
                         <div className="p-4 rounded-2xl bg-muted/30 border border-border/50">
-                            <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest mb-1">Articles</p>
+                            <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-wide mb-1">Articles</p>
                             <p className="font-bold text-xs">{intake.items.length} types</p>
                         </div>
                         <div className="p-4 rounded-2xl bg-primary/10 border border-primary/20">
-                            <p className="text-[10px] uppercase font-bold text-primary tracking-widest mb-1 flex items-center gap-1">
+                            <p className="text-[10px] uppercase font-bold text-primary tracking-wide mb-1 flex items-center gap-1">
                                 <Truck className="h-3 w-3" /> Transport
                             </p>
-                            <p className="font-black text-primary">{formatCurrency(intake.shippingCost || 0)}</p>
+                            <p className="font-semibold text-primary">{formatCurrency(intake.shippingCost || 0)}</p>
                         </div>
-                        <div className="p-4 rounded-2xl bg-primary text-primary-foreground shadow-lg shadow-primary/20">
-                            <p className="text-[10px] uppercase font-bold opacity-70 tracking-widest mb-1">Total Général</p>
-                            <p className="text-lg font-black">{formatCurrency(intake.totalValue)}</p>
+                        <div className="p-4 rounded-2xl bg-primary text-primary-foreground shadow-lg shadow-sm">
+                            <p className="text-[10px] uppercase font-bold opacity-70 tracking-wide mb-1">Total Général</p>
+                            <p className="text-lg font-semibold">{formatCurrency(intake.totalValue)}</p>
                         </div>
                     </div>
 
@@ -195,7 +195,7 @@ export function StockIntakeDetailsDialog({
                                         <TableCell className="text-right font-medium text-xs">
                                             {formatCurrency(item.purchasePrice)}
                                         </TableCell>
-                                        <TableCell className="text-right font-black text-primary bg-primary/5">
+                                        <TableCell className="text-right font-semibold text-primary bg-primary/5">
                                             {formatCurrency(item.landingCost || item.purchasePrice)}
                                         </TableCell>
                                     </TableRow>
@@ -214,7 +214,7 @@ export function StockIntakeDetailsDialog({
                     <Button variant="ghost" onClick={() => onOpenChange(false)} className="rounded-xl h-12 font-bold flex-1">
                         <X className="mr-2 h-4 w-4" /> Fermer
                     </Button>
-                    <Button onClick={handlePrint} className="rounded-xl h-12 font-bold flex-1 shadow-lg shadow-primary/20">
+                    <Button onClick={handlePrint} className="rounded-xl h-12 font-bold flex-1 shadow-lg shadow-sm">
                         <Printer className="mr-2 h-4 w-4" /> Imprimer le Bon
                     </Button>
                 </DialogFooter>

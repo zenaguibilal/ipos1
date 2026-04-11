@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useRef, useState, useEffect } from 'react';
@@ -71,7 +72,7 @@ export function PrintStatementDialog({ isOpen, onOpenChange, customer }: PrintSt
         <div id="label-print-area-wrapper" className="flex-grow overflow-y-auto bg-muted/50 p-4 rounded-md">
             <div id="label-print-area" className="bg-white mx-auto" style={{ width: '210mm', minHeight: '297mm' }}>
                 {isLoading ? (
-                    <div className="space-y-8 p-4">
+                    <div className="space-y-4 p-4">
                         <Skeleton className="h-20 w-full" />
                         <Skeleton className="h-10 w-1/2" />
                         <Skeleton className="h-64 w-full" />

@@ -2,12 +2,7 @@
 
 import { useState, useEffect, useMemo, memo, useCallback } from 'react';
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
+    Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,198 +10,217 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { useActiveCart, useCartActions } from '@/stores/cartStore';
 import { calculateCartTotals, formatCurrency, cn, FINANCIAL_EPSILON } from '@/lib/utils';
-import { Loader2, CheckCircle2, Info, Wallet, Calendar, ShieldAlert, AlertCircle } from 'lucide-react';
+import { Loader2, CheckCircle2, AlertCircle, Wallet, ShieldAlert, Calendar } from 'lucide-react';
 import { PrintReceiptDialog } from '../sales/PrintReceiptDialog';
 import type { Sale, Customer } from '@/lib/types';
 import { DatePicker } from '../ui/date-picker';
 import { addDays } from 'date-fns';
 import { customerService } from '@/services/customer.service';
 
-/**
- * PaymentDialog - Hardened financial finalization module.
- * Senior Review Note: Enforces strict input sanitization and provides redundant validation.
- */
-function PaymentDialogContent({ isOpen, onOpenChange }: { isOpen: boolean, onOpenChange: (open: boolean) => void }) {
+function PaymentDialogContent({
+    isOpen,
+    onOpenChange,
+}: {
+    isOpen: boolean;
+    onOpenChange: (open: boolean) => void;
+}) {
     const [isMounted, setIsMounted] = useState(false);
     const cart = useActiveCart();
     const { processSale } = useCartActions();
-    
-    const [amountPaidStr, setAmountPaidStr] = useState<string>('0');
-    const [dueDate, setDueDate] = useState<Date | undefined>();
-    const [isLoading, setIsLoading] = useState(false);
-    const [lastSale, setLastSale] = useState<Sale | null>(null);
+
+    const [amountPaidStr, setAmountPaidStr] = useState('0');
+    const [dueDate, setDueDate]             = useState<Date | undefined>();
+    const [isLoading, setIsLoading]         = useState(false);
+    const [lastSale, setLastSale]           = useState<Sale | null>(null);
     const [isReceiptOpen, setIsReceiptOpen] = useState(false);
-    
-    const [customer, setCustomer] = useState<Customer | null>(null);
+    const [customer, setCustomer]           = useState<Customer | null>(null);
     const [approveOverLimit, setApproveOverLimit] = useState(false);
 
-    const { total } = useMemo(() => cart ? calculateCartTotals(cart) : { total: 0 }, [cart]);
-    
-    const amountPaid = parseFloat(amountPaidStr) || 0;
-    const change = Math.max(0, amountPaid - total);
-    const isFullPayment = amountPaid >= (total - FINANCIAL_EPSILON);
+    const { total } = useMemo(
+        () => (cart ? calculateCartTotals(cart) : { total: 0 }),
+        [cart],
+    );
+
+    const amountPaid  = parseFloat(amountPaidStr) || 0;
+    const change      = Math.max(0, amountPaid - total);
+    const isFullPay   = amountPaid >= total - FINANCIAL_EPSILON;
+    const isCreditSale = cart?.customerUuid && amountPaid < total - FINANCIAL_EPSILON;
+
+    useEffect(() => { setIsMounted(true); }, []);
 
     useEffect(() => {
-        setIsMounted(true);
-    }, []);
+        if (!isOpen || !isMounted || !cart) return;
+        const totals = calculateCartTotals(cart);
+        setAmountPaidStr(totals.total.toString());
+        setIsLoading(false);
+        setLastSale(null);
+        setApproveOverLimit(false);
 
-    useEffect(() => {
-        if (isOpen && isMounted && cart) {
-            const totals = calculateCartTotals(cart);
-            setAmountPaidStr(totals.total.toString());
-            setIsLoading(false);
-            setLastSale(null);
-            setApproveOverLimit(false);
-            
-            if (cart.customerUuid) {
-                 setDueDate(addDays(new Date(), 30));
-                 customerService.getCustomerByUuid(cart.customerUuid).then(c => setCustomer(c || null));
-            } else {
-                 setDueDate(undefined);
-                 setCustomer(null);
-            }
+        if (cart.customerUuid) {
+            setDueDate(addDays(new Date(), 30));
+            customerService.getCustomerByUuid(cart.customerUuid).then(c => setCustomer(c || null));
+        } else {
+            setDueDate(undefined);
+            setCustomer(null);
         }
     }, [isOpen, cart, isMounted]);
-    
+
+    const projectedBalance = useMemo(() => {
+        if (!customer) return 0;
+        return (customer.outstandingBalance || 0) + Math.max(0, total - amountPaid);
+    }, [customer, total, amountPaid]);
+
+    const isOverLimit = useMemo(() => {
+        if (!customer?.creditLimit) return false;
+        return projectedBalance > customer.creditLimit + FINANCIAL_EPSILON;
+    }, [customer, projectedBalance]);
+
+    const canFinalize =
+        !isLoading &&
+        amountPaid >= 0 &&
+        (isFullPay || (cart?.customerUuid && (!isOverLimit || approveOverLimit)));
+
+    const handleAmountChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+        const v = e.target.value;
+        if (/^[0-9]*\.?[0-9]*$/.test(v) || v === '') setAmountPaidStr(v);
+    }, []);
+
     const handleProcessSale = useCallback(async () => {
         if (amountPaid < 0 || isLoading) return;
-        
         setIsLoading(true);
         try {
             const sale = await processSale(amountPaid, dueDate);
             if (sale) {
                 setLastSale(sale);
                 onOpenChange(false);
-                setIsReceiptOpen(true);
+                setIsReceiptOpen(true); // AutoPrint is handled inside PrintReceiptDialog
             }
         } finally {
             setIsLoading(false);
         }
     }, [amountPaid, isLoading, dueDate, processSale, onOpenChange]);
 
-    const projectedBalance = useMemo(() => {
-        if (!customer) return 0;
-        const creditAmount = Math.max(0, total - amountPaid);
-        return (customer.outstandingBalance || 0) + creditAmount;
-    }, [customer, total, amountPaid]);
-
-    const isOverLimit = useMemo(() => {
-        if (!customer || !customer.creditLimit) return false;
-        return projectedBalance > (customer.creditLimit + FINANCIAL_EPSILON);
-    }, [customer, projectedBalance]);
-
-    const handleAmountChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-        const val = e.target.value;
-        // Hardened filter: allow numbers and one decimal separator only, prevent scientific notation
-        if (/^[0-9]*\.?[0-9]*$/.test(val) || val === '') {
-            setAmountPaidStr(val);
-        }
-    }, []);
-
     if (!cart || !isMounted) return null;
 
-    const isCreditSale = cart.customerUuid && amountPaid < (total - FINANCIAL_EPSILON);
-    const canFinalize = !isLoading && amountPaid >= 0 && (
-        isFullPayment || (cart.customerUuid && (!isOverLimit || approveOverLimit))
-    );
-    
     return (
         <>
             <Dialog open={isOpen} onOpenChange={onOpenChange}>
-                <DialogContent className="sm:max-w-[500px] overflow-hidden border-none shadow-2xl p-0 gap-0 bg-card rounded-[2.5rem]">
-                    <div className="bg-primary/5 p-8 border-b border-primary/10">
-                        <DialogHeader>
-                            <div className="flex items-center gap-4">
-                                <div className="p-3.5 rounded-2xl bg-primary text-primary-foreground shadow-2xl shadow-primary/20">
-                                    <Wallet className="h-6 w-6" />
-                                </div>
-                                <div>
-                                    <DialogTitle className="text-2xl font-black tracking-tight">Clôture de Session</DialogTitle>
-                                    <DialogDescription className="font-medium text-[10px] font-black uppercase tracking-widest opacity-50">{cart.name}</DialogDescription>
-                                </div>
-                            </div>
-                        </DialogHeader>
+                <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2 text-base">
+                            <Wallet className="h-4 w-4 text-primary" />
+                            Encaissement — {cart.name}
+                        </DialogTitle>
+                        <DialogDescription className="text-xs">
+                            Saisissez le montant reçu du client.
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    {/* Total */}
+                    <div className="text-center py-3 bg-muted/50 rounded-lg">
+                        <p className="text-xs text-muted-foreground mb-0.5">Net à encaisser</p>
+                        <p className="text-3xl font-bold text-primary tabular-nums">
+                            {formatCurrency(total)}
+                        </p>
                     </div>
 
-                    <div className="p-8 space-y-8">
-                        <div className="text-center p-8 bg-black/40 rounded-[2rem] border border-white/5 relative overflow-hidden group shadow-inner">
-                            <Label className="text-muted-foreground uppercase text-[10px] font-black tracking-[0.3em] mb-3 block opacity-40">Net à Encaisser</Label>
-                            <p className="text-5xl font-black text-primary tracking-tighter transition-transform duration-500 group-hover:scale-105">{formatCurrency(total)}</p>
+                    {/* Amount paid + change */}
+                    <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-1.5">
+                            <Label htmlFor="amount-paid" className="text-xs">Reçu (DA)</Label>
+                            <Input
+                                id="amount-paid"
+                                type="text"
+                                inputMode="decimal"
+                                className="text-lg font-bold text-center h-10"
+                                value={amountPaidStr}
+                                onChange={handleAmountChange}
+                                autoFocus
+                                onFocus={e => e.target.select()}
+                                onKeyDown={e => { if (e.key === 'Enter' && canFinalize) handleProcessSale(); }}
+                            />
                         </div>
-
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                             <div className="space-y-3">
-                                <Label htmlFor="amount-paid" className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 ml-1">Reçu Client (DA)</Label>
-                                <Input
-                                    id="amount-paid"
-                                    type="text"
-                                    inputMode="decimal"
-                                    className="text-2xl h-16 text-center font-black bg-background border-none shadow-inner focus-visible:ring-primary/20 rounded-2xl"
-                                    value={amountPaidStr}
-                                    onChange={handleAmountChange}
-                                    autoFocus
-                                    onFocus={(e) => e.target.select()}
-                                    onKeyDown={(e) => { if(e.key === 'Enter' && canFinalize) handleProcessSale() }}
-                                />
-                            </div>
-                            <div className="space-y-3">
-                                 <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 ml-1">Monnaie à Rendre</Label>
-                                 <div className={cn(
-                                     "text-2xl h-16 flex items-center justify-center font-black rounded-2xl border border-dashed transition-all duration-500",
-                                     change >= 0.01 ? "bg-emerald-500/5 border-emerald-500/20 text-emerald-500" : "bg-muted/20 border-white/5 text-muted-foreground/20"
-                                 )}>
-                                    {change >= 0.01 ? formatCurrency(change) : '-'}
-                                 </div>
+                        <div className="space-y-1.5">
+                            <Label className="text-xs">Monnaie rendue</Label>
+                            <div className={cn(
+                                'h-10 flex items-center justify-center rounded-md border text-lg font-bold tabular-nums',
+                                change >= 0.01
+                                    ? 'bg-emerald-50 border-emerald-200 text-emerald-700 dark:bg-emerald-950 dark:border-emerald-800 dark:text-emerald-400'
+                                    : 'bg-muted border-border text-muted-foreground',
+                            )}>
+                                {change >= 0.01 ? formatCurrency(change) : '—'}
                             </div>
                         </div>
-
-                        {isCreditSale && (
-                            <div className="space-y-4 animate-in slide-in-from-top-4 duration-500">
-                                <div className="p-6 bg-amber-500/5 border border-amber-500/10 rounded-[2rem] space-y-6">
-                                    <div className="flex items-start gap-4">
-                                        <div className="p-2 rounded-xl bg-amber-500/10 text-amber-500"><Info className="h-5 w-5" /></div>
-                                        <div className="space-y-1">
-                                            <p className="text-xs font-black uppercase tracking-tight text-amber-600">Inscription au Grand Livre</p>
-                                            <p className="text-[10px] text-amber-600/60 font-medium">Un flux débiteur de {formatCurrency(total - amountPaid)} sera rattaché au compte client.</p>
-                                        </div>
-                                    </div>
-                                    
-                                    {isOverLimit && (
-                                        <div className="p-5 bg-destructive/10 border border-destructive/20 rounded-2xl space-y-4 shadow-inner">
-                                            <div className="flex items-center gap-3 text-destructive font-black text-[10px] uppercase tracking-widest">
-                                                <ShieldAlert className="h-5 w-5" /> Alerte Plafond Dépassé
-                                            </div>
-                                            <div className="flex items-center justify-between bg-black/20 p-4 rounded-xl">
-                                                <span className="text-[10px] font-black uppercase text-primary">Dérogation Souveraine</span>
-                                                <Switch checked={approveOverLimit} onCheckedChange={setApproveOverLimit} className="data-[state=checked]:bg-primary" />
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    <div className="space-y-3 pt-4 border-t border-amber-500/10">
-                                        <Label className="text-[10px] uppercase font-black tracking-widest text-amber-600/40 ml-1">Échéance de Règlement</Label>
-                                        <DatePicker date={dueDate} setDate={setDueDate} />
-                                    </div>
-                                </div>
-                            </div>
-                        )}
                     </div>
 
-                    <div className="p-8 bg-card border-t border-white/5 flex gap-4">
-                        <Button variant="ghost" onClick={() => onOpenChange(false)} disabled={isLoading} className="flex-1 rounded-2xl h-14 font-black text-xs uppercase tracking-widest">Annuler</Button>
-                        <Button 
-                            onClick={handleProcessSale} 
-                            disabled={!canFinalize} 
-                            className="flex-1 rounded-2xl h-14 font-black text-xs uppercase tracking-widest shadow-xl shadow-primary/20 transition-all active:scale-95 gap-3"
+                    {/* Credit warning */}
+                    {isCreditSale && (
+                        <div className="space-y-3 p-3 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded-lg text-sm">
+                            <div className="flex items-start gap-2">
+                                <AlertCircle className="h-4 w-4 text-amber-600 mt-0.5 shrink-0" />
+                                <p className="text-amber-700 dark:text-amber-400 text-xs">
+                                    Crédit de {formatCurrency(total - amountPaid)} inscrit au compte client.
+                                </p>
+                            </div>
+
+                            {/* FIX #8: Plafond (not Plafوند) */}
+                            {isOverLimit && (
+                                <div className="p-2.5 bg-destructive/10 border border-destructive/20 rounded-md space-y-2">
+                                    <div className="flex items-center gap-1.5 text-destructive text-xs font-medium">
+                                        <ShieldAlert className="h-3.5 w-3.5" />
+                                        Plafond de crédit dépassé
+                                    </div>
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-xs text-muted-foreground">Autoriser dérogation</span>
+                                        <Switch
+                                            checked={approveOverLimit}
+                                            onCheckedChange={setApproveOverLimit}
+                                        />
+                                    </div>
+                                </div>
+                            )}
+
+                            <div className="space-y-1">
+                                <Label className="text-xs flex items-center gap-1.5">
+                                    <Calendar className="h-3 w-3" /> Échéance de règlement
+                                </Label>
+                                <DatePicker date={dueDate} setDate={setDueDate} />
+                            </div>
+                        </div>
+                    )}
+
+                    <div className="flex gap-2 pt-1">
+                        <Button
+                            variant="outline"
+                            className="flex-1"
+                            onClick={() => onOpenChange(false)}
+                            disabled={isLoading}
                         >
-                            {isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <CheckCircle2 className="h-5 w-5" />}
-                            Valider le Flux [Enter]
+                            Annuler
+                        </Button>
+                        <Button
+                            className="flex-1"
+                            onClick={handleProcessSale}
+                            disabled={!canFinalize}
+                        >
+                            {isLoading ? (
+                                <Loader2 className="h-4 w-4 animate-spin mr-1" />
+                            ) : (
+                                <CheckCircle2 className="h-4 w-4 mr-1" />
+                            )}
+                            Valider [Enter]
                         </Button>
                     </div>
                 </DialogContent>
             </Dialog>
-            
-            <PrintReceiptDialog isOpen={isReceiptOpen} onOpenChange={setIsReceiptOpen} sale={lastSale} />
+
+            {/* AutoPrint=true: dialog prints automatically after sale then closes */}
+            <PrintReceiptDialog
+                isOpen={isReceiptOpen}
+                onOpenChange={setIsReceiptOpen}
+                sale={lastSale}
+                autoPrint={true}
+            />
         </>
     );
 }

@@ -26,10 +26,10 @@ const PrintableList = React.forwardRef<HTMLDivElement, { orders: BreadOrderWithC
     const formattedDate = format(new Date(currentDate.replace(/-/g, '/')), 'EEEE d MMMM yyyy', { locale: fr });
     
     return (
-        <div ref={ref} className="p-10 bg-white text-black font-sans w-[210mm] min-h-[297mm]">
+        <div ref={ref} className="p-4 bg-white text-black font-sans w-[210mm] min-h-[297mm]">
             <header className="flex justify-between items-start border-b-2 border-black pb-6 mb-8">
                 <div>
-                    <h1 className="text-3xl font-black uppercase">{profile?.companyName || 'iPOS Manager'}</h1>
+                    <h1 className="text-xl font-semibold uppercase">{profile?.companyName || 'iPOS Manager'}</h1>
                     <p className="text-sm font-bold mt-1 text-gray-600">Distribution de Pain</p>
                 </div>
                 <div className="text-right">
@@ -59,7 +59,7 @@ const PrintableList = React.forwardRef<HTMLDivElement, { orders: BreadOrderWithC
                                     <p className="font-bold text-xl">{displayName}</p>
                                 </td>
                                 <td className="py-5 px-4 text-center">
-                                    <span className="text-3xl font-black">{order.quantite}</span>
+                                    <span className="text-xl font-semibold">{order.quantite}</span>
                                 </td>
                                 <td className="py-5 px-4">
                                     <div className="w-12 h-12 border border-gray-300 mx-auto rounded-md"></div>
@@ -69,15 +69,15 @@ const PrintableList = React.forwardRef<HTMLDivElement, { orders: BreadOrderWithC
                     })}
                 </tbody>
                 <tfoot>
-                    <tr className="bg-gray-50 font-black border-t-2 border-black">
+                    <tr className="bg-gray-50 font-semibold border-t-2 border-black">
                         <td className="py-4 px-4 text-right text-lg uppercase">Total Global</td>
-                        <td className="py-4 px-4 text-center text-4xl">{totalQuantity}</td>
+                        <td className="py-4 px-4 text-center text-xl">{totalQuantity}</td>
                         <td></td>
                     </tr>
                 </tfoot>
             </table>
 
-            <footer className="mt-auto pt-10 text-center text-[10px] text-gray-400 font-bold uppercase tracking-widest">
+            <footer className="mt-auto pt-10 text-center text-[10px] text-gray-400 font-bold uppercase tracking-wide">
                 Généré par iPOS Point de Vente - {format(new Date(), 'dd/MM/yyyy HH:mm')}
             </footer>
         </div>
@@ -111,21 +111,21 @@ export function PrintBreadListDialog({ orders, currentDate }: PrintBreadListDial
                 <Printer className="mr-2 h-4 w-4 text-primary" /> Imprimer Liste
             </Button>
             <Dialog open={isOpen} onOpenChange={setIsOpen}>
-                <DialogContent className="max-w-4xl h-[90vh] flex flex-col p-0 overflow-hidden border-none shadow-2xl rounded-3xl">
+                <DialogContent className="max-w-4xl h-[90vh] flex flex-col p-0 overflow-hidden border-none shadow-sm rounded-3xl">
                     <DialogHeader className="p-6 bg-primary/5 border-b border-primary/10">
                         <div className="flex items-center gap-3">
                             <div className="p-2.5 rounded-2xl bg-primary text-primary-foreground">
                                 <Printer className="h-5 w-5" />
                             </div>
                             <div>
-                                <DialogTitle className="text-xl font-black tracking-tight">Aperçu Liste de Distribution</DialogTitle>
+                                <DialogTitle className="text-xl font-semibold tracking-tight">Aperçu Liste de Distribution</DialogTitle>
                                 <DialogDescription className="font-medium">Liste simplifiée contenant uniquement les noms et les quantités.</DialogDescription>
                             </div>
                         </div>
                     </DialogHeader>
                     
-                    <div id="label-print-area-wrapper" className="flex-grow overflow-y-auto bg-muted/50 p-8 custom-scrollbar">
-                        <div id="label-print-area" className="bg-white mx-auto shadow-2xl" style={{ width: '210mm', minHeight: '297mm' }}>
+                    <div id="label-print-area-wrapper" className="flex-grow overflow-y-auto bg-muted/50 p-4 custom-scrollbar">
+                        <div id="label-print-area" className="bg-white mx-auto shadow-sm" style={{ width: '210mm', minHeight: '297mm' }}>
                             <PrintableList ref={printRef} orders={orders} currentDate={currentDate} profile={profile || null} />
                         </div>
                     </div>
@@ -134,7 +134,7 @@ export function PrintBreadListDialog({ orders, currentDate }: PrintBreadListDial
                         <Button variant="ghost" onClick={() => setIsOpen(false)} className="rounded-xl h-12 font-bold flex-1">
                             <X className="mr-2 h-4 w-4" /> Fermer
                         </Button>
-                        <Button onClick={handlePrint} className="rounded-xl h-12 font-bold flex-1 shadow-lg shadow-primary/20">
+                        <Button onClick={handlePrint} className="rounded-xl h-12 font-bold flex-1 shadow-lg shadow-sm">
                             <Printer className="mr-2 h-4 w-4" /> Imprimer [A4]
                         </Button>
                     </DialogFooter>

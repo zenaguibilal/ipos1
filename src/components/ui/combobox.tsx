@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -77,9 +78,9 @@ export const Combobox = React.forwardRef<HTMLButtonElement, ComboboxProps>(({ op
                 <div className="flex-grow truncate">
                   {selectedOption ? (
                     <div className="flex flex-col -space-y-0.5">
-                      <p className="font-black text-sm truncate tracking-tight">{selectedOption.label}</p>
+                      <p className="font-semibold text-sm truncate tracking-tight">{selectedOption.label}</p>
                       {selectedOption.subLabel && (
-                        <p className={cn("text-[9px] font-black uppercase tracking-[0.1em] truncate opacity-60", selectedOption.subLabelClassName)}>
+                        <p className={cn("text-[9px] font-semibold uppercase truncate opacity-60", selectedOption.subLabelClassName)}>
                             {selectedOption.subLabel}
                         </p>
                       )}
@@ -92,7 +93,7 @@ export const Combobox = React.forwardRef<HTMLButtonElement, ComboboxProps>(({ op
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-20 group-hover:opacity-10 transition-opacity" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0 rounded-3xl border-white/5 bg-card/95 backdrop-blur-3xl shadow-2xl overflow-hidden">
+      <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0 rounded-3xl border-white/5 bg-card/95 backdrop-blur-sm shadow-sm overflow-hidden">
         <Command shouldFilter={!isInternalFilteringDisabled}>
           <CommandInput placeholder={searchPlaceholder} onValueChange={onSearchChange} className="h-14 border-none bg-transparent" />
            <CommandList className="custom-scrollbar">
@@ -122,9 +123,9 @@ export const Combobox = React.forwardRef<HTMLButtonElement, ComboboxProps>(({ op
                         {value === option.value ? <Check className="h-4 w-4" /> : <User className="h-4 w-4" />}
                     </div>
                     <div className="flex-grow flex flex-col -space-y-0.5">
-                        <p className="font-black text-sm tracking-tight">{option.label}</p>
+                        <p className="font-semibold text-sm tracking-tight">{option.label}</p>
                         {option.subLabel && (
-                            <p className={cn("text-[10px] font-bold uppercase tracking-widest", option.subLabelClassName || 'text-muted-foreground opacity-40')}>
+                            <p className={cn("text-[10px] font-bold uppercase tracking-wide", option.subLabelClassName || 'text-muted-foreground opacity-40')}>
                                 {option.subLabel}
                             </p>
                         )}

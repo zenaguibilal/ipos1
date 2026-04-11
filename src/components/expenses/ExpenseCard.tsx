@@ -29,8 +29,8 @@ const ExpenseCardComponent = ({ expense, onEdit, onDelete, isSelected, onToggleS
         <Card 
             onClick={handleCardClick}
             className={cn(
-                "luxury-card group flex flex-col transition-all duration-500 bg-card/40 backdrop-blur-xl border-white/5 relative overflow-hidden rounded-[2.5rem] cursor-pointer",
-                isSelected ? "ring-2 ring-primary border-primary/30 shadow-2xl scale-[1.02]" : "hover:bg-primary/5"
+                "app-card group flex flex-col transition-all duration-500 bg-card/40 backdrop-blur-sm border-white/5 relative overflow-hidden rounded-lg cursor-pointer",
+                isSelected ? "ring-2 ring-primary border-primary/30 shadow-sm scale-[1.02]" : "hover:bg-primary/5"
             )}
         >
             <div className="absolute -right-4 -top-4 opacity-[0.02] group-hover:opacity-10 transition-opacity duration-700 pointer-events-none">
@@ -59,7 +59,7 @@ const ExpenseCardComponent = ({ expense, onEdit, onDelete, isSelected, onToggleS
                             <MoreHorizontal className="h-5 w-5" />
                         </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="rounded-2xl border-none shadow-2xl bg-card">
+                    <DropdownMenuContent align="end" className="rounded-2xl border-none shadow-sm bg-card">
                         <DropdownMenuItem onClick={() => onEdit(expense)} className="rounded-xl p-3">
                             <Edit className="mr-2 h-4 w-4" /> Modifier
                         </DropdownMenuItem>
@@ -76,11 +76,11 @@ const ExpenseCardComponent = ({ expense, onEdit, onDelete, isSelected, onToggleS
                         <Banknote className="h-6 w-6" />
                     </div>
                     <div className="min-w-0 pr-12">
-                        <CardTitle className="text-xl font-black leading-tight tracking-tighter group-hover:text-primary transition-colors truncate">
+                        <CardTitle className="text-xl font-semibold leading-tight tracking-tighter group-hover:text-primary transition-colors truncate">
                             {expense.description}
                         </CardTitle>
                         <div className="flex items-center gap-2 mt-1">
-                            <div className="px-3 py-1 rounded-xl bg-primary/5 text-primary text-[9px] font-black uppercase tracking-[0.2em] flex items-center gap-1.5 border border-primary/10">
+                            <div className="px-3 py-1 rounded-xl bg-primary/5 text-primary text-[9px] font-semibold uppercase flex items-center gap-1.5 border border-primary/10">
                                 <Tag className="h-2.5 w-2.5 opacity-50" /> {expense.category}
                             </div>
                         </div>
@@ -89,7 +89,7 @@ const ExpenseCardComponent = ({ expense, onEdit, onDelete, isSelected, onToggleS
             </CardHeader>
 
             <CardContent className="p-6 py-4 relative z-10">
-                <div className="flex items-center gap-2 text-[10px] font-black text-muted-foreground/40 uppercase tracking-widest bg-black/20 px-4 py-2 rounded-2xl w-fit border border-white/5 shadow-inner">
+                <div className="flex items-center gap-2 text-[10px] font-semibold text-muted-foreground/40 uppercase tracking-wide bg-black/20 px-4 py-2 rounded-2xl w-fit border border-white/5 shadow-inner">
                     <Calendar className="h-3 w-3 opacity-50" />
                     <span>{format(safeToDate(expense.expenseDate), 'dd MMMM yyyy', { locale: fr })}</span>
                 </div>
@@ -97,14 +97,14 @@ const ExpenseCardComponent = ({ expense, onEdit, onDelete, isSelected, onToggleS
 
             <CardFooter className="p-6 pt-4 border-t border-white/5 bg-muted/5 flex items-center justify-between relative z-10">
                  <div className="space-y-0.5">
-                    <p className="text-[9px] font-black text-muted-foreground/40 uppercase tracking-widest">Décaissement Flux</p>
-                    <p className="text-3xl font-black text-destructive tracking-tighter leading-none">{formatCurrency(expense.amount)}</p>
+                    <p className="text-[9px] font-semibold text-muted-foreground/40 uppercase tracking-wide">Décaissement Flux</p>
+                    <p className="text-xl font-semibold text-destructive tracking-tighter leading-none">{formatCurrency(expense.amount)}</p>
                 </div>
                 <Button 
                     variant="ghost" 
                     size="sm" 
                     onClick={(e) => { e.stopPropagation(); onEdit(expense); }}
-                    className="h-9 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-primary/10 hover:text-primary transition-all px-4"
+                    className="h-9 rounded-xl font-semibold text-[10px] uppercase tracking-wide hover:bg-primary/10 hover:text-primary transition-all px-4"
                 >
                     Détails <ChevronRight className="ml-1 h-3 w-3 opacity-50" />
                 </Button>
