@@ -1,12 +1,17 @@
+
 import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import { Inter } from 'next/font/google';
 import { ClientProviders } from '@/components/layout/ClientProviders';
+import { AppHeader } from '@/components/layout/header';
+import { BottomNavBar } from '@/components/layout/bottom-navbar';
+import { SaleInfoBar } from '@/components/layout/SaleInfoBar';
+import { AppSyncManager } from '@/components/layout/AppSyncManager';
 
-const APP_NAME = "iPOS Luxury";
-const APP_DEFAULT_TITLE = "iPOS Luxury - Point de Vente Premium";
-const APP_TITLE_TEMPLATE = "%s - iPOS Luxury";
-const APP_DESCRIPTION = "Application de point de vente intelligente et luxueuse pour le commerce de dÃ©tail";
+const APP_NAME = "iPOS Zen";
+const APP_DEFAULT_TITLE = "iPOS Zen - Point de Vente Premium";
+const APP_TITLE_TEMPLATE = "%s - iPOS Zen";
+const APP_DESCRIPTION = "Application de point de vente intelligente et local-first";
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -26,28 +31,6 @@ export const metadata: Metadata = {
   formatDetection: {
     telephone: false,
   },
-  openGraph: {
-    type: "website",
-    siteName: APP_NAME,
-    title: {
-      default: APP_DEFAULT_TITLE,
-      template: APP_TITLE_TEMPLATE,
-    },
-    description: APP_DESCRIPTION,
-  },
-  twitter: {
-    card: "summary",
-    title: {
-      default: APP_DEFAULT_TITLE,
-      template: APP_TITLE_TEMPLATE,
-    },
-    description: APP_DESCRIPTION,
-  },
-  icons: {
-    icon: '/icon.svg',
-    shortcut: '/icon.svg',
-    apple: '/icon.svg',
-  },
 };
 
 export const viewport: Viewport = {
@@ -55,24 +38,33 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
+  userScalable: false,
 };
-
 
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-
   return (
     <html lang="fr" suppressHydrationWarning>
       <head>
          <link rel="icon" href="/icon.svg" type="image/svg+xml" />
          <link rel="apple-touch-icon" href="/icon.svg" />
+         <meta name="mobile-web-app-capable" content="yes" />
       </head>
       <body className={inter.className}>
         <ClientProviders>
-            {children}
+            <AppSyncManager>
+                <div className="flex h-screen flex-col bg-background overflow-hidden">
+                    <AppHeader />
+                    <SaleInfoBar />
+                    <main className="flex-1 overflow-y-auto pb-14 md:pb-0">
+                        {children}
+                    </main>
+                    <BottomNavBar />
+                </div>
+            </AppSyncManager>
         </ClientProviders>
       </body>
     </html>
