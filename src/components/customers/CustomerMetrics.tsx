@@ -56,7 +56,7 @@ export function CustomerMetrics({ customer }: CustomerMetricsProps) {
                         </div>
                     </div>
 
-                    {/* Détail du report initial pour transparence */}
+                    {/* تفصيل الرصيد الابتدائي للشفافية المطلقة */}
                     {Math.abs(initialBalance) > 0.01 && (
                         <div className="mt-4 pt-4 border-t border-white/5 flex justify-between items-center bg-black/10 -mx-4 px-4 py-3">
                             <span className="text-[9px] font-semibold uppercase text-muted-foreground/60 flex items-center gap-1.5">

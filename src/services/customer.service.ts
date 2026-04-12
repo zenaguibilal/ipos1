@@ -102,7 +102,7 @@ class CustomerService {
             settlementDay: customerData.settlementDay,
             creditLimit: safeNumber(customerData.creditLimit),
             initialBalance: initialBal,
-            totalSpent: initialBal, // Inclure le solde initial dans la valeur totale gérée
+            totalSpent: initialBal, 
             outstandingBalance: initialBal,
             isBreadClient: false,
             createdAt: now,
@@ -142,7 +142,6 @@ class CustomerService {
 
         await db.customers.update(existing.id, dataToUpdate);
         
-        // Final re-calculation to ensure consistency
         const updated = await this.recalculateCustomerStatus(uuid);
 
         useAppStore.getState().actions.triggerSmartSync();
@@ -323,6 +322,10 @@ class CustomerService {
             .reverse();
     }
 
+    /**
+     * محرك الحسابات الذهبي:
+     * الدين الكلي = الرصيد الابتدائي + ديون الفواتير (إجمالي الفواتير - ما دُفع عند الكاشير) - المدفوعات اللاحقة - أرصدة المرتجعات
+     */
     async recalculateCustomerStatus(customerUuid: string): Promise<Customer> {
         const customer = await this.getCustomerByUuid(customerUuid);
         if (!customer?.id)
@@ -341,19 +344,23 @@ class CustomerService {
                 .toArray(),
         ]);
 
-        // Arithmétique haute précision avec safeNumber
+        // 1. حساب ديون المبيعات الحالية (مجموع المبالغ المتبقية في الفواتير)
+        const currentSalesDebt = sales.reduce((sum, s) => sum + safeNumber(s.remainingBalance), 0);
+        
+        // 2. حساب إجمالي الفواتير الصادرة
         const totalSalesInvoiced = sales.reduce((sum, s) => sum + safeNumber(s.total), 0);
-        const totalSalesPaid = sales.reduce((sum, s) => sum + safeNumber(s.amountPaid), 0);
-        const currentSalesDebt = totalSalesInvoiced - totalSalesPaid; // Dette générée par les ventes actuelles
 
+        // 3. حساب المدفوعات اللاحقة (من سجل المدفوعات)
         const totalPaymentsFromLogs = payments.reduce((sum, p) => sum + safeNumber(p.amount), 0);
+        
+        // 4. حساب صافي أرصدة المرتجعات (قيمة المرتجع - ما تم رده نقداً)
         const netCreditFromReturns = returns.reduce((sum, r) => sum + (safeNumber(r.totalReturnValue) - safeNumber(r.amountRefunded)), 0);
 
-        // FORMULE FINALE : Dette Totale = Solde Initial + Dette des Ventes - Paiements - Avoirs Retours
+        // المعادلة النهائية المطلوبة: الدين الكلي = الرصيد الابتدائي + ديون الفواتير - التسديدات اللاحقة - أرصدة المرتجعات
         const initial = safeNumber(customer.initialBalance);
         const newBalance = initial + currentSalesDebt - totalPaymentsFromLogs - netCreditFromReturns;
             
-        // Total consommé inclut aussi le report initial
+        // إجمالي الاستهلاك يشمل الموروث + المبيعات الجديدة
         const totalSpent = totalSalesInvoiced + initial;
 
         const creditLimit = safeNumber(customer.creditLimit);
@@ -497,7 +504,6 @@ class CustomerService {
             if (toUpdate.length > 0) await db.customers.bulkPut(toUpdate);
         });
 
-        // Recalcul intégral pour garantir la synchronisation du solde initial dans l'outstanding
         for (const c of toUpdate) {
             await this.recalculateCustomerStatus(c.uuid);
         }
