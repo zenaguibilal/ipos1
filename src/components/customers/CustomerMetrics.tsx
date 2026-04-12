@@ -3,16 +3,16 @@
 import { Card, CardContent } from '@/components/ui/card';
 import { TrendingUp, Landmark, ShieldCheck, History } from 'lucide-react';
 import type { Customer } from '@/lib/types';
-import { formatCurrency, cn } from '@/lib/utils';
+import { formatCurrency, cn, safeNumber } from '@/lib/utils';
 
 interface CustomerMetricsProps {
     customer: Customer;
 }
 
 export function CustomerMetrics({ customer }: CustomerMetricsProps) {
-    const balance = Number(customer.outstandingBalance) || 0;
-    const limit = Number(customer.creditLimit) || 0;
-    const initialBalance = Number(customer.initialBalance) || 0;
+    const balance = safeNumber(customer.outstandingBalance);
+    const limit = safeNumber(customer.creditLimit);
+    const initialBalance = safeNumber(customer.initialBalance);
     const creditUsage = limit > 0 ? (balance / limit) * 100 : 0;
 
     return (
@@ -20,7 +20,7 @@ export function CustomerMetrics({ customer }: CustomerMetricsProps) {
             {/* Main Debt Card - High Impact */}
             <Card className={cn(
                 "rounded-lg border-none shadow-sm overflow-hidden relative group transition-all duration-700",
-                balance > 0 ? "bg-destructive/10 border-destructive/20" : "bg-emerald-500/10 border-emerald-500/20"
+                balance > 0.01 ? "bg-destructive/10 border-destructive/20" : "bg-emerald-500/10 border-emerald-500/20"
             )}>
                 <div className="absolute -right-6 -bottom-6 opacity-[0.03] group-hover:opacity-10 transition-opacity duration-1000">
                     <Landmark className="h-48 w-48 rotate-12" />
@@ -29,7 +29,7 @@ export function CustomerMetrics({ customer }: CustomerMetricsProps) {
                     <div className="flex justify-between items-start mb-6">
                         <div className={cn(
                             "p-4 rounded-2xl shadow-inner",
-                            balance > 0 ? "bg-destructive/20 text-destructive" : "bg-emerald-500/20 text-emerald-500"
+                            balance > 0.01 ? "bg-destructive/20 text-destructive" : "bg-emerald-500/20 text-emerald-500"
                         )}>
                             <Landmark className="h-8 w-8" />
                         </div>
@@ -37,26 +37,26 @@ export function CustomerMetrics({ customer }: CustomerMetricsProps) {
                             <span className="text-[10px] font-semibold uppercase opacity-40">Statut Financier</span>
                             <p className={cn(
                                 "text-[10px] font-semibold uppercase tracking-wide mt-1",
-                                balance > 0 ? "text-destructive" : "text-emerald-500"
+                                balance > 0.01 ? "text-destructive" : "text-emerald-500"
                             )}>
-                                {balance > 0 ? 'Dette Active' : 'Solde Équilibré'}
+                                {balance > 0.01 ? 'Dette Active' : 'Solde Équilibré'}
                             </p>
                         </div>
                     </div>
                     
                     <div className="space-y-1">
-                        <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground opacity-50">Solde Déبiteur Actuel</span>
+                        <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground opacity-50">Solde Débiteur Actuel</span>
                         <div className="flex items-baseline gap-2">
                             <p className={cn(
                                 "text-lg font-semibold tracking-tighter",
-                                balance > 0 ? "text-destructive" : "text-foreground"
+                                balance > 0.01 ? "text-destructive" : "text-foreground"
                             )}>
                                 {formatCurrency(balance)}
                             </p>
                         </div>
                     </div>
 
-                    {/* Toujours afficher le solde initial pour la traçabilité */}
+                    {/* Report de solde initial */}
                     <div className="mt-4 pt-4 border-t border-white/5 flex justify-between items-center bg-black/10 -mx-4 px-4 py-3">
                         <span className="text-[9px] font-semibold uppercase text-muted-foreground/60 flex items-center gap-1.5">
                             <History className="h-3 w-3 text-primary" /> Solde de Report (Initial)

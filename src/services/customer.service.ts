@@ -7,6 +7,7 @@ import Papa from 'papaparse';
 import { startOfMonth, subMonths, format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { useAppStore } from '@/stores/appStore';
+import { safeNumber } from '@/lib/utils';
 
 class CustomerService {
 
@@ -27,7 +28,7 @@ class CustomerService {
 
         if (filters.status) {
             if (filters.status === 'has_debt')
-                collection = collection.filter(c => c.outstandingBalance > 0.01);
+                collection = collection.filter(c => safeNumber(c.outstandingBalance) > 0.01);
             if (filters.status === 'overdue')
                 collection = collection.filter(c => c.debtStatus === 'overdue');
             if (filters.status === 'over_limit')
@@ -89,7 +90,7 @@ class CustomerService {
             throw new Error('Un client avec ce nom existe déjà.');
         }
 
-        const initialBal = Number(customerData.initialBalance) || 0;
+        const initialBal = safeNumber(customerData.initialBalance);
 
         const newCustomer: Customer = {
             uuid: uuidv4(),
@@ -99,7 +100,7 @@ class CustomerService {
             phone: customerData.phone,
             address: customerData.address,
             settlementDay: customerData.settlementDay,
-            creditLimit: customerData.creditLimit,
+            creditLimit: safeNumber(customerData.creditLimit),
             initialBalance: initialBal,
             totalSpent: 0,
             outstandingBalance: initialBal,
@@ -133,12 +134,15 @@ class CustomerService {
         };
 
         if (customerData.initialBalance !== undefined) {
-            dataToUpdate.initialBalance = Number(customerData.initialBalance) || 0;
+            dataToUpdate.initialBalance = safeNumber(customerData.initialBalance);
+        }
+        if (customerData.creditLimit !== undefined) {
+            dataToUpdate.creditLimit = safeNumber(customerData.creditLimit);
         }
 
         await db.customers.update(existing.id, dataToUpdate);
         
-        // Final re-calculation
+        // Final re-calculation to ensure consistency
         const updated = await this.recalculateCustomerStatus(uuid);
 
         useAppStore.getState().actions.triggerSmartSync();
@@ -168,7 +172,7 @@ class CustomerService {
             );
         }
 
-        if (Math.abs(customer.outstandingBalance) > 0.01) {
+        if (Math.abs(safeNumber(customer.outstandingBalance)) > 0.01) {
             throw new Error(
                 "Suppression impossible: le solde n'est pas nul.",
             );
@@ -198,7 +202,7 @@ class CustomerService {
                 returnsCount > 0 ||
                 paymentsCount > 0 ||
                 breadOrdersCount > 0 ||
-                Math.abs(customer.outstandingBalance) > 0.01
+                Math.abs(safeNumber(customer.outstandingBalance)) > 0.01
             ) {
                 throw new Error(
                     `Suppression impossible: le client "${customer.firstName} ${customer.lastName}" a un historique ou un solde non nul.`,
@@ -226,7 +230,7 @@ class CustomerService {
             overdue: allCustomers.filter(c => c.debtStatus === 'overdue').length,
             overLimit: allCustomers.filter(c => c.isOverLimit === true).length,
             totalOutstanding: allCustomers.reduce(
-                (sum, c) => sum + (c.outstandingBalance || 0),
+                (sum, c) => sum + safeNumber(c.outstandingBalance),
                 0,
             ),
         };
@@ -253,14 +257,12 @@ class CustomerService {
             ...returns.map(r => ({ ...r, type: 'return', date: r.createdAt })),
         ];
 
-        // ADD: Initial balance as a starting point in timeline
-        // On s'assure qu'il est toujours inclus s'il est non nul
-        if (customer && Math.abs(Number(customer.initialBalance)) > 0.001) {
+        if (customer && Math.abs(safeNumber(customer.initialBalance)) > 0.001) {
             activity.push({
                 uuid: 'initial-balance-' + customer.uuid,
                 type: 'initial_balance',
-                date: customer.createdAt || new Date(0), // Date la plus ancienne possible
-                amount: customer.initialBalance,
+                date: customer.createdAt || new Date(0),
+                amount: safeNumber(customer.initialBalance),
                 notes: 'Report de solde historique'
             });
         }
@@ -311,7 +313,7 @@ class CustomerService {
             if (spendingByMonth.has(monthKey)) {
                 spendingByMonth.set(
                     monthKey,
-                    (spendingByMonth.get(monthKey) || 0) + sale.total,
+                    (spendingByMonth.get(monthKey) || 0) + safeNumber(sale.total),
                 );
             }
         });
@@ -339,34 +341,20 @@ class CustomerService {
                 .toArray(),
         ]);
 
-        const totalInvoiced = sales.reduce((sum, s) => sum + s.total, 0);
-        const totalPaidAtSale = sales.reduce(
-            (sum, s) => sum + (s.amountPaid || 0),
-            0,
-        );
-        const totalPaidViaPayments = payments.reduce(
-            (sum, p) => sum + p.amount,
-            0,
-        );
-        const netCreditFromReturns = returns.reduce(
-            (sum, r) => sum + (r.totalReturnValue - r.amountRefunded),
-            0,
-        );
+        // Robust arithmetic with safety casting
+        const totalInvoiced = sales.reduce((sum, s) => sum + safeNumber(s.total), 0);
+        const totalPaidAtSale = sales.reduce((sum, s) => sum + safeNumber(s.amountPaid), 0);
+        const totalPaidViaPayments = payments.reduce((sum, p) => sum + safeNumber(p.amount), 0);
+        const netCreditFromReturns = returns.reduce((sum, r) => sum + (safeNumber(r.totalReturnValue) - safeNumber(r.amountRefunded)), 0);
 
-        // FORMULA: Balance = InitialBalance + (Sales - PaidAtSale) - Payments - ReturnCredits
-        const newBalance =
-            (Number(customer.initialBalance) || 0) +
-            totalInvoiced -
-            totalPaidAtSale -
-            totalPaidViaPayments -
-            netCreditFromReturns;
+        // FINAL FORMULA: Balance = InitialBalance + (SalesInvoiced - PaidAtTimeOfSale) - ExternalPayments - ReturnCredits
+        const initial = safeNumber(customer.initialBalance);
+        const newBalance = initial + totalInvoiced - totalPaidAtSale - totalPaidViaPayments - netCreditFromReturns;
             
         const totalSpent = totalInvoiced;
 
-        const isOverLimit =
-            customer.creditLimit != null && customer.creditLimit > 0
-                ? newBalance > customer.creditLimit
-                : false;
+        const creditLimit = safeNumber(customer.creditLimit);
+        const isOverLimit = creditLimit > 0 ? newBalance > (creditLimit + 0.01) : false;
 
         const hasPaymentThisMonth = payments.some(
             p => new Date(p.paymentDate) >= currentMonthStart,
@@ -446,13 +434,9 @@ class CustomerService {
                                 lastName,
                                 phone: row.phone || row.telephone || row.Téléphone,
                                 address: row.address || row.adresse || row.Adresse,
-                                creditLimit: row.creditLimit || row.limite || row.Limite_Crédit
-                                    ? parseFloat(row.creditLimit || row.limite || row.Limite_Crédit)
-                                    : 0,
-                                settlementDay: row.settlementDay || row.echeance
-                                    ? parseInt(row.settlementDay || row.echeance)
-                                    : 0,
-                                initialBalance: parseFloat(row.initialBalance || row.solde || row.dette || row.debt || row.Solde_Impayé || '0'),
+                                creditLimit: safeNumber(row.creditLimit || row.limite || row.Limite_Crédit),
+                                settlementDay: parseInt(row.settlementDay || row.echeance || '0'),
+                                initialBalance: safeNumber(row.initialBalance || row.solde || row.dette || row.debt || row.Solde_Impayé || '0'),
                             };
 
                             if (existingCustomer) {
@@ -483,7 +467,7 @@ class CustomerService {
         const now = new Date();
 
         const toAdd = confirmedData.toAdd.map(c => {
-            const initialBal = Number(c.initialBalance) || 0;
+            const initialBal = safeNumber(c.initialBalance);
             return {
                 ...c,
                 uuid: uuidv4(),
@@ -499,7 +483,7 @@ class CustomerService {
 
         const toUpdate = confirmedData.toUpdate.map(c => ({
             ...c,
-            initialBalance: Number(c.initialBalance) || 0,
+            initialBalance: safeNumber(c.initialBalance),
             searchName: `${c.firstName} ${c.lastName}`.toLowerCase().trim(),
             updatedAt: now,
         }));

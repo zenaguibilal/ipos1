@@ -20,17 +20,30 @@ export function safeToDate(date: Date | string): Date {
     return new Date(date);
 }
 
+/**
+ * Convertit n'importe quelle valeur en nombre sain.
+ * Gère les espaces (milliers), les virgules (décimales) et les valeurs nulles.
+ */
+export function safeNumber(val: any): number {
+    if (typeof val === 'number') return isNaN(val) ? 0 : val;
+    if (val === null || val === undefined || val === '') return 0;
+    
+    // Nettoyage de la chaîne : suppression des espaces et remplacement de la virgule par un point
+    const sanitized = String(val)
+        .replace(/\s/g, '')
+        .replace(/,/g, '.');
+        
+    const parsed = parseFloat(sanitized);
+    return isNaN(parsed) ? 0 : parsed;
+}
+
 export function formatDateToYYYYMMDD(date: Date): string {
     return date.toISOString().split('T')[0];
 }
 
 export function formatCurrency(value: number | string, currency = 'DA') {
-    const numValue = typeof value === 'string' ? parseFloat(value) : value;
-    const formattedValue =
-        typeof numValue !== 'number' || isNaN(numValue)
-            ? '0.00'
-            : numValue.toFixed(2);
-    return `${formattedValue} ${currency}`;
+    const numValue = safeNumber(value);
+    return `${numValue.toFixed(2)} ${currency}`;
 }
 
 interface CalculableCart {
@@ -46,8 +59,8 @@ export function calculateCartTotals(cart: CalculableCart) {
     const SCALE = 1000;
 
     const subtotalRaw = cart.items.reduce((acc, item) => {
-        const priceCents = Math.round((item.price || 0) * SCALE);
-        const qty        = item.cartQuantity || 0;
+        const priceCents = Math.round(safeNumber(item.price) * SCALE);
+        const qty        = safeNumber(item.cartQuantity);
         return acc + Math.round(priceCents * qty);
     }, 0);
 
@@ -56,10 +69,10 @@ export function calculateCartTotals(cart: CalculableCart) {
     let discountAmountRaw = 0;
     if (cart.discount.type === 'percentage') {
         discountAmountRaw = Math.round(
-            subtotalRaw * ((cart.discount.value || 0) / 100),
+            subtotalRaw * (safeNumber(cart.discount.value) / 100),
         );
     } else {
-        discountAmountRaw = Math.round((cart.discount.value || 0) * SCALE);
+        discountAmountRaw = Math.round(safeNumber(cart.discount.value) * SCALE);
     }
 
     const totalRaw = Math.max(0, subtotalRaw - discountAmountRaw);
@@ -72,16 +85,14 @@ export function calculateCartTotals(cart: CalculableCart) {
 }
 
 /**
- * FIX #15 : coercion explicite en Number avant comparaison.
- * Sans Number(), les valeurs string du formulaire produisent une comparaison
- * lexicographique incorrecte ("10" <= "5" → true).
+ * Calcule le statut de stock de manière robuste.
  */
 export function calculateStockStatus(
     quantity:      number | string,
     minStockLevel: number | string,
 ): Product['stockStatus'] {
-    const qty = Number(quantity);
-    const min = Number(minStockLevel);
+    const qty = safeNumber(quantity);
+    const min = safeNumber(minStockLevel);
     if (qty <= 0)   return 'out_of_stock';
     if (qty <= min) return 'low_stock';
     return 'in_stock';
