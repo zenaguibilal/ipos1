@@ -7,13 +7,13 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 /**
- * Constant for high-precision financial comparisons.
- * Prevents floating point errors from blocking logical operations.
+ * Epsilon pour les comparaisons financières haute précision.
+ * Évite les erreurs floating-point bloquant des opérations logiques.
  */
 export const FINANCIAL_EPSILON = 0.00001;
 
 /**
- * Safely converts a Date object or an ISO string to a JavaScript Date.
+ * Convertit un Date ou une ISO string en objet Date fiable.
  */
 export function safeToDate(date: Date | string): Date {
     if (date instanceof Date) return date;
@@ -39,15 +39,15 @@ interface CalculableCart {
 }
 
 /**
- * Hardened financial calculator using scaled integer arithmetic.
- * Prevents IEEE 754 floating point errors common in JS.
+ * Calculateur financier durci — arithmétique entière mise à l'échelle.
+ * Élimine les erreurs IEEE 754 communes en JS.
  */
 export function calculateCartTotals(cart: CalculableCart) {
     const SCALE = 1000;
 
     const subtotalRaw = cart.items.reduce((acc, item) => {
         const priceCents = Math.round((item.price || 0) * SCALE);
-        const qty = item.cartQuantity || 0;
+        const qty        = item.cartQuantity || 0;
         return acc + Math.round(priceCents * qty);
     }, 0);
 
@@ -67,24 +67,22 @@ export function calculateCartTotals(cart: CalculableCart) {
     return {
         subtotal,
         discountAmount: discountAmountRaw / SCALE,
-        total: totalRaw / SCALE,
+        total:          totalRaw / SCALE,
     };
 }
 
 /**
- * FIX #15: Always coerce inputs to Number before comparison.
- * The product form stores input values as strings via handleInputChange;
- * without Number() the comparison is lexicographic, which inverts the result:
- *   "10" <= "5"  → true  (wrong: should be in_stock)
- *   "5"  <= "10" → false (wrong: should be low_stock)
+ * FIX #15 : coercion explicite en Number avant comparaison.
+ * Sans Number(), les valeurs string du formulaire produisent une comparaison
+ * lexicographique incorrecte ("10" <= "5" → true).
  */
 export function calculateStockStatus(
-    quantity: number | string,
+    quantity:      number | string,
     minStockLevel: number | string,
 ): Product['stockStatus'] {
     const qty = Number(quantity);
     const min = Number(minStockLevel);
-    if (qty <= 0) return 'out_of_stock';
+    if (qty <= 0)   return 'out_of_stock';
     if (qty <= min) return 'low_stock';
     return 'in_stock';
 }

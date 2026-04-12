@@ -63,8 +63,8 @@ export const CustomerCombobox = forwardRef<HTMLButtonElement>((_, ref) => {
         if (!deferredSearch.trim()) return customers.slice(0, 20);
         const q = deferredSearch.toLowerCase().trim();
         return customers.filter(c => 
-            (c.firstName || '').toLowerCase().includes(q) || 
-            (c.lastName || '').toLowerCase().includes(q) || 
+            c.firstName.toLowerCase().includes(q) || 
+            c.lastName.toLowerCase().includes(q) || 
             (c.phone || '').includes(q)
         );
     }, [customers, deferredSearch]);

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -7,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import type { Customer } from '@/lib/types';
-import { Loader2, User, Phone, MapPin, Calendar, ShieldCheck, Coins, Landmark } from 'lucide-react';
+import { Loader2, User, Phone, MapPin, Calendar, ShieldCheck, Coins } from 'lucide-react';
 import { customerService } from '@/services/customer.service';
 
 interface CustomerDialogProps {
@@ -24,7 +25,6 @@ const initialFormState = {
     address: '',
     settlementDay: '',
     creditLimit: '',
-    initialBalance: '',
 };
 
 export function CustomerDialog({ isOpen, onOpenChange, customer, onSuccess }: CustomerDialogProps) {
@@ -41,7 +41,6 @@ export function CustomerDialog({ isOpen, onOpenChange, customer, onSuccess }: Cu
                 address: customer.address || '',
                 settlementDay: String(customer.settlementDay || ''),
                 creditLimit: String(customer.creditLimit || ''),
-                initialBalance: String(customer.initialBalance || '0'),
             });
         } else {
             setFormState(initialFormState);
@@ -54,7 +53,7 @@ export function CustomerDialog({ isOpen, onOpenChange, customer, onSuccess }: Cu
         setError(null);
         setIsLoading(true);
 
-        const { firstName, lastName, phone, address, settlementDay, creditLimit, initialBalance } = formState;
+        const { firstName, lastName, phone, address, settlementDay, creditLimit } = formState;
 
         const customerData = {
             firstName,
@@ -63,7 +62,6 @@ export function CustomerDialog({ isOpen, onOpenChange, customer, onSuccess }: Cu
             address: address || undefined,
             settlementDay: settlementDay ? parseInt(settlementDay, 10) : undefined,
             creditLimit: creditLimit ? parseFloat(creditLimit) : undefined,
-            initialBalance: initialBalance ? parseFloat(initialBalance) : 0,
         };
 
         try {
@@ -150,7 +148,7 @@ export function CustomerDialog({ isOpen, onOpenChange, customer, onSuccess }: Cu
                         </div>
 
                         <div>
-                            <SectionTitle title="Paramètres de Crédit & Solde" icon={ShieldCheck} />
+                            <SectionTitle title="Paramètres de Crédit" icon={ShieldCheck} />
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-4 bg-muted/20 rounded-lg border border-white/5 shadow-inner">
                                 <div className="space-y-4">
                                     <Label htmlFor="settlementDay" className="text-[10px] font-semibold uppercase tracking-wide text-primary ml-1">Jour de règlement (Mensuel)</Label>
@@ -158,6 +156,7 @@ export function CustomerDialog({ isOpen, onOpenChange, customer, onSuccess }: Cu
                                         <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-primary/30" />
                                         <Input id="settlementDay" type="number" min="1" max="31" placeholder="Ex: 14" value={formState.settlementDay} onChange={(e) => setFormState(s => ({...s, settlementDay: e.target.value}))} className="pl-11 h-9 rounded-2xl bg-background border-none shadow-sm font-semibold text-xl text-primary" />
                                     </div>
+                                    <p className="text-[9px] text-muted-foreground font-medium italic">Le client doit payer chaque mois le jour indiqué.</p>
                                 </div>
                                 <div className="space-y-4">
                                     <Label htmlFor="creditLimit" className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground ml-1">Plafond de Crédit (DA)</Label>
@@ -165,14 +164,7 @@ export function CustomerDialog({ isOpen, onOpenChange, customer, onSuccess }: Cu
                                         <Coins className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/30" />
                                         <Input id="creditLimit" type="number" placeholder="Ex: 50000" value={formState.creditLimit} onChange={(e) => setFormState(s => ({...s, creditLimit: e.target.value}))} className="pl-11 h-9 rounded-2xl bg-background border-none shadow-sm font-semibold text-xl" />
                                     </div>
-                                </div>
-                                <div className="space-y-4 sm:col-span-2">
-                                    <Label htmlFor="initialBalance" className="text-[10px] font-semibold uppercase tracking-wide text-destructive ml-1">Solde Initial / Dette Importée (DA)</Label>
-                                    <div className="relative">
-                                        <Landmark className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-destructive/30" />
-                                        <Input id="initialBalance" type="number" placeholder="0.00" value={formState.initialBalance} onChange={(e) => setFormState(s => ({...s, initialBalance: e.target.value}))} className="pl-11 h-12 rounded-xl bg-destructive/5 border-destructive/10 shadow-inner font-mono font-bold text-destructive text-lg" />
-                                    </div>
-                                    <p className="text-[9px] text-muted-foreground font-medium italic">Ce montant sera préservé lors de tout recalcul automatique des dettes.</p>
+                                    <p className="text-[9px] text-muted-foreground font-medium italic">Limite maximale autorisée avant blocage.</p>
                                 </div>
                             </div>
                         </div>

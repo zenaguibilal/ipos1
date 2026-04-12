@@ -27,7 +27,6 @@ export interface Customer {
     address?: string;
     settlementDay?: number;
     creditLimit?: number;
-    initialBalance?: number; // New field to preserve legacy debt
     totalSpent: number;
     outstandingBalance: number;
     lastActivityDate?: Date;
@@ -253,6 +252,7 @@ export interface BreadOrder {
     quantite_origine?: number;
     est_paye: boolean;
     est_livre: boolean;
+    isManual?: boolean;   // FIX #16 : true = ordre manuel, false = auto-généré
     venteUuid: string | null;
     createdAt?: Date;
     updatedAt?: Date;

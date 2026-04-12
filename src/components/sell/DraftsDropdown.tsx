@@ -4,38 +4,48 @@ import { useState, useEffect } from 'react';
 import { useCartStore, useCartActions, useActiveCart } from '@/stores/cartStore';
 import { Button } from '@/components/ui/button';
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { Input } from "@/components/ui/input";
-import { FileStack, Plus, Trash2, Edit, PauseCircle, Check, ShoppingBag } from 'lucide-react';
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { Input } from '@/components/ui/input';
+import {
+    FileStack,
+    Plus,
+    Trash2,
+    Edit,
+    PauseCircle,
+    Check,
+    ShoppingBag,
+} from 'lucide-react';
 import { toast } from 'sonner';
-import { calculateCartTotals, formatCurrency } from '@/lib/utils';
-import { cn } from '@/lib/utils';
+import { calculateCartTotals, formatCurrency, cn } from '@/lib/utils';
 
 export function DraftsDropdown() {
     const [isMounted, setIsMounted] = useState(false);
-    const { carts, activeCartId } = useCartStore();
+    const { carts, activeCartId }   = useCartStore();
     const { createCart, selectCart, deleteCart, renameCart } = useCartActions();
 
     const [renameDialogOpen, setRenameDialogOpen] = useState(false);
-    const [cartToRename, setCartToRename] = useState<{ id: string, name: string } | null>(null);
+    const [cartToRename, setCartToRename] = useState<{
+        id: string;
+        name: string;
+    } | null>(null);
     const [newName, setNewName] = useState('');
-    
+
     useEffect(() => {
         setIsMounted(true);
     }, []);
@@ -43,23 +53,29 @@ export function DraftsDropdown() {
     const handleRename = () => {
         if (cartToRename && newName.trim()) {
             renameCart(cartToRename.id, newName.trim());
-            toast.success("Panier renommé.");
+            toast.success('Panier renommé.');
         }
         setRenameDialogOpen(false);
         setCartToRename(null);
         setNewName('');
-    }
+    };
 
+    // FIX #19 : on ne stocke pas le retour de createCart dans une variable
+    // inutilisée — on appelle directement la fonction.
     const handleSuspendAndNew = () => {
-        const newId = createCart();
-        toast.success("Vente actuelle mise en attente. Nouveau panier créé.");
+        createCart();
+        toast.success('Vente actuelle mise en attente. Nouveau panier créé.');
     };
 
     if (!isMounted) {
         return (
-            <Button variant="outline" size="lg" className="h-14 text-base opacity-50 cursor-not-allowed">
-                <FileStack className="mr-2 h-5 w-5" />
-                <span className="hidden sm:inline">Chargement...</span>
+            <Button
+                variant="outline"
+                size="lg"
+                className="h-9 text-sm opacity-50 cursor-not-allowed"
+            >
+                <FileStack className="h-4 w-4 mr-1.5" />
+                Ventes
             </Button>
         );
     }
@@ -68,128 +84,129 @@ export function DraftsDropdown() {
         <>
             <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                    <Button id="sell-drafts-button" variant="outline" size="lg" className="h-9 text-base border-primary/20 hover:bg-primary/5 transition-all shadow-sm">
-                        <FileStack className="mr-2 h-5 w-5 text-primary" />
-                        <span className="hidden sm:inline">Brouillons</span>
-                        <span className="ml-2 px-2 py-0.5 bg-primary/10 text-primary rounded-full text-xs font-bold">{carts.length}</span>
+                    <Button variant="outline" size="sm" className="h-9 gap-1.5">
+                        <FileStack className="h-4 w-4" />
+                        <span className="hidden sm:inline">Ventes</span>
+                        {carts.length > 1 && (
+                            <span className="ml-1 inline-flex items-center justify-center rounded-full bg-primary text-primary-foreground text-[10px] font-bold w-4 h-4">
+                                {carts.length}
+                            </span>
+                        )}
                     </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-80 p-2 rounded-2xl shadow-xl border-primary/10">
-                    <DropdownMenuLabel className="flex items-center justify-between px-3 py-2">
-                        <span className="text-sm font-semibold uppercase tracking-tighter">Ventes en attente</span>
-                        <Button variant="ghost" size="sm" className="h-7 text-xs text-primary font-bold hover:bg-primary/10" onClick={() => createCart()}>
-                            <Plus className="mr-1 h-3 w-3" /> Nouveau
+
+                <DropdownMenuContent align="start" className="w-64">
+                    <DropdownMenuLabel className="flex items-center justify-between">
+                        <span>Paniers actifs</span>
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 text-xs text-primary font-bold hover:bg-primary/10"
+                            onClick={() => createCart()}
+                        >
+                            <Plus className="h-3 w-3 mr-1" />
+                            Nouveau
                         </Button>
                     </DropdownMenuLabel>
-                    <DropdownMenuSeparator className="opacity-50" />
-                    
-                    <div className="max-h-[350px] overflow-y-auto space-y-1 my-1 pr-1 custom-scrollbar">
-                        {carts.map(cart => {
-                            const { total } = calculateCartTotals(cart);
-                            const isActive = cart.id === activeCartId;
-                            const itemCount = cart.items.reduce((sum, item) => sum + item.cartQuantity, 0);
+                    <DropdownMenuSeparator />
 
-                            return (
-                                <div 
-                                    key={cart.id}
-                                    className={cn(
-                                        "group flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all duration-200",
-                                        isActive ? "bg-primary/15 border-l-4 border-l-primary shadow-inner" : "hover:bg-muted/50"
+                    {carts.map(cart => {
+                        const totals = calculateCartTotals(cart);
+                        const isActive = cart.id === activeCartId;
+                        return (
+                            <DropdownMenuItem
+                                key={cart.id}
+                                className={cn(
+                                    'flex items-center justify-between cursor-pointer p-2 rounded-md',
+                                    isActive && 'bg-primary/10 text-primary font-semibold',
+                                )}
+                                onSelect={() => selectCart(cart.id)}
+                            >
+                                <div className="flex items-center gap-2 flex-1 min-w-0">
+                                    {isActive ? (
+                                        <Check className="h-3.5 w-3.5 shrink-0 text-primary" />
+                                    ) : (
+                                        <ShoppingBag className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
                                     )}
-                                    onClick={() => selectCart(cart.id)}
-                                >
-                                    <div className={cn(
-                                        "flex-shrink-0 h-10 w-10 rounded-full flex items-center justify-center transition-colors",
-                                        isActive ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
-                                    )}>
-                                        <ShoppingBag className="h-5 w-5" />
-                                    </div>
-
-                                    <div className="flex-grow min-w-0">
-                                        <div className="flex items-center gap-2">
-                                            <p className={cn("font-bold truncate text-sm tracking-tight", isActive ? "text-primary" : "")}>
-                                                {cart.name}
-                                            </p>
-                                            {isActive && <Check className="h-3 w-3 text-primary animate-in zoom-in" />}
-                                        </div>
-                                        <div className="flex items-center gap-3 text-[10px] text-muted-foreground font-bold uppercase tracking-wide opacity-70">
-                                            <span>{itemCount} Article{itemCount > 1 ? 's' : ''}</span>
-                                            <span className="text-primary font-semibold">{formatCurrency(total)}</span>
-                                        </div>
-                                    </div>
-                                    
-                                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                        <Button 
-                                            variant="ghost" 
-                                            size="icon" 
-                                            className="h-8 w-8 hover:bg-background rounded-lg shadow-sm" 
-                                            onClick={(e) => { 
-                                                e.stopPropagation(); 
-                                                setNewName(cart.name); 
-                                                setCartToRename(cart); 
-                                                setRenameDialogOpen(true); 
-                                            }}
-                                        >
-                                            <Edit className="h-3.5 w-3.5" />
-                                        </Button>
-                                        <Button 
-                                            variant="ghost" 
-                                            size="icon" 
-                                            className="h-8 w-8 text-destructive hover:bg-destructive/10 hover:text-destructive rounded-lg shadow-sm" 
-                                            onClick={(e) => { 
-                                                e.stopPropagation(); 
-                                                if (carts.length > 1) {
-                                                    deleteCart(cart.id);
-                                                } else {
-                                                    toast.error("Impossible de supprimer le dernier panier.");
-                                                }
-                                            }}
-                                        >
-                                            <Trash2 className="h-3.5 w-3.5" />
-                                        </Button>
-                                    </div>
+                                    <span className="truncate text-sm">
+                                        {cart.name}
+                                    </span>
+                                    {cart.items.length > 0 && (
+                                        <span className="text-xs text-muted-foreground shrink-0">
+                                            ({cart.items.length} art.)
+                                        </span>
+                                    )}
                                 </div>
-                            );
-                        })}
-                    </div>
 
-                    <DropdownMenuSeparator className="opacity-50" />
-                    <DropdownMenuItem 
-                        onClick={handleSuspendAndNew}
-                        className="flex items-center justify-center gap-2 p-3 my-1 rounded-xl font-semibold text-xs uppercase tracking-wide text-primary focus:text-primary focus:bg-primary/10 cursor-pointer transition-all active:scale-95"
+                                <div className="flex items-center gap-1 shrink-0 ml-2">
+                                    {totals.total > 0 && (
+                                        <span className="text-xs font-mono text-primary">
+                                            {formatCurrency(totals.total)}
+                                        </span>
+                                    )}
+                                    <button
+                                        className="p-1 rounded hover:bg-muted"
+                                        onClick={e => {
+                                            e.stopPropagation();
+                                            setCartToRename({
+                                                id:   cart.id,
+                                                name: cart.name,
+                                            });
+                                            setNewName(cart.name);
+                                            setRenameDialogOpen(true);
+                                        }}
+                                    >
+                                        <Edit className="h-3 w-3 text-muted-foreground" />
+                                    </button>
+                                    <button
+                                        className="p-1 rounded hover:bg-destructive/10"
+                                        onClick={e => {
+                                            e.stopPropagation();
+                                            deleteCart(cart.id);
+                                        }}
+                                    >
+                                        <Trash2 className="h-3 w-3 text-destructive" />
+                                    </button>
+                                </div>
+                            </DropdownMenuItem>
+                        );
+                    })}
+
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                        onSelect={handleSuspendAndNew}
+                        className="text-primary font-medium gap-2"
                     >
                         <PauseCircle className="h-4 w-4" />
-                        Suspendre et Nouveau
+                        Suspendre et créer nouveau
                     </DropdownMenuItem>
                 </DropdownMenuContent>
             </DropdownMenu>
-            
-            {/* Rename Dialog */}
-            <AlertDialog open={renameDialogOpen} onOpenChange={setRenameDialogOpen}>
-                <AlertDialogContent className="rounded-3xl border-none shadow-sm bg-card">
+
+            {/* Dialog renommage */}
+            <AlertDialog
+                open={renameDialogOpen}
+                onOpenChange={setRenameDialogOpen}
+            >
+                <AlertDialogContent>
                     <AlertDialogHeader>
-                        <AlertDialogTitle className="text-xl font-semibold tracking-tighter">Identifier cette vente</AlertDialogTitle>
-                        <AlertDialogDescription className="text-muted-foreground font-medium">
-                           Entrez un nom pour ce brouillon (ex: n° table, nom client, etc.)
+                        <AlertDialogTitle>Renommer le panier</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Entrez un nouveau nom pour ce panier.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
-                    <div className="py-6">
-                        <div className="relative">
-                            <Input 
-                                value={newName}
-                                onChange={(e) => setNewName(e.target.value)}
-                                onKeyDown={(e) => e.key === 'Enter' && handleRename()}
-                                className="h-9 text-xl font-bold rounded-2xl bg-muted/50 border-none px-6 focus-visible:ring-primary shadow-inner"
-                                placeholder="Nom du panier..."
-                                autoFocus
-                            />
-                            <ShoppingBag className="absolute right-5 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground/30" />
-                        </div>
-                    </div>
-                    <AlertDialogFooter className="gap-3">
-                        <AlertDialogCancel className="rounded-2xl font-bold border-none h-12 flex-1">Annuler</AlertDialogCancel>
-                        <AlertDialogAction onClick={handleRename} className="rounded-2xl font-bold px-8 h-12 flex-1 shadow-lg shadow-sm">
-                            Enregistrer
+                    <Input
+                        value={newName}
+                        onChange={e => setNewName(e.target.value)}
+                        onKeyDown={e => {
+                            if (e.key === 'Enter') handleRename();
+                        }}
+                        autoFocus
+                    />
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Annuler</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleRename}>
+                            Renommer
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>

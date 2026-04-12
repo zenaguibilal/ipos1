@@ -37,7 +37,8 @@ import {
     UploadCloud,
     DownloadCloud,
     CheckCircle2,
-    AlertCircle
+    AlertCircle,
+    Printer
 } from "lucide-react";
 import { db } from "@/lib/db";
 import { toast } from "sonner";
@@ -47,6 +48,7 @@ import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { supabaseSyncService } from '@/services/supabase.service';
+import { Switch } from '@/components/ui/switch';
 
 export default function SettingsPage() {
     const [stats, setStats] = useState({
@@ -59,6 +61,7 @@ export default function SettingsPage() {
     const [envInfo, setEnvInfo] = useState<{ os: string, browser: string } | null>(null);
     const [isResetConfirmOpen, setIsResetConfirmOpen] = useState(false);
     const [isMounted, setIsMounted] = useState(false);
+    const [autoPrintEnabled, setAutoPrintEnabled] = useState(false);
     
     const [isTestingConnection, setIsTestingConnection] = useState(false);
     const [connectionStatus, setConnectionStatus] = useState<'idle' | 'success' | 'error'>('idle');
@@ -68,6 +71,7 @@ export default function SettingsPage() {
 
     useEffect(() => {
         setIsMounted(true);
+        setAutoPrintEnabled(localStorage.getItem('ipos-autoprint-enabled') === 'true');
         const fetchStats = async () => {
             try {
                 const [p, c, s, l] = await Promise.all([
@@ -144,6 +148,11 @@ export default function SettingsPage() {
     };
 
     if (!isMounted) return null;
+
+    const handleAutoPrintToggle = (checked: boolean) => {
+        setAutoPrintEnabled(checked);
+        localStorage.setItem('ipos-autoprint-enabled', String(checked));
+    };
 
     const isSupabaseConfigured = companyProfile?.supabase_url && companyProfile?.supabase_key;
 
@@ -262,6 +271,33 @@ export default function SettingsPage() {
                                     </span>
                                 </div>
                             )}
+                        </CardContent>
+                    </Card>
+
+
+                    <Card className="app-card rounded-lg overflow-hidden">
+                        <CardHeader className="bg-primary/5 border-b border-border p-4">
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 rounded-lg bg-primary text-primary-foreground">
+                                    <Printer className="h-5 w-5" />
+                                </div>
+                                <div>
+                                    <CardTitle className="text-base font-semibold">Impression Automatique</CardTitle>
+                                    <CardDescription className="text-xs">Imprime la facture thermique 80mm après chaque vente</CardDescription>
+                                </div>
+                            </div>
+                        </CardHeader>
+                        <CardContent className="p-4">
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <p className="text-sm font-medium">AutoPrint thermique</p>
+                                    <p className="text-xs text-muted-foreground">Impression directe sur imprimante 80mm sans dialog</p>
+                                </div>
+                                <Switch
+                                    checked={autoPrintEnabled}
+                                    onCheckedChange={handleAutoPrintToggle}
+                                />
+                            </div>
                         </CardContent>
                     </Card>
 

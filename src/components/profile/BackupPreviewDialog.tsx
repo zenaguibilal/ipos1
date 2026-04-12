@@ -77,7 +77,7 @@ const APP_FIELDS: Record<string, { label: string, key: string }[]> = {
         { label: 'Adresse', key: 'address' },
         { label: 'Jour Règlement', key: 'settlementDay' },
         { label: 'Limite Crédit', key: 'creditLimit' },
-        { label: 'Solde Initial', key: 'initialBalance' },
+        { label: 'Solde Initial', key: 'outstandingBalance' },
     ],
     suppliers: [
         { label: 'Nom', key: 'name' },
@@ -134,13 +134,15 @@ export function BackupPreviewDialog({ isOpen, onOpenChange, initialData }: Backu
             const cols: Record<string, Set<string>> = {};
             const mappings: Record<string, Record<string, string>> = {};
             
+            // Get known table names from db.tables to prevent "Table not found" crashes
             const knownTables = new Set(db.tables.map(t => t.name));
 
             Object.keys(initialData).forEach(tableId => {
-                if (!knownTables.has(tableId)) return;
+                if (!knownTables.has(tableId)) return; // CRITICAL FIX: Skip unknown tables from source file
 
                 let tableContent = initialData[tableId];
                 
+                // Assure que chaque segment est un tableau
                 if (tableContent && !Array.isArray(tableContent)) {
                     tableContent = [tableContent];
                 }
@@ -158,7 +160,6 @@ export function BackupPreviewDialog({ isOpen, onOpenChange, initialData }: Backu
                         const match = appProps.find(p => 
                             p.key.toLowerCase() === sCol.toLowerCase() || 
                             p.label.toLowerCase() === sCol.toLowerCase() ||
-                            (tableId === 'customers' && (sCol.toLowerCase() === 'outstandingbalance' || sCol.toLowerCase() === 'solde') && p.key === 'initialBalance') ||
                             (sCol.toLowerCase() === 'sellingprice' && p.key === 'price') ||
                             (sCol.toLowerCase() === 'purchaseprice' && p.key === 'purchasePrice')
                         );

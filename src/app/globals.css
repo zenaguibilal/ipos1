@@ -4,55 +4,55 @@
 
 @layer base {
   :root {
-    /* Smart Slate Palette - Light Mode */
-    --background: 210 40% 98%;
-    --foreground: 222 47% 11%;
-    --card: 0 0% 100%;
-    --card-foreground: 222 47% 11%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 222 47% 11%;
-    --primary: 221 83% 53%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 210 40% 96%;
-    --secondary-foreground: 222 47% 31%;
-    --muted: 210 40% 94%;
-    --muted-foreground: 215 16% 47%;
-    --accent: 221 83% 53%;
-    --accent-foreground: 0 0% 100%;
-    --destructive: 0 84% 60%;
+    /* ── Light Mode : Crème chaud & Brun doré ── */
+    --background:          43 100% 96%;   /* #FFF8E7 */
+    --foreground:          22  60% 13%;   /* #2C1A0E */
+    --card:                 0   0% 100%;
+    --card-foreground:     22  60% 13%;
+    --popover:              0   0% 100%;
+    --popover-foreground:  22  60% 13%;
+    --primary:             20  76% 31%;   /* #8B4513 brun doré */
+    --primary-foreground:   0   0% 100%;
+    --secondary:           38  60% 92%;   /* #F5EDD8 */
+    --secondary-foreground:22  60% 25%;
+    --muted:               38  60% 93%;
+    --muted-foreground:    27  37% 45%;   /* #8B6F47 */
+    --accent:              42  76% 50%;   /* #D4A017 or */
+    --accent-foreground:   22  60% 13%;
+    --destructive:          0  84% 60%;
     --destructive-foreground: 0 0% 100%;
-    --border: 214 32% 91%;
-    --input: 214 32% 91%;
-    --ring: 221 83% 53%;
-    --radius: 0.75rem;
-    --chart-primary: 221 83% 53%;
-    --chart-secondary: 262 83% 58%;
-    --chart-tertiary: 142 71% 45%;
-    --chart-quaternary: 32 95% 55%;
-    --chart-quinary: 0 72% 51%;
+    --border:              37  50% 82%;   /* #E8D5B0 */
+    --input:               37  50% 82%;
+    --ring:                20  76% 31%;
+    --radius:              0.5rem;
+    --chart-primary:       20  76% 31%;
+    --chart-secondary:     42  76% 50%;
+    --chart-tertiary:     142  71% 45%;
+    --chart-quaternary:    32  95% 55%;
+    --chart-quinary:        0  72% 51%;
   }
 
   .dark {
-    /* Deep Space Navy - Dark Mode */
-    --background: 222 47% 6%;
-    --foreground: 213 31% 91%;
-    --card: 222 47% 10%;
-    --card-foreground: 213 31% 91%;
-    --popover: 222 47% 10%;
-    --popover-foreground: 213 31% 91%;
-    --primary: 217 91% 60%;
-    --primary-foreground: 222 47% 6%;
-    --secondary: 222 47% 14%;
-    --secondary-foreground: 213 31% 80%;
-    --muted: 222 47% 14%;
-    --muted-foreground: 215 20% 55%;
-    --accent: 217 91% 60%;
-    --accent-foreground: 222 47% 6%;
-    --destructive: 0 62% 30%;
-    --destructive-foreground: 213 31% 91%;
-    --border: 222 47% 18%;
-    --input: 222 47% 18%;
-    --ring: 217 91% 60%;
+    /* ── Dark Mode : Brun profond & Or ── */
+    --background:          22  72%  8%;   /* #1C0F00 */
+    --foreground:          38  70% 88%;   /* #F5E6D0 */
+    --card:                22  68% 10%;   /* #2A1A08 */
+    --card-foreground:     38  70% 88%;
+    --popover:             22  68% 10%;
+    --popover-foreground:  38  70% 88%;
+    --primary:             42  93% 43%;   /* #D4A017 or */
+    --primary-foreground:  22  72%  8%;
+    --secondary:           22  68% 14%;
+    --secondary-foreground:38  50% 70%;
+    --muted:               22  68% 12%;
+    --muted-foreground:    27  37% 55%;
+    --accent:              42  93% 43%;
+    --accent-foreground:   22  72%  8%;
+    --destructive:          0  62% 30%;
+    --destructive-foreground: 38 70% 88%;
+    --border:              22  55% 22%;   /* #3D2510 */
+    --input:               22  55% 22%;
+    --ring:                42  93% 43%;
   }
 }
 
@@ -61,26 +61,52 @@
   body {
     @apply bg-background text-foreground antialiased;
     font-size: 13px;
-    background-image: radial-gradient(circle at top right, rgba(37, 99, 235, 0.03), transparent 400px),
-                      radial-gradient(circle at bottom left, rgba(37, 99, 235, 0.03), transparent 400px);
-    background-attachment: fixed;
   }
 }
 
-/* ── Scrollbar ── */
-::-webkit-scrollbar { width: 5px; height: 5px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb {
-  background: hsl(var(--border));
-  border-radius: 10px;
+/* ─────────────────────────────────────────
+   Boutons 3D (Light Mode uniquement)
+───────────────────────────────────────── */
+:root .btn-3d {
+  box-shadow: 0 4px 0 hsl(20 76% 20%), 0 6px 8px rgba(0,0,0,0.18);
+  transform: translateY(0);
+  transition: box-shadow 0.1s ease, transform 0.1s ease;
 }
-::-webkit-scrollbar-thumb:hover { background: hsl(var(--primary) / 0.3); }
+:root .btn-3d:active {
+  box-shadow: 0 1px 0 hsl(20 76% 20%);
+  transform: translateY(3px);
+}
+.dark .btn-3d {
+  box-shadow: none;
+}
 
-/* ── Print Configuration ── */
+/* ─────────────────────────────────────────
+   Scrollbar
+───────────────────────────────────────── */
+::-webkit-scrollbar            { width: 5px; height: 5px; }
+::-webkit-scrollbar-track      { background: transparent; }
+::-webkit-scrollbar-thumb      { background: hsl(var(--border)); border-radius: 10px; }
+::-webkit-scrollbar-thumb:hover{ background: hsl(var(--primary) / 0.35); }
+
+.custom-scrollbar::-webkit-scrollbar       { width: 4px; }
+.custom-scrollbar::-webkit-scrollbar-thumb { background: hsl(var(--primary) / 0.15); border-radius: 10px; }
+.custom-scrollbar::-webkit-scrollbar-thumb:hover { background: hsl(var(--primary) / 0.35); }
+
+/* ─────────────────────────────────────────
+   App Card
+───────────────────────────────────────── */
+.app-card {
+  @apply bg-card border border-border rounded-xl shadow-sm transition-all duration-200;
+}
+.app-card:hover { @apply shadow-md; border-color: hsl(var(--primary) / 0.25); }
+
+/* ─────────────────────────────────────────
+   Impression thermique 80mm
+───────────────────────────────────────── */
 @media print {
   @page {
     margin: 0;
-    size: auto;
+    size: 80mm auto;
   }
   body {
     background: white !important;
@@ -90,31 +116,25 @@
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
   }
-  .print-hide { display: none !important; }
+  /* Masquer toute l'interface */
+  nav, header, aside,
+  [data-print-hide], .print-hide { display: none !important; }
   .print-only { display: block !important; }
-  
+
   * {
     transition: none !important;
     animation: none !important;
     box-shadow: none !important;
   }
+
+  /* Template thermique */
+  .thermal-receipt {
+    width: 80mm !important;
+    font-family: 'Courier New', Courier, monospace !important;
+    font-size: 9pt !important;
+    margin: 0 auto;
+    padding: 4mm 3mm;
+  }
 }
 
 .print-only { display: none; }
-
-/* ── UI Elements ── */
-.app-card {
-  @apply bg-card border border-border rounded-xl shadow-sm transition-all duration-300;
-}
-.app-card:hover { @apply shadow-md border-primary/20; }
-
-.custom-scrollbar::-webkit-scrollbar {
-  width: 4px;
-}
-.custom-scrollbar::-webkit-scrollbar-thumb {
-  background: hsl(var(--primary) / 0.1);
-  border-radius: 10px;
-}
-.custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: hsl(var(--primary) / 0.3);
-}

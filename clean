@@ -1,8 +1,0 @@
-src/lib/db.ts
-src/app/(app)/stock/intake/page.tsx
-src/app/(app)/dashboard/page.tsx
-src/app/(app)/expenses/page.tsx
-src/components/expenses/ExpenseDialog.tsx
-src/app/(app)/sales-history/page.tsx
-src/app/(app)/install/page.tsx
-src/stores/appStore.ts

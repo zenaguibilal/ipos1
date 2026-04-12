@@ -97,6 +97,7 @@ class SalesService {
             quantity: item.cartQuantity,
         }));
 
+        // FIX #5 : suffix 4 chiffres (1000–9999)
         const datePrefix = now.toISOString().slice(2, 10).replace(/-/g, '');
         const randomSuffix = Math.floor(1000 + Math.random() * 9000);
         const invoiceNumber = `${datePrefix}-${randomSuffix}`;
@@ -118,9 +119,18 @@ class SalesService {
             dueDate: saleData.dueDate,
         };
 
+        // FIX #3 : la transaction déclare toutes les tables réellement accédées
+        // par inventoryService.adjustStock ET customerService.recalculateCustomerStatus
         await db.transaction(
             'rw',
-            [db.sales, db.products, db.inventory_logs, db.customers, db.payments, db.product_returns],
+            [
+                db.sales,
+                db.products,
+                db.inventory_logs,
+                db.customers,
+                db.payments,
+                db.product_returns,
+            ],
             async () => {
                 await db.sales.add(newSale);
 
@@ -148,7 +158,14 @@ class SalesService {
     async processSaleCancellation(uuid: string): Promise<void> {
         await db.transaction(
             'rw',
-            [db.sales, db.products, db.customers, db.inventory_logs, db.payments, db.product_returns],
+            [
+                db.sales,
+                db.products,
+                db.customers,
+                db.inventory_logs,
+                db.payments,
+                db.product_returns,
+            ],
             async () => {
                 const sale = await this.getSaleByUuid(uuid);
                 if (!sale || !sale.id) throw new Error('Vente non trouvée.');
