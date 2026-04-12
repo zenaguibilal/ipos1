@@ -60,7 +60,6 @@ const CustomerCardComponent = ({ customer, onEdit, onDelete, isSelected, onToggl
     };
 
     const handleCardClick = (e: React.MouseEvent) => {
-        // Prevent trigger if clicking on buttons or checkboxes
         const target = e.target as HTMLElement;
         if (target.closest('button') || target.closest('input[type="checkbox"]') || target.closest('[role="menuitem"]')) {
             return;
@@ -114,7 +113,7 @@ const CustomerCardComponent = ({ customer, onEdit, onDelete, isSelected, onToggl
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="rounded-2xl border-none shadow-sm bg-card">
                         <DropdownMenuItem asChild className="rounded-xl p-3">
-                            <Link href={`/customers/${customer.uuid}`}>
+                            <Link href={`/customers/detail?uuid=${customer.uuid}`}>
                                 <FileText className="mr-2 h-4 w-4" /> Voir le dossier
                             </Link>
                         </DropdownMenuItem>
@@ -191,7 +190,7 @@ const CustomerCardComponent = ({ customer, onEdit, onDelete, isSelected, onToggl
                     <span>{isMounted && customer.lastActivityDate ? formatDistanceToNow(new Date(customer.lastActivityDate), { addSuffix: true, locale: fr }) : 'Aucun flux'}</span>
                 </div>
                 <Button variant="ghost" size="sm" asChild className="h-9 rounded-xl font-semibold text-[10px] uppercase tracking-wide hover:bg-primary/10 hover:text-primary transition-all px-4" onClick={(e) => e.stopPropagation()}>
-                    <Link href={`/customers/${customer.uuid}`}>
+                    <Link href={`/customers/detail?uuid=${customer.uuid}`}>
                         Dossier <ChevronRight className="ml-1 h-3 w-3 opacity-50" />
                     </Link>
                 </Button>

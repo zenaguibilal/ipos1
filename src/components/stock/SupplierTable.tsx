@@ -73,7 +73,7 @@ export function SupplierTable({
                                         </div>
                                         <div className="flex flex-col -space-y-0.5">
                                             <span className="font-semibold text-base tracking-tighter group-hover:text-primary transition-colors">{supplier.name}</span>
-                                            <Link href={`/stock/suppliers/${supplier.uuid}`} className="text-[9px] font-semibold uppercase text-muted-foreground/40 tracking-wide flex items-center gap-1 hover:text-primary/60 transition-colors">
+                                            <Link href={`/stock/suppliers/detail?uuid=${supplier.uuid}`} className="text-[9px] font-semibold uppercase text-muted-foreground/40 tracking-wide flex items-center gap-1 hover:text-primary/60 transition-colors">
                                                 Dossier Complet <ChevronRight className="h-2.5 w-2.5" />
                                             </Link>
                                         </div>
@@ -100,7 +100,7 @@ export function SupplierTable({
                                     </div>
                                 </TableCell>
                                 <TableCell className="p-6 text-right" onClick={(e) => e.stopPropagation()}>
-                                    <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                                    <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-10 transition-opacity duration-300">
                                         <Button 
                                             variant="outline" 
                                             size="icon" 

@@ -1,6 +1,6 @@
 'use client';
 
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { 
@@ -23,7 +23,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { CustomerMetrics } from '@/components/customers/CustomerMetrics';
 import { CustomerActivity } from '@/components/customers/CustomerActivity';
 import { CustomerSpendingChart } from '@/components/customers/CustomerSpendingChart';
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, Suspense } from 'react';
 import { AddPaymentDialog } from '@/components/payments/AddPaymentDialog';
 import { SaleDetailsDialog } from '@/components/sales/SaleDetailsDialog';
 import { ReturnDetailsDialog } from '@/components/returns/ReturnDetailsDialog';
@@ -37,12 +37,20 @@ import { BreadClientForm } from '@/components/bread/BreadClientForm';
 import { toast } from 'sonner';
 import { cn, formatCurrency } from '@/lib/utils';
 
+// Requis pour 'output: export' avec des routes dynamiques
+export function generateStaticParams() {
+    return [{ uuid: 'detail' }];
+}
+
 const ITEMS_PER_PAGE = 10;
 
-export default function CustomerDetailPage() {
+function CustomerDetailContent() {
     const params = useParams();
+    const searchParams = useSearchParams();
     const router = useRouter();
-    const customerUuid = params.uuid as string;
+    
+    // On récupère l'UUID soit du path (dev) soit du query param (build/static)
+    const customerUuid = params.uuid === 'detail' ? searchParams.get('uuid') : params.uuid as string;
 
     const [customer, setCustomer] = useState<Customer | undefined | null>(undefined);
     const [spendingData, setSpendingData] = useState<{ month: string, total: number }[]>([]);
@@ -61,8 +69,10 @@ export default function CustomerDetailPage() {
     const [isRefreshing, setIsRefreshing] = useState(false);
 
     const fetchCustomerData = useCallback(async () => {
-        if (!customerUuid) {
-            router.push('/customers');
+        if (!customerUuid || customerUuid === 'detail') {
+            if (customerUuid === 'detail' && !searchParams.get('uuid')) {
+                router.push('/customers');
+            }
             return;
         }
         setIsRefreshing(true);
@@ -82,11 +92,11 @@ export default function CustomerDetailPage() {
         } finally {
             setIsRefreshing(false);
         }
-    }, [customerUuid, router]);
+    }, [customerUuid, searchParams, router]);
     
     useEffect(() => {
         fetchCustomerData();
-    },[fetchCustomerData]);
+    }, [fetchCustomerData]);
 
     const handleSuccessfulPayment = useCallback(async () => {
         toast.success("Paiement enregistré.");
@@ -102,7 +112,7 @@ export default function CustomerDetailPage() {
     }, []);
 
     useEffect(() => {
-        if (!customerUuid || !hasMoreActivity) return;
+        if (!customerUuid || customerUuid === 'detail' || !hasMoreActivity) return;
 
         let isCancelled = false;
         setIsLoadingActivity(true);
@@ -420,5 +430,13 @@ export default function CustomerDetailPage() {
                 onSuccess={fetchCustomerData}
             />
         </div>
+    );
+}
+
+export default function CustomerDetailPage() {
+    return (
+        <Suspense fallback={<div className="p-20 text-center animate-pulse">Chargement du profil client...</div>}>
+            <CustomerDetailContent />
+        </Suspense>
     );
 }

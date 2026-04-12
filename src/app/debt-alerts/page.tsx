@@ -299,7 +299,7 @@ export default function DebtAlertsPage() {
                                         asChild
                                         className="w-full rounded-xl h-12 font-semibold text-[9px] uppercase tracking-wide hover:bg-primary/10 hover:text-primary transition-all group/btn"
                                     >
-                                        <Link href={`/customers/${customer.uuid}`}>
+                                        <Link href={`/customers/detail?uuid=${customer.uuid}`}>
                                             <FileText className="mr-2 h-3.5 w-3.5 opacity-40" /> Grand Livre <ChevronRight className="ml-auto h-3 w-3 transition-transform group-hover/btn:translate-x-1" />
                                         </Link>
                                     </Button>

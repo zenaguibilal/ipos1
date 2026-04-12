@@ -1,4 +1,3 @@
-
 'use client';
 
 import React from 'react';
@@ -6,7 +5,7 @@ import type { Customer } from '@/lib/types';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { MoreHorizontal, Edit, Trash2, FileText, Phone, User, ChevronRight, Wheat, Landmark } from 'lucide-react';
+import { MoreHorizontal, Edit, Trash2, FileText, Phone, User, Wheat, Landmark } from 'lucide-react';
 import Link from 'next/link';
 import { formatCurrency, cn } from '@/lib/utils';
 import { Checkbox } from '../ui/checkbox';
@@ -118,7 +117,7 @@ export function CustomerTable({
                                         </DropdownMenuTrigger>
                                         <DropdownMenuContent align="end" className="rounded-2xl border-none shadow-sm bg-card">
                                             <DropdownMenuItem asChild className="rounded-xl p-3">
-                                                <Link href={`/customers/${customer.uuid}`}>
+                                                <Link href={`/customers/detail?uuid=${customer.uuid}`}>
                                                     <FileText className="mr-2 h-4 w-4" /> Voir dossier
                                                 </Link>
                                             </DropdownMenuItem>

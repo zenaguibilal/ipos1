@@ -1,12 +1,12 @@
 'use client';
 
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, HandCoins, Building, RefreshCw } from 'lucide-react';
+import { ArrowLeft, HandCoins, RefreshCw } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useState, useCallback, useEffect, useMemo } from 'react';
+import { useState, useCallback, useEffect, useMemo, Suspense } from 'react';
 import { SupplierMetrics } from '@/components/stock/SupplierMetrics';
 import { SupplierActivity } from '@/components/stock/SupplierActivity';
 import { SupplierPaymentDialog } from '@/components/stock/SupplierPaymentDialog';
@@ -17,10 +17,18 @@ import { supplierService } from '@/services/supplier.service';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
-export default function SupplierDetailPage() {
+// Requis pour 'output: export' avec des routes dynamiques
+export function generateStaticParams() {
+    return [{ uuid: 'detail' }];
+}
+
+function SupplierDetailContent() {
     const params = useParams();
+    const searchParams = useSearchParams();
     const router = useRouter();
-    const supplierUuid = params.uuid as string;
+    
+    // On récupère l'UUID soit du path (dev) soit du query param (build/static)
+    const supplierUuid = params.uuid === 'detail' ? searchParams.get('uuid') : params.uuid as string;
 
     const [supplier, setSupplier] = useState<Supplier | undefined | null>(undefined);
     const [activity, setActivity] = useState<any[]>([]);
@@ -31,7 +39,12 @@ export default function SupplierDetailPage() {
     const [isIntakeDetailsOpen, setIsIntakeDetailsOpen] = useState(false);
 
     const fetchSupplierData = useCallback(async () => {
-        if (!supplierUuid) return;
+        if (!supplierUuid || supplierUuid === 'detail') {
+            if (supplierUuid === 'detail' && !searchParams.get('uuid')) {
+                router.push('/stock');
+            }
+            return;
+        }
         setIsLoading(true);
         try {
             const [sup, act] = await Promise.all([
@@ -49,7 +62,7 @@ export default function SupplierDetailPage() {
         } finally {
             setIsLoading(false);
         }
-    }, [supplierUuid, router]);
+    }, [supplierUuid, searchParams, router]);
     
     useEffect(() => {
         fetchSupplierData();
@@ -155,5 +168,13 @@ export default function SupplierDetailPage() {
                 supplierName={supplier.name}
             />
         </div>
+    );
+}
+
+export default function SupplierDetailPage() {
+    return (
+        <Suspense fallback={<div className="p-20 text-center animate-pulse">Chargement du profil fournisseur...</div>}>
+            <SupplierDetailContent />
+        </Suspense>
     );
 }

@@ -30,7 +30,6 @@ import Link from 'next/link';
 import { ResponsiveContainer, AreaChart, XAxis, YAxis, Tooltip, Area, CartesianGrid } from 'recharts';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Progress } from '@/components/ui/progress';
-import { Button } from '@/components/ui/button';
 import { useLiveQuery } from '@/hooks/useLiveQuery';
 
 const StatCard = React.memo(({ title, value, icon: Icon, change, isLoading, href, positiveIsGood = true, suffix }: { title: string, value: string, icon: React.ElementType, change?: number, isLoading: boolean, href?: string, positiveIsGood?: boolean, suffix?: string }) => {
@@ -274,7 +273,7 @@ export default function DashboardPage() {
                     <CardContent className="p-4 space-y-6">
                         {isLoading ? [...Array(5)].map((_, i) => <Skeleton key={`skel-cust-${i}`} className="h-9 w-full rounded-2xl bg-muted/10" />) : 
                             data?.topCustomers.map((c, i) => (
-                                <Link href={`/customers/${c.customerUuid}`} key={`cust-list-${c.customerUuid}`} className="flex items-center gap-5 group">
+                                <Link href={`/customers/detail?uuid=${c.customerUuid}`} key={`cust-list-${c.customerUuid}`} className="flex items-center gap-5 group">
                                     <div className="h-12 w-12 rounded-lg bg-muted/50 flex items-center justify-center font-semibold text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary transition-all">
                                         {c.name.substring(0, 1)}
                                     </div>
@@ -297,7 +296,7 @@ export default function DashboardPage() {
                         </CardTitle>
                     </CardHeader>
                     <CardContent className="p-4 space-y-4">
-                        {isLoading ? [...Array(5)].map((_, i) => <Skeleton key={`skel-stock-${i}`} className="h-9 w-full rounded-2xl bg-muted/10" />) : 
+                        {isLoading ? [...Array(5)].map((_, i) => <Skeleton key={`skel-stock-${i}`} className="h-20 w-full rounded-lg bg-muted/10" />) : 
                             data?.lowStockProducts.map(p => (
                                 <div key={`stock-list-${p.uuid}`} className="space-y-3">
                                     <div className="flex justify-between items-center text-[10px] font-semibold uppercase">

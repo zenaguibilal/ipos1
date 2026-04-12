@@ -232,7 +232,8 @@ export default function StockPage() {
                                 <Link href="/stock/intake">
                                     <Plus className="mr-2 h-4 w-4" /> Réception
                                 </Link>
-                            </<>
+                            </Button>
+                        </>
                     )}
                 </div>
             </PageHeader>
