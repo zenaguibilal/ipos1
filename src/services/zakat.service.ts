@@ -5,8 +5,7 @@ import { companyProfileService } from './profile.service';
 
 /**
  * Service de calcul de la Zakat pour iPOS Luxury.
- * Analyse les actifs circulants (Stock + Créances) et soustrait les dettes
- * (Fournisseurs).
+ * Analyse les actifs circulants (Stock + Créances) et soustrait les dettes fournisseurs.
  */
 class ZakatService {
     async getZakatData() {
@@ -36,15 +35,7 @@ class ZakatService {
 
         const goldPrice = profile?.goldPricePerGram || 0;
 
-        /**
-         * FIX #14: When goldPricePerGram is 0 (not configured), nisabThreshold
-         * was 0, making isEligible = (base >= 0) which is almost always true.
-         * This meant Zakat appeared always due, even on empty businesses.
-         *
-         * Fix: return nisabThreshold = null when goldPrice is not set,
-         * so the page can display a "configure gold price" warning instead
-         * of showing an incorrect "Zakat is due" result.
-         */
+        // Le seuil (Nissab) correspond à la valeur de 85g d'or.
         const nisabThreshold = goldPrice > 0 ? goldPrice * 85 : null;
 
         return {
@@ -52,7 +43,7 @@ class ZakatService {
             inventoryValueSale,
             customerDebts,
             supplierDebts,
-            nisabThreshold, // null = not configured
+            nisabThreshold, // null si le prix de l'or n'est pas configuré
             goldPrice,
         };
     }

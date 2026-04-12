@@ -232,8 +232,7 @@ export default function StockPage() {
                                 <Link href="/stock/intake">
                                     <Plus className="mr-2 h-4 w-4" /> Réception
                                 </Link>
-                            </Button>
-                        </>
+                            </<>
                     )}
                 </div>
             </PageHeader>
@@ -393,7 +392,7 @@ export default function StockPage() {
                         )}
                         {activeTab === 'suppliers' && (
                             suppliers?.length === 0 ? (
-                                <EmptyState icon={Building} title="Aucun Partenaire" description="Commenceز par ajouter votre premier fournisseur." />
+                                <EmptyState icon={Building} title="Aucun Partenaire" description="Commencez par ajouter votre premier fournisseur." />
                             ) : (
                                 <SupplierTable 
                                     suppliers={suppliers!} 

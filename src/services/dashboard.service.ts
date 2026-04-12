@@ -11,9 +11,7 @@ class DashboardService {
             const prevTo   = new Date(from.getTime() - 1);
             const prevFrom = new Date(prevTo.getTime() - duration);
 
-            // FIX #7 : between() compare les valeurs stockées en IndexedDB.
-            // Si createdAt/expenseDate sont stockés en ISO string, passer des
-            // objets Date échoue silencieusement. On normalise en ISO string.
+            // Comparaison des dates normalisées en ISO string pour compatibilité IndexedDB
             const [allSales, allExpenses, returns, customers, allProducts] =
                 await Promise.all([
                     db.sales

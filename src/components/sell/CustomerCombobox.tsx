@@ -46,7 +46,7 @@ export const CustomerCombobox = forwardRef<HTMLButtonElement>((_, ref) => {
             const data = await customerService.getCustomers();
             setCustomers(data);
         } catch (e) {
-            toast.error("فشل تحميل قائمة العملاء");
+            toast.error("Échec du chargement de la liste clients");
         } finally {
             setIsLoading(false);
         }
@@ -63,8 +63,8 @@ export const CustomerCombobox = forwardRef<HTMLButtonElement>((_, ref) => {
         if (!deferredSearch.trim()) return customers.slice(0, 20);
         const q = deferredSearch.toLowerCase().trim();
         return customers.filter(c => 
-            c.firstName.toLowerCase().includes(q) || 
-            c.lastName.toLowerCase().includes(q) || 
+            (c.firstName || '').toLowerCase().includes(q) || 
+            (c.lastName || '').toLowerCase().includes(q) || 
             (c.phone || '').includes(q)
         );
     }, [customers, deferredSearch]);
@@ -74,9 +74,9 @@ export const CustomerCombobox = forwardRef<HTMLButtonElement>((_, ref) => {
         setIsOpen(false);
         if (uuid) {
             const c = customers.find(cust => cust.uuid === uuid);
-            if (c) toast.success(`العميل: ${c.firstName} ${c.lastName}`);
+            if (c) toast.success(`Client : ${c.firstName} ${c.lastName}`);
         } else {
-            toast.info("تم اختيار: عميل من الشارع");
+            toast.info("Sélection : Client de passage");
         }
     };
 
@@ -84,7 +84,7 @@ export const CustomerCombobox = forwardRef<HTMLButtonElement>((_, ref) => {
         if (customer) {
             setCustomer(customer.uuid);
             setIsOpen(false);
-            toast.success(`تم تسجيل العميل ${customer.firstName} بنجاح`);
+            toast.success(`Client ${customer.firstName} enregistré avec succès`);
         }
     };
 
@@ -108,8 +108,8 @@ export const CustomerCombobox = forwardRef<HTMLButtonElement>((_, ref) => {
                                 <Users className="h-6 w-6" />
                             </div>
                             <div>
-                                <DialogTitle className="text-xl font-black tracking-tight">قائمة العملاء</DialogTitle>
-                                <p className="text-[10px] font-bold uppercase text-primary/50">تحديد هوية العميل الحالي</p>
+                                <DialogTitle className="text-xl font-black tracking-tight">Liste des Clients</DialogTitle>
+                                <p className="text-[10px] font-bold uppercase text-primary/50">Identifier le client actuel</p>
                             </div>
                         </div>
                     </DialogHeader>
@@ -119,7 +119,7 @@ export const CustomerCombobox = forwardRef<HTMLButtonElement>((_, ref) => {
                             <Search className="absolute left-5 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
                             <Input
                                 autoFocus
-                                placeholder="ابحث بالاسم أو رقم الهاتف..."
+                                placeholder="Rechercher par nom ou téléphone..."
                                 className="pl-14 h-9 text-lg font-bold rounded-2xl bg-black/20 border-none shadow-inner focus-visible:ring-primary/20"
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -131,7 +131,7 @@ export const CustomerCombobox = forwardRef<HTMLButtonElement>((_, ref) => {
                                 {isLoading ? (
                                     <div className="flex flex-col items-center justify-center py-20 opacity-20">
                                         <Users className="h-12 w-12 animate-pulse" />
-                                        <p className="text-xs font-bold uppercase mt-4">جاري التحميل...</p>
+                                        <p className="text-xs font-bold uppercase mt-4">Chargement...</p>
                                     </div>
                                 ) : filteredCustomers.length > 0 ? (
                                     filteredCustomers.map(c => (
@@ -146,13 +146,13 @@ export const CustomerCombobox = forwardRef<HTMLButtonElement>((_, ref) => {
                                                 </div>
                                                 <div className="flex flex-col -space-y-0.5">
                                                     <p className="font-bold text-sm tracking-tight">{c.firstName} {c.lastName}</p>
-                                                    <p className="text-[10px] font-mono text-muted-foreground/50">{c.phone || 'بدون هاتف'}</p>
+                                                    <p className="text-[10px] font-mono text-muted-foreground/50">{c.phone || 'Sans téléphone'}</p>
                                                 </div>
                                             </div>
                                             <div className="flex items-center gap-4">
                                                 {c.outstandingBalance > 0 && (
                                                     <div className="text-right px-4 border-r border-white/5">
-                                                        <p className="text-[8px] font-bold uppercase text-destructive/50">دين سابق</p>
+                                                        <p className="text-[8px] font-bold uppercase text-destructive/50">Dette antérieure</p>
                                                         <p className="text-sm font-black text-destructive tracking-tighter">{formatCurrency(c.outstandingBalance)}</p>
                                                     </div>
                                                 )}
@@ -163,7 +163,7 @@ export const CustomerCombobox = forwardRef<HTMLButtonElement>((_, ref) => {
                                 ) : (
                                     <div className="text-center py-20 opacity-20">
                                         <UserX className="h-12 w-12 mx-auto mb-4" />
-                                        <p className="text-sm font-bold uppercase">لا يوجد نتائج</p>
+                                        <p className="text-sm font-bold uppercase">Aucun résultat</p>
                                     </div>
                                 )}
                             </div>
@@ -176,13 +176,13 @@ export const CustomerCombobox = forwardRef<HTMLButtonElement>((_, ref) => {
                             onClick={() => handleSelect(null)}
                             className="flex-1 h-9 rounded-2xl font-bold text-[10px] uppercase tracking-wide gap-2 hover:bg-destructive/5 hover:text-destructive"
                         >
-                            <UserX className="h-4 w-4" /> عميل عابر
+                            <UserX className="h-4 w-4" /> Client de passage
                         </Button>
                         <Button 
                             onClick={() => setIsAddDialogOpen(true)}
                             className="flex-1 h-9 rounded-2xl font-bold text-[10px] uppercase tracking-wide gap-2 shadow-xl shadow-sm"
                         >
-                            <UserPlus className="h-4 w-4" /> عميل جديد +
+                            <UserPlus className="h-4 w-4" /> Nouveau Client +
                         </Button>
                     </div>
                 </DialogContent>

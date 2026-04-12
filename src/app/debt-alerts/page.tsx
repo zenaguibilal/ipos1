@@ -320,7 +320,7 @@ export default function DebtAlertsPage() {
                         <Info className="h-3.5 w-3.5" /> Intelligence de Trésorerie Elite
                     </p>
                     <p className="text-[12px] text-muted-foreground/70 font-medium leading-relaxed max-w-5xl italic border-l-2 border-primary/20 pl-6 uppercase tracking-wider">
-                        L'algorithme de surveillance applique une évaluation temporelle absolue. Un dossier est marqué comme "Critique" si l'exposition dépasse 110% du plafond autorisé أو أن التأخير في السداد يتجاوز 15 يوماً فعلياً.
+                        L'algorithme de surveillance applique une évaluation temporelle absolue. Un dossier est marqué comme "Critique" si l'exposition dépasse 110% du plafond autorisé ou si le retard de paiement dépasse 15 jours effectifs.
                     </p>
                 </div>
             </div>

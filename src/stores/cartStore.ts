@@ -10,9 +10,7 @@ import { companyProfileService } from '@/services/profile.service';
 import { useAppStore } from './appStore';
 import { FINANCIAL_EPSILON } from '@/lib/utils';
 
-// ─────────────────────────────────────────
-// Types
-// ─────────────────────────────────────────
+// Types pour la gestion des paniers multiples
 interface CartState {
     carts:        Cart[];
     activeCartId: string | null;
@@ -39,9 +37,6 @@ interface CartActions {
     processSale:  (amountPaid: number, dueDate?: Date) => Promise<Sale | null>;
 }
 
-// ─────────────────────────────────────────
-// État initial
-// ─────────────────────────────────────────
 const defaultCart: Omit<Cart, 'id' | 'name'> = {
     items:        [],
     customerUuid: null,
@@ -60,10 +55,9 @@ const initialState: Omit<CartState, 'actions'> = {
     activeCartId: INITIAL_CART_ID,
 };
 
-// ─────────────────────────────────────────
-// AutoPrint — impression thermique 80mm
-// non-bloquant, déclenché uniquement si activé dans Settings
-// ─────────────────────────────────────────
+/**
+ * Fonction utilitaire d'impression thermique 80mm
+ */
 async function triggerAutoPrint(sale: Sale): Promise<void> {
     if (typeof window === 'undefined') return;
     if (localStorage.getItem('ipos-autoprint-enabled') !== 'true') return;
@@ -161,13 +155,10 @@ async function triggerAutoPrint(sale: Sale): Promise<void> {
             win.close();
         }, 350);
     } catch (_e) {
-        // AutoPrint est non-bloquant — une erreur n'annule pas la vente
+        // Erreur d'impression non critique pour la vente
     }
 }
 
-// ─────────────────────────────────────────
-// Store
-// ─────────────────────────────────────────
 export const useCartStore = create<CartState>()(
     persist(
         (set, get) => ({
@@ -259,7 +250,6 @@ export const useCartStore = create<CartState>()(
                             product.quantity <
                             requestedTotal - FINANCIAL_EPSILON
                         ) {
-                            // FIX #1 : "para" → "pour"
                             toast.error(
                                 `Stock insuffisant pour "${product.name}"`,
                                 {
@@ -443,7 +433,7 @@ export const useCartStore = create<CartState>()(
 
                         useAppStore.getState().actions.triggerSmartSync();
 
-                        // AutoPrint thermique 80mm — non-bloquant
+                        // AutoPrint thermique 80mm
                         triggerAutoPrint(sale);
 
                         return sale;

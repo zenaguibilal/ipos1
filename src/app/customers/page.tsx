@@ -262,7 +262,7 @@ function CustomersContent() {
                 <EmptyState
                     icon={Users}
                     title="Aucun client trouvé"
-                    description={isFiltered ? "Essayez d'ajستر vos filtres." : "Commencez par ajouter votre premier client."}
+                    description={isFiltered ? "Essayez d'ajuster vos filtres." : "Commencez par ajouter votre premier client."}
                 >
                     <div className="flex gap-2 justify-center">
                         {isFiltered && <Button variant="outline" onClick={resetFilters} className="rounded-xl"><FilterX className="mr-2 h-4 w-4" /> Effacer</Button>}

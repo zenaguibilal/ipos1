@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -62,8 +61,8 @@ export default function InstallPWAPage() {
     return (
         <div className="p-6 sm:p-4 space-y-4 max-w-6xl mx-auto pb-24 animate-in fade-in duration-1000">
             <PageHeader 
-                title="التثبيت الذكي iPOS Zen"
-                description="قم بتثبيت التطبيق على جهازك للوصول السريع والعمل بدون إنترنت."
+                title="Installation Intelligente iPOS Zen"
+                description="Installez l'application sur votre appareil pour un accès rapide et un fonctionnement hors ligne."
             />
 
             {isInstalled ? (
@@ -78,17 +77,17 @@ export default function InstallPWAPage() {
                                 </div>
                             </div>
                             <div className="space-y-2">
-                                <h2 className="text-2xl font-bold tracking-tighter text-emerald-500">تم التثبيت بنجاح</h2>
+                                <h2 className="text-2xl font-bold tracking-tighter text-emerald-500">Installation Réussie</h2>
                                 <p className="text-muted-foreground font-medium max-w-md mx-auto leading-relaxed">
-                                    iPOS Zen يعمل الآن كبرنامج مستقل على جهازك. استمتع بسرعة فائقة وخصوصية كاملة.
+                                    iPOS Zen fonctionne désormais comme un programme indépendant sur votre appareil. Profitez d'une vitesse supérieure et d'une confidentialité totale.
                                 </p>
                             </div>
                             <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
                                 <Button asChild variant="outline" className="rounded-xl h-11 px-8 font-bold border-white/5 bg-card/40 hover:bg-emerald-500/5 gap-3 uppercase text-xs tracking-wide">
-                                    <Link href="/settings">تشخيص النظام</Link>
+                                    <Link href="/settings">Diagnostic Système</Link>
                                 </Button>
                                 <Button asChild className="rounded-xl h-11 px-8 font-bold bg-emerald-500 hover:bg-emerald-600 shadow-lg shadow-emerald-500/20 gap-3 uppercase text-xs tracking-wide">
-                                    <Link href="/dashboard">لوحة القيادة <LayoutDashboard className="h-4 w-4" /></Link>
+                                    <Link href="/dashboard">Tableau de Bord <LayoutDashboard className="h-4 w-4" /></Link>
                                 </Button>
                             </div>
                         </CardContent>
@@ -104,8 +103,8 @@ export default function InstallPWAPage() {
                                         <Zap className="h-6 w-6" />
                                     </div>
                                     <div>
-                                        <CardTitle className="text-xl font-bold tracking-tight">دليل التفعيل السريع</CardTitle>
-                                        <CardDescription className="text-xs font-bold uppercase tracking-wide text-primary/50 mt-1">حرّر قوة المعالجة المحلية لجهازك</CardDescription>
+                                        <CardTitle className="text-xl font-bold tracking-tight">Guide d'Activation Rapide</CardTitle>
+                                        <CardDescription className="text-xs font-bold uppercase tracking-wide text-primary/50 mt-1">Libérez la puissance de traitement locale de votre appareil</CardDescription>
                                     </div>
                                 </div>
                             </CardHeader>
@@ -114,13 +113,13 @@ export default function InstallPWAPage() {
                                     <div className="space-y-6">
                                         <div className="flex items-center gap-3">
                                             <div className="h-1.5 w-10 bg-primary rounded-full" />
-                                            <p className="text-[10px] font-bold text-primary uppercase tracking-widest">بروتوكول Safari (iPhone/iPad)</p>
+                                            <p className="text-[10px] font-bold text-primary uppercase tracking-widest">Protocole Safari (iPhone/iPad)</p>
                                         </div>
                                         <div className="grid gap-4">
                                             {[
-                                                { step: 1, text: "اضغط على أيقونة المشاركة", icon: <Share className="h-4 w-4"/>, highlight: "Partager" },
-                                                { step: 2, text: "اختر 'إضافة إلى الشاشة الرئيسية'", icon: <PlusSquare className="h-4 w-4"/>, highlight: "Sur l'écran d'accueil" },
-                                                { step: 3, text: "اضغط على 'إضافة' للتأكيد", icon: null, highlight: "Ajouter" }
+                                                { step: 1, text: "Appuyez sur l'icône de partage", icon: <Share className="h-4 w-4"/>, highlight: "Partager" },
+                                                { step: 2, text: "Choisissez 'Sur l'écran d'accueil'", icon: <PlusSquare className="h-4 w-4"/>, highlight: "Sur l'écran d'accueil" },
+                                                { step: 3, text: "Appuyez sur 'Ajouter' pour confirmer", icon: null, highlight: "Ajouter" }
                                             ].map((s) => (
                                                 <div key={s.step} className="flex items-start gap-6 p-5 bg-black/20 rounded-2xl border border-white/5 transition-all hover:bg-black/30 group">
                                                     <div className="h-10 w-10 rounded-xl bg-background flex items-center justify-center font-bold text-lg shadow-inner shrink-0 group-hover:text-primary transition-colors">{s.step}</div>
@@ -138,10 +137,10 @@ export default function InstallPWAPage() {
                                         <div className="space-y-3">
                                             <div className="flex items-center gap-3">
                                                 <div className="h-1.5 w-10 bg-primary rounded-full" />
-                                                <p className="text-[10px] font-bold text-primary uppercase tracking-widest">تثبيت تلقائي (Chrome / Android / Edge)</p>
+                                                <p className="text-[10px] font-bold text-primary uppercase tracking-widest">Installation Automatique (Chrome / Android / Edge)</p>
                                             </div>
                                             <p className="text-muted-foreground text-sm font-medium leading-relaxed px-1">
-                                                يسمح التثبيت لـ iPOS Zen بالعمل في عملية نظام مستقلة، مما يضمن أداءً أقصى وخصوصية بيانات كاملة بعيداً عن تبويبات المتصفح.
+                                                L'installation permet à iPOS Zen de s'exécuter dans un processus système indépendant, garantissant des performances maximales et une confidentialité totale des données hors du navigateur.
                                             </p>
                                         </div>
                                         
@@ -153,14 +152,14 @@ export default function InstallPWAPage() {
                                                 className="relative w-full h-24 rounded-2xl font-black text-xl shadow-2xl gap-5 transition-all active:scale-[0.98] border border-white/10"
                                             >
                                                 <Download className="h-8 w-8 animate-bounce" />
-                                                تثبيت iPOS Zen الآن
+                                                Installer iPOS Zen Maintenant
                                             </Button>
                                         </div>
 
                                         {!deferredPrompt && (
                                             <div className="p-5 bg-amber-500/5 rounded-2xl border border-dashed border-amber-500/20 text-center">
                                                 <p className="text-xs font-bold uppercase text-amber-600/70 leading-relaxed">
-                                                    إذا كان الزر غير نشط، التثبيت متاح في قائمة <span className="inline-block p-1 bg-background rounded-lg mx-2 shadow-inner border border-white/5">⋮</span> للمتصفح.
+                                                    Si le bouton est inactif, l'installation est disponible dans le menu <span className="inline-block p-1 bg-background rounded-lg mx-2 shadow-inner border border-white/5">⋮</span> du navigateur.
                                                 </p>
                                             </div>
                                         )}
@@ -174,9 +173,9 @@ export default function InstallPWAPage() {
                                 <Monitor className="h-8 w-8 text-primary opacity-40 group-hover:opacity-100 transition-opacity" />
                             </div>
                             <div>
-                                <h4 className="text-lg font-bold uppercase tracking-tight">على جهاز الكمبيوتر (PC/Mac)</h4>
+                                <h4 className="text-lg font-bold uppercase tracking-tight">Sur Ordinateur (PC/Mac)</h4>
                                 <p className="text-xs text-muted-foreground font-medium leading-relaxed mt-1">
-                                    للحصول على أفضل تجربة كاشير، اضغط على أيقونة الشاشة <span className="inline-block p-1 bg-background rounded-lg border border-white/10 shadow-lg mx-1"><Download className="h-3 w-3 text-primary" /></span> في يمين شريط العنوان.
+                                    Pour obtenir la meilleure expérience de caisse, appuyez sur l'icône d'écran <span className="inline-block p-1 bg-background rounded-lg border border-white/10 shadow-lg mx-1"><Download className="h-3 w-3 text-primary" /></span> à droite de la barre d'adresse.
                                 </p>
                             </div>
                         </div>
@@ -184,13 +183,13 @@ export default function InstallPWAPage() {
 
                     <div className="lg:col-span-4 space-y-6">
                         <div className="p-6 bg-card/40 backdrop-blur-sm rounded-2xl shadow-xl border border-white/5 space-y-6">
-                            <h3 className="text-[10px] font-black uppercase text-center border-b border-white/5 pb-4 opacity-40 tracking-[0.2em]">مميزات وضع Zen</h3>
+                            <h3 className="text-[10px] font-black uppercase text-center border-b border-white/5 pb-4 opacity-40 tracking-[0.2em]">Avantages du Mode Zen</h3>
                             
                             <div className="space-y-6">
                                 {[
-                                    { icon: Zap, color: "text-primary", title: "سرعة البرق", desc: "فتح فوري للتطبيق دون انتظار تحميل الشبكة." },
-                                    { icon: ShieldCheck, color: "text-emerald-500", title: "تركيز مطلق", desc: "إزالة كافة المشتتات والعمل في مساحة نظيفة." },
-                                    { icon: Download, color: "text-amber-500", title: "سيادة البيانات", desc: "يعمل التطبيق كنظام أصلي (Native) بالكامل." }
+                                    { icon: Zap, color: "text-primary", title: "Vitesse Éclair", desc: "Ouverture instantanée de l'application sans attente réseau." },
+                                    { icon: ShieldCheck, color: "text-emerald-500", title: "Focus Absolu", desc: "Élimination des distractions pour un espace de travail propre." },
+                                    { icon: Download, color: "text-amber-500", title: "Souveraineté des Données", desc: "L'application fonctionne comme un système natif complet." }
                                 ].map((item, i) => (
                                     <div key={i} className="flex gap-4 group">
                                         <div className={cn("h-10 w-10 rounded-xl flex items-center justify-center shadow-inner shrink-0 group-hover:scale-110 transition-transform bg-white/5", item.color)}>
@@ -207,9 +206,9 @@ export default function InstallPWAPage() {
 
                         <div className="p-6 bg-primary/5 rounded-2xl border border-primary/10 text-center space-y-4 relative overflow-hidden group">
                             <Sparkles className="absolute -right-4 -top-4 h-24 w-24 text-primary/5 group-hover:opacity-20 transition-opacity" />
-                            <p className="text-[10px] font-black uppercase text-primary/60 tracking-widest">أمان محلي 100%</p>
+                            <p className="text-[10px] font-black uppercase text-primary/60 tracking-widest">Sécurité Locale 100%</p>
                             <p className="text-xs font-bold text-muted-foreground leading-relaxed italic relative z-10">
-                                "بياناتك التجارية لا تغادر جهازك أبداً. الخصوصية هي جوهر iPOS Zen."
+                                "Vos données commerciales ne quittent jamais votre appareil. La confidentialité est le cœur d'iPOS Zen."
                             </p>
                         </div>
                     </div>

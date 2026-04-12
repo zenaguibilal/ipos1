@@ -44,7 +44,7 @@ export function PrintReceiptDialog({
                                     <Printer className="h-5 w-5" />
                                 </div>
                                 <div>
-                                    <DialogTitle className="text-lg font-bold tracking-tight">إصدار الفاتورة</DialogTitle>
+                                    <DialogTitle className="text-lg font-bold tracking-tight">Émission de Facture</DialogTitle>
                                     <DialogDescription className="text-[10px] uppercase font-semibold text-primary/50"># {sale.invoiceNumber}</DialogDescription>
                                 </div>
                             </div>
@@ -74,11 +74,11 @@ export function PrintReceiptDialog({
 
                     <DialogFooter className="p-4 bg-card border-t flex gap-3">
                         <Button variant="ghost" onClick={() => onOpenChange(false)} className="rounded-xl h-10 font-bold flex-1">
-                            <X className="mr-2 h-4 w-4" /> إغلاق
+                            <X className="mr-2 h-4 w-4" /> Fermer
                         </Button>
                         <Button onClick={handlePrint} className="rounded-xl h-10 font-bold flex-1 shadow-lg shadow-sm transition-all active:scale-95 gap-2">
                             <Printer className="h-4 w-4" /> 
-                            طباعة [P]
+                            Imprimer [P]
                         </Button>
                     </DialogFooter>
                 </DialogContent>

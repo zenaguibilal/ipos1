@@ -7,11 +7,9 @@ import { toast } from 'sonner';
 /**
  * Service de synchronisation souverain pour iPOS Zen.
  * Gère le transfert bidirectionnel intelligent entre IndexedDB et Supabase.
- * Utilise une logique de fusion temporelle Elite (updatedAt).
  */
 class SupabaseSyncService {
 
-    /** Guard contre les syncs parallèles */
     private isSyncing = false;
 
     /** Ordonnancement strict pour l'intégrité référentielle */
@@ -30,7 +28,7 @@ class SupabaseSyncService {
         { name: 'supplier_payments', table: db.supplier_payments },
     ];
 
-    /** Convertit Dates en ISO strings, supprime l'id local Dexie */
+    /** Nettoyage des données pour le stockage Cloud */
     private sanitizeForCloud(data: any): any {
         if (data === null || data === undefined) return data;
         if (data instanceof Date) return data.toISOString();
@@ -46,16 +44,13 @@ class SupabaseSyncService {
         return data;
     }
 
-    /**
-     * FIX #10 : supprime l'id Supabase avant add/update dans Dexie
-     * pour ne pas corrompre l'auto-increment local.
-     */
+    /** Suppression des IDs distants pour IndexedDB */
     private stripRemoteId(record: any): any {
         const { id: _ignored, ...rest } = record;
         return rest;
     }
 
-    /** Retry helper — 3 tentatives avec back-off exponentiel */
+    /** Mécanisme de retry intelligent */
     private async withRetry<T>(
         fn: () => Promise<T>,
         attempts = 3,
@@ -93,7 +88,6 @@ class SupabaseSyncService {
     }
 
     async pushAllData(url: string, key: string): Promise<void> {
-        // FIX : guard isSyncing
         if (this.isSyncing) {
             toast.info('Synchronisation déjà en cours…');
             return;
@@ -121,7 +115,7 @@ class SupabaseSyncService {
                     if (error) {
                         if (error.code === '42501')
                             throw new Error(
-                                `Permission refusée sur ${item.name}. Exécutez le script SQL avec DISABLE RLS.`,
+                                `Permission refusée sur ${item.name}. Vérifiez les politiques RLS.`,
                             );
                         throw new Error(
                             `Push [${item.name}] échoué: ${error.message}`,
@@ -184,14 +178,12 @@ class SupabaseSyncService {
                                     : 0;
 
                                 if (remoteUpdate > localUpdate) {
-                                    // FIX #10 : stripRemoteId avant update
                                     await item.table.update(
                                         localRecord.id,
                                         this.stripRemoteId(remoteRecord),
                                     );
                                 }
                             } else {
-                                // FIX #10 : stripRemoteId avant add
                                 await item.table.add(
                                     this.stripRemoteId(remoteRecord),
                                 );

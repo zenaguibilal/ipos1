@@ -114,7 +114,6 @@ export const useAppStore = create<AppState>()(
                         return;
                     }
 
-                    // FIX Supabase : guard contre les syncs parallèles
                     if (get().isSyncing) {
                         toast.info('Synchronisation déjà en cours…');
                         return;
@@ -136,7 +135,6 @@ export const useAppStore = create<AppState>()(
                             );
                         }
 
-                        // FIX Supabase : last_sync_at mis à jour correctement
                         const updatedProfile =
                             await companyProfileService.updateProfile({
                                 last_sync_at: now,
@@ -162,7 +160,7 @@ export const useAppStore = create<AppState>()(
                     if (
                         !currentProfile?.supabase_url ||
                         !currentProfile?.supabase_key ||
-                        state.isSyncing   // FIX : ne pas lancer si déjà en cours
+                        state.isSyncing
                     ) {
                         return;
                     }
