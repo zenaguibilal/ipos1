@@ -9,7 +9,6 @@ import { Suspense } from 'react';
 
 /**
  * @fileOverview Page de création d'un nouveau bon de retour client.
- * Utilise Suspense pour gérer l'initialisation des données de vente via searchParams.
  */
 export default function NewReturnPage() {
     return (
@@ -20,14 +19,14 @@ export default function NewReturnPage() {
                 </Button>
                 <PageHeader 
                     title="Régularisation / Nouveau Retour" 
-                    description="Traitement Elite des litiges marchandises et rééquilibrage des créances"
+                    description="Traitement des litiges marchandises و rééquilibrage des créances"
                 />
             </div>
 
             <Suspense fallback={
                 <div className="flex flex-col items-center justify-center py-40 gap-4 opacity-20">
-                    <div className="h-12 w-12 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-                    <p className="text-xs font-bold uppercase tracking-widest">Initialisation du protocole de retour...</p>
+                    <Loader2 className="h-12 w-12 animate-spin text-primary" />
+                    <p className="text-xs font-bold uppercase tracking-widest">Initialisation du protocole...</p>
                 </div>
             }>
                 <NewReturnForm />

@@ -7,8 +7,7 @@ import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 
 /**
- * @fileOverview Route de réception des marchandises.
- * Permet d'enregistrer les flux entrants et de mettre à jour le coût moyen pondéré.
+ * @fileOverview Route de réception des marchandises Elite.
  */
 export default function NewIntakePage() {
     return (
@@ -18,8 +17,8 @@ export default function NewIntakePage() {
                     <Link href="/stock"><ArrowLeft className="h-4 w-4" /></Link>
                 </Button>
                 <PageHeader 
-                    title="Manifeste de Réception Stock" 
-                    description="Enregistrement souverain des flux entrants et calcul du coût de revient Elite"
+                    title="Manifeste de Réception" 
+                    description="Enregistrement des flux entrants et ajustement du coût de revient"
                 />
             </div>
 
