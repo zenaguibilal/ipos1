@@ -1,4 +1,3 @@
-
 'use client';
 
 import React from 'react';
@@ -7,7 +6,7 @@ import { Timeline, TimelineItem, TimelineConnector, TimelineHeader, TimelineIcon
 import { safeToDate, formatCurrency, cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { HandCoins, ShoppingBag, Receipt, Undo2 } from 'lucide-react';
+import { HandCoins, ShoppingBag, Receipt, Undo2, History, Landmark } from 'lucide-react';
 
 interface CustomerActivityProps {
   activity: any[];
@@ -108,6 +107,30 @@ export function CustomerActivity({ activity, onSaleClick, onReturnClick }: Custo
                 <div className="p-4 bg-chart-quaternary/10 rounded-lg">
                      <p className="font-semibold text-lg text-chart-quaternary">{formatCurrency(payment.amount)}</p>
                      <p className="text-sm text-muted-foreground">{payment.notes || 'Paiement enregistré.'}</p>
+                </div>
+              </TimelineBody>
+            </TimelineItem>
+          );
+        } else if (item.type === 'initial_balance') {
+          return (
+            <TimelineItem key={`init-${item.uuid}`}>
+              {!isLast && <TimelineConnector />}
+              <TimelineHeader>
+                <TimelineIcon>
+                  <History className="h-5 w-5 text-primary" />
+                </TimelineIcon>
+                <TimelineTitle>Report de Solde Initial</TimelineTitle>
+                <span className="text-sm text-muted-foreground ml-auto">Ouverture Dossier</span>
+              </TimelineHeader>
+              <TimelineBody>
+                <div className="p-4 bg-primary/5 rounded-lg border border-primary/10">
+                  <div className="flex justify-between items-center">
+                    <p className="font-bold text-lg text-primary">{formatCurrency(item.amount)}</p>
+                    <div className="px-2 py-0.5 rounded-md bg-primary/10 text-primary text-[10px] font-bold uppercase tracking-wide">
+                      Historique
+                    </div>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1 italic">{item.notes}</p>
                 </div>
               </TimelineBody>
             </TimelineItem>

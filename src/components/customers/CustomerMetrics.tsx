@@ -1,8 +1,7 @@
-
 'use client';
 
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { DollarSign, Hourglass, ShieldCheck, TrendingUp, Landmark, Star } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
+import { TrendingUp, Landmark, ShieldCheck, History } from 'lucide-react';
 import type { Customer } from '@/lib/types';
 import { formatCurrency, cn } from '@/lib/utils';
 
@@ -14,6 +13,7 @@ export function CustomerMetrics({ customer }: CustomerMetricsProps) {
     const balance = customer.outstandingBalance || 0;
     const limit = customer.creditLimit || 0;
     const creditUsage = limit > 0 ? (balance / limit) * 100 : 0;
+    const initialBalance = customer.initialBalance || 0;
 
     return (
         <div className="space-y-6">
@@ -55,6 +55,15 @@ export function CustomerMetrics({ customer }: CustomerMetricsProps) {
                             </p>
                         </div>
                     </div>
+
+                    {initialBalance > 0 && (
+                        <div className="mt-4 pt-4 border-t border-white/5 flex justify-between items-center">
+                            <span className="text-[9px] font-semibold uppercase text-muted-foreground opacity-40 flex items-center gap-1.5">
+                                <History className="h-2.5 w-2.5" /> Dont Dette Initiale
+                            </span>
+                            <span className="text-[10px] font-bold text-muted-foreground/60">{formatCurrency(initialBalance)}</span>
+                        </div>
+                    )}
 
                     {limit > 0 && (
                         <div className="mt-8 space-y-3">

@@ -5,7 +5,7 @@ import type { Customer } from '@/lib/types';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { MoreHorizontal, Edit, Trash2, FileText, Phone, BellRing, ShieldCheck, Calendar, Hourglass, User, ChevronRight, Wheat, MessageCircle } from 'lucide-react';
+import { MoreHorizontal, Edit, Trash2, FileText, Phone, BellRing, ShieldCheck, Calendar, Hourglass, User, ChevronRight, Wheat, MessageCircle, History } from 'lucide-react';
 import Link from 'next/link';
 import { formatCurrency, cn } from '@/lib/utils';
 import { Progress } from '../ui/progress';
@@ -175,7 +175,12 @@ const CustomerCardComponent = ({ customer, onEdit, onDelete, isSelected, onToggl
                         "p-4 rounded-3xl border transition-all duration-500 shadow-inner",
                         balance > 0 ? "bg-destructive/5 border-destructive/20" : "bg-black/20 border-white/5"
                     )}>
-                        <p className={cn("text-[8px] font-semibold uppercase mb-1.5", balance > 0 ? "text-destructive/70" : "text-muted-foreground/40")}>Dette Active</p>
+                        <div className="flex justify-between items-start mb-1.5">
+                            <p className={cn("text-[8px] font-semibold uppercase", balance > 0 ? "text-destructive/70" : "text-muted-foreground/40")}>Solde Actuel</p>
+                            {customer.initialBalance > 0 && (
+                                <History className="h-2.5 w-2.5 text-primary opacity-40" />
+                            )}
+                        </div>
                         <div className="flex items-center justify-between">
                             <p className={cn("font-semibold text-sm tracking-tight", balance > 0 ? "text-destructive" : "")}>{formatCurrency(balance)}</p>
                             <DebtStatusIcon status={customer.debtStatus} />

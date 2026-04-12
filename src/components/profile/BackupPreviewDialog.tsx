@@ -169,7 +169,9 @@ export function BackupPreviewDialog({ isOpen, onOpenChange, initialData }: Backu
                             (sCol.toLowerCase() === 'purchaseprice' && p.key === 'purchasePrice') ||
                             (sCol.toLowerCase() === 'solde' && p.key === 'initialBalance') ||
                             (sCol.toLowerCase() === 'dette' && p.key === 'initialBalance') ||
-                            (sCol.toLowerCase() === 'debt' && p.key === 'initialBalance')
+                            (sCol.toLowerCase() === 'debt' && p.key === 'initialBalance') ||
+                            (sCol.toLowerCase() === 'r_solde' && p.key === 'initialBalance') ||
+                            (sCol.toLowerCase() === 'outstandingbalance' && p.key === 'initialBalance')
                         );
                         if (match) mappings[tableId][sCol] = match.key;
                     });
@@ -266,7 +268,7 @@ export function BackupPreviewDialog({ isOpen, onOpenChange, initialData }: Backu
                                 const targetKey = mappings[sourceKey] || sourceKey;
                                 let value = record[sourceKey];
 
-                                // Enforcement: Numeric conversion for financial keys
+                                // ENFORCEMENT: Proper numeric conversion
                                 if (NUMERIC_FIELDS.includes(targetKey)) {
                                     value = parseFloat(value) || 0;
                                 }

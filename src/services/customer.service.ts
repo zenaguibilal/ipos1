@@ -138,7 +138,7 @@ class CustomerService {
 
         await db.customers.update(existing.id, dataToUpdate);
         
-        // Always recalculate balance after update to incorporate new initialBalance or creditLimit
+        // Final re-calculation
         const updated = await this.recalculateCustomerStatus(uuid);
 
         useAppStore.getState().actions.triggerSmartSync();
@@ -237,6 +237,7 @@ class CustomerService {
         page: number,
         pageSize: number,
     ): Promise<any[]> {
+        const customer = await this.getCustomerByUuid(customerUuid);
         const [sales, payments, returns] = await Promise.all([
             db.sales.where('customerUuid').equals(customerUuid).toArray(),
             db.payments.where('customerUuid').equals(customerUuid).toArray(),
@@ -251,6 +252,17 @@ class CustomerService {
             ...payments.map(p => ({ ...p, type: 'payment', date: p.paymentDate })),
             ...returns.map(r => ({ ...r, type: 'return', date: r.createdAt })),
         ];
+
+        // ADD: Initial balance as a starting point in timeline
+        if (customer && customer.initialBalance > 0) {
+            activity.push({
+                uuid: 'initial-balance-' + customer.uuid,
+                type: 'initial_balance',
+                date: customer.createdAt || new Date(0),
+                amount: customer.initialBalance,
+                notes: 'Report de solde historique'
+            });
+        }
 
         activity.sort(
             (a, b) => new Date(b.date!).getTime() - new Date(a.date!).getTime(),
@@ -340,7 +352,7 @@ class CustomerService {
             0,
         );
 
-        // Crucial Formula: Balance = InitialBalance + (Sales - PaidAtSale) - Payments - ReturnCredits
+        // FORMULA: Balance = InitialBalance + (Sales - PaidAtSale) - Payments - ReturnCredits
         const newBalance =
             (Number(customer.initialBalance) || 0) +
             totalInvoiced -
@@ -496,7 +508,6 @@ class CustomerService {
             if (toUpdate.length > 0) await db.customers.bulkPut(toUpdate);
         });
 
-        // Mandatory recalculation for integrity
         for (const c of toUpdate) {
             await this.recalculateCustomerStatus(c.uuid);
         }
