@@ -341,13 +341,13 @@ class CustomerService {
                 .toArray(),
         ]);
 
-        // Robust arithmetic with safety casting
+        // Arithmétique haute précision avec safeNumber
         const totalInvoiced = sales.reduce((sum, s) => sum + safeNumber(s.total), 0);
         const totalPaidAtSale = sales.reduce((sum, s) => sum + safeNumber(s.amountPaid), 0);
         const totalPaidViaPayments = payments.reduce((sum, p) => sum + safeNumber(p.amount), 0);
         const netCreditFromReturns = returns.reduce((sum, r) => sum + (safeNumber(r.totalReturnValue) - safeNumber(r.amountRefunded)), 0);
 
-        // FINAL FORMULA: Balance = InitialBalance + (SalesInvoiced - PaidAtTimeOfSale) - ExternalPayments - ReturnCredits
+        // FORMULE FINALE: Solde = الرصيد الابتدائي + (المبيعات - المدفوع عند البيع) - المدفوعات اللاحقة - رصيد المرتجعات
         const initial = safeNumber(customer.initialBalance);
         const newBalance = initial + totalInvoiced - totalPaidAtSale - totalPaidViaPayments - netCreditFromReturns;
             
@@ -399,7 +399,8 @@ class CustomerService {
                 complete: async results => {
                     try {
                         const existingCustomers = await this.getCustomers();
-                        const existingNames = new Map(
+                        // On garde l'objet complet pour avoir accès à l'ID interne
+                        const existingMap = new Map(
                             existingCustomers.map(c => [c.searchName, c]),
                         );
 
@@ -427,7 +428,7 @@ class CustomerService {
 
                             const searchName =
                                 `${firstName} ${lastName}`.toLowerCase().trim();
-                            const existingCustomer = existingNames.get(searchName);
+                            const existingCustomer = existingMap.get(searchName);
 
                             const customerData = {
                                 firstName,
@@ -443,6 +444,7 @@ class CustomerService {
                                 analysis.customersToUpdate.push({
                                     ...customerData,
                                     uuid: existingCustomer.uuid,
+                                    id: existingCustomer.id, // CRITIQUE: On préserve l'ID pour bulkPut
                                 });
                             } else {
                                 analysis.customersToAdd.push(customerData);
@@ -493,6 +495,7 @@ class CustomerService {
             if (toUpdate.length > 0) await db.customers.bulkPut(toUpdate);
         });
 
+        // Recalcul intégral pour garantir la synchronisation du solde initial dans l'outstanding
         for (const c of toUpdate) {
             await this.recalculateCustomerStatus(c.uuid);
         }

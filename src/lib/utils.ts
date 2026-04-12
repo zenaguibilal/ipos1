@@ -22,15 +22,16 @@ export function safeToDate(date: Date | string): Date {
 
 /**
  * Convertit n'importe quelle valeur en nombre sain.
- * Gère les espaces (milliers), les virgules (décimales) et les valeurs nulles.
+ * Gère les espaces (milliers), رموز العملات, les virgules (décimales) et les valeurs nulles.
+ * Très robuste pour les imports CSV/JSON pollués.
  */
 export function safeNumber(val: any): number {
     if (typeof val === 'number') return isNaN(val) ? 0 : val;
     if (val === null || val === undefined || val === '') return 0;
     
-    // Nettoyage de la chaîne : suppression des espaces et remplacement de la virgule par un point
+    // Nettoyage agressif : on ne garde que les chiffres, le point, la virgule et le signe moins
     const sanitized = String(val)
-        .replace(/\s/g, '')
+        .replace(/[^\d.,-]/g, '') 
         .replace(/,/g, '.');
         
     const parsed = parseFloat(sanitized);
