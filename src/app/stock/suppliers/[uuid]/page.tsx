@@ -1,13 +1,13 @@
 import { redirect } from 'next/navigation';
 
 /**
- * @fileOverview Neutralisation de la route dynamique pour la compatibilité 'output: export'.
- * Cette route est obsolète. Utiliser /stock/suppliers/detail?uuid=...
+ * @fileOverview Route dynamique neutralisée.
+ * Le système utilise désormais /stock/suppliers/detail?uuid=... pour la compatibilité 'output: export'.
  */
 
 export function generateStaticParams() {
-    // Retourne une liste vide pour empêcher la génération de pages dynamiques au build
-    return [];
+    // On fournit un paramètre bidon pour satisfaire les exigences du build statique Next.js
+    return [{ uuid: 'fallback' }];
 }
 
 export default function Page() {

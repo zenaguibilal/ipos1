@@ -1,17 +1,18 @@
 import { redirect } from 'next/navigation';
 
 /**
- * @fileOverview Neutralisation de la route dynamique pour la compatibilité 'output: export'.
- * Cette route est obsolète. Utiliser /customers/detail?uuid=...
+ * @fileOverview Route dynamique neutralisée.
+ * Le système utilise désormais /customers/detail?uuid=... pour la compatibilité 'output: export'.
  */
 
 export function generateStaticParams() {
-    // Retourne une liste vide pour empêcher la génération de pages dynamiques au build
-    return [];
+    // On fournit un paramètre bidon pour satisfaire les exigences du build statique Next.js
+    // Cela évite l'erreur "missing param" lors du build ou du développement.
+    return [{ uuid: 'fallback' }];
 }
 
 export default function Page() {
-    // Redirection de sécurité vers la liste principale
+    // Redirection immédiate vers la liste principale pour tout accès direct résiduel
     redirect('/customers');
     return null;
 }
