@@ -2,15 +2,16 @@ import { redirect } from 'next/navigation';
 
 /**
  * @fileOverview Neutralisation de la route dynamique pour la compatibilité 'output: export'.
- * Toutes les navigations doivent désormais utiliser /stock/suppliers/detail?uuid=...
+ * Cette route est obsolète. Utiliser /stock/suppliers/detail?uuid=...
  */
 
 export function generateStaticParams() {
+    // Retourne une liste vide pour empêcher la génération de pages dynamiques au build
     return [];
 }
 
 export default function Page() {
-    // Par sécurité, on redirige vers la liste si cette route est accédée directement
+    // Redirection de sécurité vers la gestion des stocks
     redirect('/stock');
     return null;
 }

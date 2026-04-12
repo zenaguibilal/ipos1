@@ -2,15 +2,16 @@ import { redirect } from 'next/navigation';
 
 /**
  * @fileOverview Neutralisation de la route dynamique pour la compatibilité 'output: export'.
- * Toutes les navigations doivent désormais utiliser /customers/detail?uuid=...
+ * Cette route est obsolète. Utiliser /customers/detail?uuid=...
  */
 
 export function generateStaticParams() {
+    // Retourne une liste vide pour empêcher la génération de pages dynamiques au build
     return [];
 }
 
 export default function Page() {
-    // Par sécurité, on redirige vers la liste si cette route est accédée directement
+    // Redirection de sécurité vers la liste principale
     redirect('/customers');
     return null;
 }

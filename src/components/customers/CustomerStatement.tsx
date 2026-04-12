@@ -73,7 +73,7 @@ export const CustomerStatement = React.forwardRef<HTMLDivElement, CustomerStatem
                     </thead>
                     <tbody className="divide-y-2 divide-black/5">
                         {unpaidSales.map(sale => (
-                            <tr key={sale.id} className="hover:bg-gray-50 transition-colors">
+                            <tr key={sale.uuid} className="hover:bg-gray-50 transition-colors">
                                 <td className="p-4 text-sm font-bold">{format(safeToDate(sale.createdAt!), 'dd/MM/yyyy')}</td>
                                 <td className="p-4 text-sm font-mono font-bold">#{sale.invoiceNumber}</td>
                                 <td className="p-4 text-right text-sm font-medium">{formatCurrency(sale.total)}</td>
@@ -106,7 +106,7 @@ export const CustomerStatement = React.forwardRef<HTMLDivElement, CustomerStatem
             </footer>
 
             <p className="text-center mt-20 text-[8px] font-bold uppercase tracking-[0.3em] text-gray-300">
-                Ce document est généré informatiquement par iPOS SMART SYSTEM v1.9.5
+                Ce document est généré informatiquement par iPOS ZEN SYSTEM
             </p>
         </div>
     );
