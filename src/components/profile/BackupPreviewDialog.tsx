@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useCallback, useEffect } from 'react';
@@ -267,7 +266,7 @@ export function BackupPreviewDialog({ isOpen, onOpenChange, initialData }: Backu
                                 const targetKey = mappings[sourceKey] || sourceKey;
                                 let value = record[sourceKey];
 
-                                // Force correct type based on field name
+                                // Enforcement: Numeric conversion for financial keys
                                 if (NUMERIC_FIELDS.includes(targetKey)) {
                                     value = parseFloat(value) || 0;
                                 }
@@ -286,7 +285,7 @@ export function BackupPreviewDialog({ isOpen, onOpenChange, initialData }: Backu
             });
 
             await backupService.restoreBackup(finalManifest);
-            toast.success("Déploiement Elite terminé avec succès.");
+            toast.success("Restauration Elite terminée.");
             onOpenChange(false);
             setTimeout(() => window.location.reload(), 1000);
         } catch (error: any) {
@@ -403,12 +402,12 @@ export function BackupPreviewDialog({ isOpen, onOpenChange, initialData }: Backu
                                 {!selectedTables.has(activeCategory) ? (
                                     <div className="h-full py-40 flex flex-col items-center justify-center text-center space-y-4 opacity-20">
                                         <X className="h-9 w-16" />
-                                        <p className="text-[10px] font-semibold uppercase ">Segment exclu du déploiement</p>
+                                        <p className="text-[10px] font-semibold uppercase ">Segment exclu</p>
                                     </div>
                                 ) : filteredData.length === 0 ? (
                                     <div className="h-full py-40 flex flex-col items-center justify-center text-center space-y-4 opacity-20">
                                         <X className="h-9 w-16" />
-                                        <p className="text-[10px] font-semibold uppercase ">Aucune donnée trouvée</p>
+                                        <p className="text-[10px] font-semibold uppercase ">Aucune donnée</p>
                                     </div>
                                 ) : (
                                     <div className="rounded-lg border border-white/5 bg-black/40 overflow-hidden shadow-sm">
@@ -512,8 +511,8 @@ export function BackupPreviewDialog({ isOpen, onOpenChange, initialData }: Backu
                 </div>
 
                 <DialogFooter className="bg-black/40 p-4 border-t border-white/5 flex justify-between items-center text-[9px] text-muted-foreground font-semibold uppercase opacity-30">
-                    <span className="flex items-center gap-2 italic"><CheckCircle2 className="h-3 w-3" /> Audit en cours : {selectedTables.size} segments surveillés</span>
-                    <span>iPOS Luxury Elite Restore Engine v1.9.6</span>
+                    <span className="flex items-center gap-2 italic"><CheckCircle2 className="h-3 w-3" /> Restore Engine v1.9.8</span>
+                    <span>iPOS Luxury Elite</span>
                 </DialogFooter>
             </DialogContent>
         </Dialog>

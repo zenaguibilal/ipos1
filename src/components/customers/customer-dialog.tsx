@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -80,7 +79,7 @@ export function CustomerDialog({ isOpen, onOpenChange, customer, onSuccess }: Cu
             onOpenChange(false);
         } catch (err: any) {
             setError(err.message || "Une erreur est survenue.");
-            toast.error("Échec de l'opération.", { description: err.message });
+            toast.error("Échec de l'opération.");
         } finally {
             setIsLoading(false);
         }
@@ -117,7 +116,7 @@ export function CustomerDialog({ isOpen, onOpenChange, customer, onSuccess }: Cu
                         {error && <div className="p-4 bg-destructive/10 text-destructive rounded-2xl text-xs font-bold border border-destructive/20 text-center">{error}</div>}
                         
                         <div>
-                            <SectionTitle title="Identité Civile" icon={User} />
+                            <SectionTitle title="Identité" icon={User} />
                             <div className="grid grid-cols-2 gap-6">
                                 <div className="space-y-2">
                                     <Label htmlFor="firstName" className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground ml-1">Prénom *</Label>
@@ -141,7 +140,7 @@ export function CustomerDialog({ isOpen, onOpenChange, customer, onSuccess }: Cu
                                     </div>
                                 </div>
                                 <div className="space-y-2">
-                                    <Label htmlFor="address" className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground ml-1">Adresse Physique</Label>
+                                    <Label htmlFor="address" className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground ml-1">Adresse</Label>
                                     <div className="relative">
                                         <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/30" />
                                         <Input id="address" value={formState.address} onChange={(e) => setFormState(s => ({...s, address: e.target.value}))} className="pl-11 h-12 rounded-xl bg-muted/20 border-none shadow-inner font-medium" placeholder="Localisation..." />
@@ -151,37 +150,37 @@ export function CustomerDialog({ isOpen, onOpenChange, customer, onSuccess }: Cu
                         </div>
 
                         <div>
-                            <SectionTitle title="Paramètres de Crédit" icon={ShieldCheck} />
+                            <SectionTitle title="Paramètres Financiers" icon={ShieldCheck} />
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-4 bg-muted/20 rounded-lg border border-white/5 shadow-inner">
                                 <div className="space-y-4">
-                                    <Label htmlFor="settlementDay" className="text-[10px] font-semibold uppercase tracking-wide text-primary ml-1">Jour de règlement (Mensuel)</Label>
+                                    <Label htmlFor="settlementDay" className="text-[10px] font-semibold uppercase tracking-wide text-primary ml-1">Jour de règlement</Label>
                                     <div className="relative">
                                         <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-primary/30" />
                                         <Input id="settlementDay" type="number" min="1" max="31" placeholder="Ex: 14" value={formState.settlementDay} onChange={(e) => setFormState(s => ({...s, settlementDay: e.target.value}))} className="pl-11 h-9 rounded-2xl bg-background border-none shadow-sm font-semibold text-xl text-primary" />
                                     </div>
-                                    <p className="text-[9px] text-muted-foreground font-medium italic">Le client doit payer chaque mois le jour indiqué.</p>
+                                    <p className="text-[9px] text-muted-foreground font-medium italic">Date mensuelle attendue pour le paiement.</p>
                                 </div>
                                 <div className="space-y-4">
-                                    <Label htmlFor="creditLimit" className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground ml-1">Plafond de Crédit (DA)</Label>
+                                    <Label htmlFor="creditLimit" className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground ml-1">Plafond Crédit</Label>
                                     <div className="relative">
                                         <Coins className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/30" />
                                         <Input id="creditLimit" type="number" placeholder="Ex: 50000" value={formState.creditLimit} onChange={(e) => setFormState(s => ({...s, creditLimit: e.target.value}))} className="pl-11 h-9 rounded-2xl bg-background border-none shadow-sm font-semibold text-xl" />
                                     </div>
-                                    <p className="text-[9px] text-muted-foreground font-medium italic">Limite maximale autorisée avant blocage.</p>
+                                    <p className="text-[9px] text-muted-foreground font-medium italic">Limite avant blocage de vente.</p>
                                 </div>
                             </div>
                         </div>
 
                         <div>
-                            <SectionTitle title="Dettes Antérieures" icon={Landmark} />
+                            <SectionTitle title="Report de Solde" icon={Landmark} />
                             <div className="p-4 bg-destructive/5 rounded-lg border border-destructive/10 space-y-4">
                                 <div className="space-y-2">
-                                    <Label htmlFor="initialBalance" className="text-[10px] font-semibold uppercase tracking-wide text-destructive/70 ml-1">Solde Initial (Dette avant iPOS)</Label>
+                                    <Label htmlFor="initialBalance" className="text-[10px] font-semibold uppercase tracking-wide text-destructive/70 ml-1">Solde Initial (Dette importée)</Label>
                                     <div className="relative">
                                         <Landmark className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-destructive/30" />
                                         <Input id="initialBalance" type="number" placeholder="0.00" value={formState.initialBalance} onChange={(e) => setFormState(s => ({...s, initialBalance: e.target.value}))} className="pl-11 h-12 rounded-xl bg-background border-none shadow-inner font-bold text-destructive" />
                                     </div>
-                                    <p className="text-[9px] text-destructive/50 italic">Ce montant sera préservé et ajouté aux futurs impayés.</p>
+                                    <p className="text-[9px] text-destructive/50 italic">Dette historique enregistrée hors iPOS.</p>
                                 </div>
                             </div>
                         </div>
@@ -191,7 +190,7 @@ export function CustomerDialog({ isOpen, onOpenChange, customer, onSuccess }: Cu
                         <Button type="button" variant="ghost" onClick={() => onOpenChange(false)} className="h-9 rounded-2xl font-semibold text-xs uppercase tracking-wide px-8" disabled={isLoading}>Annuler</Button>
                         <Button type="submit" disabled={isLoading} className="flex-1 h-9 rounded-2xl font-semibold text-xs uppercase tracking-wide shadow-xl shadow-sm transition-all active:scale-95 gap-3">
                              {isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <ShieldCheck className="h-5 w-5" />}
-                            {customer ? 'Mettre à jour le Dossier' : 'Confirmer Inscription Elite'}
+                            Valider Dossier
                         </Button>
                     </DialogFooter>
                 </form>

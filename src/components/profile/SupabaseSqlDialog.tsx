@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -14,9 +13,8 @@ import { Database, Copy, Check, Terminal } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { toast } from 'sonner';
 
-const SUPABASE_SQL_SCRIPT = `-- iPOS Luxury - Elite Cloud Schema (Verified v1.9.6)
+const SUPABASE_SQL_SCRIPT = `-- iPOS Luxury - Elite Cloud Schema (Verified v1.9.8)
 -- Ce script initialise votre coffre-fort Cloud avec une précision de type absolue.
--- Note: La sécurité RLS est désactivée pour faciliter la synchronisation locale-first.
 
 -- 1. Identité de l'Etablissement
 CREATE TABLE IF NOT EXISTS company_profile (
@@ -54,7 +52,7 @@ CREATE TABLE IF NOT EXISTS suppliers (
 );
 ALTER TABLE suppliers DISABLE ROW LEVEL SECURITY;
 
--- 3. Fichier Clients & CRM
+-- 3. Fichier Clients & CRM (Initial Balance included)
 CREATE TABLE IF NOT EXISTS customers (
     uuid UUID PRIMARY KEY,
     "firstName" TEXT NOT NULL,
@@ -222,7 +220,7 @@ export function SupabaseSqlDialog() {
         if (typeof window !== 'undefined') {
             navigator.clipboard.writeText(SUPABASE_SQL_SCRIPT);
             setCopied(true);
-            toast.success("Code SQL copié pour Supabase.");
+            toast.success("Code SQL copié.");
             setTimeout(() => setCopied(false), 2000);
         }
     };
@@ -249,13 +247,13 @@ export function SupabaseSqlDialog() {
                                     <Database className="h-6 w-6" />
                                 </div>
                                 <div>
-                                    <DialogTitle className="text-lg font-semibold tracking-tight">Initialisation Supabase</DialogTitle>
+                                    <DialogTitle className="text-lg font-semibold tracking-tight">Initialisation Saphir</DialogTitle>
                                     <DialogDescription className="font-medium">Script SQL Elite certifié pour votre coffre-fort Cloud.</DialogDescription>
                                 </div>
                             </div>
                             <Button onClick={handleCopy} className="rounded-2xl h-12 px-6 font-semibold text-xs uppercase tracking-wide shadow-xl shadow-sm gap-2 transition-all active:scale-95">
                                 {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-                                {copied ? 'Copié !' : 'Copier le script'}
+                                {copied ? 'Copié !' : 'Copier script'}
                             </Button>
                         </div>
                     </DialogHeader>
@@ -268,7 +266,7 @@ export function SupabaseSqlDialog() {
 
                     <div className="p-6 bg-muted/5 border-t border-white/5 text-center">
                         <p className="text-[10px] font-semibold uppercase text-muted-foreground opacity-40">
-                            Précision de type absolue : Garanti compatible avec le moteur de synchronisation iPOS Luxury.
+                            Certifié compatible v1.9.8 Elite Restore Engine.
                         </p>
                     </div>
                 </DialogContent>

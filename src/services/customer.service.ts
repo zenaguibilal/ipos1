@@ -1,4 +1,3 @@
-
 'use client';
 
 import { v4 as uuidv4 } from 'uuid';
@@ -28,7 +27,7 @@ class CustomerService {
 
         if (filters.status) {
             if (filters.status === 'has_debt')
-                collection = collection.filter(c => c.outstandingBalance > 0);
+                collection = collection.filter(c => c.outstandingBalance > 0.01);
             if (filters.status === 'overdue')
                 collection = collection.filter(c => c.debtStatus === 'overdue');
             if (filters.status === 'over_limit')
@@ -75,7 +74,7 @@ class CustomerService {
         customerData: Partial<Omit<Customer, 'uuid'>>,
     ): Promise<Customer> {
         if (!customerData.firstName || !customerData.lastName) {
-            throw new Error('Le prénom et le nom sont requis.');
+            throw new Error('Prénom et nom requis.');
         }
 
         const now = new Date();
@@ -87,8 +86,10 @@ class CustomerService {
             .equals(searchName)
             .first();
         if (existing) {
-            throw new Error('Un client avec ce nom et prénom existe déjà.');
+            throw new Error('Un client avec ce nom existe déjà.');
         }
+
+        const initialBal = Number(customerData.initialBalance) || 0;
 
         const newCustomer: Customer = {
             uuid: uuidv4(),
@@ -99,9 +100,9 @@ class CustomerService {
             address: customerData.address,
             settlementDay: customerData.settlementDay,
             creditLimit: customerData.creditLimit,
-            initialBalance: Number(customerData.initialBalance) || 0,
+            initialBalance: initialBal,
             totalSpent: 0,
-            outstandingBalance: Number(customerData.initialBalance) || 0,
+            outstandingBalance: initialBal,
             isBreadClient: false,
             createdAt: now,
             updatedAt: now,
@@ -132,18 +133,16 @@ class CustomerService {
         };
 
         if (customerData.initialBalance !== undefined) {
-            dataToUpdate.initialBalance = Number(customerData.initialBalance);
+            dataToUpdate.initialBalance = Number(customerData.initialBalance) || 0;
         }
 
         await db.customers.update(existing.id, dataToUpdate);
         
-        // Recalculer le solde si le solde initial a changé
-        if (customerData.initialBalance !== undefined) {
-            await this.recalculateCustomerStatus(uuid);
-        }
+        // Always recalculate balance after update to incorporate new initialBalance or creditLimit
+        const updated = await this.recalculateCustomerStatus(uuid);
 
         useAppStore.getState().actions.triggerSmartSync();
-        return { ...existing, ...dataToUpdate };
+        return updated;
     }
 
     async deleteCustomer(uuid: string): Promise<void> {
@@ -165,13 +164,13 @@ class CustomerService {
             breadOrdersCount > 0
         ) {
             throw new Error(
-                "Suppression impossible: ce client a un historique de transactions.",
+                "Suppression impossible: historique de transactions existant.",
             );
         }
 
-        if (customer.outstandingBalance !== 0) {
+        if (Math.abs(customer.outstandingBalance) > 0.01) {
             throw new Error(
-                "Suppression impossible: le solde du client n'est pas à zéro.",
+                "Suppression impossible: le solde n'est pas nul.",
             );
         }
 
@@ -199,7 +198,7 @@ class CustomerService {
                 returnsCount > 0 ||
                 paymentsCount > 0 ||
                 breadOrdersCount > 0 ||
-                (customer.outstandingBalance || 0) !== 0
+                Math.abs(customer.outstandingBalance) > 0.01
             ) {
                 throw new Error(
                     `Suppression impossible: le client "${customer.firstName} ${customer.lastName}" a un historique ou un solde non nul.`,
@@ -341,7 +340,7 @@ class CustomerService {
             0,
         );
 
-        // Formule: Solde Initial + Ventes - Paiements - Avoirs Retours
+        // Crucial Formula: Balance = InitialBalance + (Sales - PaidAtSale) - Payments - ReturnCredits
         const newBalance =
             (Number(customer.initialBalance) || 0) +
             totalInvoiced -
@@ -391,34 +390,6 @@ class CustomerService {
         return { ...customer, ...customerUpdate };
     }
 
-    async getDebtAlerts(): Promise<Customer[]> {
-        const all = await this.getCustomers();
-        const now = new Date();
-        const currentDay = now.getDate();
-        const monthStart = startOfMonth(now);
-
-        const alerts: Customer[] = [];
-        for (const c of all) {
-            if (c.outstandingBalance <= 0.01) continue;
-            const payments = await db.payments
-                .where('customerUuid')
-                .equals(c.uuid)
-                .toArray();
-            const hasPaidThisMonth = payments.some(
-                p => new Date(p.paymentDate) >= monthStart,
-            );
-            if (
-                c.settlementDay &&
-                currentDay > c.settlementDay &&
-                !hasPaidThisMonth
-            ) {
-                alerts.push(c);
-            }
-        }
-
-        return alerts.sort((a, b) => b.outstandingBalance - a.outstandingBalance);
-    }
-
     async analyzeImport(file: File): Promise<ImportAnalysis> {
         return new Promise((resolve, reject) => {
             Papa.parse(file, {
@@ -441,14 +412,14 @@ class CustomerService {
 
                         for (const row of results.data as any[]) {
                             const firstName =
-                                row.firstName || row.prenom || row.first_name;
+                                row.firstName || row.prenom || row.first_name || row.Prénom;
                             const lastName =
-                                row.lastName || row.nom || row.last_name;
+                                row.lastName || row.nom || row.last_name || row.Nom;
 
                             if (!firstName || !lastName) {
                                 analysis.errorRows.push({
                                     ...row,
-                                    error: 'Prénom ou nom manquant',
+                                    error: 'Identité manquante',
                                 });
                                 continue;
                             }
@@ -460,15 +431,15 @@ class CustomerService {
                             const customerData = {
                                 firstName,
                                 lastName,
-                                phone: row.phone || row.telephone,
-                                address: row.address || row.adresse,
-                                creditLimit: row.creditLimit
-                                    ? parseFloat(row.creditLimit)
+                                phone: row.phone || row.telephone || row.Téléphone,
+                                address: row.address || row.adresse || row.Adresse,
+                                creditLimit: row.creditLimit || row.limite || row.Limite_Crédit
+                                    ? parseFloat(row.creditLimit || row.limite || row.Limite_Crédit)
                                     : 0,
-                                settlementDay: row.settlementDay
-                                    ? parseInt(row.settlementDay)
+                                settlementDay: row.settlementDay || row.echeance
+                                    ? parseInt(row.settlementDay || row.echeance)
                                     : 0,
-                                initialBalance: parseFloat(row.initialBalance || row.solde || row.dette || row.debt || '0'),
+                                initialBalance: parseFloat(row.initialBalance || row.solde || row.dette || row.debt || row.Solde_Impayé || '0'),
                             };
 
                             if (existingCustomer) {
@@ -486,7 +457,7 @@ class CustomerService {
                     }
                 },
                 error: error => {
-                    reject(new Error('Erreur de parsing CSV: ' + error.message));
+                    reject(new Error('Erreur CSV: ' + error.message));
                 },
             });
         });
@@ -525,8 +496,11 @@ class CustomerService {
             if (toUpdate.length > 0) await db.customers.bulkPut(toUpdate);
         });
 
-        // For each updated customer, recalculate to be safe
+        // Mandatory recalculation for integrity
         for (const c of toUpdate) {
+            await this.recalculateCustomerStatus(c.uuid);
+        }
+        for (const c of toAdd) {
             await this.recalculateCustomerStatus(c.uuid);
         }
 
