@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useRef, useState, useEffect } from 'react';
@@ -33,7 +34,7 @@ export function PrintStatementDialog({ isOpen, onOpenChange, customer }: PrintSt
                 const data = await customerService.getCustomerStatementData(customer.uuid);
                 setStatementData(data);
             } catch (error) {
-                toast.error("Impossible de charger les données du كشف الحساب.");
+                toast.error("Impossible de charger les données du relevé de compte.");
             }
         };
 

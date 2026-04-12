@@ -1,3 +1,4 @@
+
 export interface Product {
     id?: number;
     uuid: string;
@@ -27,6 +28,7 @@ export interface Customer {
     address?: string;
     settlementDay?: number;
     creditLimit?: number;
+    initialBalance: number; // Nouveau: Pour préserver les dettes importées
     totalSpent: number;
     outstandingBalance: number;
     lastActivityDate?: Date;
@@ -252,7 +254,7 @@ export interface BreadOrder {
     quantite_origine?: number;
     est_paye: boolean;
     est_livre: boolean;
-    isManual?: boolean;   // FIX #16 : true = ordre manuel, false = auto-généré
+    isManual?: boolean;   
     venteUuid: string | null;
     createdAt?: Date;
     updatedAt?: Date;

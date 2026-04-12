@@ -1,3 +1,4 @@
+
 'use client';
 
 import { v4 as uuidv4 } from 'uuid';
@@ -98,9 +99,9 @@ class CustomerService {
             address: customerData.address,
             settlementDay: customerData.settlementDay,
             creditLimit: customerData.creditLimit,
+            initialBalance: customerData.initialBalance || 0,
             totalSpent: 0,
-            outstandingBalance: 0,
-            // FIX #27: initialise bread fields so Dexie index works from creation
+            outstandingBalance: customerData.initialBalance || 0,
             isBreadClient: false,
             createdAt: now,
             updatedAt: now,
@@ -131,6 +132,12 @@ class CustomerService {
         };
 
         await db.customers.update(existing.id, dataToUpdate);
+        
+        // Recalculer le solde si le solde initial a changé
+        if (customerData.initialBalance !== undefined) {
+            await this.recalculateCustomerStatus(uuid);
+        }
+
         useAppStore.getState().actions.triggerSmartSync();
         return { ...existing, ...dataToUpdate };
     }
@@ -298,20 +305,10 @@ class CustomerService {
             .reverse();
     }
 
-    /**
-     * FIX #2: Outstanding balance now correctly accounts for amountPaid
-     * recorded directly on each sale (in addition to separate Payment records).
-     *
-     * Formula:
-     *   balance = totalInvoiced
-     *           - totalPaidAtSale       ← was missing before
-     *           - totalPaidViaPayments
-     *           - netCreditFromReturns
-     */
     async recalculateCustomerStatus(customerUuid: string): Promise<Customer> {
         const customer = await this.getCustomerByUuid(customerUuid);
         if (!customer?.id)
-            throw new Error('Customer not found during recalculation.');
+            throw new Error('Client non trouvé lors du recalcul.');
 
         const now = new Date();
         const currentDayOfMonth = now.getDate();
@@ -327,8 +324,6 @@ class CustomerService {
         ]);
 
         const totalInvoiced = sales.reduce((sum, s) => sum + s.total, 0);
-
-        // FIX #2: include cash collected at the moment of each sale
         const totalPaidAtSale = sales.reduce(
             (sum, s) => sum + (s.amountPaid || 0),
             0,
@@ -342,11 +337,14 @@ class CustomerService {
             0,
         );
 
+        // Formule: Solde Initial + Ventes - Paiements - Avoirs Retours
         const newBalance =
+            (customer.initialBalance || 0) +
             totalInvoiced -
             totalPaidAtSale -
             totalPaidViaPayments -
             netCreditFromReturns;
+            
         const totalSpent = totalInvoiced;
 
         const isOverLimit =
@@ -466,10 +464,7 @@ class CustomerService {
                                 settlementDay: row.settlementDay
                                     ? parseInt(row.settlementDay)
                                     : undefined,
-                                // FIX #25: do NOT import outstandingBalance from CSV —
-                                // it would bypass the recalculation logic and create
-                                // inconsistencies with actual sales/payments in the DB.
-                                // outstandingBalance is always computed by recalculateCustomerStatus.
+                                initialBalance: row.initialBalance || row.solde || row.dette || row.debt || 0,
                             };
 
                             if (existingCustomer) {
@@ -504,8 +499,7 @@ class CustomerService {
             uuid: uuidv4(),
             searchName: `${c.firstName} ${c.lastName}`.toLowerCase().trim(),
             totalSpent: 0,
-            // FIX #25: always start with 0 — never import an arbitrary balance
-            outstandingBalance: 0,
+            outstandingBalance: parseFloat(c.initialBalance) || 0,
             isBreadClient: false,
             createdAt: now,
             updatedAt: now,

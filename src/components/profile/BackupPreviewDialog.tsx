@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useCallback, useEffect } from 'react';
@@ -77,7 +78,7 @@ const APP_FIELDS: Record<string, { label: string, key: string }[]> = {
         { label: 'Adresse', key: 'address' },
         { label: 'Jour Règlement', key: 'settlementDay' },
         { label: 'Limite Crédit', key: 'creditLimit' },
-        { label: 'Solde Initial', key: 'outstandingBalance' },
+        { label: 'Solde Initial', key: 'initialBalance' },
     ],
     suppliers: [
         { label: 'Nom', key: 'name' },
@@ -134,15 +135,13 @@ export function BackupPreviewDialog({ isOpen, onOpenChange, initialData }: Backu
             const cols: Record<string, Set<string>> = {};
             const mappings: Record<string, Record<string, string>> = {};
             
-            // Get known table names from db.tables to prevent "Table not found" crashes
             const knownTables = new Set(db.tables.map(t => t.name));
 
             Object.keys(initialData).forEach(tableId => {
-                if (!knownTables.has(tableId)) return; // CRITICAL FIX: Skip unknown tables from source file
+                if (!knownTables.has(tableId)) return;
 
                 let tableContent = initialData[tableId];
                 
-                // Assure que chaque segment est un tableau
                 if (tableContent && !Array.isArray(tableContent)) {
                     tableContent = [tableContent];
                 }
@@ -161,7 +160,10 @@ export function BackupPreviewDialog({ isOpen, onOpenChange, initialData }: Backu
                             p.key.toLowerCase() === sCol.toLowerCase() || 
                             p.label.toLowerCase() === sCol.toLowerCase() ||
                             (sCol.toLowerCase() === 'sellingprice' && p.key === 'price') ||
-                            (sCol.toLowerCase() === 'purchaseprice' && p.key === 'purchasePrice')
+                            (sCol.toLowerCase() === 'purchaseprice' && p.key === 'purchasePrice') ||
+                            (sCol.toLowerCase() === 'solde' && p.key === 'initialBalance') ||
+                            (sCol.toLowerCase() === 'dette' && p.key === 'initialBalance') ||
+                            (sCol.toLowerCase() === 'debt' && p.key === 'initialBalance')
                         );
                         if (match) mappings[tableId][sCol] = match.key;
                     });
