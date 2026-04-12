@@ -34,21 +34,21 @@ export function CustomerMetrics({ customer }: CustomerMetricsProps) {
                             <Landmark className="h-8 w-8" />
                         </div>
                         <div className="text-right">
-                            <span className="text-[10px] font-semibold uppercase opacity-40">Statut Financier</span>
+                            <span className="text-[10px] font-semibold uppercase opacity-40">Situation Comptable</span>
                             <p className={cn(
                                 "text-[10px] font-semibold uppercase tracking-wide mt-1",
                                 balance > 0.01 ? "text-destructive" : "text-emerald-500"
                             )}>
-                                {balance > 0.01 ? 'Dette Active' : 'Solde Équilibré'}
+                                {balance > 0.01 ? 'Exigibilité Active' : 'Compte Équilibré'}
                             </p>
                         </div>
                     </div>
                     
                     <div className="space-y-1">
-                        <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground opacity-50">Solde Débiteur Actuel</span>
+                        <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground opacity-50">Dette Totale Exigible</span>
                         <div className="flex items-baseline gap-2">
                             <p className={cn(
-                                "text-lg font-semibold tracking-tighter",
+                                "text-3xl font-black tracking-tighter",
                                 balance > 0.01 ? "text-destructive" : "text-foreground"
                             )}>
                                 {formatCurrency(balance)}
@@ -56,18 +56,20 @@ export function CustomerMetrics({ customer }: CustomerMetricsProps) {
                         </div>
                     </div>
 
-                    {/* Report de solde initial */}
-                    <div className="mt-4 pt-4 border-t border-white/5 flex justify-between items-center bg-black/10 -mx-4 px-4 py-3">
-                        <span className="text-[9px] font-semibold uppercase text-muted-foreground/60 flex items-center gap-1.5">
-                            <History className="h-3 w-3 text-primary" /> Solde de Report (Initial)
-                        </span>
-                        <span className="text-[10px] font-bold text-primary">{formatCurrency(initialBalance)}</span>
-                    </div>
+                    {/* Détail du report initial pour transparence */}
+                    {Math.abs(initialBalance) > 0.01 && (
+                        <div className="mt-4 pt-4 border-t border-white/5 flex justify-between items-center bg-black/10 -mx-4 px-4 py-3">
+                            <span className="text-[9px] font-semibold uppercase text-muted-foreground/60 flex items-center gap-1.5">
+                                <History className="h-3 w-3 text-primary" /> Report Dette Initiale
+                            </span>
+                            <span className="text-[10px] font-bold text-primary">{formatCurrency(initialBalance)}</span>
+                        </div>
+                    )}
 
                     {limit > 0 && (
                         <div className="mt-6 space-y-3">
                             <div className="flex justify-between text-[9px] font-semibold uppercase tracking-wide">
-                                <span className="text-muted-foreground/60">Utilisation du Crédit</span>
+                                <span className="text-muted-foreground/60">Consommation du Crédit</span>
                                 <span className={cn(creditUsage > 90 ? "text-destructive" : "text-primary")}>{creditUsage.toFixed(1)}%</span>
                             </div>
                             <div className="h-2 bg-black/20 rounded-full overflow-hidden shadow-inner">
@@ -91,7 +93,7 @@ export function CustomerMetrics({ customer }: CustomerMetricsProps) {
                             </div>
                         </div>
                         <div className="space-y-0.5">
-                            <p className="text-[9px] font-semibold uppercase tracking-wide text-muted-foreground/40">Volume Achats</p>
+                            <p className="text-[9px] font-semibold uppercase tracking-wide text-muted-foreground/40">Volume Total</p>
                             <p className="text-xl font-semibold tracking-tight">{formatCurrency(customer.totalSpent)}</p>
                         </div>
                     </CardContent>
@@ -107,7 +109,7 @@ export function CustomerMetrics({ customer }: CustomerMetricsProps) {
                         <div className="space-y-0.5">
                             <p className="text-[9px] font-semibold uppercase tracking-wide text-muted-foreground/40">Limite Autorisée</p>
                             <p className="text-xl font-semibold tracking-tight">
-                                {limit > 0 ? formatCurrency(limit) : '∞'}
+                                {limit > 0 ? formatCurrency(limit) : 'ILLIMITÉ'}
                             </p>
                         </div>
                     </CardContent>

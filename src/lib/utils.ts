@@ -22,7 +22,7 @@ export function safeToDate(date: Date | string): Date {
 
 /**
  * Convertit n'importe quelle valeur en nombre sain.
- * Gère les espaces (milliers), رموز العملات, les virgules (décimales) et les valeurs nulles.
+ * Gère les espaces (milliers), les virgules (décimales) et les valeurs nulles.
  * Très robuste pour les imports CSV/JSON pollués.
  */
 export function safeNumber(val: any): number {

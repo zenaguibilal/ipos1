@@ -102,7 +102,7 @@ class CustomerService {
             settlementDay: customerData.settlementDay,
             creditLimit: safeNumber(customerData.creditLimit),
             initialBalance: initialBal,
-            totalSpent: 0,
+            totalSpent: initialBal, // Inclure le solde initial dans la valeur totale gérée
             outstandingBalance: initialBal,
             isBreadClient: false,
             createdAt: now,
@@ -342,16 +342,19 @@ class CustomerService {
         ]);
 
         // Arithmétique haute précision avec safeNumber
-        const totalInvoiced = sales.reduce((sum, s) => sum + safeNumber(s.total), 0);
-        const totalPaidAtSale = sales.reduce((sum, s) => sum + safeNumber(s.amountPaid), 0);
-        const totalPaidViaPayments = payments.reduce((sum, p) => sum + safeNumber(p.amount), 0);
+        const totalSalesInvoiced = sales.reduce((sum, s) => sum + safeNumber(s.total), 0);
+        const totalSalesPaid = sales.reduce((sum, s) => sum + safeNumber(s.amountPaid), 0);
+        const currentSalesDebt = totalSalesInvoiced - totalSalesPaid; // Dette générée par les ventes actuelles
+
+        const totalPaymentsFromLogs = payments.reduce((sum, p) => sum + safeNumber(p.amount), 0);
         const netCreditFromReturns = returns.reduce((sum, r) => sum + (safeNumber(r.totalReturnValue) - safeNumber(r.amountRefunded)), 0);
 
-        // FORMULE FINALE: Solde = الرصيد الابتدائي + (المبيعات - المدفوع عند البيع) - المدفوعات اللاحقة - رصيد المرتجعات
+        // FORMULE FINALE : Dette Totale = Solde Initial + Dette des Ventes - Paiements - Avoirs Retours
         const initial = safeNumber(customer.initialBalance);
-        const newBalance = initial + totalInvoiced - totalPaidAtSale - totalPaidViaPayments - netCreditFromReturns;
+        const newBalance = initial + currentSalesDebt - totalPaymentsFromLogs - netCreditFromReturns;
             
-        const totalSpent = totalInvoiced;
+        // Total consommé inclut aussi le report initial
+        const totalSpent = totalSalesInvoiced + initial;
 
         const creditLimit = safeNumber(customer.creditLimit);
         const isOverLimit = creditLimit > 0 ? newBalance > (creditLimit + 0.01) : false;
@@ -399,7 +402,6 @@ class CustomerService {
                 complete: async results => {
                     try {
                         const existingCustomers = await this.getCustomers();
-                        // On garde l'objet complet pour avoir accès à l'ID interne
                         const existingMap = new Map(
                             existingCustomers.map(c => [c.searchName, c]),
                         );
@@ -444,7 +446,7 @@ class CustomerService {
                                 analysis.customersToUpdate.push({
                                     ...customerData,
                                     uuid: existingCustomer.uuid,
-                                    id: existingCustomer.id, // CRITIQUE: On préserve l'ID pour bulkPut
+                                    id: existingCustomer.id,
                                 });
                             } else {
                                 analysis.customersToAdd.push(customerData);
@@ -474,7 +476,7 @@ class CustomerService {
                 ...c,
                 uuid: uuidv4(),
                 searchName: `${c.firstName} ${c.lastName}`.toLowerCase().trim(),
-                totalSpent: 0,
+                totalSpent: initialBal,
                 initialBalance: initialBal,
                 outstandingBalance: initialBal,
                 isBreadClient: false,
