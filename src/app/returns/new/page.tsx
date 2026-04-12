@@ -3,7 +3,7 @@
 import { NewReturnForm } from '@/components/returns/NewReturnForm';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { Suspense } from 'react';
 
@@ -19,7 +19,7 @@ export default function NewReturnPage() {
                 </Button>
                 <PageHeader 
                     title="Régularisation / Nouveau Retour" 
-                    description="Traitement des litiges marchandises و rééquilibrage des créances"
+                    description="Traitement des litiges marchandises et rééquilibrage des créances"
                 />
             </div>
 

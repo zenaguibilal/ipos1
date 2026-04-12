@@ -5,8 +5,8 @@ import type { DateRange } from 'react-day-picker';
 import { subDays, startOfDay, endOfDay } from 'date-fns';
 
 /**
- * useDateRange — Hook لتحديد نطاق زمني.
- * تم تعديله ليبدأ بـ undefined لتجنب أخطاء الـ Hydration (التعارض بين الخادم والمتصفح).
+ * useDateRange — Hook pour définir une plage de dates.
+ * Initialisé à undefined pour éviter les erreurs de Hydration (conflit serveur/client).
  */
 export function useDateRange(defaultDays: number = 6) {
     const [dateRange, setDateRange] = useState<DateRange | undefined>();
