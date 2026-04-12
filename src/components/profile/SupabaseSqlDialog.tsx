@@ -14,7 +14,7 @@ import { Database, Copy, Check, Terminal } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { toast } from 'sonner';
 
-const SUPABASE_SQL_SCRIPT = `-- iPOS Luxury - Elite Cloud Schema (Verified v1.9.5)
+const SUPABASE_SQL_SCRIPT = `-- iPOS Luxury - Elite Cloud Schema (Verified v1.9.6)
 -- Ce script initialise votre coffre-fort Cloud avec une précision de type absolue.
 -- Note: La sécurité RLS est désactivée pour faciliter la synchronisation locale-first.
 
@@ -64,6 +64,7 @@ CREATE TABLE IF NOT EXISTS customers (
     address TEXT,
     "settlementDay" INTEGER,
     "creditLimit" NUMERIC,
+    "initialBalance" NUMERIC DEFAULT 0,
     "totalSpent" NUMERIC DEFAULT 0,
     "outstandingBalance" NUMERIC DEFAULT 0,
     "lastActivityDate" TIMESTAMPTZ,

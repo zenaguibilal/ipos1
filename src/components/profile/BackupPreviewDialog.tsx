@@ -118,6 +118,13 @@ const APP_FIELDS: Record<string, { label: string, key: string }[]> = {
     ],
 };
 
+const NUMERIC_FIELDS = [
+    'price', 'purchasePrice', 'quantity', 'minStockLevel', 
+    'settlementDay', 'creditLimit', 'initialBalance', 'totalSpent', 'outstandingBalance', 
+    'balance', 'amount', 'subtotal', 'discountAmount', 'total', 'amountPaid', 'remainingBalance', 
+    'shippingCost', 'totalValue', 'totalReturnValue', 'amountRefunded', 'quantite'
+];
+
 export function BackupPreviewDialog({ isOpen, onOpenChange, initialData }: BackupPreviewDialogProps) {
     const [data, setData] = useState<Record<string, any[]>>(initialData);
     const [activeCategory, setActiveCategory] = useState<Category>('products');
@@ -258,7 +265,19 @@ export function BackupPreviewDialog({ isOpen, onOpenChange, initialData }: Backu
                         Object.keys(record).forEach(sourceKey => {
                             if (tableCols.has(sourceKey) && sourceKey !== 'uuid' && sourceKey !== 'id' && sourceKey !== '_removed') {
                                 const targetKey = mappings[sourceKey] || sourceKey;
-                                transformed[targetKey] = record[sourceKey];
+                                let value = record[sourceKey];
+
+                                // Force correct type based on field name
+                                if (NUMERIC_FIELDS.includes(targetKey)) {
+                                    value = parseFloat(value) || 0;
+                                }
+
+                                if (targetKey.toLowerCase().includes('date') && typeof value === 'string' && value) {
+                                    const d = new Date(value);
+                                    if (!isNaN(d.getTime())) value = d;
+                                }
+
+                                transformed[targetKey] = value;
                             }
                         });
                         
@@ -287,7 +306,7 @@ export function BackupPreviewDialog({ isOpen, onOpenChange, initialData }: Backu
                 <DialogHeader className="bg-primary/5 p-4 border-b border-primary/10">
                     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
                         <div className="flex items-center gap-4">
-                            <div className="p-3.5 rounded-2xl bg-primary text-primary-foreground shadow-sm shadow-sm">
+                            <div className="p-3.5 rounded-2xl bg-primary text-primary-foreground shadow-sm">
                                 <Database className="h-6 w-6" />
                             </div>
                             <div>
@@ -494,7 +513,7 @@ export function BackupPreviewDialog({ isOpen, onOpenChange, initialData }: Backu
 
                 <DialogFooter className="bg-black/40 p-4 border-t border-white/5 flex justify-between items-center text-[9px] text-muted-foreground font-semibold uppercase opacity-30">
                     <span className="flex items-center gap-2 italic"><CheckCircle2 className="h-3 w-3" /> Audit en cours : {selectedTables.size} segments surveillés</span>
-                    <span>iPOS Luxury Elite Restore Engine v1.9.2</span>
+                    <span>iPOS Luxury Elite Restore Engine v1.9.6</span>
                 </DialogFooter>
             </DialogContent>
         </Dialog>

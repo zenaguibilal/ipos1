@@ -99,9 +99,9 @@ class CustomerService {
             address: customerData.address,
             settlementDay: customerData.settlementDay,
             creditLimit: customerData.creditLimit,
-            initialBalance: customerData.initialBalance || 0,
+            initialBalance: Number(customerData.initialBalance) || 0,
             totalSpent: 0,
-            outstandingBalance: customerData.initialBalance || 0,
+            outstandingBalance: Number(customerData.initialBalance) || 0,
             isBreadClient: false,
             createdAt: now,
             updatedAt: now,
@@ -130,6 +130,10 @@ class CustomerService {
             searchName,
             updatedAt: new Date(),
         };
+
+        if (customerData.initialBalance !== undefined) {
+            dataToUpdate.initialBalance = Number(customerData.initialBalance);
+        }
 
         await db.customers.update(existing.id, dataToUpdate);
         
@@ -339,7 +343,7 @@ class CustomerService {
 
         // Formule: Solde Initial + Ventes - Paiements - Avoirs Retours
         const newBalance =
-            (customer.initialBalance || 0) +
+            (Number(customer.initialBalance) || 0) +
             totalInvoiced -
             totalPaidAtSale -
             totalPaidViaPayments -
@@ -460,11 +464,11 @@ class CustomerService {
                                 address: row.address || row.adresse,
                                 creditLimit: row.creditLimit
                                     ? parseFloat(row.creditLimit)
-                                    : undefined,
+                                    : 0,
                                 settlementDay: row.settlementDay
                                     ? parseInt(row.settlementDay)
-                                    : undefined,
-                                initialBalance: row.initialBalance || row.solde || row.dette || row.debt || 0,
+                                    : 0,
+                                initialBalance: parseFloat(row.initialBalance || row.solde || row.dette || row.debt || '0'),
                             };
 
                             if (existingCustomer) {
@@ -494,19 +498,24 @@ class CustomerService {
     }): Promise<void> {
         const now = new Date();
 
-        const toAdd = confirmedData.toAdd.map(c => ({
-            ...c,
-            uuid: uuidv4(),
-            searchName: `${c.firstName} ${c.lastName}`.toLowerCase().trim(),
-            totalSpent: 0,
-            outstandingBalance: parseFloat(c.initialBalance) || 0,
-            isBreadClient: false,
-            createdAt: now,
-            updatedAt: now,
-        }));
+        const toAdd = confirmedData.toAdd.map(c => {
+            const initialBal = Number(c.initialBalance) || 0;
+            return {
+                ...c,
+                uuid: uuidv4(),
+                searchName: `${c.firstName} ${c.lastName}`.toLowerCase().trim(),
+                totalSpent: 0,
+                initialBalance: initialBal,
+                outstandingBalance: initialBal,
+                isBreadClient: false,
+                createdAt: now,
+                updatedAt: now,
+            };
+        });
 
         const toUpdate = confirmedData.toUpdate.map(c => ({
             ...c,
+            initialBalance: Number(c.initialBalance) || 0,
             searchName: `${c.firstName} ${c.lastName}`.toLowerCase().trim(),
             updatedAt: now,
         }));
@@ -515,6 +524,11 @@ class CustomerService {
             if (toAdd.length > 0)   await db.customers.bulkAdd(toAdd);
             if (toUpdate.length > 0) await db.customers.bulkPut(toUpdate);
         });
+
+        // For each updated customer, recalculate to be safe
+        for (const c of toUpdate) {
+            await this.recalculateCustomerStatus(c.uuid);
+        }
 
         useAppStore.getState().actions.triggerSmartSync();
     }
