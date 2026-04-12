@@ -254,11 +254,12 @@ class CustomerService {
         ];
 
         // ADD: Initial balance as a starting point in timeline
-        if (customer && customer.initialBalance > 0) {
+        // On s'assure qu'il est toujours inclus s'il est non nul
+        if (customer && Math.abs(Number(customer.initialBalance)) > 0.001) {
             activity.push({
                 uuid: 'initial-balance-' + customer.uuid,
                 type: 'initial_balance',
-                date: customer.createdAt || new Date(0),
+                date: customer.createdAt || new Date(0), // Date la plus ancienne possible
                 amount: customer.initialBalance,
                 notes: 'Report de solde historique'
             });

@@ -16,7 +16,8 @@ import {
     MapPin, 
     Phone,
     User,
-    Sparkles
+    Sparkles,
+    History
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -344,6 +345,18 @@ export default function CustomerDetailClient() {
                                     <span className="font-semibold text-base leading-tight">{customer.address || '-'}</span>
                                 </div>
                             </div>
+                        </div>
+                    </div>
+
+                    {/* Section spécifique pour le solde initial */}
+                    <div className="p-4 bg-primary/5 rounded-lg border border-primary/10 space-y-3 shadow-inner group">
+                        <div className="flex items-center gap-3 text-primary">
+                            <History className="h-4 w-4" />
+                            <h4 className="text-[10px] font-semibold uppercase tracking-wide">Situation de Départ</h4>
+                        </div>
+                        <div className="flex justify-between items-center">
+                            <span className="text-[11px] font-medium text-muted-foreground/60">Solde à l'ouverture :</span>
+                            <span className="text-sm font-bold text-primary">{formatCurrency(customer.initialBalance)}</span>
                         </div>
                     </div>
 

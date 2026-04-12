@@ -10,10 +10,10 @@ interface CustomerMetricsProps {
 }
 
 export function CustomerMetrics({ customer }: CustomerMetricsProps) {
-    const balance = customer.outstandingBalance || 0;
-    const limit = customer.creditLimit || 0;
+    const balance = Number(customer.outstandingBalance) || 0;
+    const limit = Number(customer.creditLimit) || 0;
+    const initialBalance = Number(customer.initialBalance) || 0;
     const creditUsage = limit > 0 ? (balance / limit) * 100 : 0;
-    const initialBalance = customer.initialBalance || 0;
 
     return (
         <div className="space-y-6">
@@ -45,7 +45,7 @@ export function CustomerMetrics({ customer }: CustomerMetricsProps) {
                     </div>
                     
                     <div className="space-y-1">
-                        <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground opacity-50">Solde Débiteur</span>
+                        <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground opacity-50">Solde Déبiteur Actuel</span>
                         <div className="flex items-baseline gap-2">
                             <p className={cn(
                                 "text-lg font-semibold tracking-tighter",
@@ -56,17 +56,16 @@ export function CustomerMetrics({ customer }: CustomerMetricsProps) {
                         </div>
                     </div>
 
-                    {initialBalance > 0 && (
-                        <div className="mt-4 pt-4 border-t border-white/5 flex justify-between items-center">
-                            <span className="text-[9px] font-semibold uppercase text-muted-foreground opacity-40 flex items-center gap-1.5">
-                                <History className="h-2.5 w-2.5" /> Dont Dette Initiale
-                            </span>
-                            <span className="text-[10px] font-bold text-muted-foreground/60">{formatCurrency(initialBalance)}</span>
-                        </div>
-                    )}
+                    {/* Toujours afficher le solde initial pour la traçabilité */}
+                    <div className="mt-4 pt-4 border-t border-white/5 flex justify-between items-center bg-black/10 -mx-4 px-4 py-3">
+                        <span className="text-[9px] font-semibold uppercase text-muted-foreground/60 flex items-center gap-1.5">
+                            <History className="h-3 w-3 text-primary" /> Solde de Report (Initial)
+                        </span>
+                        <span className="text-[10px] font-bold text-primary">{formatCurrency(initialBalance)}</span>
+                    </div>
 
                     {limit > 0 && (
-                        <div className="mt-8 space-y-3">
+                        <div className="mt-6 space-y-3">
                             <div className="flex justify-between text-[9px] font-semibold uppercase tracking-wide">
                                 <span className="text-muted-foreground/60">Utilisation du Crédit</span>
                                 <span className={cn(creditUsage > 90 ? "text-destructive" : "text-primary")}>{creditUsage.toFixed(1)}%</span>
