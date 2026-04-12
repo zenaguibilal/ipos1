@@ -1,3 +1,4 @@
+
 'use client';
 
 import React from 'react';
@@ -8,9 +9,6 @@ import { fr }     from 'date-fns/locale';
 import { cn }     from '@/lib/utils';
 import QRCode     from 'qrcode';
 
-// ─────────────────────────────────────────
-// QR Code canvas helper
-// ─────────────────────────────────────────
 const QRCodeCanvas = ({ text }: { text: string }) => {
     const ref = React.useRef<HTMLCanvasElement>(null);
     React.useEffect(() => {
@@ -26,24 +24,17 @@ const QRCodeCanvas = ({ text }: { text: string }) => {
     return <canvas ref={ref} className="mx-auto" />;
 };
 
-// ─────────────────────────────────────────
-// Props
-// ─────────────────────────────────────────
 interface ReceiptProps {
     sale:        Sale;
     profile:     CompanyProfile | null;
     receiptType: 'a4' | 'thermal';
-    customerName?: string; // Ajout du nom du client
+    customerName?: string;
 }
 
-// ─────────────────────────────────────────
-// Receipt component
-// ─────────────────────────────────────────
 export const Receipt = React.forwardRef<HTMLDivElement, ReceiptProps>(
     ({ sale, profile, receiptType, customerName }, ref) => {
         const thermal = receiptType === 'thermal';
 
-        // Montants calculés
         const amountPaid      = Number(sale.amountPaid      || 0);
         const total           = Number(sale.total           || 0);
         const remainingBalance = Number(sale.remainingBalance || 0);
@@ -52,6 +43,11 @@ export const Receipt = React.forwardRef<HTMLDivElement, ReceiptProps>(
 
         const hasDebt         = remainingBalance > 0.01;
         const changeGiven     = Math.max(0, amountPaid - total);
+
+        // Resolve display name: use prop if valid, then ID, then Passage
+        const displayName = customerName && customerName !== 'Client de passage' 
+            ? customerName 
+            : (sale.customerUuid ? `Client #${sale.customerUuid.substring(0, 8)}` : 'Passage');
 
         return (
             <div
@@ -63,28 +59,19 @@ export const Receipt = React.forwardRef<HTMLDivElement, ReceiptProps>(
                         : 'w-[210mm] min-h-[297mm] mx-auto px-12 py-12 font-sans text-[11pt] shadow-sm border border-gray-100',
                 )}
             >
-                {/* ── Header ── */}
                 <header className="text-center mb-4">
-                    <p
-                        className={cn(
-                            'font-bold uppercase tracking-tighter',
-                            thermal ? 'text-lg' : 'text-2xl',
-                        )}
-                    >
+                    <p className={cn('font-bold uppercase tracking-tighter', thermal ? 'text-lg' : 'text-2xl')}>
                         {profile?.companyName || 'iPOS Zen'}
                     </p>
                     <div className="text-[9pt] text-gray-700 mt-1 space-y-0.5">
                         {profile?.address && <p>{profile.address}</p>}
-                        {profile?.phone   && (
-                            <p className="font-semibold">Tél: {profile.phone}</p>
-                        )}
-                        {profile?.email   && <p>{profile.email}</p>}
+                        {profile?.phone && <p className="font-semibold">Tél: {profile.phone}</p>}
+                        {profile?.email && <p>{profile.email}</p>}
                     </div>
                 </header>
 
                 <div className="border-b-2 border-black mb-4" />
 
-                {/* ── Métadonnées ── */}
                 <section className="text-[9pt] mb-4 space-y-1">
                     <div className="flex justify-between font-bold">
                         <span>FACTURE N°:</span>
@@ -93,62 +80,40 @@ export const Receipt = React.forwardRef<HTMLDivElement, ReceiptProps>(
                     <div className="flex justify-between">
                         <span>DATE & HEURE:</span>
                         <span>
-                            {format(
-                                safeToDate(sale.createdAt!),
-                                'dd/MM/yyyy HH:mm',
-                                { locale: fr },
-                            )}
+                            {format(safeToDate(sale.createdAt!), 'dd/MM/yyyy HH:mm', { locale: fr })}
                         </span>
                     </div>
-                    {/* Affichage du nom du client au lieu de l'ID */}
                     <div className="flex justify-between italic">
                         <span>CLIENT:</span>
-                        <span className="font-bold">
-                            {customerName || (sale.customerUuid ? `#${sale.customerUuid.substring(0, 8)}` : 'Passage')}
-                        </span>
+                        <span className="font-bold">{displayName}</span>
                     </div>
                 </section>
 
                 <div className="border-b border-dashed border-gray-400 mb-2" />
 
-                {/* ── Tableau articles ── */}
                 <table className="w-full text-[9pt] mb-4 border-collapse">
                     <thead>
                         <tr className="border-b-2 border-black text-left">
                             <th className="pb-1 font-bold">ARTICLE</th>
                             <th className="pb-1 text-center font-bold w-10">QTÉ</th>
-                            {!thermal && (
-                                <th className="pb-1 text-right font-bold w-20">P.U</th>
-                            )}
+                            {!thermal && <th className="pb-1 text-right font-bold w-20">P.U</th>}
                             <th className="pb-1 text-right font-bold w-24">TOTAL</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200">
                         {sale.items.map((item, i) => (
                             <tr key={i} className="align-top">
-                                <td className="py-1.5 pr-2 font-medium leading-snug">
-                                    {item.name}
-                                </td>
-                                <td className="py-1.5 text-center font-mono">
-                                    {item.quantity}
-                                </td>
-                                {!thermal && (
-                                    <td className="py-1.5 text-right font-mono">
-                                        {Number(item.price || 0).toFixed(2)}
-                                    </td>
-                                )}
+                                <td className="py-1.5 pr-2 font-medium leading-snug">{item.name}</td>
+                                <td className="py-1.5 text-center font-mono">{item.quantity}</td>
+                                {!thermal && <td className="py-1.5 text-right font-mono">{Number(item.price || 0).toFixed(2)}</td>}
                                 <td className="py-1.5 text-right font-bold font-mono">
-                                    {(
-                                        Number(item.price    || 0) *
-                                        Number(item.quantity || 0)
-                                    ).toFixed(2)}
+                                    {(Number(item.price || 0) * Number(item.quantity || 0)).toFixed(2)}
                                 </td>
                             </tr>
                         ))}
                     </tbody>
                 </table>
 
-                {/* ── Totaux ── */}
                 <div className="border-t-2 border-black pt-2 space-y-1.5">
                     <div className="flex justify-between text-[9pt]">
                         <span>SOUS-TOTAL:</span>
@@ -158,9 +123,7 @@ export const Receipt = React.forwardRef<HTMLDivElement, ReceiptProps>(
                     {discountAmount > 0 && (
                         <div className="flex justify-between text-[9pt] text-gray-600">
                             <span>REMISE:</span>
-                            <span className="font-mono">
-                                -{formatCurrency(discountAmount)}
-                            </span>
+                            <span className="font-mono">-{formatCurrency(discountAmount)}</span>
                         </div>
                     )}
 
@@ -175,27 +138,18 @@ export const Receipt = React.forwardRef<HTMLDivElement, ReceiptProps>(
                     </div>
 
                     <div className="flex justify-between text-[10pt] font-bold">
-                        <span>
-                            {hasDebt ? 'SOLDE DÛ (DETTE):' : 'MONNAIE RENDUE:'}
-                        </span>
+                        <span>{hasDebt ? 'SOLDE DÛ (DETTE):' : 'MONNAIE RENDUE:'}</span>
                         <span className="font-mono text-lg">
-                            {hasDebt
-                                ? formatCurrency(remainingBalance)
-                                : formatCurrency(changeGiven)}
+                            {hasDebt ? formatCurrency(remainingBalance) : formatCurrency(changeGiven)}
                         </span>
                     </div>
                 </div>
 
-                {/* ── Footer + QR ── */}
                 <footer className="text-center mt-8 border-t border-dashed border-gray-300 pt-4">
-                    <p className="text-[8pt] font-bold italic mb-4">
-                        MERCI DE VOTRE VISITE ET À BIENTÔT !
-                    </p>
+                    <p className="text-[8pt] font-bold italic mb-4">MERCI DE VOTRE VISITE ET À BIENTÔT !</p>
                     <div className="flex flex-col items-center gap-2">
                         <QRCodeCanvas text={sale.invoiceNumber} />
-                        <p className="text-[7pt] font-mono opacity-40 uppercase tracking-widest">
-                            {sale.invoiceNumber}
-                        </p>
+                        <p className="text-[7pt] font-mono opacity-40 uppercase tracking-widest">{sale.invoiceNumber}</p>
                     </div>
                 </footer>
             </div>

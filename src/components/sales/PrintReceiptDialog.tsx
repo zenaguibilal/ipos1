@@ -1,11 +1,11 @@
 
 'use client';
 
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Receipt } from './Receipt';
-import { Printer, X, FileText, Smartphone, MessageCircle, Share2, Loader2 } from 'lucide-react';
+import { Printer, X, FileText, Smartphone, MessageCircle, Loader2 } from 'lucide-react';
 import type { Sale, Customer } from '@/lib/types';
 import { useAppStore } from '@/stores/appStore';
 import { Switch } from '@/components/ui/switch';
@@ -32,13 +32,25 @@ export function PrintReceiptDialog({
     const [customer, setCustomer] = useState<Customer | null>(null);
     const receiptRef = useRef<HTMLDivElement>(null);
 
+    // Fetch customer details locally to ensure we have the real name and phone
     useEffect(() => {
         if (isOpen && sale?.customerUuid) {
-            customerService.getCustomerByUuid(sale.customerUuid).then(setCustomer);
+            customerService.getCustomerByUuid(sale.customerUuid)
+                .then(c => {
+                    if (c) setCustomer(c);
+                })
+                .catch(err => console.error("Error fetching customer for receipt:", err));
         } else {
             setCustomer(null);
         }
     }, [isOpen, sale]);
+
+    // Resolve the best available customer name
+    const resolvedCustomerName = useMemo(() => {
+        if (customer) return `${customer.firstName} ${customer.lastName}`;
+        if (customerName && customerName !== 'Client de passage') return customerName;
+        return 'Client de passage';
+    }, [customer, customerName]);
 
     const handlePrint = () => window.print();
 
@@ -47,16 +59,14 @@ export function PrintReceiptDialog({
         setIsGenerating(true);
 
         try {
-            // Importation dynamique des bibliothèques PDF pour réduire le bundle initial
             const { jsPDF } = await import('jspdf');
             const html2canvas = (await import('html2canvas')).default;
 
             const element = receiptRef.current;
-            if (!element) throw new Error("Référence de facture non trouvée");
+            if (!element) throw new Error("Référence de factura non trouvée");
 
-            // Capture de l'élément HTML
             const canvas = await html2canvas(element, {
-                scale: 2, // Haute qualité
+                scale: 2,
                 useCORS: true,
                 logging: false,
                 backgroundColor: "#ffffff"
@@ -76,7 +86,6 @@ export function PrintReceiptDialog({
             const pdfBlob = pdf.output('blob');
             const fileName = `Facture-${sale.invoiceNumber}.pdf`;
 
-            // Tentative de partage natif (Mobile)
             if (navigator.share && navigator.canShare && navigator.canShare({ files: [new File([pdfBlob], fileName, { type: 'application/pdf' })] })) {
                 const file = new File([pdfBlob], fileName, { type: 'application/pdf' });
                 await navigator.share({
@@ -85,7 +94,6 @@ export function PrintReceiptDialog({
                     text: `Bonjour, voici votre facture n°${sale.invoiceNumber}. Merci pour votre confiance.`
                 });
             } else {
-                // Fallback Desktop : Téléchargement + lien WhatsApp
                 const url = URL.createObjectURL(pdfBlob);
                 const link = document.createElement('a');
                 link.href = url;
@@ -97,10 +105,10 @@ export function PrintReceiptDialog({
                 const message = encodeURIComponent(`Bonjour, voici votre facture n°${sale.invoiceNumber}. Le fichier PDF a été téléchargé sur mon appareil.`);
                 window.open(`https://wa.me/${phone.replace(/\s/g, '')}?text=${message}`, '_blank');
                 
-                toast.success("PDF généré et téléchargé. Veuillez l'attacher manuellement sur WhatsApp Web.");
+                toast.success("PDF généré. Veuillez l'envoyer sur WhatsApp.");
             }
         } catch (error: any) {
-            console.error("Erreur génération PDF:", error);
+            console.error("Erreur PDF:", error);
             toast.error("Échec de la génération du PDF.");
         } finally {
             setIsGenerating(false);
@@ -111,9 +119,8 @@ export function PrintReceiptDialog({
 
     return (
         <>
-            {/* Real printable container (hidden on UI) */}
             <div className="hidden print:block fixed inset-0 z-[100] bg-white">
-                <Receipt sale={sale} profile={profile} receiptType={receiptType} customerName={customerName} />
+                <Receipt sale={sale} profile={profile} receiptType={receiptType} customerName={resolvedCustomerName} />
             </div>
 
             <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -146,10 +153,9 @@ export function PrintReceiptDialog({
                         </div>
                     </DialogHeader>
 
-                    {/* Preview Area */}
                     <div className="flex-grow overflow-y-auto bg-muted/30 p-6 custom-scrollbar flex justify-center">
                         <div className="origin-top scale-[0.85] sm:scale-100 transition-transform shadow-2xl bg-white" ref={receiptRef}>
-                            <Receipt sale={sale} profile={profile} receiptType={receiptType} customerName={customerName} />
+                            <Receipt sale={sale} profile={profile} receiptType={receiptType} customerName={resolvedCustomerName} />
                         </div>
                     </div>
 
