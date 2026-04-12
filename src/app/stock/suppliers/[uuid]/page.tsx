@@ -1,14 +1,17 @@
-import SupplierDetailClient from './SupplierDetailClient';
+import { redirect } from 'next/navigation';
 
 /**
- * @fileOverview Shell serveur pour la page détail fournisseur.
- * Nécessaire pour 'output: export' car generateStaticParams ne peut pas coexister avec 'use client'.
+ * @fileOverview Redirection des anciens chemins dynamiques vers le nouveau chemin statique 'detail'.
  */
 
 export function generateStaticParams() {
     return [{ uuid: 'detail' }];
 }
 
-export default function Page() {
-    return <SupplierDetailClient />;
+export default function Page({ params }: { params: { uuid: string } }) {
+    if (params.uuid !== 'detail') {
+        redirect(`/stock/suppliers/detail?uuid=${params.uuid}`);
+    }
+    
+    return null;
 }

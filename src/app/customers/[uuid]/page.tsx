@@ -1,14 +1,19 @@
-import CustomerDetailClient from './CustomerDetailClient';
+import { redirect } from 'next/navigation';
 
 /**
- * @fileOverview Shell serveur pour la page détail client.
- * Nécessaire pour 'output: export' car generateStaticParams ne peut pas coexister avec 'use client'.
+ * @fileOverview Redirection des anciens chemins dynamiques vers le nouveau chemin statique 'detail'.
+ * Cette approche évite les erreurs 'missing param' lors du build Next.js avec output: export.
  */
 
 export function generateStaticParams() {
     return [{ uuid: 'detail' }];
 }
 
-export default function Page() {
-    return <CustomerDetailClient />;
+export default function Page({ params }: { params: { uuid: string } }) {
+    // Si l'utilisateur arrive sur /customers/UUID, on le redirige vers le SPA handler
+    if (params.uuid !== 'detail') {
+        redirect(`/customers/detail?uuid=${params.uuid}`);
+    }
+    
+    return null;
 }

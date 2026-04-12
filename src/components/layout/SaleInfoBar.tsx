@@ -75,7 +75,7 @@ export function SaleInfoBar() {
                         <div className="flex items-center gap-1.5 min-w-0">
                             <User className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                             <Link
-                                href={`/customers/${customer.uuid}`}
+                                href={`/customers/detail?uuid=${customer.uuid}`}
                                 className="text-xs font-medium hover:text-primary transition-colors truncate max-w-[120px]"
                             >
                                 {customer.firstName} {customer.lastName}
