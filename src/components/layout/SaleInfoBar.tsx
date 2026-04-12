@@ -19,6 +19,7 @@ export function SaleInfoBar() {
 
     const [customer, setCustomer]               = useState<Customer | null>(null);
     const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
+    const [isMounted, setIsMounted] = useState(false);
 
     const fetchCustomer = useCallback(async () => {
         if (cart?.customerUuid) {
@@ -29,7 +30,12 @@ export function SaleInfoBar() {
         }
     }, [cart?.customerUuid]);
 
-    useEffect(() => { fetchCustomer(); }, [fetchCustomer]);
+    useEffect(() => { 
+        setIsMounted(true);
+        fetchCustomer(); 
+    }, [fetchCustomer]);
+
+    if (!isMounted) return null;
 
     const hasItems  = !!(cart && cart.items.length > 0);
     const isSellPage = pathname === '/sell';

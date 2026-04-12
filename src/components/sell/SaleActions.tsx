@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, memo } from 'react';
+import React, { useState, useEffect, memo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Wallet } from 'lucide-react';
 import { PaymentDialog } from './PaymentDialog';
@@ -15,8 +15,14 @@ interface SaleActionsProps {
 
 function SaleActionsContent({ payButtonRef, customerComboRef }: SaleActionsProps) {
     const [isPaymentOpen, setIsPaymentOpen] = useState(false);
-    const cart    = useActiveCart();
-    const hasItems = !!(cart && cart.items.length > 0);
+    const [mounted, setMounted] = useState(false);
+    const cart = useActiveCart();
+
+    useEffect(() => {
+        setMounted(true);
+    }, []);
+
+    const hasItems = !!(mounted && cart && cart.items.length > 0);
 
     return (
         <div className="flex items-center gap-2">

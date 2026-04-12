@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useState, useEffect } from 'react';
 import {
     Settings, Package, Users2, History, Undo2, Archive,
     Wallet, LayoutDashboard, Wheat, ShoppingCart, Building,
@@ -39,6 +40,11 @@ export function AppHeader() {
         companyProfile: state.companyProfile,
         isSyncing:      state.isSyncing,
     }));
+
+    const [mounted, setMounted] = useState(false);
+    useEffect(() => {
+        setMounted(true);
+    }, []);
 
     const lastSync = companyProfile?.last_sync_at;
 
@@ -95,7 +101,7 @@ export function AppHeader() {
                             >
                                 {isSyncing ? (
                                     <RefreshCw className="h-3 w-3 animate-spin text-primary" />
-                                ) : lastSync ? (
+                                ) : (mounted && lastSync) ? (
                                     <Cloud className="h-3 w-3 text-emerald-500" />
                                 ) : (
                                     <Cloud className="h-3 w-3" />
@@ -103,7 +109,7 @@ export function AppHeader() {
                                 <span className="hidden xl:inline text-xs">
                                     {isSyncing
                                         ? 'Sync...'
-                                        : lastSync
+                                        : (mounted && lastSync)
                                         ? format(new Date(lastSync), 'HH:mm', { locale: fr })
                                         : 'Non sync'}
                                 </span>
