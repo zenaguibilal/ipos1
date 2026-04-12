@@ -42,7 +42,6 @@ export function SaleDetailsDialog({
             .then(c => setCustomer(c || null));
     }, [sale]);
 
-    // Move useMemo ABOVE the early return to respect React Rules of Hooks
     const margin = useMemo(() => {
         if (!sale) return 0;
         const cogs = sale.items.reduce(
@@ -265,6 +264,7 @@ export function SaleDetailsDialog({
                 isOpen={isPrintOpen}
                 onOpenChange={setIsPrintOpen}
                 sale={sale}
+                customerName={customer ? `${customer.firstName} ${customer.lastName}` : 'Client de passage'}
             />
         </>
     );

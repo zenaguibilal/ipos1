@@ -609,7 +609,6 @@ export default function SalesHistoryPage() {
                 isOpen={isDetailsOpen}
                 onOpenChange={setIsDetailsOpen}
                 sale={selectedSale}
-                customerName={selectedSale?.customerUuid ? (customerMap.get(selectedSale.customerUuid) ? `${customerMap.get(selectedSale.customerUuid)?.firstName} ${customerMap.get(selectedSale.customerUuid)?.lastName}` : 'Client Inconnu') : 'Client de passage'}
             />
             
             <CancelSaleDialog 
@@ -623,6 +622,7 @@ export default function SalesHistoryPage() {
                 isOpen={isPrintOpen}
                 onOpenChange={setIsPrintOpen}
                 sale={selectedSale}
+                customerName={selectedSale?.customerUuid ? (customerMap.get(selectedSale.customerUuid) ? `${customerMap.get(selectedSale.customerUuid)?.firstName} ${customerMap.get(selectedSale.customerUuid)?.lastName}` : undefined) : 'Client de passage'}
             />
 
             <ConfirmAlertDialog

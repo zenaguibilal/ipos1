@@ -269,6 +269,7 @@ function PaymentDialogContent({
                 isOpen={isReceiptOpen}
                 onOpenChange={setIsReceiptOpen}
                 sale={lastSale}
+                customerName={customer ? `${customer.firstName} ${customer.lastName}` : 'Client de passage'}
             />
         </>
     );

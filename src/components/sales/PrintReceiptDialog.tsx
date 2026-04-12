@@ -14,12 +14,14 @@ interface PrintReceiptDialogProps {
     isOpen: boolean;
     onOpenChange: (open: boolean) => void;
     sale: Sale | null;
+    customerName?: string; // Reçoit le nom du client
 }
 
 export function PrintReceiptDialog({
     isOpen,
     onOpenChange,
     sale,
+    customerName,
 }: PrintReceiptDialogProps) {
     const profile = useAppStore(state => state.companyProfile);
     const [receiptType, setReceiptType] = useState<'a4' | 'thermal'>('thermal');
@@ -32,7 +34,7 @@ export function PrintReceiptDialog({
         <>
             {/* Real printable container (hidden on UI) */}
             <div className="hidden print:block fixed inset-0 z-[100] bg-white">
-                <Receipt sale={sale} profile={profile} receiptType={receiptType} />
+                <Receipt sale={sale} profile={profile} receiptType={receiptType} customerName={customerName} />
             </div>
 
             <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -68,7 +70,7 @@ export function PrintReceiptDialog({
                     {/* Preview Area */}
                     <div className="flex-grow overflow-y-auto bg-muted/30 p-6 custom-scrollbar flex justify-center">
                         <div className="origin-top scale-[0.85] sm:scale-100 transition-transform shadow-2xl">
-                            <Receipt sale={sale} profile={profile} receiptType={receiptType} />
+                            <Receipt sale={sale} profile={profile} receiptType={receiptType} customerName={customerName} />
                         </div>
                     </div>
 

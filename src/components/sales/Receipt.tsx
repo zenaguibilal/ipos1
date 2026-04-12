@@ -33,13 +33,14 @@ interface ReceiptProps {
     sale:        Sale;
     profile:     CompanyProfile | null;
     receiptType: 'a4' | 'thermal';
+    customerName?: string; // Ajout du nom du client
 }
 
 // ─────────────────────────────────────────
 // Receipt component
 // ─────────────────────────────────────────
 export const Receipt = React.forwardRef<HTMLDivElement, ReceiptProps>(
-    ({ sale, profile, receiptType }, ref) => {
+    ({ sale, profile, receiptType, customerName }, ref) => {
         const thermal = receiptType === 'thermal';
 
         // Montants calculés
@@ -49,10 +50,6 @@ export const Receipt = React.forwardRef<HTMLDivElement, ReceiptProps>(
         const subtotal        = Number(sale.subtotal        || 0);
         const discountAmount  = Number(sale.discountAmount  || 0);
 
-        // FIX #23 : les labels étaient inversés dans la version originale.
-        // Logique correcte :
-        //   • Si remainingBalance > 0  → le client DOIT encore de l'argent  → "SOLDE DÛ"
-        //   • Si remainingBalance ≤ 0  → le client a trop payé / soldé       → "MONNAIE RENDUE"
         const hasDebt         = remainingBalance > 0.01;
         const changeGiven     = Math.max(0, amountPaid - total);
 
@@ -103,14 +100,13 @@ export const Receipt = React.forwardRef<HTMLDivElement, ReceiptProps>(
                             )}
                         </span>
                     </div>
-                    {sale.customerUuid && (
-                        <div className="flex justify-between italic">
-                            <span>CLIENT:</span>
-                            <span className="font-bold">
-                                #{sale.customerUuid.substring(0, 8)}
-                            </span>
-                        </div>
-                    )}
+                    {/* Affichage du nom du client au lieu de l'ID */}
+                    <div className="flex justify-between italic">
+                        <span>CLIENT:</span>
+                        <span className="font-bold">
+                            {customerName || (sale.customerUuid ? `#${sale.customerUuid.substring(0, 8)}` : 'Passage')}
+                        </span>
+                    </div>
                 </section>
 
                 <div className="border-b border-dashed border-gray-400 mb-2" />
@@ -178,17 +174,6 @@ export const Receipt = React.forwardRef<HTMLDivElement, ReceiptProps>(
                         <span className="font-mono">{formatCurrency(amountPaid)}</span>
                     </div>
 
-                    {/*
-                     * FIX #23 : Labels étaient INVERSÉS dans la version originale.
-                     *
-                     * Avant (incorrect) :
-                     *   remainingBalance > 0  → affichait "MONNAIE RENDUE"  ← FAUX
-                     *   remainingBalance ≤ 0  → affichait "SOLDE RESTANT"   ← FAUX
-                     *
-                     * Après (correct) :
-                     *   hasDebt (remainingBalance > 0)  → "SOLDE DÛ (DETTE)"
-                     *   !hasDebt (client a trop payé)   → "MONNAIE RENDUE"
-                     */}
                     <div className="flex justify-between text-[10pt] font-bold">
                         <span>
                             {hasDebt ? 'SOLDE DÛ (DETTE):' : 'MONNAIE RENDUE:'}
