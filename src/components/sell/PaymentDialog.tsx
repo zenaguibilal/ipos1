@@ -24,7 +24,7 @@ import {
 import { PrintReceiptDialog } from '../sales/PrintReceiptDialog';
 import type { Sale, Customer } from '@/lib/types';
 import { DatePicker }       from '../ui/date-picker';
-import { addDays }          from 'date-fns';
+import { addDays, setDate as fnsSetDate, addMonths, isAfter, startOfDay } from 'date-fns';
 import { customerService }  from '@/services/customer.service';
 
 // ─────────────────────────────────────────────────────────
@@ -70,10 +70,24 @@ function PaymentDialogContent({
         setApproveOverLimit(false);
 
         if (cart.customerUuid) {
-            setDueDate(addDays(new Date(), 30));
             customerService
                 .getCustomerByUuid(cart.customerUuid)
-                .then(c => setCustomer(c || null));
+                .then(c => {
+                    setCustomer(c || null);
+                    const now = new Date();
+                    if (c?.settlementDay) {
+                        // Calculate next occurrence of settlementDay
+                        let targetDate = fnsSetDate(new Date(now), c.settlementDay);
+                        // If today is past the settlement day, move to next month
+                        if (isAfter(startOfDay(now), startOfDay(targetDate))) {
+                            targetDate = addMonths(targetDate, 1);
+                        }
+                        setDueDate(targetDate);
+                    } else {
+                        // Fallback to 30 days if no settlement day is set
+                        setDueDate(addDays(now, 30));
+                    }
+                });
         } else {
             setDueDate(undefined);
             setCustomer(null);
@@ -128,8 +142,6 @@ function PaymentDialogContent({
                     <DialogHeader>
                         <DialogTitle className="flex items-center gap-2 text-base">
                             <Wallet className="h-4 w-4 text-primary" />
-                            {/* FIX #8 : titre en français pur — aucun caractère
-                                Unicode arabe mélangé dans du texte français */}
                             Finaliser la vente — {cart.name}
                         </DialogTitle>
                         <DialogDescription className="text-xs">
@@ -196,8 +208,6 @@ function PaymentDialogContent({
                                 </p>
                             </div>
 
-                            {/* FIX #8 : "Plafond de crédit" en français pur,
-                                sans aucun caractère arabe mélangé */}
                             {isOverLimit && (
                                 <div className="p-2.5 bg-destructive/10 border border-destructive/20 rounded-md space-y-2">
                                     <div className="flex items-center gap-1.5 text-destructive text-xs font-medium">
@@ -222,7 +232,7 @@ function PaymentDialogContent({
                             <div className="space-y-1">
                                 <Label className="text-xs flex items-center gap-1.5">
                                     <Calendar className="h-3 w-3" />
-                                    Date d&apos;échéance
+                                    Date d&apos;échéance {customer?.settlementDay ? `(Jour ${customer.settlementDay})` : ''}
                                 </Label>
                                 <DatePicker date={dueDate} setDate={setDueDate} />
                             </div>
