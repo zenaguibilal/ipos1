@@ -2,12 +2,12 @@
 
 import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Plus, Trash2, Save, ShoppingBag, Truck, FileText, Building, Hash, Loader2, PackagePlus, Info, AlertTriangle } from 'lucide-react';
+import { Plus, Trash2, Save, ShoppingBag, Truck, FileText, Building, Hash, Loader2, PackagePlus, Calculator, Coins } from 'lucide-react';
 import { ProductIntakeCombobox } from './ProductIntakeCombobox';
 import { OcrInvoiceScanner, type OcrLineItem } from './OcrInvoiceScanner';
 import type { Product, StockIntakeItem } from '@/lib/types';
@@ -19,7 +19,7 @@ import { DatePicker } from '../ui/date-picker';
 
 /**
  * @fileOverview Formulaire de gestion des réceptions de stock Elite.
- * Gère l'ajout de produits, la création au vol, l'OCR et le calcul du coût de revient.
+ * Affiche désormais le coût de revient (Landing Cost) et le total par ligne.
  */
 export function NewIntakeForm() {
     const router = useRouter();
@@ -32,11 +32,17 @@ export function NewIntakeForm() {
     const [items, setItems] = useState<StockIntakeItem[]>([]);
     const [isSubmitting, setIsSaving] = useState(false);
 
-    const itemsTotal = useMemo(() => {
+    // Calcul du sous-total des articles
+    const itemsTotalValue = useMemo(() => {
         return items.reduce((sum, item) => sum + (item.quantity * item.purchasePrice), 0);
     }, [items]);
 
-    const totalValue = itemsTotal + shippingCost;
+    // Calcul du facteur de transport pour le coût de revient
+    const shippingFactor = useMemo(() => {
+        return itemsTotalValue > 0 ? shippingCost / itemsTotalValue : 0;
+    }, [itemsTotalValue, shippingCost]);
+
+    const totalValue = itemsTotalValue + shippingCost;
 
     const handleAddProduct = (product: Product) => {
         const existing = items.find(i => i.productUuid === product.uuid);
@@ -138,7 +144,7 @@ export function NewIntakeForm() {
 
     return (
         <div className="grid lg:grid-cols-12 gap-6 animate-in slide-in-from-bottom-4 duration-700">
-            <div className="lg:col-span-8 space-y-6">
+            <div className="lg:col-span-9 space-y-6">
                 <Card className="app-card rounded-lg border-white/5 bg-card/40 backdrop-blur-sm overflow-hidden shadow-sm">
                     <CardHeader className="bg-muted/20 border-b border-white/5 p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
                         <div className="flex items-center gap-3">
@@ -161,15 +167,17 @@ export function NewIntakeForm() {
                                     <TableRow className="border-white/5">
                                         <TableHead className="font-bold text-[10px] uppercase text-muted-foreground/60 p-4">Désignation</TableHead>
                                         <TableHead className="font-bold text-[10px] uppercase text-muted-foreground/60 text-center">Qté</TableHead>
-                                        <TableHead className="font-bold text-[10px] uppercase text-muted-foreground/60 text-center">P.Achat HT</TableHead>
-                                        <TableHead className="font-bold text-[10px] uppercase text-muted-foreground/60 text-right">P.Vente Public</TableHead>
+                                        <TableHead className="font-bold text-[10px] uppercase text-muted-foreground/60 text-right">P.Achat HT</TableHead>
+                                        <TableHead className="font-bold text-[10px] uppercase text-primary/60 text-right">C. Revient</TableHead>
+                                        <TableHead className="font-bold text-[10px] uppercase text-muted-foreground/60 text-right">P.Vente</TableHead>
+                                        <TableHead className="font-bold text-[10px] uppercase text-muted-foreground/60 text-right">Total HT</TableHead>
                                         <TableHead className="w-[50px]"></TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
                                     {items.length === 0 ? (
                                         <TableRow>
-                                            <TableCell colSpan={5} className="h-80 text-center p-6 opacity-20">
+                                            <TableCell colSpan={7} className="h-80 text-center p-6 opacity-20">
                                                 <div className="flex flex-col items-center justify-center gap-4">
                                                     <PackagePlus className="h-16 w-16" />
                                                     <p className="text-[10px] font-black uppercase tracking-[0.2em]">Identifiez des produits pour le manifeste</p>
@@ -177,51 +185,65 @@ export function NewIntakeForm() {
                                             </TableCell>
                                         </TableRow>
                                     ) : (
-                                        items.map((item) => (
-                                            <TableRow key={item.id} className="border-white/5 group hover:bg-white/5 transition-all">
-                                                <TableCell className="p-4">
-                                                    <div className="flex flex-col gap-1">
-                                                        <span className="font-black text-sm tracking-tight">{item.name}</span>
-                                                        {item.isNew && (
-                                                            <span className="text-[8px] font-bold text-primary uppercase bg-primary/10 px-2 py-0.5 rounded-full w-fit border border-primary/20">Création Catalogue</span>
-                                                        )}
-                                                    </div>
-                                                </TableCell>
-                                                <TableCell className="p-4">
-                                                    <Input 
-                                                        type="number" 
-                                                        value={item.quantity} 
-                                                        onChange={e => updateItem(item.id, 'quantity', parseFloat(e.target.value) || 0)}
-                                                        className="w-20 h-8 text-center bg-black/20 border-none shadow-inner mx-auto font-black focus-visible:ring-primary/20"
-                                                    />
-                                                </TableCell>
-                                                <TableCell className="p-4 text-center">
-                                                    <Input 
-                                                        type="number" 
-                                                        step="0.01"
-                                                        value={item.purchasePrice || ''} 
-                                                        onChange={e => updateItem(item.id, 'purchasePrice', parseFloat(e.target.value) || 0)}
-                                                        className="w-24 h-8 text-right bg-black/20 border-none shadow-inner font-mono font-bold mx-auto focus-visible:ring-primary/20"
-                                                        placeholder="0.00"
-                                                    />
-                                                </TableCell>
-                                                <TableCell className="p-4 text-right">
-                                                    <Input 
-                                                        type="number" 
-                                                        step="0.01"
-                                                        value={item.price || ''} 
-                                                        onChange={e => updateItem(item.id, 'price', parseFloat(e.target.value) || 0)}
-                                                        className="w-24 h-8 text-right bg-black/20 border-none shadow-inner font-mono font-bold text-primary ml-auto focus-visible:ring-primary/20"
-                                                        placeholder="0.00"
-                                                    />
-                                                </TableCell>
-                                                <TableCell className="p-4">
-                                                    <Button variant="ghost" size="icon" onClick={() => removeItem(item.id)} className="h-8 w-8 text-destructive/20 hover:text-destructive hover:bg-destructive/10 transition-colors">
-                                                        <Trash2 className="h-4 w-4" />
-                                                    </Button>
-                                                </TableCell>
-                                            </TableRow>
-                                        ))
+                                        items.map((item) => {
+                                            const landingCost = item.purchasePrice * (1 + shippingFactor);
+                                            const rowTotal = item.quantity * item.purchasePrice;
+                                            
+                                            return (
+                                                <TableRow key={item.id} className="border-white/5 group hover:bg-white/5 transition-all">
+                                                    <TableCell className="p-4">
+                                                        <div className="flex flex-col gap-1 min-w-[150px]">
+                                                            <span className="font-black text-sm tracking-tight">{item.name}</span>
+                                                            {item.isNew && (
+                                                                <span className="text-[8px] font-bold text-primary uppercase bg-primary/10 px-2 py-0.5 rounded-full w-fit border border-primary/20">Création Catalogue</span>
+                                                            )}
+                                                        </div>
+                                                    </TableCell>
+                                                    <TableCell className="p-4">
+                                                        <Input 
+                                                            type="number" 
+                                                            value={item.quantity} 
+                                                            onChange={e => updateItem(item.id, 'quantity', parseFloat(e.target.value) || 0)}
+                                                            className="w-16 h-8 text-center bg-black/20 border-none shadow-inner mx-auto font-black focus-visible:ring-primary/20"
+                                                        />
+                                                    </TableCell>
+                                                    <TableCell className="p-4 text-right">
+                                                        <Input 
+                                                            type="number" 
+                                                            step="0.01"
+                                                            value={item.purchasePrice || ''} 
+                                                            onChange={e => updateItem(item.id, 'purchasePrice', parseFloat(e.target.value) || 0)}
+                                                            className="w-20 h-8 text-right bg-black/20 border-none shadow-inner font-mono font-bold ml-auto focus-visible:ring-primary/20"
+                                                            placeholder="0.00"
+                                                        />
+                                                    </TableCell>
+                                                    <TableCell className="p-4 text-right">
+                                                        <div className="flex flex-col items-end">
+                                                            <span className="font-mono text-xs font-bold text-primary">{landingCost.toFixed(2)}</span>
+                                                            <span className="text-[8px] text-muted-foreground/40 uppercase">P.A + Transport</span>
+                                                        </div>
+                                                    </TableCell>
+                                                    <TableCell className="p-4 text-right">
+                                                        <Input 
+                                                            type="number" 
+                                                            step="0.01"
+                                                            value={item.price || ''} 
+                                                            onChange={e => updateItem(item.id, 'price', parseFloat(e.target.value) || 0)}
+                                                            className="w-20 h-8 text-right bg-black/20 border-none shadow-inner font-mono font-bold text-emerald-600 ml-auto focus-visible:ring-primary/20"
+                                                            placeholder="0.00"
+                                                        />
+                                                    </TableCell>
+                                                    <TableCell className="p-4 text-right font-mono font-bold text-sm">
+                                                        {formatCurrency(rowTotal)}
+                                                    </TableCell>
+                                                    <TableCell className="p-4">
+                                                        <button onClick={() => removeItem(item.id)} className="text-destructive/20 hover:text-destructive transition-colors">
+                                                            <Trash2 className="h-4 w-4" />
+                                                        </button>
+                                                    </TableCell>
+                                                </TableRow>
+                                            );
+                                        })
                                     )}
                                 </TableBody>
                             </Table>
@@ -230,11 +252,11 @@ export function NewIntakeForm() {
                 </Card>
             </div>
 
-            <div className="lg:col-span-4 space-y-6">
+            <div className="lg:col-span-3 space-y-6">
                 <Card className="app-card rounded-lg border-white/5 bg-card/40 backdrop-blur-sm overflow-hidden sticky top-24 shadow-xl">
                     <CardHeader className="bg-primary/5 border-b border-white/5 p-4">
                         <CardTitle className="text-sm font-semibold uppercase tracking-wide opacity-60 flex items-center gap-2">
-                            <FileText className="h-4 w-4" /> Résumé de Réception
+                            <FileText className="h-4 w-4" /> Résumé Financier
                         </CardTitle>
                     </CardHeader>
                     <CardContent className="p-6 space-y-6">
@@ -252,7 +274,7 @@ export function NewIntakeForm() {
                                 </div>
                             </div>
 
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 gap-4">
                                 <div className="space-y-2">
                                     <Label className="text-[10px] font-semibold uppercase text-muted-foreground/60 ml-1">N° Facture</Label>
                                     <Input 
@@ -282,15 +304,15 @@ export function NewIntakeForm() {
                                     />
                                 </div>
                                 <p className="text-[9px] text-muted-foreground/50 leading-relaxed italic border-l-2 border-primary/20 pl-3">
-                                    Le coût de revient (Landing Cost) sera ajusté proportionnellement.
+                                    Répartis sur le coût de revient (Landing Cost).
                                 </p>
                             </div>
                         </div>
 
                         <div className="pt-6 border-t border-white/5 space-y-3">
                             <div className="flex justify-between items-center text-xs font-semibold uppercase text-muted-foreground/40">
-                                <span>Total Articles</span>
-                                <span className="font-mono text-foreground font-bold">{formatCurrency(itemsTotal)}</span>
+                                <span>Total Marchandise</span>
+                                <span className="font-mono text-foreground font-bold">{formatCurrency(itemsTotalValue)}</span>
                             </div>
                             <div className="flex justify-between items-end pt-4 bg-primary/5 p-4 rounded-2xl border border-primary/10">
                                 <span className="text-[10px] font-black uppercase tracking-widest text-primary">Dette Fournisseur</span>
@@ -306,7 +328,7 @@ export function NewIntakeForm() {
                                 className="w-full h-14 rounded-2xl font-black text-lg shadow-2xl transition-all active:scale-[0.98] gap-3"
                             >
                                 {isSubmitting ? <Loader2 className="h-6 w-6 animate-spin" /> : <Save className="h-6 w-6" />}
-                                Valider le Manifeste
+                                Valider Manifeste
                             </Button>
                         </div>
                     </CardContent>

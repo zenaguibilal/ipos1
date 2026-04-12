@@ -8,17 +8,18 @@ import Link from 'next/link';
 
 /**
  * @fileOverview Route de réception des marchandises Elite.
+ * Centralise l'enregistrement des flux entrants avec calcul de coût de revient.
  */
 export default function NewIntakePage() {
     return (
-        <div className="p-6 sm:p-4 space-y-4 max-w-[1400px] mx-auto animate-in fade-in duration-1000">
+        <div className="p-6 sm:p-4 space-y-4 max-w-[1800px] mx-auto animate-in fade-in duration-1000">
             <div className="flex items-center gap-4">
                 <Button variant="outline" size="icon" className="rounded-xl border-none shadow-sm bg-card h-10 w-10 active:scale-90 transition-all" asChild>
                     <Link href="/stock"><ArrowLeft className="h-4 w-4" /></Link>
                 </Button>
                 <PageHeader 
                     title="Manifeste de Réception" 
-                    description="Enregistrement des flux entrants et ajustement du coût de revient"
+                    description="Contrôle des flux entrants et ajustement automatique du coût de revient"
                 />
             </div>
 
