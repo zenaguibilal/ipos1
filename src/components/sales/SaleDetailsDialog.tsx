@@ -42,9 +42,19 @@ export function SaleDetailsDialog({
             .then(c => setCustomer(c || null));
     }, [sale]);
 
+    // Move useMemo ABOVE the early return to respect React Rules of Hooks
+    const margin = useMemo(() => {
+        if (!sale) return 0;
+        const cogs = sale.items.reduce(
+            (sum, item) =>
+                sum + Number(item.purchasePrice || 0) * Number(item.quantity),
+            0,
+        );
+        return sale.total - cogs;
+    }, [sale]);
+
     if (!sale) return null;
 
-    // FIX #24 : 'partial' affiché comme "Partiellement payée" et non "Impayée"
     const statusLabel =
         sale.paymentStatus === 'paid'    ? 'Soldée' :
         sale.paymentStatus === 'partial' ? 'Partiellement payée' :
@@ -54,15 +64,6 @@ export function SaleDetailsDialog({
         sale.paymentStatus === 'paid'    ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400' :
         sale.paymentStatus === 'partial' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400' :
         'bg-destructive/10 text-destructive';
-
-    const margin = useMemo(() => {
-        const cogs = sale.items.reduce(
-            (sum, item) =>
-                sum + Number(item.purchasePrice || 0) * Number(item.quantity),
-            0,
-        );
-        return sale.total - cogs;
-    }, [sale]);
 
     return (
         <>
@@ -196,7 +197,6 @@ export function SaleDetailsDialog({
                                     </span>
                                 </div>
 
-                                {/* FIX #24 : label correct selon le signe du solde */}
                                 <div className="flex justify-between text-sm font-bold">
                                     <span>
                                         {sale.remainingBalance > 0.01
