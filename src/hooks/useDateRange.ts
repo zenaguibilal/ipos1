@@ -1,10 +1,13 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
 import type { DateRange } from 'react-day-picker';
 import { subDays, startOfDay, endOfDay } from 'date-fns';
 
+/**
+ * useDateRange — Hook لتحديد نطاق زمني.
+ * تم تعديله ليبدأ بـ undefined لتجنب أخطاء الـ Hydration (التعارض بين الخادم والمتصفح).
+ */
 export function useDateRange(defaultDays: number = 6) {
     const [dateRange, setDateRange] = useState<DateRange | undefined>();
     const [isMounted, setIsMounted] = useState(false);
@@ -20,6 +23,7 @@ export function useDateRange(defaultDays: number = 6) {
 
     const setRange = (newRange?: DateRange) => {
         if (newRange?.from && newRange.to) {
+            // Force hours normalization
             newRange.from = startOfDay(newRange.from);
             newRange.to = endOfDay(newRange.to);
         }

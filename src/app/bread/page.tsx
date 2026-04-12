@@ -15,6 +15,10 @@ import { cn } from '@/lib/utils';
 import { useLiveQuery } from '@/hooks/useLiveQuery';
 import { db } from '@/lib/db';
 
+/**
+ * Page de gestion de la logistique du pain.
+ * Sécurisée contre les erreurs de Hydration via isMounted.
+ */
 export default function BreadPage() {
     const [currentDate, setCurrentDate] = useState<Date | null>(null);
     const [isMounted, setIsMounted] = useState(false);
@@ -116,7 +120,7 @@ export default function BreadPage() {
                                 <div className="absolute inset-0 bg-primary/20 blur-3xl animate-pulse rounded-full"></div>
                                 <Loader2 className="relative h-12 w-12 animate-spin text-primary opacity-40" />
                             </div>
-                            <p className="mt-6 text-[10px] font-semibold uppercase text-muted-foreground opacity-30">Planification des livraisons...</p>
+                            <p className="mt-6 text-[10px] font-semibold uppercase text-muted-foreground opacity-30">Initialisation du registre...</p>
                         </div>
                     ) : (
                         <BreadDayView 
