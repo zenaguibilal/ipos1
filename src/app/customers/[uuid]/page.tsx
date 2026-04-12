@@ -1,19 +1,16 @@
 import { redirect } from 'next/navigation';
 
 /**
- * @fileOverview Redirection des anciens chemins dynamiques vers le nouveau chemin statique 'detail'.
- * Cette approche évite les erreurs 'missing param' lors du build Next.js avec output: export.
+ * @fileOverview Neutralisation de la route dynamique pour la compatibilité 'output: export'.
+ * Toutes les navigations doivent désormais utiliser /customers/detail?uuid=...
  */
 
 export function generateStaticParams() {
-    return [{ uuid: 'detail' }];
+    return [];
 }
 
-export default function Page({ params }: { params: { uuid: string } }) {
-    // Si l'utilisateur arrive sur /customers/UUID, on le redirige vers le SPA handler
-    if (params.uuid !== 'detail') {
-        redirect(`/customers/detail?uuid=${params.uuid}`);
-    }
-    
+export default function Page() {
+    // Par sécurité, on redirige vers la liste si cette route est accédée directement
+    redirect('/customers');
     return null;
 }

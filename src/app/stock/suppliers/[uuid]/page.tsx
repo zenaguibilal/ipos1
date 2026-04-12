@@ -1,17 +1,16 @@
 import { redirect } from 'next/navigation';
 
 /**
- * @fileOverview Redirection des anciens chemins dynamiques vers le nouveau chemin statique 'detail'.
+ * @fileOverview Neutralisation de la route dynamique pour la compatibilité 'output: export'.
+ * Toutes les navigations doivent désormais utiliser /stock/suppliers/detail?uuid=...
  */
 
 export function generateStaticParams() {
-    return [{ uuid: 'detail' }];
+    return [];
 }
 
-export default function Page({ params }: { params: { uuid: string } }) {
-    if (params.uuid !== 'detail') {
-        redirect(`/stock/suppliers/detail?uuid=${params.uuid}`);
-    }
-    
+export default function Page() {
+    // Par sécurité, on redirige vers la liste si cette route est accédée directement
+    redirect('/stock');
     return null;
 }
