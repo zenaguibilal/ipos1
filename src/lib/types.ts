@@ -27,6 +27,7 @@ export interface Customer {
     address?: string;
     settlementDay?: number;
     creditLimit?: number;
+    initialBalance?: number; // New field to preserve legacy debt
     totalSpent: number;
     outstandingBalance: number;
     lastActivityDate?: Date;
