@@ -27,17 +27,19 @@ export function PrintReceiptDialog({
     customerName,
 }: PrintReceiptDialogProps) {
     const profile = useAppStore(state => state.companyProfile);
-    const [receiptType, setReceiptType] = useState<'a4' | 'thermal'>('a4'); // Par défaut A4 pour Bon de Livraison
+    const [receiptType, setReceiptType] = useState<'a4' | 'thermal'>('a4'); 
     const [isGenerating, setIsGenerating] = useState(false);
     const [customer, setCustomer] = useState<Customer | null>(null);
     const receiptRef = useRef<HTMLDivElement>(null);
 
-    // Calcul du solde ancien avant cette vente
+    /**
+     * Calcul critique du solde avant opération :
+     * Solde Ancien = Solde Actuel (DB) - (Total Vente - Déjà Payé)
+     */
     const oldBalance = useMemo(() => {
         if (!customer || !sale) return 0;
-        // Solde actuel - (Total vente - Ce qui a été payé)
-        // Mais plus précisément pour un BL, on veut le solde AVANT cette opération
-        return customer.outstandingBalance - (sale.total - sale.amountPaid);
+        const currentDebtOfThisSale = sale.total - sale.amountPaid;
+        return Math.max(0, customer.outstandingBalance - currentDebtOfThisSale);
     }, [customer, sale]);
 
     useEffect(() => {
@@ -137,6 +139,7 @@ export function PrintReceiptDialog({
 
     return (
         <>
+            {/* Conteneur masqué pour l'impression système réelle */}
             <div className="hidden print:block fixed inset-0 z-[100] bg-white">
                 <Receipt 
                     sale={sale} 
