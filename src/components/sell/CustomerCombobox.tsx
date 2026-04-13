@@ -25,6 +25,8 @@ import {
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { CustomerDialog } from '@/components/customers/customer-dialog';
+import { useLiveQuery } from '@/hooks/useLiveQuery';
+import { db } from '@/lib/db';
 
 export const CustomerCombobox = forwardRef<{ focusInput: () => void }, any>((_, ref) => {
     const { setCustomer } = useCartActions();
@@ -39,10 +41,17 @@ export const CustomerCombobox = forwardRef<{ focusInput: () => void }, any>((_, 
     const [isLoading, setIsLoading] = useState(false);
     const internalInputRef = useRef<HTMLInputElement>(null);
 
+    // Resolve the selected customer details in real-time
+    const selectedCustomer = useLiveQuery(
+        () => activeCart?.customerUuid ? db.customers.where('uuid').equals(activeCart.customerUuid).first() : null,
+        [activeCart?.customerUuid]
+    );
+
+    const displayName = selectedCustomer ? `${selectedCustomer.firstName} ${selectedCustomer.lastName}` : "Client de passage";
+
     useImperativeHandle(ref, () => ({
         focusInput: () => {
             setIsOpen(true);
-            // Petit délai pour laisser le temps au Dialog de se monter
             setTimeout(() => internalInputRef.current?.focus(), 100);
         }
     }));
@@ -100,10 +109,12 @@ export const CustomerCombobox = forwardRef<{ focusInput: () => void }, any>((_, 
             <Button
                 variant="outline"
                 onClick={() => setIsOpen(true)}
-                className="h-9 px-4 rounded-xl border-primary/20 bg-primary/5 hover:bg-primary/10 transition-all gap-2 group shadow-sm"
+                className="h-9 px-4 rounded-xl border-primary/20 bg-primary/5 hover:bg-primary/10 transition-all gap-2 group shadow-sm max-w-[200px]"
             >
-                <Users className="h-4 w-4 text-primary" />
-                <span className="text-xs font-bold uppercase tracking-tight">Client [F2]</span>
+                <Users className="h-4 w-4 text-primary shrink-0" />
+                <span className="text-xs font-bold uppercase tracking-tight truncate">
+                    {displayName} [F2]
+                </span>
             </Button>
 
             <Dialog open={isOpen} onOpenChange={setIsOpen}>

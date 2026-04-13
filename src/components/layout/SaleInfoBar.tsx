@@ -6,7 +6,7 @@ import { useActiveCart, useCartActions } from '@/stores/cartStore';
 import { customerService } from '@/services/customer.service';
 import type { Customer } from '@/lib/types';
 import { calculateCartTotals, formatCurrency, cn } from '@/lib/utils';
-import { User, HandCoins, Trash2, Receipt } from 'lucide-react';
+import { User, HandCoins, Trash2, Receipt, UserX } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { AddPaymentDialog } from '@/components/payments/AddPaymentDialog';
@@ -74,26 +74,24 @@ export function SaleInfoBar() {
                     )}
                 </div>
 
-                {/* Customer */}
-                {customer && (
-                    <>
-                        <div className="h-4 w-px bg-border" />
-                        <div className="flex items-center gap-1.5 min-w-0">
-                            <User className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                <div className="h-4 w-px bg-border" />
+
+                {/* Customer Section - Now always visible as requested */}
+                <div className="flex items-center gap-1.5 min-w-0">
+                    {customer ? (
+                        <>
+                            <User className="h-3.5 w-3.5 text-primary shrink-0" />
                             <Link
                                 href={`/customers/detail?uuid=${customer.uuid}`}
-                                className="text-xs font-medium hover:text-primary transition-colors truncate max-w-[120px]"
+                                className="text-xs font-bold hover:text-primary transition-colors truncate max-w-[120px]"
                             >
                                 {customer.firstName} {customer.lastName}
                             </Link>
                             {customerDebt > 0 && (
-                                <span className={cn('text-xs tabular-nums font-medium', 'text-destructive')}>
+                                <span className={cn('text-xs tabular-nums font-bold', 'text-destructive')}>
                                     {formatCurrency(customerDebt)}
                                 </span>
                             )}
-                        </div>
-
-                        {customerDebt > 0 && (
                             <Button
                                 variant="ghost"
                                 size="sm"
@@ -103,9 +101,14 @@ export function SaleInfoBar() {
                                 <HandCoins className="h-3 w-3 mr-1" />
                                 Régler
                             </Button>
-                        )}
-                    </>
-                )}
+                        </>
+                    ) : (
+                        <div className="flex items-center gap-1.5 text-muted-foreground/60 italic">
+                            <UserX className="h-3.5 w-3.5 shrink-0" />
+                            <span className="text-xs font-medium">Client de passage</span>
+                        </div>
+                    )}
+                </div>
 
                 <div className="flex-1" />
 
