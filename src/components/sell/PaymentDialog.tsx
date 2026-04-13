@@ -133,13 +133,13 @@ function PaymentDialogContent({
         {
             key: 'Enter',
             action: handleProcessSale,
-            description: 'Valider le paiement',
+            description: 'Valider la transaction',
             ignoreInputFocus: true
         },
         {
             key: 'Escape',
             action: () => onOpenChange(false),
-            description: 'Fermer',
+            description: 'Fermer la fenêtre',
             ignoreInputFocus: true
         }
     ], 'Encaissement', isOpen);

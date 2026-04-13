@@ -94,23 +94,16 @@ export function AddPaymentDialog({
         {
             key: 'Enter',
             action: handleAddPayment,
-            description: 'Enregistrer le paiement',
-            ignoreInputFocus: true
-        },
-        {
-            key: 'Enter',
-            ctrl: true,
-            action: handleAddPayment,
-            description: 'Enregistrer',
+            description: 'Enregistrer le versement client',
             ignoreInputFocus: true
         },
         {
             key: 'Escape',
             action: () => onOpenChange(false),
-            description: 'Fermer',
+            description: 'Fermer la fenêtre',
             ignoreInputFocus: true
         }
-    ], 'AjoutPaiement', isOpen);
+    ], 'Versement', isOpen);
 
     return (
         <Dialog open={isOpen} onOpenChange={onOpenChange}>

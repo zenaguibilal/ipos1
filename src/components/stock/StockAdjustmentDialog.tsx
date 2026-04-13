@@ -79,16 +79,16 @@ export function StockAdjustmentDialog({
         {
             key: 'Enter',
             action: handleSave,
-            description: 'Appliquer ajustement',
+            description: 'Appliquer l\'ajustement de stock',
             ignoreInputFocus: true
         },
         {
             key: 'Escape',
             action: () => onOpenChange(false),
-            description: 'Fermer',
+            description: 'Fermer la fenêtre',
             ignoreInputFocus: true
         }
-    ], 'AjustementStock', isOpen);
+    ], 'CorrectionStock', isOpen);
 
     const changeVal  = parseFloat(adjustment) || 0;
     const finalStock = selectedProduct

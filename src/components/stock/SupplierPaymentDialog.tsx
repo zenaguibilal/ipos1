@@ -93,16 +93,16 @@ export function SupplierPaymentDialog({
         {
             key: 'Enter',
             action: handleSave,
-            description: 'Enregistrer le paiement',
+            description: 'Enregistrer le versement fournisseur',
             ignoreInputFocus: true
         },
         {
             key: 'Escape',
             action: () => onOpenChange(false),
-            description: 'Fermer',
+            description: 'Fermer la fenêtre',
             ignoreInputFocus: true
         }
-    ], 'PaiementFournisseur', isOpen);
+    ], 'Fournisseur', isOpen);
 
     if (!supplier) return null;
 

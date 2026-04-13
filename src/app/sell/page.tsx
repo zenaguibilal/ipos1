@@ -25,13 +25,13 @@ function SellPageContent() {
         {
             key: 'F2',
             action: () => customerComboRef.current?.focusInput(),
-            description: 'Identifier client',
+            description: 'Identifier un client',
             ignoreInputFocus: true
         },
         {
             key: 'F3',
             action: () => searchInputRef.current?.focusInput(),
-            description: 'Rechercher produit',
+            description: 'Rechercher un produit',
             ignoreInputFocus: true
         },
         {
@@ -40,13 +40,13 @@ function SellPageContent() {
                 if (cart && cart.items.length > 0) setIsPaymentOpen(true);
                 else toast.error("Le panier est vide");
             },
-            description: 'Ouvrir encaissement',
+            description: 'Ouvrir l\'encaissement',
             ignoreInputFocus: true
         },
         {
             key: ' ',
             action: () => searchInputRef.current?.focusInput(),
-            description: 'Focus recherche',
+            description: 'Focus sur la recherche',
             ignoreInputFocus: false
         },
         {
@@ -55,7 +55,7 @@ function SellPageContent() {
             action: () => {
                 if (cart && cart.items.length > 0) setIsClearConfirmOpen(true);
             },
-            description: 'Vider le panier',
+            description: 'Vider le panier actuel',
             ignoreInputFocus: true
         },
         {
@@ -65,24 +65,12 @@ function SellPageContent() {
                 createCart();
                 toast.success('Vente suspendue. Nouveau panier créé.');
             },
-            description: 'Suspendre + Nouveau',
+            description: 'Suspendre la vente et créer un nouveau panier',
             ignoreInputFocus: true
-        },
-        // Raccourcis pour changer de panier Alt+1 à Alt+9
-        ...[1, 2, 3, 4, 5, 6, 7, 8, 9].map(num => ({
-            key: String(num),
-            alt: true,
-            action: () => {
-                // selectCart par index si possible ou par logique de store
-                // Ici on utilise une sélection simplifiée pour l'exemple
-                toast.info(`Changement vers panier ${num}`);
-            },
-            description: `Panier ${num}`,
-            ignoreInputFocus: true
-        }))
+        }
     ];
 
-    useKeyboardShortcuts(shortcuts, 'PageVente');
+    useKeyboardShortcuts(shortcuts, 'Vente');
 
     return (
         <div className="h-full flex flex-col p-2 gap-2 overflow-hidden bg-background">

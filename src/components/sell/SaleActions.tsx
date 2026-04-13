@@ -9,12 +9,11 @@ import { CustomerCombobox } from './CustomerCombobox';
 import { useActiveCart } from '@/stores/cartStore';
 
 interface SaleActionsProps {
-    payButtonRef: React.RefObject<HTMLButtonElement>;
-    customerComboRef: React.RefObject<HTMLButtonElement>;
+    customerComboRef: React.RefObject<{ focusInput: () => void }>;
+    onOpenPayment: () => void;
 }
 
-function SaleActionsContent({ payButtonRef, customerComboRef }: SaleActionsProps) {
-    const [isPaymentOpen, setIsPaymentOpen] = useState(false);
+function SaleActionsContent({ customerComboRef, onOpenPayment }: SaleActionsProps) {
     const [mounted, setMounted] = useState(false);
     const cart = useActiveCart();
 
@@ -29,15 +28,13 @@ function SaleActionsContent({ payButtonRef, customerComboRef }: SaleActionsProps
             <DraftsDropdown />
             <CustomerCombobox ref={customerComboRef} />
             <Button
-                ref={payButtonRef}
                 className="flex-1 h-9 font-semibold gap-2 shadow-lg shadow-primary/20 active:scale-95 transition-all"
-                onClick={() => setIsPaymentOpen(true)}
+                onClick={onOpenPayment}
                 disabled={!hasItems}
             >
                 <Wallet className="h-4 w-4" />
-                Payer [F2]
+                Payer [F4]
             </Button>
-            <PaymentDialog isOpen={isPaymentOpen} onOpenChange={setIsPaymentOpen} />
         </div>
     );
 }
