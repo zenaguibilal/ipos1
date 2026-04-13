@@ -1,3 +1,4 @@
+
 'use client';
 
 import { v4 as uuidv4 } from 'uuid';
@@ -62,6 +63,32 @@ class SalesService {
         );
     }
 
+    /**
+     * Génère un numéro de facture séquentiel conforme à la loi algérienne.
+     * Format : AAAA-NNNNNN (ex: 2025-000142)
+     */
+    private async generateInvoiceNumber(): Promise<string> {
+        const now = new Date();
+        const year = now.getFullYear();
+        
+        // Récupérer le compteur depuis le profil
+        const profile = await db.company_profile.toCollection().first();
+        const currentCounter = profile?.invoice_counter || 1;
+        const prefix = profile?.invoice_prefix || String(year);
+
+        const invoiceNumber = `${prefix}-${String(currentCounter).padStart(6, '0')}`;
+
+        // Mettre à jour le compteur dans Dexie
+        if (profile?.id) {
+            await db.company_profile.update(profile.id, {
+                invoice_counter: currentCounter + 1,
+                updatedAt: new Date()
+            });
+        }
+
+        return invoiceNumber;
+    }
+
     async createSale(saleData: {
         items: CartItem[];
         discountType: 'fixed' | 'percentage';
@@ -95,12 +122,10 @@ class SalesService {
             price: item.price,
             purchasePrice: item.purchasePrice,
             quantity: item.cartQuantity,
+            tva_rate: 19 // Valeur par défaut standard en Algérie
         }));
 
-        // FIX #5 : suffix 4 chiffres (1000–9999)
-        const datePrefix = now.toISOString().slice(2, 10).replace(/-/g, '');
-        const randomSuffix = Math.floor(1000 + Math.random() * 9000);
-        const invoiceNumber = `${datePrefix}-${randomSuffix}`;
+        const invoiceNumber = await this.generateInvoiceNumber();
 
         const newSale: Sale = {
             uuid: uuidv4(),
@@ -119,8 +144,6 @@ class SalesService {
             dueDate: saleData.dueDate,
         };
 
-        // FIX #3 : la transaction déclare toutes les tables réellement accédées
-        // par inventoryService.adjustStock ET customerService.recalculateCustomerStatus
         await db.transaction(
             'rw',
             [
@@ -130,6 +153,7 @@ class SalesService {
                 db.customers,
                 db.payments,
                 db.product_returns,
+                db.company_profile
             ],
             async () => {
                 await db.sales.add(newSale);

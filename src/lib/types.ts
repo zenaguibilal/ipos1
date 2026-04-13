@@ -28,7 +28,7 @@ export interface Customer {
     address?: string;
     settlementDay?: number;
     creditLimit?: number;
-    initialBalance: number; // Nouveau: Pour préserver les dettes importées
+    initialBalance: number;
     totalSpent: number;
     outstandingBalance: number;
     lastActivityDate?: Date;
@@ -36,7 +36,6 @@ export interface Customer {
     updatedAt?: Date;
     debtStatus?: 'none' | 'due_soon' | 'overdue';
     isOverLimit?: boolean;
-    // Bread feature fields
     isBreadClient?: boolean;
     bread_type_recurrence?: 'quotidien' | 'jours_specifiques' | 'aucun';
     bread_quantite_defaut?: number;
@@ -49,14 +48,15 @@ export interface SaleItem {
     id?: number;
     productUuid: string | null;
     name: string;
-    price: number;
+    price: number; // Prix TTC (le système travaille en TTC par défaut pour la simplicité utilisateur)
     purchasePrice: number;
     quantity: number;
+    tva_rate?: number; // Taux de TVA (0, 9, 19)
 }
 
 export interface CartItem extends Product {
     cartQuantity: number;
-    flash?: boolean; // For UI animation
+    flash?: boolean;
 }
 
 export interface Cart {
@@ -110,19 +110,32 @@ export interface CompanyProfile {
     phone?: string;
     email?: string;
     website?: string;
-    vatNumber?: string;
-    rcNumber?: string;
+    vatNumber?: string; // Ancien champ, gardé pour compatibilité temporaire
+    rcNumber?: string;  // Ancien champ
     goldPricePerGram?: number;
     prix_pain?: number;
     updatedAt?: Date;
-    // Supabase Sync Settings
     supabase_url?: string;
     supabase_key?: string;
     last_sync_at?: Date;
+    logoUrl?: string;
+    
+    // Nouveaux champs fiscaux algériens
+    rc_number?:           string; // WW/BB-NNNNNNN
+    nif?:                 string; // 15 chiffres
+    ai_number?:           string; // Article d'Imposition
+    nis_number?:          string; // Numéro Statistique
+    tva_number?:          string;
+    legal_form?:          string; // SARL, EURL, SNC, EI, Auto-entrepreneur
+    tva_rate?:            number; // 0 | 9 | 19
+    is_tva_exempt?:       boolean;
+    tva_exempt_reason?:   string;
+    invoice_prefix?:      string;
+    invoice_counter?:     number;
 }
 
 export interface StockIntakeItem {
-    id: string; // Unique ID for the item row in UI, not persisted
+    id: string;
     productUuid?: string;
     barcodes: string[];
     name: string;
