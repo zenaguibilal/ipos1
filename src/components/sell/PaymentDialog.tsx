@@ -57,18 +57,21 @@ function PaymentDialogContent({
 
     const amountPaid   = parseFloat(amountPaidStr) || 0;
     const change       = Math.max(0, amountPaid - total);
-    const isFullPay    = amountPaid >= total - FINANCIAL_EPSILON;
-    const isCreditSale = !!(cart?.customerUuid && amountPaid < total - FINANCIAL_EPSILON);
+    
+    // Check if the sale is fully paid, allowing a very small rounding margin (less than 1 centime)
+    const isFullPay    = amountPaid >= total - 0.009;
+    const isCreditSale = !!(cart?.customerUuid && amountPaid < total - 0.009);
 
     useEffect(() => { setIsMounted(true); }, []);
 
     useEffect(() => {
         if (!isOpen || !isMounted || !cart) return;
         
-        // Use active items only for initial amount setting
+        // Ensure we calculate using active items only
         const activeItemsOnly = cart.items.filter(i => i.cartQuantity > 0);
         const totals = calculateCartTotals({ ...cart, items: activeItemsOnly });
         
+        // Initialize amount with rounded total
         setAmountPaidStr(totals.total.toFixed(2));
         setIsLoading(false);
         setLastSale(null);
@@ -106,6 +109,7 @@ function PaymentDialogContent({
         return projectedBalance > customer.creditLimit + FINANCIAL_EPSILON;
     }, [customer, projectedBalance]);
 
+    // Validation logic fixed: walk-in customers must pay full total. Registered customers can use credit.
     const canFinalize =
         !isLoading &&
         amountPaid >= 0 &&
@@ -139,7 +143,7 @@ function PaymentDialogContent({
         {
             key: 'Enter',
             action: handleProcessSale,
-            description: 'Valider l\'encaissement',
+            description: "Valider l'encaissement",
             ignoreInputFocus: true
         },
         {

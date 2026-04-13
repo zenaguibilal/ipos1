@@ -64,6 +64,7 @@ interface CalculableCart {
 /**
  * Calculateur financier durci — arithmétique entière mise à l'échelle.
  * Élimine les erreurs IEEE 754 communes en JS.
+ * Arrondit le total final à 2 décimales pour la conformité monétaire.
  */
 export function calculateCartTotals(cart: CalculableCart) {
     const SCALE = 1000;
@@ -86,11 +87,12 @@ export function calculateCartTotals(cart: CalculableCart) {
     }
 
     const totalRaw = Math.max(0, subtotalRaw - discountAmountRaw);
+    const finalTotal = totalRaw / SCALE;
 
     return {
-        subtotal,
-        discountAmount: discountAmountRaw / SCALE,
-        total:          totalRaw / SCALE,
+        subtotal: Math.round(subtotal * 100) / 100,
+        discountAmount: Math.round((discountAmountRaw / SCALE) * 100) / 100,
+        total: Math.round(finalTotal * 100) / 100,
     };
 }
 
