@@ -35,11 +35,11 @@ interface DeliveryNoteData {
 }
 
 /**
- * Advanced French number to words converter (v2.2 - Corrected & Robust)
+ * Advanced French number to words converter (v2.5 - Supports Decimals/Cents)
  */
 function numberToWordsFR(n: number): string {
   const intPart = Math.floor(n);
-  if (intPart === 0) return "ZÉRO DINAR";
+  const decPart = Math.round((n - intPart) * 100);
 
   const units = ["", "UN", "DEUX", "TROIS", "QUATRE", "CINQ", "SIX", "SEPT", "HUIT", "NEUF"];
   const tens = ["", "DIX", "VINGT", "TRENTE", "QUARANTE", "CINQUANTE", "SOIXANTE", "SOIXANTE-DIX", "QUATRE-VINGTS", "QUATRE-VINGT-DIX"];
@@ -95,28 +95,44 @@ function numberToWordsFR(n: number): string {
     return res.trim();
   }
 
-  let result = "";
-  const millions = Math.floor(intPart / 1000000);
-  const thousands = Math.floor((intPart % 1000000) / 1000);
-  const remainder = intPart % 1000;
+  function getWords(amount: number): string {
+    if (amount === 0) return "";
+    let res = "";
+    const millions = Math.floor(amount / 1000000);
+    const thousands = Math.floor((amount % 1000000) / 1000);
+    const remainder = amount % 1000;
 
-  if (millions > 0) {
-    result += convertGroup(millions) + " MILLION" + (millions > 1 ? "S " : " ");
-  }
-
-  if (thousands > 0) {
-    if (thousands === 1) {
-      result += "MILLE ";
-    } else {
-      result += convertGroup(thousands, true) + " MILLE ";
+    if (millions > 0) {
+      res += convertGroup(millions) + " MILLION" + (millions > 1 ? "S " : " ");
     }
+
+    if (thousands > 0) {
+      if (thousands === 1) {
+        res += "MILLE ";
+      } else {
+        res += convertGroup(thousands, true) + " MILLE ";
+      }
+    }
+
+    if (remainder > 0) {
+      res += convertGroup(remainder);
+    }
+    return res.trim();
   }
 
-  if (remainder > 0) {
-    result += convertGroup(remainder);
+  let finalStr = "";
+  if (intPart === 0 && decPart === 0) return "ZÉRO DINAR";
+
+  if (intPart > 0) {
+    finalStr += getWords(intPart) + (intPart > 1 ? " DINARS" : " DINAR");
   }
 
-  return result.trim().toUpperCase() + " DINARS";
+  if (decPart > 0) {
+    if (finalStr !== "") finalStr += " ET ";
+    finalStr += getWords(decPart) + (decPart > 1 ? " CENTIMES" : " CENTIME");
+  }
+
+  return finalStr.trim().toUpperCase();
 }
 
 interface ReceiptProps {
@@ -362,7 +378,7 @@ export const Receipt = React.forwardRef<HTMLDivElement, ReceiptProps>(
           {/* SIGNATURES AREAS */}
           <div className="mt-20 grid grid-cols-2 gap-10">
             <div className="text-center h-36 border-2 border-dashed border-gray-100 rounded-2xl p-4 flex flex-col justify-between bg-gray-50/20">
-              <p className="text-[10px] font-black uppercase text-gray-400 tracking-widest">Signature & Cachet — Le Fournisseur</p>
+              <p className="text-[10px] font-black uppercase text-gray-400 tracking-widest">Signature & Cachet — Le Fournisseور</p>
               <div className="text-[8px] font-bold opacity-10 uppercase tracking-widest">iPOS ZEN ELITE SYSTEM</div>
             </div>
             <div className="text-center h-36 border-2 border-dashed border-gray-100 rounded-2xl p-4 flex flex-col justify-between bg-gray-50/20">
