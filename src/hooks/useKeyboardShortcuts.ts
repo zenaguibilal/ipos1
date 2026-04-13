@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useContext } from 'react';
-import { KeyboardShortcutsContext } from '@/contexts/KeyboardShortcutsContext';
+import { useEffect, useContext, useRef } from 'react';
+import { KeyboardShortcutsActionsContext } from '@/contexts/KeyboardShortcutsContext';
 
 export interface ShortcutConfig {
   key: string;            // 'Enter', 'Escape', 'F2', '+', '-', '?'
@@ -18,6 +18,7 @@ export interface ShortcutConfig {
  * Détermine si un champ de saisie est actuellement focalisé.
  */
 const isInputFocused = (): boolean => {
+  if (typeof document === 'undefined') return false;
   const el = document.activeElement;
   if (!el) return false;
   const tag = el.tagName;
@@ -32,35 +33,35 @@ const isInputFocused = (): boolean => {
 };
 
 /**
- * Hook pour enregistrer et gérer des raccourcis clavier dans un composant.
- * @param shortcuts Liste des configurations de raccourcis.
- * @param id Identifiant unique pour le composant (pour l'aide).
- * @param active Si les raccourcis doivent être actifs (défaut: true).
+ * Hook لبرمجة مختصرات لوحة المفاتيح مع حماية ضد التكرار اللانهائي.
  */
 export function useKeyboardShortcuts(
   shortcuts: ShortcutConfig[],
   id: string,
   active: boolean = true
 ): void {
-  const context = useContext(KeyboardShortcutsContext);
+  const actions = useContext(KeyboardShortcutsActionsContext);
+  
+  // استخدام مرجع لضمان أن المستمع لديه دائماً أحدث الوظائف دون إعادة تشغيل التأثير
+  const shortcutsRef = useRef(shortcuts);
+  shortcutsRef.current = shortcuts;
 
-  // Enregistrement des raccourcis dans le contexte global (pour l'aide)
+  // تسجيل المختصرات في النظام (لنافذة المساعدة)
   useEffect(() => {
-    if (active && context) {
-      context.registerShortcuts(id, shortcuts);
-      return () => context.unregisterShortcuts(id);
+    if (active && actions) {
+      actions.registerShortcuts(id, shortcutsRef.current);
+      return () => actions.unregisterShortcuts(id);
     }
-  }, [id, shortcuts, active, context]);
+  }, [id, active, actions]); // لا نضع 'shortcuts' هنا لمنع حلقات التكرار
 
-  // Gestionnaire d'événements clavier
+  // إدارة مستمع الأحداث
   useEffect(() => {
     if (!active) return;
 
     const handleKeyDown = (event: KeyboardEvent) => {
-      // Normalisation de la touche pour la comparaison
       const pressedKey = event.key;
       
-      for (const config of shortcuts) {
+      for (const config of shortcutsRef.current) {
         const matchKey = config.key.toLowerCase() === pressedKey.toLowerCase();
         const matchCtrl = !!config.ctrl === (event.ctrlKey || event.metaKey);
         const matchShift = !!config.shift === event.shiftKey;
@@ -69,7 +70,7 @@ export function useKeyboardShortcuts(
         if (matchKey && matchCtrl && matchShift && matchAlt) {
           const focused = isInputFocused();
           
-          // Exceptions universelles : Escape et Ctrl+Enter se déclenchent toujours
+          // الحالات العالمية: Escape و Ctrl+Enter تعمل دائماً
           const isUniversal = pressedKey === 'Escape' || (pressedKey === 'Enter' && (event.ctrlKey || event.metaKey));
           
           if (!isUniversal && focused && !config.ignoreInputFocus) {
@@ -88,5 +89,5 @@ export function useKeyboardShortcuts(
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [shortcuts, active]);
+  }, [active]); // يعتمد فقط على حالة النشاط
 }

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useContext, useEffect } from 'react';
-import { KeyboardShortcutsContext } from '@/contexts/KeyboardShortcutsContext';
+import { KeyboardShortcutsDataContext } from '@/contexts/KeyboardShortcutsContext';
 import { 
   Dialog, 
   DialogContent, 
@@ -10,19 +10,19 @@ import {
   DialogDescription 
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Keyboard, X, Command } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { Keyboard, Command } from 'lucide-react';
 
 /**
- * Overlay d'aide affichant tous les raccourcis clavier actifs.
+ * نافذة المساعدة لمختصرات لوحة المفاتيح.
+ * تستهلك سياق البيانات فقط، مما يضمن تحديثها فقط عند الحاجة.
  */
 export function KeyboardShortcutsHelp() {
-  const context = useContext(KeyboardShortcutsContext);
+  const allShortcuts = useContext(KeyboardShortcutsDataContext);
   const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Déclenché par '?' si aucun input n'est focus
+      // تفعيل المساعدة بالضغط على '?' (عندما لا يكون أي حقل إدخال نشطاً)
       if (e.key === '?' && !['INPUT', 'TEXTAREA'].includes(document.activeElement?.tagName || '')) {
         setIsOpen(true);
       }
@@ -31,13 +31,10 @@ export function KeyboardShortcutsHelp() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  if (!context) return null;
-
-  const sections = Object.entries(context.allShortcuts).filter(([_, list]) => list.length > 0);
+  const sections = Object.entries(allShortcuts).filter(([_, list]) => list.length > 0);
 
   return (
     <>
-      {/* Bouton icône flottant */}
       <Button
         variant="outline"
         size="icon"
