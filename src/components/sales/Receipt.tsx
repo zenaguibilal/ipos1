@@ -1,320 +1,287 @@
-
 'use client';
 
 import React from 'react';
 import type { Sale, CompanyProfile } from '@/lib/types';
-import { formatCurrency, safeToDate, cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import QRCode from 'qrcode';
-import { numberToFrenchWords } from '@/lib/numberToWords';
 
-const QRCodeCanvas = ({ text }: { text: string }) => {
-    const ref = React.useRef<HTMLCanvasElement>(null);
-    React.useEffect(() => {
-        if (ref.current && text) {
-            QRCode.toCanvas(
-                ref.current,
-                text,
-                { width: 80, margin: 1, color: { dark: '#000000', light: '#ffffff' } },
-                () => {},
-            );
-        }
-    }, [text]);
-    return <canvas ref={ref} className="mx-auto" />;
-};
+/**
+ * Interface exact demandé pour le Bon de Livraison
+ */
+interface DeliveryNoteData {
+  docNumber: string;
+  date: string;
+  companyName: string;
+  companyAddress: string;
+  companyPhone: string;
+  clientName: string;
+  clientAddress: string;
+  paymentMode: string;
+  seller: string;
+  orderRef: string;
+  items: {
+    id: number;
+    designation: string;
+    qty: number;
+    unitPrice: number;
+    total: number;
+  }[];
+  totalQty: number;
+  grandTotal: number;
+  oldBalance: number;
+  payment: number;
+  newBalance: number;
+  amountInWords: string;
+}
+
+/**
+ * Fonction de conversion des nombres en lettres françaises
+ */
+function numberToWordsFR(n: number): string {
+  const units = ['', 'UN', 'DEUX', 'TROIS', 'QUATRE', 'CINQ', 'SIX', 'SEPT', 'HUIT', 'NEUF'];
+  const teens = ['DIX', 'ONZE', 'DOUZE', 'TREIZE', 'QUATORZE', 'QUINZE', 'SEIZE', 'DIX-SEPT', 'DIX-HUIT', 'DIX-NEUF'];
+  const tens = ['', '', 'VINGT', 'TRENTE', 'QUARANTE', 'CINQUANTE', 'SOIXANTE', 'SOIXANTE-DIX', 'QUATRE-VINGTS', 'QUATRE-VINGT-DIX'];
+
+  function convert(num: number): string {
+    if (num < 10) return units[num];
+    if (num < 20) return teens[num - 10];
+    if (num < 100) {
+      const unit = num % 10;
+      const ten = Math.floor(num / 10);
+      return tens[ten] + (unit > 0 ? (ten === 7 || ten === 9 ? '-' : ' ET ') + convert(unit) : '');
+    }
+    if (num < 1000) {
+      const cent = Math.floor(num / 100);
+      const rest = num % 100;
+      return (cent === 1 ? 'CENT' : units[cent] + ' CENT') + (rest > 0 ? ' ' + convert(rest) : '');
+    }
+    if (num < 1000000) {
+      const mille = Math.floor(num / 1000);
+      const rest = num % 1000;
+      return (mille === 1 ? 'MILLE' : convert(mille) + ' MILLE') + (rest > 0 ? ' ' + convert(rest) : '');
+    }
+    return num.toString();
+  }
+
+  const intPart = Math.floor(n);
+  const result = convert(intPart);
+  return result + " DINARS";
+}
 
 interface ReceiptProps {
-    sale:        Sale;
-    profile:     CompanyProfile | null;
-    receiptType: 'a4' | 'thermal';
-    customerName?: string;
-    isDuplicate?: boolean;
+  sale: Sale;
+  profile: CompanyProfile | null;
+  receiptType: 'a4' | 'thermal';
+  customerName?: string;
+  oldBalance?: number;
 }
 
 export const Receipt = React.forwardRef<HTMLDivElement, ReceiptProps>(
-    ({ sale, profile, receiptType, customerName, isDuplicate = false }, ref) => {
-        const thermal = receiptType === 'thermal';
+  ({ sale, profile, receiptType, customerName, oldBalance = 0 }, ref) => {
+    const isThermal = receiptType === 'thermal';
 
-        if (thermal) {
-            const amountPaid      = Number(sale.amountPaid      || 0);
-            const total           = Number(sale.total           || 0);
-            const remainingBalance = Number(sale.remainingBalance || 0);
-            const subtotal        = Number(sale.subtotal        || 0);
-            const discountAmount  = Number(sale.discountAmount  || 0);
-            const hasDebt         = remainingBalance > 0.01;
-            const changeGiven     = Math.max(0, amountPaid - total);
-            const displayName = customerName && customerName !== 'Client de passage' 
-                ? customerName 
-                : (sale.customerUuid ? `Client #${sale.customerUuid.substring(0, 8)}` : 'Passage');
+    // Préparation des données pour le format A4 (Bon de Livraison)
+    const data: DeliveryNoteData = {
+      docNumber: sale.invoiceNumber,
+      date: sale.createdAt ? format(new Date(sale.createdAt), 'dd/MM/yyyy') : '',
+      companyName: profile?.companyName || 'MAGASIN ZEN',
+      companyAddress: profile?.address || '',
+      companyPhone: profile?.phone || '',
+      clientName: customerName || 'Client de passage',
+      clientAddress: 'ALGER, ALGÉRIE',
+      paymentMode: sale.paymentStatus === 'paid' ? 'Comptant' : sale.paymentStatus === 'partial' ? 'Partiel' : 'À Crédit',
+      seller: 'ADMIN',
+      orderRef: '—',
+      items: sale.items.map((item, idx) => ({
+        id: idx + 1,
+        designation: item.name,
+        qty: item.quantity,
+        unitPrice: item.price,
+        total: item.quantity * item.price,
+      })),
+      totalQty: sale.items.reduce((sum, i) => sum + i.quantity, 0),
+      grandTotal: sale.total,
+      oldBalance: oldBalance,
+      payment: sale.amountPaid,
+      newBalance: (oldBalance + sale.total) - sale.amountPaid,
+      amountInWords: numberToWordsFR(sale.total),
+    };
 
-            return (
-                <div
-                    ref={ref}
-                    className="bg-white text-black leading-tight w-[80mm] font-mono text-[10pt] px-4 py-6 thermal-receipt"
-                >
-                    <header className="text-center mb-4">
-                        <p className="font-bold uppercase tracking-tighter text-lg">
-                            {profile?.companyName || 'iPOS Zen'}
-                        </p>
-                        <div className="text-[9pt] text-gray-700 mt-1 space-y-0.5">
-                            {profile?.address && <p>{profile.address}</p>}
-                            {profile?.phone && <p className="font-semibold">Tél: {profile.phone}</p>}
-                        </div>
-                    </header>
-                    <div className="border-b-2 border-black mb-4" />
-                    <section className="text-[9pt] mb-4 space-y-1">
-                        <div className="flex justify-between font-bold"><span>FACTURE N°:</span><span className="font-mono">{sale.invoiceNumber}</span></div>
-                        <div className="flex justify-between"><span>DATE:</span><span>{format(safeToDate(sale.createdAt!), 'dd/MM/yyyy HH:mm', { locale: fr })}</span></div>
-                        <div className="flex justify-between italic"><span>CLIENT:</span><span className="font-bold">{displayName}</span></div>
-                    </section>
-                    <div className="border-b border-dashed border-gray-400 mb-2" />
-                    <table className="w-full text-[9pt] mb-4 border-collapse">
-                        <thead><tr className="border-b-2 border-black text-left"><th className="pb-1 font-bold">ARTICLE</th><th className="pb-1 text-center font-bold w-10">QTÉ</th><th className="pb-1 text-right font-bold w-24">TOTAL</th></tr></thead>
-                        <tbody className="divide-y divide-gray-200">
-                            {sale.items.map((item, i) => (
-                                <tr key={i} className="align-top">
-                                    <td className="py-1.5 pr-2 font-medium leading-snug">{item.name}</td>
-                                    <td className="py-1.5 text-center font-mono">{item.quantity}</td>
-                                    <td className="py-1.5 text-right font-bold font-mono">{(Number(item.price || 0) * Number(item.quantity || 0)).toFixed(2)}</td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                    <div className="border-t-2 border-black pt-2 space-y-1.5">
-                        <div className="flex justify-between text-[9pt]"><span>SOUS-TOTAL:</span><span className="font-mono">{formatCurrency(subtotal)}</span></div>
-                        {discountAmount > 0 && <div className="flex justify-between text-[9pt] text-gray-600"><span>REMISE:</span><span className="font-mono">-{formatCurrency(discountAmount)}</span></div>}
-                        <div className="flex justify-between font-extrabold text-[12pt] border-y border-black py-1 my-1"><span>TOTAL NET:</span><span className="font-mono">{formatCurrency(total)}</span></div>
-                        <div className="flex justify-between text-[10pt] font-medium"><span>REÇU CLIENT:</span><span className="font-mono">{formatCurrency(amountPaid)}</span></div>
-                        <div className="flex justify-between text-[10pt] font-bold"><span>{hasDebt ? 'SOLDE DÛ:' : 'RENDU:'}</span><span className="font-mono text-lg">{hasDebt ? formatCurrency(remainingBalance) : formatCurrency(changeGiven)}</span></div>
-                    </div>
-                    <footer className="text-center mt-8 border-t border-dashed border-gray-300 pt-4">
-                        <p className="text-[8pt] font-bold italic mb-4">MERCI DE VOTRE VISITE !</p>
-                        <QRCodeCanvas text={sale.invoiceNumber} />
-                    </footer>
-                </div>
-            );
-        }
+    const formatNum = (val: number) => val.toLocaleString('fr-DZ', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-        // ─── RENDU A4 CONFORME DROIT ALGÉRIEN (100% FRANÇAIS) ───
-        const totalTTC = sale.total;
-        const totalHT = sale.items.reduce((acc, item) => {
-            const tvaRate = item.tva_rate || profile?.tva_rate || 0;
-            const priceHT = item.price / (1 + tvaRate / 100);
-            return acc + (priceHT * item.quantity);
-        }, 0);
+    if (isThermal) {
+      return (
+        <div ref={ref} className="bg-white text-black font-mono text-[10pt] w-[80mm] p-4 thermal-receipt">
+          <header className="text-center mb-4">
+            <p className="font-bold uppercase text-lg">{data.companyName}</p>
+            <p className="text-[8pt]">{data.companyAddress}</p>
+            <p className="text-[8pt]">Tél: {data.companyPhone}</p>
+          </header>
+          <div className="border-b-2 border-black mb-4" />
+          <p className="font-bold">BL N°: {data.docNumber}</p>
+          <p>DATE: {data.date}</p>
+          <p className="mb-4">CLIENT: {data.clientName}</p>
+          <table className="w-full text-left text-[9pt] mb-4">
+            <thead>
+              <tr className="border-b border-black">
+                <th>ART</th>
+                <th className="text-center">QTÉ</th>
+                <th className="text-right">TOT</th>
+              </tr>
+            </thead>
+            <tbody>
+              {data.items.map((item) => (
+                <tr key={item.id}>
+                  <td className="py-1">{item.designation}</td>
+                  <td className="text-center">{item.qty}</td>
+                  <td className="text-right">{formatNum(item.total)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <div className="border-t-2 border-black pt-2 text-right font-bold">
+            <p>TOTAL NET: {formatNum(data.grandTotal)} DA</p>
+          </div>
+          <footer className="text-center mt-6 text-[8pt]">MERCI DE VOTRE VISITE</footer>
+        </div>
+      );
+    }
+
+    return (
+      <div ref={ref} className="bg-white text-gray-900 font-sans print:p-0">
+        <style dangerouslySetInnerHTML={{ __html: `
+          @media print {
+            @page { size: A4; margin: 0; }
+            body { background: white; }
+            .no-print { display: none !important; }
+          }
+          .page {
+            width: 210mm;
+            min-height: 297mm;
+            padding: 14mm;
+            background: white;
+            margin: 0 auto;
+          }
+        `}} />
         
-        // Group TVA by rate
-        const tvaGroups = sale.items.reduce((acc, item) => {
-            const rate = item.tva_rate || profile?.tva_rate || 0;
-            const ttc = item.price * item.quantity;
-            const ht = ttc / (1 + rate / 100);
-            const tva = ttc - ht;
-            if (!acc[rate]) acc[rate] = { ht: 0, tva: 0 };
-            acc[rate].ht += ht;
-            acc[rate].tva += tva;
-            return acc;
-        }, {} as Record<number, { ht: number, tva: number }>);
-
-        const qrData = JSON.stringify({
-            inv: sale.invoiceNumber,
-            nif: profile?.nif,
-            ttc: sale.total,
-            date: sale.createdAt
-        });
-
-        return (
-            <div
-                ref={ref}
-                className="relative bg-white text-black font-sans text-[10pt] w-[210mm] min-h-[297mm] mx-auto p-[15mm] shadow-lg border border-gray-100 overflow-hidden"
-            >
-                {/* Filigrane Duplicata */}
-                {isDuplicate && (
-                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-0">
-                        <span className="text-[120pt] font-black text-red-600/10 -rotate-45 uppercase">
-                            DUPLICATA
-                        </span>
-                    </div>
-                )}
-
-                <div className="relative z-10 flex flex-col h-full">
-                    {/* EN-TÊTE PROFESSIONNEL */}
-                    <header className="grid grid-cols-2 gap-10 mb-10">
-                        <div className="space-y-4">
-                            {profile?.logoUrl ? (
-                                <img src={profile.logoUrl} alt="Logo" className="max-h-20 object-contain" />
-                            ) : (
-                                <div className="w-16 h-16 bg-primary flex items-center justify-center text-white font-black text-2xl rounded-xl">
-                                    {profile?.companyName?.substring(0, 2).toUpperCase() || 'IZ'}
-                                </div>
-                            )}
-                            <div className="space-y-1">
-                                <h1 className="text-xl font-black text-primary uppercase tracking-tight leading-none">
-                                    {profile?.companyName || 'MAGASIN ZEN'}
-                                </h1>
-                                <p className="text-sm font-bold text-gray-600">{profile?.legal_form || 'Entreprise Individuelle'}</p>
-                                <p className="text-sm leading-tight text-gray-500 max-w-xs">{profile?.address}</p>
-                            </div>
-                        </div>
-
-                        <div className="bg-gray-50 p-6 rounded-2xl border border-gray-100 space-y-2 text-[9pt]">
-                            <div className="grid grid-cols-[80px_1fr] gap-2">
-                                <span className="font-bold text-gray-400">RC:</span>
-                                <span className="font-bold">{profile?.rc_number || '—'}</span>
-                                <span className="font-bold text-gray-400">NIF:</span>
-                                <span className="font-bold">{profile?.nif || '—'}</span>
-                                <span className="font-bold text-gray-400">AI:</span>
-                                <span className="font-bold">{profile?.ai_number || '—'}</span>
-                                <span className="font-bold text-gray-400">NIS:</span>
-                                <span className="font-bold">{profile?.nis_number || '—'}</span>
-                            </div>
-                            <div className="pt-4 border-t border-gray-200 mt-2 space-y-1">
-                                <p className="font-bold flex items-center gap-2">
-                                    <span className="w-4 h-4 bg-primary/10 rounded flex items-center justify-center text-[10px]">📞</span>
-                                    {profile?.phone || '—'}
-                                </p>
-                                <p className="font-bold flex items-center gap-2">
-                                    <span className="w-4 h-4 bg-primary/10 rounded flex items-center justify-center text-[10px]">✉️</span>
-                                    {profile?.email || '—'}
-                                </p>
-                            </div>
-                        </div>
-                    </header>
-
-                    {/* BANDEAU TITRE */}
-                    <div className="bg-primary p-6 rounded-2xl text-white flex justify-between items-center mb-8 shadow-md">
-                        <div>
-                            <h2 className="text-2xl font-black tracking-widest uppercase">FACTURE</h2>
-                            <p className="text-[10pt] font-bold opacity-80 uppercase">Originale</p>
-                        </div>
-                        <div className="text-right">
-                            <p className="text-2xl font-mono font-black tracking-tighter">N° {sale.invoiceNumber}</p>
-                            <p className="text-sm font-bold opacity-80">Émise le: {format(safeToDate(sale.createdAt!), 'dd/MM/yyyy', { locale: fr })}</p>
-                        </div>
-                    </div>
-
-                    {/* INFOS CLIENT & ÉCHÉANCE */}
-                    <div className="grid grid-cols-2 gap-10 mb-8 px-2">
-                        <div>
-                            <h3 className="text-[8pt] font-black text-gray-400 uppercase tracking-widest mb-2">Facturé à :</h3>
-                            <p className="text-lg font-black">{customerName || 'Client de passage'}</p>
-                            {sale.customerUuid && <p className="text-xs font-bold text-gray-500 mt-1">ID Client: {sale.customerUuid.substring(0,8).toUpperCase()}</p>}
-                        </div>
-                        <div className="text-right">
-                            <h3 className="text-[8pt] font-black text-gray-400 uppercase tracking-widest mb-2">Modalités :</h3>
-                            <p className="text-sm font-bold uppercase">Règlement: {sale.paymentStatus === 'paid' ? 'Comptant' : 'À Crédit'}</p>
-                            {sale.dueDate && (
-                                <p className="text-sm font-black text-primary mt-1 uppercase">
-                                    Échéance: {format(safeToDate(sale.dueDate), 'dd/MM/yyyy')}
-                                </p>
-                            )}
-                        </div>
-                    </div>
-
-                    {/* TABLEAU ARTICLES */}
-                    <div className="flex-grow">
-                        <table className="w-full border-collapse">
-                            <thead>
-                                <tr className="bg-gray-100 text-[8pt] font-black uppercase text-gray-600 border-y-2 border-gray-200">
-                                    <th className="py-4 px-4 text-left">Désignation</th>
-                                    <th className="py-4 px-2 text-center w-16">Qté</th>
-                                    <th className="py-4 px-2 text-center w-16">Unité</th>
-                                    <th className="py-4 px-2 text-right w-24">P.U HT</th>
-                                    <th className="py-4 px-2 text-center w-12">TVA%</th>
-                                    <th className="py-4 px-4 text-right w-32">Total TTC</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-gray-100">
-                                {sale.items.map((item, idx) => {
-                                    const tvaRate = item.tva_rate || profile?.tva_rate || 0;
-                                    const ttc = item.price * item.quantity;
-                                    const ht = ttc / (1 + tvaRate / 100);
-                                    
-                                    return (
-                                        <tr key={idx} className={cn("text-sm transition-colors", idx % 2 === 0 ? "bg-white" : "bg-gray-50/50")}>
-                                            <td className="py-4 px-4 font-bold text-gray-800">{item.name}</td>
-                                            <td className="py-4 px-2 text-center font-mono font-bold">{item.quantity}</td>
-                                            <td className="py-4 px-2 text-center text-gray-500 font-bold uppercase text-[8pt]">Pcs</td>
-                                            <td className="py-4 px-2 text-right font-mono">{ht.toFixed(2)}</td>
-                                            <td className="py-4 px-2 text-center text-gray-400 font-bold">{tvaRate}%</td>
-                                            <td className="py-4 px-4 text-right font-black tracking-tighter">{ttc.toFixed(2)}</td>
-                                        </tr>
-                                    );
-                                })}
-                            </tbody>
-                        </table>
-                    </div>
-
-                    {/* BLOC TOTAUX & LETTRES */}
-                    <div className="mt-10 grid grid-cols-[1fr_250px] gap-10 items-start">
-                        <div className="space-y-6">
-                            <div className="bg-primary/5 border-l-4 border-primary p-6 rounded-r-2xl">
-                                <p className="text-[8pt] font-black text-primary/60 uppercase tracking-widest mb-2">Arrêtée la présente facture à la somme de :</p>
-                                <p className="text-md font-black text-gray-800 italic leading-relaxed">
-                                    {numberToFrenchWords(sale.total)}
-                                </p>
-                            </div>
-                            
-                            {profile?.is_tva_exempt && (
-                                <p className="text-[8pt] italic text-gray-400 px-2">
-                                    Exonération de TVA : {profile.tva_exempt_reason || 'Dispositions légales en vigueur'}
-                                </p>
-                            )}
-                        </div>
-
-                        <div className="space-y-3 bg-gray-50 p-6 rounded-2xl border border-gray-100">
-                            <div className="flex justify-between text-xs font-bold text-gray-500">
-                                <span>TOTAL HT</span>
-                                <span className="font-mono">{totalHT.toFixed(2)} DA</span>
-                            </div>
-                            
-                            {Object.entries(tvaGroups).map(([rate, vals]) => (
-                                <div key={rate} className="flex justify-between text-xs font-medium text-gray-400">
-                                    <span>TVA {rate}%</span>
-                                    <span className="font-mono">{vals.tva.toFixed(2)} DA</span>
-                                </div>
-                            ))}
-
-                            <div className="h-px bg-gray-200 my-2" />
-                            
-                            <div className="flex justify-between items-end">
-                                <span className="text-xs font-black uppercase text-primary">TOTAL TTC</span>
-                                <span className="text-xl font-black tracking-tighter text-primary">
-                                    {formatCurrency(sale.total)}
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* SIGNATURES & QR */}
-                    <div className="mt-16 grid grid-cols-3 gap-6 items-end">
-                        <div className="border-2 border-dashed border-gray-200 rounded-2xl p-4 h-32 flex flex-col justify-between">
-                            <p className="text-[8pt] font-black uppercase text-gray-400 text-center">Signature et cachet du vendeur</p>
-                        </div>
-                        
-                        <div className="flex flex-col items-center">
-                            <QRCodeCanvas text={qrData} />
-                            <p className="text-[6pt] font-mono opacity-30 mt-2 uppercase">{sale.uuid}</p>
-                        </div>
-
-                        <div className="border-2 border-dashed border-gray-200 rounded-2xl p-4 h-32 flex flex-col justify-between">
-                            <p className="text-[8pt] font-black uppercase text-gray-400 text-center">Signature et date du client</p>
-                        </div>
-                    </div>
-
-                    {/* PIED DE PAGE FIXE */}
-                    <footer className="mt-10 pt-6 border-t border-gray-100 text-center space-y-2">
-                        <p className="text-[7pt] text-gray-400 leading-relaxed max-w-2xl mx-auto uppercase font-bold">
-                            Facture établie conformément à la législation fiscale algérienne en vigueur. Tout retard de paiement entraîne des pénalités conformément à l'article 938 du Code Civil.
-                        </p>
-                        <div className="flex justify-between items-center text-[8pt] font-bold text-gray-300">
-                            <span>iPOS Zen v1.9.8 System</span>
-                            <span>Page 1 / 1</span>
-                        </div>
-                    </footer>
-                </div>
+        <div className="page flex flex-col">
+          {/* HEADER */}
+          <div className="flex justify-between items-start border-b-2 border-[#111827] pb-6 mb-8">
+            <div className="flex flex-col gap-1">
+              <h1 className="text-3xl font-black uppercase text-[#111827]">{data.companyName}</h1>
+              <p className="text-sm font-medium opacity-70">{data.companyAddress}</p>
+              <p className="text-sm font-bold">Tél: {data.companyPhone}</p>
             </div>
-        );
-    },
+            <div className="flex flex-col items-end">
+              <h2 className="text-3xl font-black text-blue-600 uppercase tracking-tighter">Bon de Livraison</h2>
+              <div className="mt-2 text-right">
+                <p className="font-mono font-bold text-lg">N°: {data.docNumber}</p>
+                <p className="text-sm font-medium">Date: {data.date}</p>
+              </div>
+            </div>
+          </div>
+
+          {/* CLIENT SECTION */}
+          <div className="grid grid-cols-12 gap-6 mb-8">
+            <div className="col-span-7 bg-[#EFF6FF] border border-[#BFDBFE] p-6 rounded-xl">
+              <h3 className="text-[10px] font-black uppercase text-blue-400 tracking-widest mb-2">Destinataire</h3>
+              <p className="text-xl font-black text-gray-900">{data.clientName}</p>
+              <p className="text-sm font-medium text-gray-600 mt-1">{data.clientAddress}</p>
+            </div>
+            <div className="col-span-5 grid grid-cols-2 gap-2">
+              {[
+                { label: 'Réf. commande', val: data.orderRef },
+                { label: 'Mode paiement', val: data.paymentMode },
+                { label: 'Vendeur', val: data.seller },
+                { label: 'Date livraison', val: data.date },
+              ].map((box, i) => (
+                <div key={i} className="border border-gray-200 p-3 rounded-lg flex flex-col justify-center">
+                  <span className="text-[8px] font-black uppercase text-gray-400">{box.label}</span>
+                  <span className="text-[10px] font-bold truncate">{box.val}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* ITEMS TABLE */}
+          <div className="flex-grow">
+            <table className="w-full border-collapse">
+              <thead>
+                <tr className="bg-[#111827] text-white">
+                  <th className="py-4 px-4 text-left text-[10px] font-black uppercase rounded-tl-xl w-12">N°</th>
+                  <th className="py-4 px-4 text-left text-[10px] font-black uppercase">Désignation</th>
+                  <th className="py-4 px-4 text-center text-[10px] font-black uppercase w-20">Qté</th>
+                  <th className="py-4 px-4 text-right text-[10px] font-black uppercase w-32">Prix U. (DA)</th>
+                  <th className="py-4 px-4 text-right text-[10px] font-black uppercase rounded-tr-xl w-32">Total (DA)</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {data.items.map((item, idx) => (
+                  <tr key={item.id} className={idx % 2 === 0 ? 'bg-white' : 'bg-[#F9FAFB]'}>
+                    <td className="py-4 px-4 font-mono text-xs text-gray-400">{item.id}</td>
+                    <td className="py-4 px-4 font-bold text-sm">{item.designation}</td>
+                    <td className="py-4 px-4 text-center font-mono font-bold">{item.qty}</td>
+                    <td className="py-4 px-4 text-right font-mono font-bold">{formatNum(item.unitPrice)}</td>
+                    <td className="py-4 px-4 text-right font-mono font-black text-[#111827]">{formatNum(item.total)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* TOTALS SECTION */}
+          <div className="mt-10 grid grid-cols-2 gap-10 items-end">
+            <div className="space-y-6">
+              <div className="bg-gray-50 p-6 rounded-2xl border border-gray-100">
+                <p className="text-[10px] font-black uppercase text-gray-400 mb-2 tracking-widest">Arrêté à la somme de :</p>
+                <p className="text-sm font-black italic text-gray-800 leading-relaxed uppercase">
+                  {data.amountInWords}
+                </p>
+              </div>
+              <div className="pt-10 border-t border-dashed border-gray-200">
+                <p className="text-[10px] font-black uppercase text-gray-300">Signature Client (Bon pour accord)</p>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex justify-between px-4 py-2 text-sm font-bold text-gray-500">
+                <span>Quantité Totale</span>
+                <span className="font-mono">{data.totalQty}</span>
+              </div>
+              <div className="flex justify-between px-4 py-2 text-sm font-bold text-gray-500">
+                <span>Ancien solde</span>
+                <span className="font-mono">{formatNum(data.oldBalance)} DA</span>
+              </div>
+              <div className="flex justify-between px-4 py-2 text-sm font-bold text-emerald-600">
+                <span>Versement</span>
+                <span className="font-mono">-{formatNum(data.payment)} DA</span>
+              </div>
+              <div className="bg-[#111827] text-white p-6 rounded-2xl flex justify-between items-center mt-4">
+                <span className="text-xs font-black uppercase tracking-widest opacity-60">TOTAL NET (DA)</span>
+                <span className="text-3xl font-black font-mono tracking-tighter">{formatNum(data.newBalance)}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* SIGNATURES */}
+          <div className="mt-20 grid grid-cols-2 gap-10">
+            <div className="text-center h-32 border-2 border-dashed border-gray-100 rounded-2xl p-4">
+              <p className="text-[10px] font-black uppercase text-gray-400">Signature & Cachet — Le Fournisseur</p>
+            </div>
+            <div className="text-center h-32 border-2 border-dashed border-gray-100 rounded-2xl p-4">
+              <p className="text-[10px] font-black uppercase text-gray-400">Lu et approuvé — Le Client</p>
+            </div>
+          </div>
+
+          {/* FOOTER */}
+          <footer className="mt-auto pt-10 border-t border-gray-100 flex justify-between items-center text-[8px] font-bold text-gray-300 uppercase tracking-[0.2em]">
+            <span>{data.companyName}</span>
+            <span>Généré par iPOS — {format(new Date(), 'dd/MM/yyyy HH:mm')}</span>
+          </footer>
+        </div>
+      </div>
+    );
+  }
 );
+
 Receipt.displayName = 'Receipt';

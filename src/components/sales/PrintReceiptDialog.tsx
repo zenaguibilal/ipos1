@@ -27,12 +27,19 @@ export function PrintReceiptDialog({
     customerName,
 }: PrintReceiptDialogProps) {
     const profile = useAppStore(state => state.companyProfile);
-    const [receiptType, setReceiptType] = useState<'a4' | 'thermal'>('thermal');
+    const [receiptType, setReceiptType] = useState<'a4' | 'thermal'>('a4'); // Par défaut A4 pour Bon de Livraison
     const [isGenerating, setIsGenerating] = useState(false);
     const [customer, setCustomer] = useState<Customer | null>(null);
     const receiptRef = useRef<HTMLDivElement>(null);
 
-    // Fetch customer details locally to ensure we have the real name and phone
+    // Calcul du solde ancien avant cette vente
+    const oldBalance = useMemo(() => {
+        if (!customer || !sale) return 0;
+        // Solde actuel - (Total vente - Ce qui a été payé)
+        // Mais plus précisément pour un BL, on veut le solde AVANT cette opération
+        return customer.outstandingBalance - (sale.total - sale.amountPaid);
+    }, [customer, sale]);
+
     useEffect(() => {
         if (isOpen && sale?.customerUuid) {
             customerService.getCustomerByUuid(sale.customerUuid)
@@ -45,7 +52,6 @@ export function PrintReceiptDialog({
         }
     }, [isOpen, sale]);
 
-    // Resolve the best available customer name
     const resolvedCustomerName = useMemo(() => {
         if (customer) return `${customer.firstName} ${customer.lastName}`;
         if (customerName && customerName !== 'Client de passage') return customerName;
@@ -56,12 +62,11 @@ export function PrintReceiptDialog({
         if (typeof window !== 'undefined') window.print();
     }, []);
 
-    // Raccourcis pour la fenêtre d'impression
     useKeyboardShortcuts([
         {
             key: 'p',
             action: handlePrint,
-            description: 'Imprimer la facture',
+            description: 'Imprimer le document',
             ignoreInputFocus: true
         },
         {
@@ -81,7 +86,7 @@ export function PrintReceiptDialog({
             const html2canvas = (await import('html2canvas')).default;
 
             const element = receiptRef.current;
-            if (!element) throw new Error("Référence de factura non trouvée");
+            if (!element) throw new Error("Référence document non trouvée");
 
             const canvas = await html2canvas(element, {
                 scale: 2,
@@ -92,9 +97,9 @@ export function PrintReceiptDialog({
 
             const imgData = canvas.toDataURL('image/png');
             const pdf = new jsPDF({
-                orientation: receiptType === 'a4' ? 'portrait' : 'portrait',
+                orientation: 'portrait',
                 unit: 'mm',
-                format: receiptType === 'a4' ? 'a4' : [80, Math.max(297, canvas.height * 80 / canvas.width)]
+                format: receiptType === 'a4' ? 'a4' : [80, 297]
             });
 
             const imgWidth = receiptType === 'a4' ? 210 : 80;
@@ -102,14 +107,14 @@ export function PrintReceiptDialog({
 
             pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
             const pdfBlob = pdf.output('blob');
-            const fileName = `Facture-${sale.invoiceNumber}.pdf`;
+            const fileName = `BL-${sale.invoiceNumber}.pdf`;
 
             if (navigator.share && navigator.canShare && navigator.canShare({ files: [new File([pdfBlob], fileName, { type: 'application/pdf' })] })) {
                 const file = new File([pdfBlob], fileName, { type: 'application/pdf' });
                 await navigator.share({
                     files: [file],
-                    title: `Facture iPOS ${sale.invoiceNumber}`,
-                    text: `Bonjour, voici votre facture n°${sale.invoiceNumber}. Merci pour votre confiance.`
+                    title: `Bon de Livraison iPOS ${sale.invoiceNumber}`,
+                    text: `Bonjour, voici votre bon de livraison n°${sale.invoiceNumber}.`
                 });
             } else {
                 const url = URL.createObjectURL(pdfBlob);
@@ -118,12 +123,7 @@ export function PrintReceiptDialog({
                 link.download = fileName;
                 link.click();
                 URL.revokeObjectURL(url);
-
-                const phone = customer?.phone || '';
-                const message = encodeURIComponent(`Bonjour, voici votre facture n°${sale.invoiceNumber}. Le fichier PDF a été téléchargé sur mon appareil.`);
-                window.open(`https://wa.me/${phone.replace(/\s/g, '')}?text=${message}`, '_blank');
-                
-                toast.success("PDF généré. Veuillez l'envoyer sur WhatsApp.");
+                toast.success("PDF généré et téléchargé.");
             }
         } catch (error: any) {
             console.error("Erreur PDF:", error);
@@ -137,22 +137,27 @@ export function PrintReceiptDialog({
 
     return (
         <>
-            {/* Hidden Area for Browser Printing */}
             <div className="hidden print:block fixed inset-0 z-[100] bg-white">
-                <Receipt sale={sale} profile={profile} receiptType={receiptType} customerName={resolvedCustomerName} />
+                <Receipt 
+                    sale={sale} 
+                    profile={profile} 
+                    receiptType={receiptType} 
+                    customerName={resolvedCustomerName} 
+                    oldBalance={oldBalance}
+                />
             </div>
 
             <Dialog open={isOpen} onOpenChange={onOpenChange}>
-                <DialogContent className="sm:max-w-2xl h-auto max-h-[90vh] flex flex-col p-0 overflow-hidden border-none shadow-xl rounded-2xl bg-card">
+                <DialogContent className="sm:max-w-4xl h-auto max-h-[95vh] flex flex-col p-0 overflow-hidden border-none shadow-xl rounded-2xl bg-card">
                     <DialogHeader className="p-4 bg-primary/5 border-b border-primary/10">
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-3">
                                 <div className="p-2 rounded-xl bg-primary text-primary-foreground shadow-lg">
-                                    <Printer className="h-5 w-5" />
+                                    <FileText className="h-5 w-5" />
                                 </div>
                                 <div>
-                                    <DialogTitle className="text-lg font-bold tracking-tight">Émission de Facture</DialogTitle>
-                                    <DialogDescription className="text-[10px] uppercase font-semibold text-primary/50"># {sale.invoiceNumber}</DialogDescription>
+                                    <DialogTitle className="text-lg font-bold tracking-tight">Impression Bon de Livraison</DialogTitle>
+                                    <DialogDescription className="text-[10px] uppercase font-semibold text-primary/50">RÉFÉRENCE # {sale.invoiceNumber}</DialogDescription>
                                 </div>
                             </div>
                             <div className="flex items-center gap-4 bg-background/50 p-1.5 rounded-xl border border-primary/10">
@@ -173,15 +178,20 @@ export function PrintReceiptDialog({
                     </DialogHeader>
 
                     <div className="flex-grow overflow-y-auto bg-muted/30 p-6 custom-scrollbar flex justify-center">
-                        {/* Scale wrapper for UI preview */}
-                        <div className="origin-top scale-[0.85] sm:scale-100 transition-transform shadow-2xl bg-white" ref={receiptRef}>
-                            <Receipt sale={sale} profile={profile} receiptType={receiptType} customerName={resolvedCustomerName} />
+                        <div className={cn("bg-white shadow-2xl transition-all origin-top", receiptType === 'a4' ? "scale-[0.7] sm:scale-[0.85] lg:scale-100" : "scale-100")} ref={receiptRef}>
+                            <Receipt 
+                                sale={sale} 
+                                profile={profile} 
+                                receiptType={receiptType} 
+                                customerName={resolvedCustomerName} 
+                                oldBalance={oldBalance}
+                            />
                         </div>
                     </div>
 
                     <DialogFooter className="p-4 bg-card border-t flex flex-wrap gap-3">
-                        <Button variant="ghost" onClick={() => onOpenChange(false)} className="rounded-xl h-10 font-bold px-6 border-white/5">
-                            <X className="mr-2 h-4 w-4" /> Fermer [Esc]
+                        <Button variant="ghost" onClick={() => onOpenChange(false)} className="rounded-xl h-10 font-bold px-6">
+                            <X className="mr-2 h-4 w-4" /> Fermer
                         </Button>
                         
                         <Button 
@@ -191,7 +201,7 @@ export function PrintReceiptDialog({
                             className="rounded-xl h-10 font-bold border-emerald-500/20 bg-emerald-500/5 text-emerald-600 hover:bg-emerald-500 hover:text-white transition-all gap-2"
                         >
                             {isGenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : <MessageCircle className="h-4 w-4" />}
-                            WhatsApp PDF
+                            Partager PDF
                         </Button>
 
                         <Button onClick={handlePrint} className="rounded-xl h-10 font-bold flex-1 shadow-lg shadow-sm transition-all active:scale-95 gap-2">
