@@ -1,9 +1,9 @@
 'use client';
 
 import { v4 as uuidv4 } from 'uuid';
-import type { Product, ProductImportAnalysis } from '@/lib/types';
+import type { Product, ProductImportAnalysis, InventoryLog } from '@/lib/types';
 import { db } from '@/lib/db';
-import { calculateStockStatus } from '@/lib/utils';
+import { calculateStockStatus, safeNumber } from '@/lib/utils';
 import { inventoryService } from './inventory.service';
 import Papa from 'papaparse';
 import { supplierService } from './supplier.service';
@@ -108,21 +108,22 @@ class ProductService {
         delete (dataForRepo as any).supplierName;
 
         const now = new Date();
+        const qty = Number(safeNumber(productData.quantity).toFixed(3));
+        
         const newProduct: Product = {
             ...(dataForRepo as Omit<Product, 'uuid'>),
             uuid: uuidv4(),
+            quantity: qty,
             supplierUuid: finalSupplierUuid,
             createdAt: now,
             updatedAt: now,
             dateMajPrix: now,
-            stockStatus: calculateStockStatus(productData.quantity, productData.minStockLevel),
+            stockStatus: calculateStockStatus(qty, productData.minStockLevel),
         };
         const id = await db.products.add(newProduct);
         newProduct.id = id;
 
-        // Trigger Cloud Sync
         useAppStore.getState().actions.triggerSmartSync();
-
         return newProduct;
     }
 
@@ -151,17 +152,33 @@ class ProductService {
             dataToUpdate.dateMajPrix = new Date();
         }
 
-        const newQuantity = productData.quantity ?? existingProduct.quantity;
+        const newQuantity = productData.quantity !== undefined 
+            ? Number(safeNumber(productData.quantity).toFixed(3)) 
+            : existingProduct.quantity;
         const newMinStock = productData.minStockLevel ?? existingProduct.minStockLevel;
-        if (productData.quantity !== undefined || productData.minStockLevel !== undefined) {
-            dataToUpdate.stockStatus = calculateStockStatus(newQuantity, newMinStock);
-        }
         
-        await db.products.update(existingProduct.id, dataToUpdate);
+        dataToUpdate.quantity = newQuantity;
+        dataToUpdate.stockStatus = calculateStockStatus(newQuantity, newMinStock);
+        
+        await db.transaction('rw', [db.products, db.inventory_logs], async () => {
+            // Audit trail automatique pour les changements manuels de quantité
+            if (productData.quantity !== undefined && newQuantity !== existingProduct.quantity) {
+                const diff = Number((newQuantity - existingProduct.quantity).toFixed(3));
+                const logEntry: InventoryLog = {
+                    uuid: uuidv4(),
+                    productUuid: uuid,
+                    change: diff,
+                    newQuantity: newQuantity,
+                    reason: 'manual_adjustment',
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                };
+                await db.inventory_logs.add(logEntry);
+            }
+            await db.products.update(existingProduct.id!, dataToUpdate);
+        });
 
-        // Trigger Cloud Sync
         useAppStore.getState().actions.triggerSmartSync();
-
         return { ...existingProduct, ...dataToUpdate };
     }
 
@@ -187,7 +204,6 @@ class ProductService {
         const product = await this.getProductByUuid(uuid);
         if (product?.id) {
             await db.products.delete(product.id);
-            // Trigger Cloud Sync
             useAppStore.getState().actions.triggerSmartSync();
         }
     }
@@ -203,8 +219,6 @@ class ProductService {
         const productsToDelete = await db.products.where('uuid').anyOf(uuids).toArray();
         const idsToDelete = productsToDelete.map(p => p.id!);
         await db.products.bulkDelete(idsToDelete);
-
-        // Trigger Cloud Sync
         useAppStore.getState().actions.triggerSmartSync();
     }
 
@@ -256,8 +270,8 @@ class ProductService {
                 category: row.category || row.categorie || row.Catégorie || 'Non classé',
                 price: parseFloat(price),
                 purchasePrice: row.purchasePrice ? parseFloat(row.purchasePrice) : 0,
-                quantity: row.quantity ? parseInt(row.quantity) : 0,
-                minStockLevel: row.minStockLevel ? parseInt(row.minStockLevel) : 10,
+                quantity: row.quantity ? parseFloat(row.quantity) : 0,
+                minStockLevel: row.minStockLevel ? parseFloat(row.minStockLevel) : 10,
                 barcodes: row.barcodes ? String(row.barcodes).split(',').map((b:string) => b.trim()).filter(Boolean) : [],
                 unite: row.unite || row.unité || 'Pièce',
             };
@@ -278,26 +292,33 @@ class ProductService {
 
     async executeImport(confirmedData: { toAdd: any[], toUpdate: any[] }): Promise<void> {
         const now = new Date();
-        const toAdd = confirmedData.toAdd.map(p => ({
-            ...p,
-            uuid: uuidv4(),
-            createdAt: now,
-            updatedAt: now,
-            dateMajPrix: now,
-            stockStatus: calculateStockStatus(p.quantity, p.minStockLevel),
-        }));
-         const toUpdate = confirmedData.toUpdate.map(p => ({
-            ...p,
-            updatedAt: now,
-            dateMajPrix: now,
-            stockStatus: calculateStockStatus(p.quantity, p.minStockLevel),
-        }));
+        const toAdd = confirmedData.toAdd.map(p => {
+            const qty = Number(safeNumber(p.quantity).toFixed(3));
+            return {
+                ...p,
+                uuid: uuidv4(),
+                quantity: qty,
+                createdAt: now,
+                updatedAt: now,
+                dateMajPrix: now,
+                stockStatus: calculateStockStatus(qty, p.minStockLevel),
+            };
+        });
+         const toUpdate = confirmedData.toUpdate.map(p => {
+            const qty = Number(safeNumber(p.quantity).toFixed(3));
+            return {
+                ...p,
+                quantity: qty,
+                updatedAt: now,
+                dateMajPrix: now,
+                stockStatus: calculateStockStatus(qty, p.minStockLevel),
+            };
+        });
         await db.transaction('rw', [db.products], async () => {
             if (toAdd.length > 0) await db.products.bulkAdd(toAdd);
             if (toUpdate.length > 0) await db.products.bulkPut(toUpdate);
         });
 
-        // Trigger Cloud Sync
         useAppStore.getState().actions.triggerSmartSync();
     }
 }
