@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useDeferredValue, forwardRef, useImperativeHandle, useRef } from 'react';
@@ -144,9 +145,10 @@ export const ProductSelector = forwardRef<{ focusInput: () => void }, ProductSel
                     <Button 
                         variant="outline" 
                         onClick={() => onCustomItemOpenChange(true)}
-                        className="h-9 w-16 flex-shrink-0 rounded-3xl border-none bg-primary/5 hover:bg-primary/20 hover:text-primary transition-all shadow-xl group" 
+                        className="h-9 w-auto px-4 flex-shrink-0 rounded-3xl border-none bg-primary/5 hover:bg-primary/20 hover:text-primary transition-all shadow-xl group gap-2" 
                     >
-                        <ShoppingBag className="h-6 w-6 transition-transform group-hover:scale-110 group-hover:-rotate-12"/>
+                        <ShoppingBag className="h-4 w-4 transition-transform group-hover:scale-110 group-hover:-rotate-12"/>
+                        <span className="text-[10px] font-bold uppercase">Manuel [F4]</span>
                     </Button>
                 </CustomItemDialog>
             </div>

@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, memo } from 'react';
@@ -33,7 +34,7 @@ function SaleActionsContent({ customerComboRef, onOpenPayment }: SaleActionsProp
                 disabled={!hasItems}
             >
                 <Wallet className="h-4 w-4" />
-                Payer [F4]
+                Payer [F10]
             </Button>
         </div>
     );
