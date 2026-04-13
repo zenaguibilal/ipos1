@@ -17,6 +17,7 @@ import type { Customer } from '@/lib/types';
 import { formatCurrency, cn } from '@/lib/utils';
 import { DatePicker }      from '../ui/date-picker';
 import { paymentService }  from '@/services/payment.service';
+import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 
 interface AddPaymentDialogProps {
     isOpen:           boolean;
@@ -47,7 +48,6 @@ export function AddPaymentDialog({
     const paymentAmount   = parseFloat(amount) || 0;
     const newBalance      = customer.outstandingBalance - paymentAmount;
     const isFullySettled  = paymentAmount >= customer.outstandingBalance && customer.outstandingBalance > 0;
-    // FIX #18 : calcul correct de isOverpaying
     const isOverpaying    = paymentAmount > customer.outstandingBalance + 0.01;
 
     const handlePayAll = () => {
@@ -55,12 +55,10 @@ export function AddPaymentDialog({
     };
 
     const handleAddPayment = async () => {
-        // FIX #18 : valider montant > 0
         if (paymentAmount <= 0) {
             toast.error('Veuillez entrer un montant supérieur à zéro.');
             return;
         }
-        // FIX #18 : bloquer si montant > dette
         if (isOverpaying) {
             toast.error('Montant trop élevé.', {
                 description: `Le paiement (${formatCurrency(paymentAmount)}) dépasse la dette actuelle (${formatCurrency(customer.outstandingBalance)}).`,
@@ -92,10 +90,31 @@ export function AddPaymentDialog({
         }
     };
 
+    useKeyboardShortcuts([
+        {
+            key: 'Enter',
+            action: handleAddPayment,
+            description: 'Enregistrer le paiement',
+            ignoreInputFocus: true
+        },
+        {
+            key: 'Enter',
+            ctrl: true,
+            action: handleAddPayment,
+            description: 'Enregistrer',
+            ignoreInputFocus: true
+        },
+        {
+            key: 'Escape',
+            action: () => onOpenChange(false),
+            description: 'Fermer',
+            ignoreInputFocus: true
+        }
+    ], 'AjoutPaiement', isOpen);
+
     return (
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
             <DialogContent className="sm:max-w-md">
-                {/* Header */}
                 <div className="bg-primary/5 -mx-6 -mt-6 px-6 pt-6 pb-4 border-b border-border mb-4 rounded-t-lg">
                     <DialogHeader>
                         <div className="flex items-center gap-3">
@@ -115,7 +134,6 @@ export function AddPaymentDialog({
                 </div>
 
                 <div className="space-y-4">
-                    {/* Résumé financier */}
                     <div className="grid grid-cols-2 gap-3">
                         <div className="p-3 rounded-lg border bg-destructive/5">
                             <p className="text-[10px] uppercase font-bold text-muted-foreground mb-1">
@@ -147,7 +165,6 @@ export function AddPaymentDialog({
                         </div>
                     </div>
 
-                    {/* Alerte dépassement */}
                     {isOverpaying && (
                         <div className="flex items-center gap-2 p-2.5 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-xs">
                             <AlertTriangle className="h-4 w-4 shrink-0" />
@@ -155,7 +172,6 @@ export function AddPaymentDialog({
                         </div>
                     )}
 
-                    {/* Montant */}
                     <div className="space-y-1.5">
                         <div className="flex items-center justify-between">
                             <Label htmlFor="pay-amount" className="text-xs font-medium">
@@ -186,15 +202,10 @@ export function AddPaymentDialog({
                                     setAmount(v);
                             }}
                             onFocus={e => e.target.select()}
-                            onKeyDown={e => {
-                                if (e.key === 'Enter' && !isOverpaying && paymentAmount > 0)
-                                    handleAddPayment();
-                            }}
                             autoFocus
                         />
                     </div>
 
-                    {/* Date */}
                     <div className="space-y-1.5">
                         <Label className="text-xs font-medium flex items-center gap-1.5">
                             <Calendar className="h-3.5 w-3.5" />
@@ -203,7 +214,6 @@ export function AddPaymentDialog({
                         <DatePicker date={paymentDate} setDate={setPaymentDate} />
                     </div>
 
-                    {/* Notes */}
                     <div className="space-y-1.5">
                         <Label htmlFor="pay-notes" className="text-xs font-medium">
                             Notes (optionnel)
@@ -217,7 +227,6 @@ export function AddPaymentDialog({
                         />
                     </div>
 
-                    {/* Actions */}
                     <div className="flex gap-2 pt-1">
                         <Button
                             variant="outline"
@@ -230,7 +239,6 @@ export function AddPaymentDialog({
                         <Button
                             className="flex-1"
                             onClick={handleAddPayment}
-                            // FIX #18 : désactivé si isOverpaying ou montant ≤ 0
                             disabled={isLoading || isOverpaying || paymentAmount <= 0}
                         >
                             {isLoading ? (

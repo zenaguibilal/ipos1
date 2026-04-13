@@ -24,6 +24,7 @@ import { supplierService }  from '@/services/supplier.service';
 import { toast }            from 'sonner';
 import { Loader2, HandCoins, CheckCircle2, AlertTriangle } from 'lucide-react';
 import { formatCurrency, cn } from '@/lib/utils';
+import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 
 interface SupplierPaymentDialogProps {
     isOpen:       boolean;
@@ -53,7 +54,6 @@ export function SupplierPaymentDialog({
             return;
         }
 
-        // FIX #12 : bloquer si le paiement dépasse la dette fournisseur
         if (amountNum > supplier.balance + 0.01) {
             toast.error('Montant trop élevé.', {
                 description: `Le paiement (${formatCurrency(amountNum)}) dépasse la dette actuelle (${formatCurrency(supplier.balance)}).`,
@@ -89,6 +89,21 @@ export function SupplierPaymentDialog({
         }
     };
 
+    useKeyboardShortcuts([
+        {
+            key: 'Enter',
+            action: handleSave,
+            description: 'Enregistrer le paiement',
+            ignoreInputFocus: true
+        },
+        {
+            key: 'Escape',
+            action: () => onOpenChange(false),
+            description: 'Fermer',
+            ignoreInputFocus: true
+        }
+    ], 'PaiementFournisseur', isOpen);
+
     if (!supplier) return null;
 
     const parsedAmount      = parseFloat(amount) || 0;
@@ -99,7 +114,6 @@ export function SupplierPaymentDialog({
     return (
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
             <DialogContent className="sm:max-w-md p-0 gap-0 overflow-hidden">
-                {/* Header */}
                 <div className="bg-primary/5 p-4 border-b border-border">
                     <DialogHeader>
                         <div className="flex items-center gap-3">
@@ -119,7 +133,6 @@ export function SupplierPaymentDialog({
                 </div>
 
                 <div className="p-4 space-y-4">
-                    {/* Résumé financier */}
                     <div className="grid grid-cols-2 gap-3">
                         <div className="p-3 rounded-lg border bg-destructive/5">
                             <p className="text-[10px] uppercase font-bold text-muted-foreground mb-1">
@@ -153,7 +166,6 @@ export function SupplierPaymentDialog({
                         </div>
                     </div>
 
-                    {/* Alerte dépassement */}
                     {isOverpaying && (
                         <div className="flex items-center gap-2 p-2.5 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-xs">
                             <AlertTriangle className="h-4 w-4 shrink-0" />
@@ -161,7 +173,6 @@ export function SupplierPaymentDialog({
                         </div>
                     )}
 
-                    {/* Montant */}
                     <div className="space-y-1.5">
                         <div className="flex items-center justify-between">
                             <Label htmlFor="sup-pay-amt" className="text-xs font-semibold">
@@ -187,11 +198,9 @@ export function SupplierPaymentDialog({
                             value={amount}
                             onChange={e => setAmount(e.target.value)}
                             autoFocus
-                            onKeyDown={e => e.key === 'Enter' && !isOverpaying && handleSave()}
                         />
                     </div>
 
-                    {/* Mode + Date */}
                     <div className="grid grid-cols-2 gap-3">
                         <div className="space-y-1.5">
                             <Label className="text-xs font-semibold">Mode de paiement</Label>
@@ -215,7 +224,6 @@ export function SupplierPaymentDialog({
                         </div>
                     </div>
 
-                    {/* Notes */}
                     <div className="space-y-1.5">
                         <Label htmlFor="sup-pay-notes" className="text-xs font-semibold">
                             Référence / Notes
@@ -230,7 +238,6 @@ export function SupplierPaymentDialog({
                     </div>
                 </div>
 
-                {/* Footer */}
                 <div className="p-4 border-t border-border flex gap-2">
                     <Button
                         variant="outline"

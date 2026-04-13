@@ -17,6 +17,7 @@ import { inventoryService }     from '@/services/inventory.service';
 import { toast }                from 'sonner';
 import { Loader2, ArrowUpDown, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { cn }                   from '@/lib/utils';
+import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 
 interface StockAdjustmentDialogProps {
     isOpen:       boolean;
@@ -39,8 +40,6 @@ export function StockAdjustmentDialog({
     };
 
     const handleSave = async () => {
-        // FIX #9 : parseFloat au lieu de parseInt pour supporter les quantités
-        // fractionnaires (ex: 0.5 kg, 1.25 litre)
         const change = parseFloat(adjustment);
 
         if (!selectedProduct) {
@@ -76,7 +75,21 @@ export function StockAdjustmentDialog({
         }
     };
 
-    // FIX #9 : parseFloat ici aussi pour l'aperçu du stock final
+    useKeyboardShortcuts([
+        {
+            key: 'Enter',
+            action: handleSave,
+            description: 'Appliquer ajustement',
+            ignoreInputFocus: true
+        },
+        {
+            key: 'Escape',
+            action: () => onOpenChange(false),
+            description: 'Fermer',
+            ignoreInputFocus: true
+        }
+    ], 'AjustementStock', isOpen);
+
     const changeVal  = parseFloat(adjustment) || 0;
     const finalStock = selectedProduct
         ? Number((selectedProduct.quantity + changeVal).toFixed(3))
@@ -91,7 +104,6 @@ export function StockAdjustmentDialog({
             }}
         >
             <DialogContent className="sm:max-w-md p-0 gap-0 overflow-hidden">
-                {/* Header */}
                 <div className="bg-primary/5 p-4 border-b border-border">
                     <DialogHeader>
                         <div className="flex items-center gap-3">
@@ -111,7 +123,6 @@ export function StockAdjustmentDialog({
                 </div>
 
                 <div className="p-4 space-y-4">
-                    {/* Sélection produit */}
                     <div className="space-y-1.5">
                         <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                             1. Produit
@@ -122,7 +133,6 @@ export function StockAdjustmentDialog({
                         />
                     </div>
 
-                    {/* Variation */}
                     {selectedProduct && (
                         <div className="space-y-3 animate-in fade-in duration-200">
                             <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50 border border-border">
@@ -153,7 +163,6 @@ export function StockAdjustmentDialog({
                                     value={adjustment}
                                     onChange={e => setAdjustment(e.target.value)}
                                     autoFocus
-                                    onKeyDown={e => e.key === 'Enter' && handleSave()}
                                 />
                                 <div className="flex items-center gap-1.5">
                                     <AlertCircle className="h-3 w-3 text-muted-foreground" />
@@ -163,7 +172,6 @@ export function StockAdjustmentDialog({
                                 </div>
                             </div>
 
-                            {/* Aperçu stock final */}
                             {adjustment && changeVal !== 0 && (
                                 <div
                                     className={cn(
@@ -188,7 +196,6 @@ export function StockAdjustmentDialog({
                     )}
                 </div>
 
-                {/* Footer */}
                 <div className="p-4 border-t border-border flex gap-2">
                     <Button
                         variant="outline"

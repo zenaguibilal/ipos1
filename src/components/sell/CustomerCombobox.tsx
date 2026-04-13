@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo, useEffect, forwardRef, useDeferredValue } from 'react';
+import React, { useState, useMemo, useEffect, forwardRef, useDeferredValue, useImperativeHandle, useRef } from 'react';
 import { customerService } from '@/services/customer.service';
 import { useCartActions, useActiveCart } from '@/stores/cartStore';
 import { formatCurrency, cn } from '@/lib/utils';
@@ -12,8 +12,6 @@ import {
     User, 
     UserX, 
     Phone, 
-    Landmark, 
-    X, 
     ChevronRight,
     Users
 } from 'lucide-react';
@@ -28,7 +26,7 @@ import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { CustomerDialog } from '@/components/customers/customer-dialog';
 
-export const CustomerCombobox = forwardRef<HTMLButtonElement>((_, ref) => {
+export const CustomerCombobox = forwardRef<{ focusInput: () => void }, any>((_, ref) => {
     const { setCustomer } = useCartActions();
     const activeCart = useActiveCart();
     
@@ -39,6 +37,15 @@ export const CustomerCombobox = forwardRef<HTMLButtonElement>((_, ref) => {
     
     const [customers, setCustomers] = useState<Customer[]>([]);
     const [isLoading, setIsLoading] = useState(false);
+    const internalInputRef = useRef<HTMLInputElement>(null);
+
+    useImperativeHandle(ref, () => ({
+        focusInput: () => {
+            setIsOpen(true);
+            // Petit délai pour laisser le temps au Dialog de se monter
+            setTimeout(() => internalInputRef.current?.focus(), 100);
+        }
+    }));
 
     const fetchCustomers = async () => {
         setIsLoading(true);
@@ -91,13 +98,12 @@ export const CustomerCombobox = forwardRef<HTMLButtonElement>((_, ref) => {
     return (
         <>
             <Button
-                ref={ref}
                 variant="outline"
                 onClick={() => setIsOpen(true)}
                 className="h-9 px-4 rounded-xl border-primary/20 bg-primary/5 hover:bg-primary/10 transition-all gap-2 group shadow-sm"
             >
                 <Users className="h-4 w-4 text-primary" />
-                <span className="text-xs font-bold uppercase tracking-tight">Client [F4]</span>
+                <span className="text-xs font-bold uppercase tracking-tight">Client [F2]</span>
             </Button>
 
             <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -118,7 +124,7 @@ export const CustomerCombobox = forwardRef<HTMLButtonElement>((_, ref) => {
                         <div className="relative group">
                             <Search className="absolute left-5 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
                             <Input
-                                autoFocus
+                                ref={internalInputRef}
                                 placeholder="Rechercher par nom ou téléphone..."
                                 className="pl-14 h-9 text-lg font-bold rounded-2xl bg-black/20 border-none shadow-inner focus-visible:ring-primary/20"
                                 value={searchQuery}

@@ -1,10 +1,10 @@
 'use client';
 
-import React, { useState, useEffect, useDeferredValue } from 'react';
+import React, { useState, useEffect, useDeferredValue, forwardRef, useImperativeHandle, useRef } from 'react';
 import type { Product } from '@/lib/types';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Search, PackagePlus, ShoppingBag, Loader2, Sparkles, AlertCircle } from 'lucide-react';
+import { Search, ShoppingBag, Loader2, Sparkles, AlertCircle } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 import { useDebounce } from '@/hooks/useDebounce';
 import { productService } from '@/services/product.service';
@@ -13,10 +13,6 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { CustomItemDialog } from './CustomItemDialog';
 import { cn } from '@/lib/utils';
 
-/**
- * SearchResultItem - Atomic visual unit.
- * Memoized to prevent UI jank during rapid typing.
- */
 const SearchResultItem = React.memo(({ product, onSelect }: { product: Product, onSelect: (p: Product) => void }) => {
     return (
         <div
@@ -48,25 +44,13 @@ const SearchResultItem = React.memo(({ product, onSelect }: { product: Product, 
                     <span className="text-[9px] font-semibold uppercase tracking-wide text-muted-foreground opacity-50">Stock: {product.quantity} {product.unite}</span>
                     <span className="text-xl font-semibold text-primary tracking-tighter">{formatCurrency(product.price)}</span>
                 </div>
-                <div className="h-10 w-10 rounded-2xl bg-primary text-primary-foreground shadow-lg shadow-sm flex items-center justify-center transition-all duration-500 group-hover:scale-110 group-hover:rotate-12">
-                    <PackagePlus className="h-5 w-5" />
-                </div>
             </div>
         </div>
     );
 });
 SearchResultItem.displayName = 'SearchResultItem';
 
-interface ProductSelectorProps {
-    searchInputRef: React.RefObject<HTMLInputElement>;
-    customItemButtonRef: React.RefObject<HTMLButtonElement>;
-}
-
-/**
- * ProductSelector - Secure high-frequency search engine.
- * Implements AbortController and useDeferredValue to solve race conditions and main thread jank.
- */
-export function ProductSelector({ searchInputRef, customItemButtonRef }: ProductSelectorProps) {
+export const ProductSelector = forwardRef<{ focusInput: () => void }, any>((_, ref) => {
     const { addItemToCart } = useCartActions();
     const [searchQuery, setSearchQuery] = useState('');
     const debouncedSearchQuery = useDebounce(searchQuery, 150);
@@ -75,6 +59,14 @@ export function ProductSelector({ searchInputRef, customItemButtonRef }: Product
     const [searchResults, setSearchResults] = useState<Product[]>([]);
     const [isSearching, setIsSearching] = useState(false);
     const [searchError, setSearchError] = useState<string | null>(null);
+    const inputRef = useRef<HTMLInputElement>(null);
+
+    useImperativeHandle(ref, () => ({
+        focusInput: () => {
+            inputRef.current?.focus();
+            inputRef.current?.select();
+        }
+    }));
 
     useEffect(() => {
         if (!deferredResults.trim()) {
@@ -110,8 +102,7 @@ export function ProductSelector({ searchInputRef, customItemButtonRef }: Product
         addItemToCart(product);
         setSearchQuery('');
         setSearchResults([]);
-        // Force return focus to search input for rapid scanning
-        setTimeout(() => searchInputRef.current?.focus(), 0);
+        setTimeout(() => inputRef.current?.focus(), 0);
     };
     
     const isActiveSearch = searchQuery.trim().length > 0;
@@ -125,12 +116,17 @@ export function ProductSelector({ searchInputRef, customItemButtonRef }: Product
                         isActiveSearch ? "text-primary scale-110" : "text-muted-foreground/30"
                     )} />
                     <Input
-                        ref={searchInputRef}
-                        placeholder="Scanner ou rechercher [F1]..."
+                        ref={inputRef}
+                        placeholder="Scanner ou rechercher [F3]..."
                         className="pl-14 text-lg h-9 rounded-3xl bg-background/50 border-none shadow-inner focus-visible:ring-primary/20 font-semibold tracking-tight"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         autoComplete="off"
+                        onKeyDown={(e) => {
+                            if (e.key === 'Enter' && searchResults.length > 0) {
+                                handleSelect(searchResults[0]);
+                            }
+                        }}
                     />
                     {isSearching && (
                         <div className="absolute right-5 top-1/2 -translate-y-1/2">
@@ -140,7 +136,6 @@ export function ProductSelector({ searchInputRef, customItemButtonRef }: Product
                 </div>
                 <CustomItemDialog>
                     <Button 
-                        ref={customItemButtonRef}
                         variant="outline" 
                         className="h-9 w-16 flex-shrink-0 rounded-3xl border-none bg-primary/5 hover:bg-primary/20 hover:text-primary transition-all shadow-xl group" 
                     >
@@ -161,7 +156,7 @@ export function ProductSelector({ searchInputRef, customItemButtonRef }: Product
                             <Search className="h-14 w-14 text-primary/20" />
                         </div>
                         <p className="text-sm font-semibold uppercase text-muted-foreground/20 max-w-[250px] mx-auto leading-relaxed">
-                            Prêt pour le scan. Saisissez une référence ou utilisez le lecteur.
+                            Prêt pour le scan [F3]. Saisissez une référence ou utilisez le lecteur.
                         </p>
                     </div>
                 ) : (
@@ -191,4 +186,5 @@ export function ProductSelector({ searchInputRef, customItemButtonRef }: Product
             </ScrollArea>
         </div>
     );
-}
+});
+ProductSelector.displayName = "ProductSelector";

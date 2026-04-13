@@ -26,10 +26,8 @@ import type { Sale, Customer } from '@/lib/types';
 import { DatePicker }       from '../ui/date-picker';
 import { addDays, setDate as fnsSetDate, addMonths, isAfter, startOfDay } from 'date-fns';
 import { customerService }  from '@/services/customer.service';
+import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 
-// ─────────────────────────────────────────────────────────
-// Component
-// ─────────────────────────────────────────────────────────
 function PaymentDialogContent({
     isOpen,
     onOpenChange,
@@ -76,15 +74,12 @@ function PaymentDialogContent({
                     setCustomer(c || null);
                     const now = new Date();
                     if (c?.settlementDay) {
-                        // Calculate next occurrence of settlementDay
                         let targetDate = fnsSetDate(new Date(now), c.settlementDay);
-                        // If today is past the settlement day, move to next month
                         if (isAfter(startOfDay(now), startOfDay(targetDate))) {
                             targetDate = addMonths(targetDate, 1);
                         }
                         setDueDate(targetDate);
                     } else {
-                        // Fallback to 30 days if no settlement day is set
                         setDueDate(addDays(now, 30));
                     }
                 });
@@ -119,7 +114,7 @@ function PaymentDialogContent({
     );
 
     const handleProcessSale = useCallback(async () => {
-        if (amountPaid < 0 || isLoading) return;
+        if (amountPaid < 0 || isLoading || !canFinalize) return;
         setIsLoading(true);
         try {
             const sale = await processSale(amountPaid, dueDate);
@@ -131,7 +126,23 @@ function PaymentDialogContent({
         } finally {
             setIsLoading(false);
         }
-    }, [amountPaid, isLoading, dueDate, processSale, onOpenChange]);
+    }, [amountPaid, isLoading, dueDate, processSale, onOpenChange, canFinalize]);
+
+    // Raccourcis clavier pour le dialogue
+    useKeyboardShortcuts([
+        {
+            key: 'Enter',
+            action: handleProcessSale,
+            description: 'Valider le paiement',
+            ignoreInputFocus: true
+        },
+        {
+            key: 'Escape',
+            action: () => onOpenChange(false),
+            description: 'Fermer',
+            ignoreInputFocus: true
+        }
+    ], 'Encaissement', isOpen);
 
     if (!cart || !isMounted) return null;
 
@@ -174,10 +185,6 @@ function PaymentDialogContent({
                                 onChange={handleAmountChange}
                                 autoFocus
                                 onFocus={e => e.target.select()}
-                                onKeyDown={e => {
-                                    if (e.key === 'Enter' && canFinalize)
-                                        handleProcessSale();
-                                }}
                             />
                         </div>
                         <div className="space-y-1.5">
@@ -262,15 +269,16 @@ function PaymentDialogContent({
                             Confirmer [Enter]
                         </Button>
                     </div>
-                </DialogContent>
-            </Dialog>
+                </div>
+            </DialogContent>
+        </Dialog>
 
-            <PrintReceiptDialog
-                isOpen={isReceiptOpen}
-                onOpenChange={setIsReceiptOpen}
-                sale={lastSale}
-                customerName={customer ? `${customer.firstName} ${customer.lastName}` : 'Client de passage'}
-            />
+        <PrintReceiptDialog
+            isOpen={isReceiptOpen}
+            onOpenChange={setIsReceiptOpen}
+            sale={lastSale}
+            customerName={customer ? `${customer.firstName} ${customer.lastName}` : 'Client de passage'}
+        />
         </>
     );
 }

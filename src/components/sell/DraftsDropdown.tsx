@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useCartStore, useCartActions, useActiveCart } from '@/stores/cartStore';
+import { useCartStore, useCartActions } from '@/stores/cartStore';
 import { Button } from '@/components/ui/button';
 import {
     DropdownMenu,
@@ -33,6 +33,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { calculateCartTotals, formatCurrency, cn } from '@/lib/utils';
+import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 
 export function DraftsDropdown() {
     const [isMounted, setIsMounted] = useState(false);
@@ -50,6 +51,23 @@ export function DraftsDropdown() {
         setIsMounted(true);
     }, []);
 
+    // Raccourcis Alt+1 à Alt+9 pour changer de panier
+    const shortcutConfigs = [1, 2, 3, 4, 5, 6, 7, 8, 9].map(num => ({
+        key: String(num),
+        alt: true,
+        action: () => {
+            const targetCart = carts[num - 1];
+            if (targetCart) {
+                selectCart(targetCart.id);
+                toast.success(`Passage à : ${targetCart.name}`);
+            }
+        },
+        description: `Aller au panier ${num}`,
+        ignoreInputFocus: true
+    }));
+
+    useKeyboardShortcuts(shortcutConfigs, 'GestionPaniers', isMounted);
+
     const handleRename = () => {
         if (cartToRename && newName.trim()) {
             renameCart(cartToRename.id, newName.trim());
@@ -60,8 +78,6 @@ export function DraftsDropdown() {
         setNewName('');
     };
 
-    // FIX #19 : on ne stocke pas le retour de createCart dans une variable
-    // inutilisée — on appelle directement la fonction.
     const handleSuspendAndNew = () => {
         createCart();
         toast.success('Vente actuelle mise en attente. Nouveau panier créé.');
@@ -183,7 +199,6 @@ export function DraftsDropdown() {
                 </DropdownMenuContent>
             </DropdownMenu>
 
-            {/* Dialog renommage */}
             <AlertDialog
                 open={renameDialogOpen}
                 onOpenChange={setRenameDialogOpen}

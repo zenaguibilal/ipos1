@@ -9,33 +9,62 @@ import { Trash2, ShoppingCart, Tag } from 'lucide-react';
 import { formatCurrency } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 import type { CartItem } from "@/lib/types";
+import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 
 interface CartItemRowProps {
     item: CartItem;
+    isSelected: boolean;
     onUpdate: (uuid: string, quantity: number) => void;
     onRemove: (uuid: string) => void;
+    onSelect: () => void;
 }
 
-/**
- * CartItemRow - High-efficiency row component.
- * Memoized to prevent cascade re-renders.
- */
-const CartItemRow = React.memo(({ item, onUpdate, onRemove }: CartItemRowProps) => {
+const CartItemRow = React.memo(({ item, isSelected, onUpdate, onRemove, onSelect }: CartItemRowProps) => {
     const handleQtyChange = (val: string) => {
         const num = parseFloat(val);
         if (isNaN(num)) return;
         onUpdate(item.uuid, Math.max(0, num));
     };
 
+    // Raccourcis clavier locaux pour la ligne sélectionnée
+    useKeyboardShortcuts([
+        {
+            key: '+',
+            action: () => onUpdate(item.uuid, item.cartQuantity + 1),
+            description: 'Quantité +1',
+            ignoreInputFocus: false
+        },
+        {
+            key: '=',
+            action: () => onUpdate(item.uuid, item.cartQuantity + 1),
+            description: 'Quantité +1',
+            ignoreInputFocus: false
+        },
+        {
+            key: '-',
+            action: () => onUpdate(item.uuid, Math.max(0, item.cartQuantity - 1)),
+            description: 'Quantité -1',
+            ignoreInputFocus: false
+        },
+        {
+            key: 'Delete',
+            action: () => onRemove(item.uuid),
+            description: 'Supprimer article',
+            ignoreInputFocus: true
+        }
+    ], `Article-${item.uuid}`, isSelected);
+
     const isCustom = item.uuid.startsWith('custom-');
     const isService = item.uuid === 'BREAD_PRODUCT';
-    // Precision step: allow grams/ml for weight-based units
     const stepValue = item.unite === 'Kg' || item.unite === 'Litre' ? "0.001" : "1";
 
     return (
         <div 
+            tabIndex={0}
+            onFocus={onSelect}
             className={cn(
-                "grid grid-cols-[1fr_auto_auto_auto] gap-x-6 items-center p-4 rounded-lg bg-muted/20 border border-white/5 transition-all duration-500 hover:bg-muted/40 group",
+                "grid grid-cols-[1fr_auto_auto_auto] gap-x-6 items-center p-4 rounded-lg border transition-all duration-500 group outline-none",
+                isSelected ? "bg-primary/10 border-primary/30 ring-1 ring-primary/20 shadow-sm" : "bg-muted/20 border-white/5 hover:bg-muted/40",
                 item.flash && 'animate-flash ring-2 ring-primary/30'
             )}
         >
@@ -58,9 +87,6 @@ const CartItemRow = React.memo(({ item, onUpdate, onRemove }: CartItemRowProps) 
                     className="w-24 text-center h-10 rounded-xl bg-background/50 border-none shadow-inner font-semibold text-primary"
                     min="0"
                 />
-                {!isCustom && !isService && item.cartQuantity >= (item.quantity - 0.0001) && (
-                    <span className="text-[8px] font-semibold text-destructive uppercase animate-pulse">Max Stock</span>
-                )}
             </div>
 
             <div className="w-24 text-right">
@@ -84,12 +110,37 @@ CartItemRow.displayName = 'CartItemRow';
 
 export function CartDisplay() {
     const [isMounted, setIsMounted] = useState(false);
+    const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
     const cart = useActiveCart();
     const { updateItemQuantity, removeItemFromCart } = useCartActions();
     
     useEffect(() => {
         setIsMounted(true);
     }, []);
+
+    // Navigation clavier entre les lignes
+    useKeyboardShortcuts([
+        {
+            key: 'ArrowDown',
+            action: () => {
+                if (cart && cart.items.length > 0) {
+                    setSelectedIndex(prev => prev === null || prev >= cart.items.length - 1 ? 0 : prev + 1);
+                }
+            },
+            description: 'Ligne suivante',
+            ignoreInputFocus: true
+        },
+        {
+            key: 'ArrowUp',
+            action: () => {
+                if (cart && cart.items.length > 0) {
+                    setSelectedIndex(prev => prev === null || prev <= 0 ? cart.items.length - 1 : prev - 1);
+                }
+            },
+            description: 'Ligne précédente',
+            ignoreInputFocus: true
+        }
+    ], 'ListePanier', isMounted && cart !== null && cart.items.length > 0);
 
     if (!isMounted) return null;
     
@@ -118,12 +169,14 @@ export function CartDisplay() {
                 </div>
 
                 <div className="space-y-3">
-                    {cart.items.map(item => (
+                    {cart.items.map((item, index) => (
                         <CartItemRow 
                             key={item.uuid} 
                             item={item} 
+                            isSelected={selectedIndex === index}
                             onUpdate={updateItemQuantity} 
                             onRemove={removeItemFromCart} 
+                            onSelect={() => setSelectedIndex(index)}
                         />
                     ))}
                 </div>

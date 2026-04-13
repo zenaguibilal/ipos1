@@ -1,4 +1,3 @@
-
 import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import { Inter } from 'next/font/google';
@@ -7,6 +6,8 @@ import { AppHeader } from '@/components/layout/header';
 import { BottomNavBar } from '@/components/layout/bottom-navbar';
 import { SaleInfoBar } from '@/components/layout/SaleInfoBar';
 import { AppSyncManager } from '@/components/layout/AppSyncManager';
+import { KeyboardShortcutsProvider } from '@/contexts/KeyboardShortcutsContext';
+import { KeyboardShortcutsHelp } from '@/components/layout/KeyboardShortcutsHelp';
 
 const APP_NAME = "iPOS Zen";
 const APP_DEFAULT_TITLE = "iPOS Zen - Point de Vente Premium";
@@ -55,6 +56,7 @@ export default function RootLayout({
       </head>
       <body className={inter.className}>
         <ClientProviders>
+          <KeyboardShortcutsProvider>
             <AppSyncManager>
                 <div className="flex h-screen flex-col bg-background overflow-hidden">
                     <AppHeader />
@@ -63,9 +65,13 @@ export default function RootLayout({
                         {children}
                     </main>
                     <BottomNavBar />
+                    <KeyboardShortcutsHelp />
                 </div>
             </AppSyncManager>
+          </KeyboardShortcutsProvider>
         </ClientProviders>
+        {/* Container global pour l'impression A4 */}
+        <div id="receipt-for-print" className="hidden print:block bg-white min-h-screen w-full"></div>
       </body>
     </html>
   );
