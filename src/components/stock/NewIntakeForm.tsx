@@ -16,10 +16,10 @@ import { useAppActions } from '@/stores/appStore';
 import { toast } from 'sonner';
 import { v4 as uuidv4 } from 'uuid';
 import { DatePicker } from '../ui/date-picker';
+import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 
 /**
  * @fileOverview Formulaire de gestion des réceptions de stock Elite.
- * Affiche désormais le coût de revient (Landing Cost) et le total par ligne.
  */
 export function NewIntakeForm() {
     const router = useRouter();
@@ -141,6 +141,16 @@ export function NewIntakeForm() {
             setIsSaving(false);
         }
     };
+
+    useKeyboardShortcuts([
+        {
+            key: 'Enter',
+            ctrl: true,
+            action: handleSave,
+            description: 'Valider le manifeste de réception',
+            ignoreInputFocus: true
+        }
+    ], 'Logistique', items.length > 0);
 
     return (
         <div className="grid lg:grid-cols-12 gap-6 animate-in slide-in-from-bottom-4 duration-700">
@@ -328,7 +338,7 @@ export function NewIntakeForm() {
                                 className="w-full h-14 rounded-2xl font-black text-lg shadow-2xl transition-all active:scale-[0.98] gap-3"
                             >
                                 {isSubmitting ? <Loader2 className="h-6 w-6 animate-spin" /> : <Save className="h-6 w-6" />}
-                                Valider Manifeste
+                                Valider Manifeste [Ctrl+Enter]
                             </Button>
                         </div>
                     </CardContent>

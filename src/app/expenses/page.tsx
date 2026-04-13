@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { expenseService } from '@/services/expense.service';
 import { useDebounce } from '@/hooks/useDebounce';
 import type { Expense } from '@/lib/types';
@@ -54,6 +54,7 @@ import { useAppStore } from '@/stores/appStore';
 import { format, differenceInDays } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import Papa from 'papaparse';
+import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 
 const COLORS = [
     'hsl(var(--primary))', 
@@ -86,6 +87,7 @@ const StatCard = ({ title, value, icon: Icon, colorClass, subtitle }: { title: s
 );
 
 export default function ExpensesPage() {
+    const searchInputRef = useRef<HTMLInputElement>(null);
     const { viewMode, setViewMode } = useAppStore(state => ({
         viewMode: state.expensesViewMode,
         setViewMode: state.actions.setExpensesViewMode,
@@ -358,6 +360,21 @@ export default function ExpensesPage() {
         setSortBy('date_desc');
     };
 
+    useKeyboardShortcuts([
+        {
+            key: 'F3',
+            action: () => searchInputRef.current?.focus(),
+            description: 'Rechercher une charge',
+            ignoreInputFocus: true
+        },
+        {
+            key: 'n',
+            action: () => { setSelectedExpense(null); setIsExpenseDialogOpen(true); },
+            description: 'Nouvelle dépense',
+            ignoreInputFocus: false
+        }
+    ], 'Charges');
+
     const isFiltered = searchQuery !== '' || selectedCategory !== 'all' || sortBy !== 'date_desc';
     
     return (
@@ -377,7 +394,7 @@ export default function ExpensesPage() {
                         onClick={() => { setSelectedExpense(null); setIsExpenseDialogOpen(true); }}
                         className="flex-1 sm:flex-none h-12 rounded-2xl font-semibold text-xs uppercase tracking-wide shadow-xl transition-all active:scale-95 gap-3"
                     >
-                        <Plus className="mr-2 h-4 w-4" /> Nouvelle Dépense
+                        <Plus className="mr-2 h-4 w-4" /> Nouvelle Dépense [N]
                     </Button>
                 </div>
             </PageHeader>
@@ -467,7 +484,8 @@ export default function ExpensesPage() {
                 <div className="relative group flex-grow max-w-xl px-4">
                     <Search className="absolute left-8 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground group-focus-within:text-primary transition-colors duration-500" />
                     <Input 
-                        placeholder="Rechercher par description..."
+                        ref={searchInputRef}
+                        placeholder="Rechercher par description [F3]..."
                         className="pl-14 h-9 rounded-2xl bg-black/20 border-none shadow-inner focus-visible:ring-primary/20 font-bold text-lg"
                         value={searchQuery}
                         onChange={e => setSearchQuery(e.target.value)}
@@ -596,7 +614,7 @@ export default function ExpensesPage() {
                             <Button variant="outline" onClick={resetFilters} className="rounded-2xl h-12 font-bold px-8 border-primary/20 hover:bg-primary/5">Réinitialiser</Button>
                         ) : (
                             <Button onClick={() => { setSelectedExpense(null); setIsExpenseDialogOpen(true); }} className="rounded-lg h-14 px-4 font-semibold text-xs uppercase tracking-wide shadow-xl transition-all active:scale-95 gap-3">
-                                <Plus className="h-5 w-5" /> Enregistrer un Flux
+                                <Plus className="h-5 w-5" /> Enregistrer un Flux [N]
                             </Button>
                         )}
                     </EmptyState>

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useEffect, useMemo } from 'react';
+import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { useDebounce } from '@/hooks/useDebounce';
 import type { StockIntake, Supplier, InventoryLog } from '@/lib/types';
 import { Button } from '@/components/ui/button';
@@ -30,10 +30,12 @@ import { SupplierDialog } from '@/components/stock/SupplierDialog';
 import { ConfirmAlertDialog } from '@/components/ui/ConfirmAlertDialog';
 import { cn, formatCurrency } from '@/lib/utils';
 import Papa from 'papaparse';
+import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 
 type StockTab = 'intakes' | 'logs' | 'suppliers';
 
 export default function StockPage() {
+    const searchInputRef = useRef<HTMLInputElement>(null);
     const { viewMode, setViewMode } = useAppStore(state => ({
         viewMode: state.stockViewMode,
         setViewMode: state.actions.setStockViewMode,
@@ -212,6 +214,24 @@ export default function StockPage() {
         return suppliers.reduce((sum, s) => sum + s.balance, 0);
     }, [suppliers]);
 
+    useKeyboardShortcuts([
+        {
+            key: 'F3',
+            action: () => searchInputRef.current?.focus(),
+            description: 'Rechercher un flux ou partenaire',
+            ignoreInputFocus: true
+        },
+        {
+            key: 'n',
+            action: () => { 
+                if (activeTab === 'suppliers') handleAddSupplier();
+                else router.push('/stock/intake');
+            },
+            description: activeTab === 'suppliers' ? 'Nouveau fournisseur' : 'Nouvelle réception',
+            ignoreInputFocus: false
+        }
+    ], 'Logistique');
+
     return (
         <div className="p-6 sm:p-4 space-y-4 max-w-[1600px] mx-auto animate-in fade-in duration-1000">
             <PageHeader
@@ -221,7 +241,7 @@ export default function StockPage() {
                 <div className="flex gap-3 w-full sm:w-auto">
                     {activeTab === 'suppliers' ? (
                         <Button onClick={handleAddSupplier} className="flex-1 sm:flex-none h-12 rounded-2xl font-semibold text-xs uppercase tracking-wide shadow-xl transition-all active:scale-95">
-                            <UserPlus className="mr-2 h-4 w-4" /> Nouveau Fournisseur
+                            <UserPlus className="mr-2 h-4 w-4" /> Nouveau Fournisseur [N]
                         </Button>
                     ) : (
                         <>
@@ -230,7 +250,7 @@ export default function StockPage() {
                             </Button>
                             <Button asChild className="flex-1 sm:flex-none h-12 rounded-2xl font-semibold text-xs uppercase tracking-wide shadow-xl transition-all active:scale-95">
                                 <Link href="/stock/intake">
-                                    <Plus className="mr-2 h-4 w-4" /> Réception
+                                    <Plus className="mr-2 h-4 w-4" /> Réception [N]
                                 </Link>
                             </Button>
                         </>
@@ -315,7 +335,8 @@ export default function StockPage() {
                     <div className="relative group flex-grow max-w-xs">
                         <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
                         <Input 
-                            placeholder="Rechercher..."
+                            ref={searchInputRef}
+                            placeholder="Rechercher [F3]..."
                             className="pl-11 h-12 rounded-2xl bg-black/20 border-none shadow-inner focus-visible:ring-primary/20 font-bold"
                             value={searchQuery}
                             onChange={e => setSearchQuery(e.target.value)}

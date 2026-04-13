@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { formatDateToYYYYMMDD } from '@/lib/utils';
 import { addDays, format } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -14,10 +14,10 @@ import { breadService } from '@/services/bread.service';
 import { cn } from '@/lib/utils';
 import { useLiveQuery } from '@/hooks/useLiveQuery';
 import { db } from '@/lib/db';
+import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 
 /**
  * Page de gestion de la logistique du pain.
- * Sécurisée contre les erreurs de Hydration via isMounted.
  */
 export default function BreadPage() {
     const [currentDate, setCurrentDate] = useState<Date | null>(null);
@@ -59,6 +59,27 @@ export default function BreadPage() {
     const isToday = isMounted && currentDate && formatDateToYYYYMMDD(new Date()) === formattedDate;
     const isLoading = orders === undefined || !isMounted || !currentDate;
 
+    useKeyboardShortcuts([
+        {
+            key: 'ArrowLeft',
+            action: () => handleDateChange(-1),
+            description: 'Jour précédent',
+            ignoreInputFocus: true
+        },
+        {
+            key: 'ArrowRight',
+            action: () => handleDateChange(1),
+            description: 'Jour suivant',
+            ignoreInputFocus: true
+        },
+        {
+            key: 'h',
+            action: () => setCurrentDate(new Date()),
+            description: 'Retour à aujourd\'hui',
+            ignoreInputFocus: false
+        }
+    ], 'Distribution');
+
     return (
         <div className="p-6 sm:p-4 space-y-4 max-w-[1800px] mx-auto animate-in fade-in duration-1000">
             <PageHeader 
@@ -84,7 +105,7 @@ export default function BreadPage() {
                                 isToday ? "bg-primary text-primary-foreground shadow-lg" : "hover:text-primary"
                             )}
                         >
-                            <CalendarDays className="mr-2 h-3.5 w-3.5" /> Aujourd'hui
+                            <CalendarDays className="mr-2 h-3.5 w-3.5" /> Aujourd'hui [H]
                         </Button>
                         <Button 
                             variant="ghost" 
