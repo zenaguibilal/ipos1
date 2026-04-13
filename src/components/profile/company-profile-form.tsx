@@ -16,7 +16,6 @@ import {
     ShieldCheck, Landmark, Receipt, Percent
 } from 'lucide-react';
 import { useAppStore } from '@/stores/appStore';
-import { SupabaseSqlDialog } from './SupabaseSqlDialog';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 
@@ -78,15 +77,12 @@ export function CompanyProfileForm() {
         );
     }
 
-    const SectionTitle = ({ title, icon: Icon, action }: { title: string, icon: any, action?: React.ReactNode }) => (
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-10">
-            <div className="flex items-center gap-3">
-                <div className="p-2.5 rounded-xl bg-primary/10 text-primary shadow-inner border border-primary/10">
-                    <Icon className="h-4 w-4" />
-                </div>
-                <h4 className="text-[10px] font-semibold uppercase text-muted-foreground opacity-60 italic">{title}</h4>
+    const SectionTitle = ({ title, icon: Icon }: { title: string, icon: any }) => (
+        <div className="flex items-center gap-3 mb-10">
+            <div className="p-2.5 rounded-xl bg-primary/10 text-primary shadow-inner border border-primary/10">
+                <Icon className="h-4 w-4" />
             </div>
-            {action && action}
+            <h4 className="text-[10px] font-semibold uppercase text-muted-foreground opacity-60 italic">{title}</h4>
         </div>
     );
 
@@ -103,7 +99,7 @@ export function CompanyProfileForm() {
                         </div>
                         <div className="space-y-4">
                             <Label htmlFor="legal_form" className="text-[10px] font-semibold uppercase ml-1 opacity-40">Forme Juridique</Label>
-                            <Input id="legal_form" value={formState.legal_form || ''} onChange={handleInputChange} className="h-11 rounded-lg bg-black/20 border-none shadow-inner font-bold" placeholder="SARL, EURL, SNC..." disabled={isSaving}/>
+                            <Input id="legal_form" value={formState.legal_form || ''} onChange={handleInputChange} className="h-11 rounded-lg bg-black/20 border-none shadow-inner font-bold" placeholder="SARL, EURL, EI..." disabled={isSaving}/>
                         </div>
                     </div>
                     <div className="space-y-4">
@@ -118,7 +114,7 @@ export function CompanyProfileForm() {
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                         <div className="space-y-4">
                             <Label htmlFor="rc_number" className="text-[10px] font-semibold uppercase ml-1 opacity-40">Reg. Commerce (RC)</Label>
-                            <Input id="rc_number" value={formState.rc_number || ''} onChange={handleInputChange} className="h-11 rounded-lg bg-black/20 border-none shadow-inner font-mono font-bold" placeholder="00/00-0000000" disabled={isSaving}/>
+                            <Input id="rc_number" value={formState.rc_number || ''} onChange={handleInputChange} className="h-11 rounded-lg bg-black/20 border-none shadow-inner font-mono font-bold" placeholder="WW/BB-NNNNNNN" disabled={isSaving}/>
                         </div>
                         <div className="space-y-4">
                             <Label htmlFor="nif" className="text-[10px] font-semibold uppercase ml-1 opacity-40">Ident. Fiscale (NIF)</Label>
@@ -155,7 +151,7 @@ export function CompanyProfileForm() {
                         </div>
                         <div className="space-y-4">
                             <Label htmlFor="tva_exempt_reason" className="text-[10px] font-semibold uppercase ml-1 opacity-40">Base légale d'exonération</Label>
-                            <Input id="tva_exempt_reason" value={formState.tva_exempt_reason || ''} onChange={handleInputChange} className="h-11 rounded-lg bg-black/20 border-none shadow-inner text-xs italic" placeholder="Art. X du Code des Taxes..." disabled={!formState.is_tva_exempt || isSaving}/>
+                            <Input id="tva_exempt_reason" value={formState.tva_exempt_reason || ''} onChange={handleInputChange} className="h-11 rounded-lg bg-black/20 border-none shadow-inner text-xs italic" placeholder="Art. X du CGI..." disabled={!formState.is_tva_exempt || isSaving}/>
                         </div>
                     </div>
                 </div>
@@ -171,25 +167,6 @@ export function CompanyProfileForm() {
                         <div className="space-y-4">
                             <Label htmlFor="invoice_counter" className="text-[10px] font-semibold uppercase ml-1 opacity-40">Prochain Numéro</Label>
                             <Input id="invoice_counter" type="number" value={formState.invoice_counter || 1} onChange={handleInputChange} className="h-11 rounded-lg bg-black/20 border-none shadow-inner font-mono font-bold text-emerald-500" disabled={isSaving}/>
-                        </div>
-                    </div>
-                </div>
-
-                {/* CLOUD & BACKUP */}
-                <div className="space-y-4 pt-16 border-t border-white/5 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-400">
-                    <SectionTitle 
-                        title="Connectivité Cloud" 
-                        icon={Cloud} 
-                        action={<SupabaseSqlDialog />}
-                    />
-                    <div className="grid grid-cols-1 gap-4">
-                        <div className="space-y-4">
-                            <Label htmlFor="supabase_url" className="text-[10px] font-semibold uppercase ml-1 opacity-40">URL Supabase</Label>
-                            <Input id="supabase_url" value={formState.supabase_url || ''} onChange={handleInputChange} className="h-11 rounded-lg bg-black/20 border-none shadow-inner font-mono text-xs" placeholder="https://xxxx.supabase.co" disabled={isSaving} />
-                        </div>
-                        <div className="space-y-4">
-                            <Label htmlFor="supabase_key" className="text-[10px] font-semibold uppercase ml-1 opacity-40">Clé API</Label>
-                            <Input id="supabase_key" type="password" value={formState.supabase_key || ''} onChange={handleInputChange} className="h-11 rounded-lg bg-black/20 border-none shadow-inner font-mono text-xs" disabled={isSaving} />
                         </div>
                     </div>
                 </div>

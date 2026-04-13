@@ -48,10 +48,10 @@ export interface SaleItem {
     id?: number;
     productUuid: string | null;
     name: string;
-    price: number; // Prix TTC (le système travaille en TTC par défaut pour la simplicité utilisateur)
+    price: number; 
     purchasePrice: number;
     quantity: number;
-    tva_rate?: number; // Taux de TVA (0, 9, 19)
+    tva_rate?: number;
 }
 
 export interface CartItem extends Product {
@@ -110,19 +110,17 @@ export interface CompanyProfile {
     phone?: string;
     email?: string;
     website?: string;
-    vatNumber?: string; // Ancien champ, gardé pour compatibilité temporaire
-    rcNumber?: string;  // Ancien champ
+    logoUrl?: string;
     goldPricePerGram?: number;
     prix_pain?: number;
     updatedAt?: Date;
     supabase_url?: string;
     supabase_key?: string;
     last_sync_at?: Date;
-    logoUrl?: string;
     
-    // Nouveaux champs fiscaux algériens
-    rc_number?:           string; // WW/BB-NNNNNNN
-    nif?:                 string; // 15 chiffres
+    // Champs fiscaux algériens
+    rc_number?:           string; // Registre de Commerce
+    nif?:                 string; // Numéro Identification Fiscale
     ai_number?:           string; // Article d'Imposition
     nis_number?:          string; // Numéro Statistique
     tva_number?:          string;

@@ -46,7 +46,7 @@ class SalesService {
         if (filters.query) {
             const lowerQuery = filters.query.toLowerCase().trim();
             const customers = await db.customers
-                .filter(c => c.searchName!.toLowerCase().includes(lowerQuery))
+                .filter(c => (c.firstName + ' ' + c.lastName).toLowerCase().includes(lowerQuery))
                 .toArray();
             const customerUuids = customers.map(c => c.uuid);
             sales = sales.filter(
@@ -116,13 +116,15 @@ class SalesService {
                   ? 'partial'
                   : 'unpaid';
 
+        const profile = await db.company_profile.toCollection().first();
+
         const saleItems: SaleItem[] = saleData.items.map(item => ({
             productUuid: item.uuid.startsWith('custom-') ? null : item.uuid,
             name: item.name,
             price: item.price,
             purchasePrice: item.purchasePrice,
             quantity: item.cartQuantity,
-            tva_rate: 19 // Valeur par défaut standard en Algérie
+            tva_rate: profile?.tva_rate || 19
         }));
 
         const invoiceNumber = await this.generateInvoiceNumber();

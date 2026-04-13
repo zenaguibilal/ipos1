@@ -7,7 +7,7 @@ import { formatCurrency, safeToDate, cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import QRCode from 'qrcode';
-import { numberToArabicWords } from '@/lib/numberToArabicWords';
+import { numberToFrenchWords } from '@/lib/numberToWords';
 
 const QRCodeCanvas = ({ text }: { text: string }) => {
     const ref = React.useRef<HTMLCanvasElement>(null);
@@ -96,15 +96,14 @@ export const Receipt = React.forwardRef<HTMLDivElement, ReceiptProps>(
             );
         }
 
-        // ─── RENDU A4 CONFORME DROIT ALGÉRIEN ───
+        // ─── RENDU A4 CONFORME DROIT ALGÉRIEN (100% FRANÇAIS) ───
         const totalTTC = sale.total;
         const totalHT = sale.items.reduce((acc, item) => {
             const tvaRate = item.tva_rate || profile?.tva_rate || 0;
             const priceHT = item.price / (1 + tvaRate / 100);
             return acc + (priceHT * item.quantity);
         }, 0);
-        const totalTVA = totalTTC - totalHT;
-
+        
         // Group TVA by rate
         const tvaGroups = sale.items.reduce((acc, item) => {
             const rate = item.tva_rate || profile?.tva_rate || 0;
@@ -139,7 +138,7 @@ export const Receipt = React.forwardRef<HTMLDivElement, ReceiptProps>(
                 )}
 
                 <div className="relative z-10 flex flex-col h-full">
-                    {/* EN-TÊTE 2 COLONNES */}
+                    {/* EN-TÊTE PROFESSIONNEL */}
                     <header className="grid grid-cols-2 gap-10 mb-10">
                         <div className="space-y-4">
                             {profile?.logoUrl ? (
@@ -168,12 +167,6 @@ export const Receipt = React.forwardRef<HTMLDivElement, ReceiptProps>(
                                 <span className="font-bold">{profile?.ai_number || '—'}</span>
                                 <span className="font-bold text-gray-400">NIS:</span>
                                 <span className="font-bold">{profile?.nis_number || '—'}</span>
-                                {profile?.tva_number && (
-                                    <>
-                                        <span className="font-bold text-gray-400">TVA:</span>
-                                        <span className="font-bold">{profile.tva_number}</span>
-                                    </>
-                                )}
                             </div>
                             <div className="pt-4 border-t border-gray-200 mt-2 space-y-1">
                                 <p className="font-bold flex items-center gap-2">
@@ -209,7 +202,7 @@ export const Receipt = React.forwardRef<HTMLDivElement, ReceiptProps>(
                         </div>
                         <div className="text-right">
                             <h3 className="text-[8pt] font-black text-gray-400 uppercase tracking-widest mb-2">Modalités :</h3>
-                            <p className="text-sm font-bold uppercase">Règlement: {sale.paymentStatus === 'paid' ? 'Espèces' : 'À Crédit'}</p>
+                            <p className="text-sm font-bold uppercase">Règlement: {sale.paymentStatus === 'paid' ? 'Comptant' : 'À Crédit'}</p>
                             {sale.dueDate && (
                                 <p className="text-sm font-black text-primary mt-1 uppercase">
                                     Échéance: {format(safeToDate(sale.dueDate), 'dd/MM/yyyy')}
@@ -228,7 +221,6 @@ export const Receipt = React.forwardRef<HTMLDivElement, ReceiptProps>(
                                     <th className="py-4 px-2 text-center w-16">Unité</th>
                                     <th className="py-4 px-2 text-right w-24">P.U HT</th>
                                     <th className="py-4 px-2 text-center w-12">TVA%</th>
-                                    <th className="py-4 px-2 text-right w-24">Montant TVA</th>
                                     <th className="py-4 px-4 text-right w-32">Total TTC</th>
                                 </tr>
                             </thead>
@@ -237,7 +229,6 @@ export const Receipt = React.forwardRef<HTMLDivElement, ReceiptProps>(
                                     const tvaRate = item.tva_rate || profile?.tva_rate || 0;
                                     const ttc = item.price * item.quantity;
                                     const ht = ttc / (1 + tvaRate / 100);
-                                    const tvaAmt = ttc - ht;
                                     
                                     return (
                                         <tr key={idx} className={cn("text-sm transition-colors", idx % 2 === 0 ? "bg-white" : "bg-gray-50/50")}>
@@ -246,7 +237,6 @@ export const Receipt = React.forwardRef<HTMLDivElement, ReceiptProps>(
                                             <td className="py-4 px-2 text-center text-gray-500 font-bold uppercase text-[8pt]">Pcs</td>
                                             <td className="py-4 px-2 text-right font-mono">{ht.toFixed(2)}</td>
                                             <td className="py-4 px-2 text-center text-gray-400 font-bold">{tvaRate}%</td>
-                                            <td className="py-4 px-2 text-right font-mono text-gray-500">{tvaAmt.toFixed(2)}</td>
                                             <td className="py-4 px-4 text-right font-black tracking-tighter">{ttc.toFixed(2)}</td>
                                         </tr>
                                     );
@@ -258,16 +248,16 @@ export const Receipt = React.forwardRef<HTMLDivElement, ReceiptProps>(
                     {/* BLOC TOTAUX & LETTRES */}
                     <div className="mt-10 grid grid-cols-[1fr_250px] gap-10 items-start">
                         <div className="space-y-6">
-                            <div className="bg-amber-50/50 border-l-4 border-primary p-6 rounded-r-2xl">
+                            <div className="bg-primary/5 border-l-4 border-primary p-6 rounded-r-2xl">
                                 <p className="text-[8pt] font-black text-primary/60 uppercase tracking-widest mb-2">Arrêtée la présente facture à la somme de :</p>
-                                <p className="text-lg font-black text-gray-800 leading-relaxed text-right" dir="rtl">
-                                    {numberToArabicWords(sale.total)}
+                                <p className="text-md font-black text-gray-800 italic leading-relaxed">
+                                    {numberToFrenchWords(sale.total)}
                                 </p>
                             </div>
                             
                             {profile?.is_tva_exempt && (
                                 <p className="text-[8pt] italic text-gray-400 px-2">
-                                    Exonération de TVA : {profile.tva_exempt_reason || 'Article 9 du Code des Taxes sur le Chiffre d\'Affaires'}
+                                    Exonération de TVA : {profile.tva_exempt_reason || 'Dispositions légales en vigueur'}
                                 </p>
                             )}
                         </div>
@@ -318,7 +308,7 @@ export const Receipt = React.forwardRef<HTMLDivElement, ReceiptProps>(
                             Facture établie conformément à la législation fiscale algérienne en vigueur. Tout retard de paiement entraîne des pénalités conformément à l'article 938 du Code Civil.
                         </p>
                         <div className="flex justify-between items-center text-[8pt] font-bold text-gray-300">
-                            <span>iPOS Zen v1.9.8 Elite System</span>
+                            <span>iPOS Zen v1.9.8 System</span>
                             <span>Page 1 / 1</span>
                         </div>
                     </footer>
