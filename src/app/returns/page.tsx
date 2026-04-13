@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { returnService } from '@/services/return.service';
 import { customerService } from '@/services/customer.service';
 import { useDebounce } from '@/hooks/useDebounce';
@@ -35,8 +35,10 @@ import { cn } from '@/lib/utils';
 import { useAppStore } from '@/stores/appStore';
 import Papa from 'papaparse';
 import { ConfirmAlertDialog } from '@/components/ui/ConfirmAlertDialog';
+import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 
 export default function ReturnsPage() {
+    const searchInputRef = useRef<HTMLInputElement>(null);
     const { viewMode, setViewMode } = useAppStore(state => ({
         viewMode: state.returnsViewMode,
         setViewMode: state.actions.setReturnsViewMode,
@@ -163,6 +165,15 @@ export default function ReturnsPage() {
         setSearchQuery('');
     };
 
+    useKeyboardShortcuts([
+        {
+            key: 'F3',
+            action: () => searchInputRef.current?.focus(),
+            description: 'Rechercher un retour',
+            ignoreInputFocus: true
+        }
+    ], 'Retours');
+
     const isFiltered = searchQuery !== '';
     
     return (
@@ -198,7 +209,8 @@ export default function ReturnsPage() {
                 <div className="relative group flex-grow max-w-xl px-4">
                     <Search className="absolute left-8 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground group-focus-within:text-primary transition-colors duration-500" />
                     <Input 
-                        placeholder="Rechercher par N° Facture..."
+                        ref={searchInputRef}
+                        placeholder="Rechercher par N° Facture [F3]..."
                         className="pl-14 h-9 rounded-2xl bg-black/20 border-none shadow-inner focus-visible:ring-primary/20 font-bold text-lg"
                         value={searchQuery}
                         onChange={e => setSearchQuery(e.target.value)}
@@ -208,22 +220,22 @@ export default function ReturnsPage() {
                 <div className="flex flex-wrap items-center gap-3 px-4">
                     <DateRangePicker date={dateRange} setDate={setDate} />
                     
-                    <div className="flex items-center gap-1 p-1 bg-black/20 rounded-2xl border border-white/5 shadow-inner">
+                    <div className="flex items-center gap-1.5 p-1.5 bg-black/20 rounded-lg border border-white/5 shadow-inner">
                         <Button 
                             variant={viewMode === 'grid' ? 'secondary': 'ghost'} 
                             size="icon" 
-                            className="rounded-xl h-10 w-10"
+                            className="rounded-xl h-9 w-9"
                             onClick={() => setViewMode('grid')}
                         >
-                            <LayoutGrid className="h-5 w-5"/>
+                            <LayoutGrid className="h-4 w-4"/>
                         </Button>
                         <Button 
                             variant={viewMode === 'list' ? 'secondary': 'ghost'} 
                             size="icon" 
-                            className="rounded-xl h-10 w-10"
+                            className="rounded-xl h-9 w-9"
                             onClick={() => setViewMode('list')}
                         >
-                            <List className="h-5 w-5"/>
+                            <List className="h-4 w-4"/>
                         </Button>
                     </div>
 
@@ -268,7 +280,7 @@ export default function ReturnsPage() {
                     <EmptyState
                         icon={Undo2}
                         title="Aucun retour identifié"
-                        description={isFiltered ? "Ajustez vos filtres pour localiser les flux." : "Commencez par enregistrer votre premier retour Premium."}
+                        description={isFiltered ? "Ajustez vos filtres pour localiser les flux." : "Commenceز par enregistrer votre premier retour Premium."}
                     >
                         {isFiltered && <Button variant="outline" onClick={resetFilters} className="rounded-2xl h-12 font-bold px-8 border-primary/20 hover:bg-primary/5">Effacer les filtres</Button>}
                     </EmptyState>

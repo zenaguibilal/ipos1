@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useDeferredValue, useEffect } from 'react';
+import { useState, useMemo, useDeferredValue, useEffect, useRef } from 'react';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -30,6 +30,7 @@ import { useLiveQuery } from '@/hooks/useLiveQuery';
 import { db } from '@/lib/db';
 import { startOfMonth, differenceInDays, subMonths, setDate as fnsSetDate, lastDayOfMonth } from 'date-fns';
 import { Progress } from '@/components/ui/progress';
+import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 
 interface DebtAlertItem extends Customer {
     daysPastSettlement: number;
@@ -40,6 +41,7 @@ interface DebtAlertItem extends Customer {
 }
 
 export default function DebtAlertsPage() {
+    const searchInputRef = useRef<HTMLInputElement>(null);
     const [searchQuery, setSearchQuery] = useState('');
     const deferredSearch = useDeferredValue(searchQuery);
     const [isMounted, setIsMounted] = useState(false);
@@ -145,6 +147,15 @@ export default function DebtAlertsPage() {
         window.open(`https://wa.me/${customer.phone}?text=${message}`, '_blank');
     };
 
+    useKeyboardShortcuts([
+        {
+            key: 'F3',
+            action: () => searchInputRef.current?.focus(),
+            description: 'Rechercher un dossier',
+            ignoreInputFocus: true
+        }
+    ], 'Alertes');
+
     const isLoading = alerts === undefined || !isMounted;
 
     return (
@@ -164,7 +175,8 @@ export default function DebtAlertsPage() {
                     <div className="flex-grow relative group w-full">
                         <Search className="absolute left-8 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground group-focus-within:text-primary transition-all" />
                         <Input 
-                            placeholder="Identifier un dossier par nom ou mobile..."
+                            ref={searchInputRef}
+                            placeholder="Identifier un dossier par nom ou mobile [F3]..."
                             className="pl-16 h-9 rounded-lg bg-black/20 border-none shadow-inner font-semibold text-lg focus-visible:ring-primary/20"
                             value={searchQuery}
                             onChange={e => setSearchQuery(e.target.value)}

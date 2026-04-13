@@ -26,6 +26,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 
 export default function ZakatPage() {
     const [data, setData] = useState<any>(null);
@@ -63,6 +64,15 @@ export default function ZakatPage() {
         return { assets, base, zakat, isEligible };
     }, [data, useSalePrice, cashInHand, cashInBank]);
 
+    useKeyboardShortcuts([
+        {
+            key: 'r',
+            action: fetchData,
+            description: 'Actualiser le bilan',
+            ignoreInputFocus: false
+        }
+    ], 'Zakat');
+
     if (isLoading && !data) {
         return (
             <div className="p-6 sm:p-4 space-y-4 max-w-[1400px] mx-auto animate-pulse">
@@ -87,7 +97,7 @@ export default function ZakatPage() {
                     className="rounded-2xl h-12 border-primary/20 bg-card hover:bg-primary/5 transition-all group"
                 >
                     <RefreshCw className={cn("h-4 w-4 text-primary mr-2", isLoading && "animate-spin")} />
-                    Actualiser les flux
+                    Actualiser [R]
                 </Button>
             </PageHeader>
 

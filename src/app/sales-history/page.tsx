@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { salesService } from '@/services/sales.service';
 import { customerService } from '@/services/customer.service';
 import { useDebounce } from '@/hooks/useDebounce';
@@ -47,10 +47,12 @@ import { fr } from 'date-fns/locale';
 import Papa from 'papaparse';
 import { useAppStore } from '@/stores/appStore';
 import { ConfirmAlertDialog } from '@/components/ui/ConfirmAlertDialog';
+import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 
 type SalesStatus = 'all' | 'paid' | 'partial' | 'unpaid';
 
 export default function SalesHistoryPage() {
+    const searchInputRef = useRef<HTMLInputElement>(null);
     const { viewMode, setViewMode } = useAppStore(state => ({
         viewMode: state.salesViewMode,
         setViewMode: state.actions.setSalesViewMode,
@@ -315,6 +317,15 @@ export default function SalesHistoryPage() {
         setFilterStatus('all');
     };
 
+    useKeyboardShortcuts([
+        {
+            key: 'F3',
+            action: () => searchInputRef.current?.focus(),
+            description: 'Rechercher une facture',
+            ignoreInputFocus: true
+        }
+    ], 'Historique');
+
     const isFiltered = searchQuery !== '' || filterStatus !== 'all';
     
     return (
@@ -390,7 +401,8 @@ export default function SalesHistoryPage() {
                             <div className="relative group">
                                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
                                 <Input 
-                                    placeholder="N° Facture, Client..."
+                                    ref={searchInputRef}
+                                    placeholder="N° Facture, Client [F3]..."
                                     className="pl-11 h-12 rounded-xl bg-black/20 border-none shadow-inner font-bold focus-visible:ring-primary/20"
                                     value={searchQuery}
                                     onChange={e => setSearchQuery(e.target.value)}

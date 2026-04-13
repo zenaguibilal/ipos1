@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
@@ -12,6 +11,7 @@ import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
 import { customerService } from '@/services/customer.service';
 import { toast } from 'sonner';
+import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 
 interface PrintReceiptDialogProps {
     isOpen: boolean;
@@ -52,7 +52,24 @@ export function PrintReceiptDialog({
         return 'Client de passage';
     }, [customer, customerName]);
 
-    const handlePrint = () => window.print();
+    const handlePrint = useCallback(() => {
+        if (typeof window !== 'undefined') window.print();
+    }, []);
+
+    useKeyboardShortcuts([
+        {
+            key: 'p',
+            action: handlePrint,
+            description: 'Imprimer la facture',
+            ignoreInputFocus: true
+        },
+        {
+            key: 'Escape',
+            action: () => onOpenChange(false),
+            description: 'Fermer la fenêtre',
+            ignoreInputFocus: true
+        }
+    ], 'Impression', isOpen);
 
     const handleWhatsAppShare = useCallback(async () => {
         if (!sale) return;
@@ -161,7 +178,7 @@ export function PrintReceiptDialog({
 
                     <DialogFooter className="p-4 bg-card border-t flex flex-wrap gap-3">
                         <Button variant="ghost" onClick={() => onOpenChange(false)} className="rounded-xl h-10 font-bold px-6 border-white/5">
-                            <X className="mr-2 h-4 w-4" /> Fermer
+                            <X className="mr-2 h-4 w-4" /> Fermer [Esc]
                         </Button>
                         
                         <Button 
