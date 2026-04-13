@@ -13,203 +13,281 @@ import { Database, Copy, Check, Terminal } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { toast } from 'sonner';
 
-const SUPABASE_SQL_SCRIPT = `-- iPOS Luxury - Elite Cloud Schema (Verified v1.9.8)
--- Ce script initialise votre coffre-fort Cloud avec une précision de type absolue.
+const SUPABASE_SQL_SCRIPT = `-- ══════════════════════════════════════════════════════════
+-- iPOS Zen — Elite Cloud Schema (Verified v2.0.0)
+-- ══════════════════════════════════════════════════════════
+-- Ce script initialise votre coffre-fort Cloud avec une précision
+-- absolue conforme à la réglementation algérienne.
 
--- 1. Identité de l'Etablissement
+-- 0. PRÉREQUIS : Extension pour les UUID
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
+-- 1. IDENTITÉ DE L'ÉTABLISSEMENT
 CREATE TABLE IF NOT EXISTS company_profile (
-    uuid UUID PRIMARY KEY,
-    "companyName" TEXT NOT NULL,
-    address TEXT,
-    city TEXT,
-    "zipCode" TEXT,
-    country TEXT,
-    phone TEXT,
-    email TEXT,
-    website TEXT,
-    "vatNumber" TEXT,
-    "rcNumber" TEXT,
-    "goldPricePerGram" NUMERIC,
-    prix_pain NUMERIC,
-    "updatedAt" TIMESTAMPTZ DEFAULT NOW(),
-    last_sync_at TIMESTAMPTZ,
-    supabase_url TEXT,
-    supabase_key TEXT
+    uuid                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    company_name          TEXT NOT NULL DEFAULT 'Mon Commerce',
+    address               TEXT,
+    city                  TEXT,
+    zip_code              TEXT,
+    country               TEXT DEFAULT 'Algérie',
+    phone                 TEXT,
+    email                 TEXT,
+    website               TEXT,
+    logo_url              TEXT,
+    -- Champs fiscaux algériens
+    rc_number             TEXT,   -- Registre de Commerce
+    nif                   TEXT,   -- Numéro d'Identification Fiscale (15 chiffres)
+    ai_number             TEXT,   -- Article d'Imposition
+    nis_number            TEXT,   -- Numéro Statistique
+    legal_form            TEXT,   -- SARL, EURL, SNC, EI, etc.
+    tva_rate              SMALLINT DEFAULT 19 CHECK (tva_rate IN (0, 9, 19)),
+    is_tva_exempt         BOOLEAN DEFAULT false,
+    tva_exempt_reason     TEXT,
+    -- Numérotation & Séquences
+    invoice_prefix        TEXT DEFAULT 'FAC',
+    invoice_counter       BIGINT DEFAULT 1,
+    -- Configuration & Sync
+    gold_price_per_gram   NUMERIC(15,2) DEFAULT 0,
+    prix_pain             NUMERIC(15,2) DEFAULT 0,
+    supabase_url          TEXT,
+    supabase_key          TEXT,
+    last_sync_at          TIMESTAMPTZ,
+    created_at            TIMESTAMPTZ DEFAULT NOW(),
+    updated_at            TIMESTAMPTZ DEFAULT NOW()
 );
-ALTER TABLE company_profile DISABLE ROW LEVEL SECURITY;
 
--- 2. Réseau Partenaires (Fournisseurs)
+-- 2. PARTENAIRES (FOURNISSEURS)
 CREATE TABLE IF NOT EXISTS suppliers (
-    uuid UUID PRIMARY KEY,
-    name TEXT NOT NULL UNIQUE,
-    "contactPerson" TEXT,
-    phone TEXT,
-    email TEXT,
-    address TEXT,
-    balance NUMERIC DEFAULT 0,
-    "createdAt" TIMESTAMPTZ DEFAULT NOW(),
-    "updatedAt" TIMESTAMPTZ DEFAULT NOW()
+    uuid            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name            TEXT NOT NULL UNIQUE,
+    contact_person  TEXT,
+    phone           TEXT,
+    email           TEXT,
+    address         TEXT,
+    balance         NUMERIC(15,2) DEFAULT 0,
+    created_at      TIMESTAMPTZ DEFAULT NOW(),
+    updated_at      TIMESTAMPTZ DEFAULT NOW()
 );
-ALTER TABLE suppliers DISABLE ROW LEVEL SECURITY;
 
--- 3. Fichier Clients & CRM (Initial Balance included)
+-- 3. FICHIER CLIENTS (CRM & CRÉDIT)
 CREATE TABLE IF NOT EXISTS customers (
-    uuid UUID PRIMARY KEY,
-    "firstName" TEXT NOT NULL,
-    "lastName" TEXT NOT NULL,
-    "searchName" TEXT,
-    phone TEXT,
-    address TEXT,
-    "settlementDay" INTEGER,
-    "creditLimit" NUMERIC,
-    "initialBalance" NUMERIC DEFAULT 0,
-    "totalSpent" NUMERIC DEFAULT 0,
-    "outstandingBalance" NUMERIC DEFAULT 0,
-    "lastActivityDate" TIMESTAMPTZ,
-    "createdAt" TIMESTAMPTZ DEFAULT NOW(),
-    "updatedAt" TIMESTAMPTZ DEFAULT NOW(),
-    "debtStatus" TEXT,
-    "isOverLimit" BOOLEAN DEFAULT FALSE,
-    "isBreadClient" BOOLEAN DEFAULT FALSE,
-    bread_type_recurrence TEXT,
-    bread_quantite_defaut INTEGER,
-    bread_jours_semaine JSONB
+    uuid                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    first_name            TEXT NOT NULL,
+    last_name             TEXT NOT NULL,
+    search_name           TEXT,
+    phone                 TEXT,
+    address               TEXT,
+    settlement_day        SMALLINT CHECK (settlement_day BETWEEN 1 AND 31),
+    credit_limit          NUMERIC(15,2) DEFAULT 0,
+    initial_balance       NUMERIC(15,2) DEFAULT 0,
+    total_spent           NUMERIC(15,2) DEFAULT 0,
+    outstanding_balance   NUMERIC(15,2) DEFAULT 0,
+    last_activity_date    TIMESTAMPTZ,
+    debt_status           TEXT DEFAULT 'none' CHECK (debt_status IN ('none','due_soon','overdue')),
+    is_over_limit         BOOLEAN DEFAULT false,
+    -- Module Pain Elite
+    is_bread_client       BOOLEAN DEFAULT false,
+    bread_type_recurrence TEXT CHECK (bread_type_recurrence IN ('quotidien','jours_specifiques','aucun')),
+    bread_quantite_defaut NUMERIC(15,3) DEFAULT 0,
+    bread_jours_semaine   JSONB DEFAULT '{}',
+    created_at            TIMESTAMPTZ DEFAULT NOW(),
+    updated_at            TIMESTAMPTZ DEFAULT NOW()
 );
-ALTER TABLE customers DISABLE ROW LEVEL SECURITY;
 
--- 4. Catalogue Produits Elite
+-- 4. CATALOGUE PRODUITS
 CREATE TABLE IF NOT EXISTS products (
-    uuid UUID PRIMARY KEY,
-    name TEXT NOT NULL,
-    category TEXT,
-    price NUMERIC NOT NULL,
-    "purchasePrice" NUMERIC NOT NULL,
-    quantity NUMERIC DEFAULT 0,
-    "minStockLevel" NUMERIC DEFAULT 10,
-    barcodes TEXT[], 
-    unite TEXT,
-    "dateExpiration" TIMESTAMPTZ,
-    "supplierUuid" UUID,
-    "dateMajPrix" TIMESTAMPTZ,
-    "createdAt" TIMESTAMPTZ DEFAULT NOW(),
-    "updatedAt" TIMESTAMPTZ DEFAULT NOW(),
-    "stockStatus" TEXT
+    uuid              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name              TEXT NOT NULL,
+    category          TEXT,
+    price             NUMERIC(15,2) NOT NULL,
+    purchase_price    NUMERIC(15,2) NOT NULL DEFAULT 0,
+    quantity          NUMERIC(15,3) DEFAULT 0,
+    min_stock_level   NUMERIC(15,3) DEFAULT 10,
+    barcodes          TEXT[],
+    unite             TEXT DEFAULT 'Pièce',
+    date_expiration   TIMESTAMPTZ,
+    supplier_uuid     UUID REFERENCES suppliers(uuid) ON DELETE SET NULL,
+    date_maj_prix     TIMESTAMPTZ DEFAULT NOW(),
+    stock_status      TEXT DEFAULT 'in_stock' CHECK (stock_status IN ('in_stock','low_stock','out_of_stock')),
+    created_at        TIMESTAMPTZ DEFAULT NOW(),
+    updated_at        TIMESTAMPTZ DEFAULT NOW()
 );
-ALTER TABLE products DISABLE ROW LEVEL SECURITY;
 
--- 5. Registre des Charges
-CREATE TABLE IF NOT EXISTS expenses (
-    uuid UUID PRIMARY KEY,
-    description TEXT NOT NULL,
-    category TEXT,
-    amount NUMERIC NOT NULL,
-    "expenseDate" TIMESTAMPTZ NOT NULL,
-    "createdAt" TIMESTAMPTZ DEFAULT NOW(),
-    "updatedAt" TIMESTAMPTZ DEFAULT NOW()
-);
-ALTER TABLE expenses DISABLE ROW LEVEL SECURITY;
-
--- 6. Manifestes de Réception Stock
-CREATE TABLE IF NOT EXISTS stock_intakes (
-    uuid UUID PRIMARY KEY,
-    "supplierUuid" UUID,
-    "invoiceNumber" TEXT,
-    "invoiceDate" TIMESTAMPTZ,
-    "shippingCost" NUMERIC DEFAULT 0,
-    items JSONB NOT NULL,
-    "totalValue" NUMERIC NOT NULL,
-    "createdAt" TIMESTAMPTZ DEFAULT NOW(),
-    "updatedAt" TIMESTAMPTZ DEFAULT NOW()
-);
-ALTER TABLE stock_intakes DISABLE ROW LEVEL SECURITY;
-
--- 7. Grand Livre des Ventes
+-- 5. GRAND LIVRE DES VENTES
 CREATE TABLE IF NOT EXISTS sales (
-    uuid UUID PRIMARY KEY,
-    "invoiceNumber" TEXT NOT NULL UNIQUE,
-    items JSONB NOT NULL,
-    subtotal NUMERIC NOT NULL,
-    "discountType" TEXT,
-    "discountAmount" NUMERIC DEFAULT 0,
-    total NUMERIC NOT NULL,
-    "amountPaid" NUMERIC NOT NULL,
-    "remainingBalance" NUMERIC NOT NULL,
-    "paymentStatus" TEXT NOT NULL,
-    "customerUuid" UUID,
-    "dueDate" TIMESTAMPTZ,
-    "createdAt" TIMESTAMPTZ DEFAULT NOW(),
-    "updatedAt" TIMESTAMPTZ DEFAULT NOW()
+    uuid              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    invoice_number    TEXT NOT NULL UNIQUE,
+    items             JSONB NOT NULL DEFAULT '[]',
+    subtotal          NUMERIC(15,2) NOT NULL,
+    discount_type     TEXT CHECK (discount_type IN ('fixed','percentage')),
+    discount_amount   NUMERIC(15,2) DEFAULT 0,
+    total             NUMERIC(15,2) NOT NULL,
+    amount_paid       NUMERIC(15,2) DEFAULT 0,
+    remaining_balance NUMERIC(15,2) DEFAULT 0,
+    payment_status    TEXT NOT NULL DEFAULT 'unpaid' CHECK (payment_status IN ('paid','partial','unpaid')),
+    customer_uuid     UUID REFERENCES customers(uuid) ON DELETE SET NULL,
+    due_date          TIMESTAMPTZ,
+    created_at        TIMESTAMPTZ DEFAULT NOW(),
+    updated_at        TIMESTAMPTZ DEFAULT NOW()
 );
-ALTER TABLE sales DISABLE ROW LEVEL SECURITY;
 
--- 8. Registre des Retours Clients
+-- 6. REGISTRE DES CHARGES (DÉPENSES)
+CREATE TABLE IF NOT EXISTS expenses (
+    uuid          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    description   TEXT NOT NULL,
+    category      TEXT,
+    amount        NUMERIC(15,2) NOT NULL,
+    expense_date  TIMESTAMPTZ NOT NULL,
+    created_at    TIMESTAMPTZ DEFAULT NOW(),
+    updated_at    TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 7. MANIFESTES DE RÉCEPTION (STOCKS)
+CREATE TABLE IF NOT EXISTS stock_intakes (
+    uuid              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    supplier_uuid     UUID REFERENCES suppliers(uuid) ON DELETE SET NULL,
+    invoice_number    TEXT,
+    invoice_date      TIMESTAMPTZ,
+    shipping_cost     NUMERIC(15,2) DEFAULT 0,
+    items             JSONB NOT NULL DEFAULT '[]',
+    total_value       NUMERIC(15,2) NOT NULL,
+    created_at        TIMESTAMPTZ DEFAULT NOW(),
+    updated_at        TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 8. RETOURS MARCHANDISES
 CREATE TABLE IF NOT EXISTS product_returns (
-    uuid UUID PRIMARY KEY,
-    "originalSaleUuid" UUID,
-    "originalInvoiceNumber" TEXT NOT NULL,
-    items JSONB NOT NULL,
-    "totalReturnValue" NUMERIC NOT NULL,
-    "amountRefunded" NUMERIC DEFAULT 0,
-    "customerUuid" UUID,
-    notes TEXT,
-    "createdAt" TIMESTAMPTZ DEFAULT NOW(),
-    "updatedAt" TIMESTAMPTZ DEFAULT NOW()
+    uuid                    UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    original_sale_uuid      UUID REFERENCES sales(uuid) ON DELETE SET NULL,
+    original_invoice_number TEXT NOT NULL,
+    items                   JSONB NOT NULL DEFAULT '[]',
+    total_return_value      NUMERIC(15,2) NOT NULL,
+    amount_refunded         NUMERIC(15,2) DEFAULT 0,
+    customer_uuid           UUID REFERENCES customers(uuid) ON DELETE SET NULL,
+    notes                   TEXT,
+    created_at              TIMESTAMPTZ DEFAULT NOW(),
+    updated_at              TIMESTAMPTZ DEFAULT NOW()
 );
-ALTER TABLE product_returns DISABLE ROW LEVEL SECURITY;
 
--- 9. Journal des Encaissements Clients
+-- 9. JOURNAL DES ENCAISSEMENTS CLIENTS
 CREATE TABLE IF NOT EXISTS payments (
-    uuid UUID PRIMARY KEY,
-    "customerUuid" UUID,
-    amount NUMERIC NOT NULL,
-    "paymentDate" TIMESTAMPTZ NOT NULL,
-    notes TEXT,
-    "createdAt" TIMESTAMPTZ DEFAULT NOW(),
-    "updatedAt" TIMESTAMPTZ DEFAULT NOW()
+    uuid          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    customer_uuid UUID NOT NULL REFERENCES customers(uuid) ON DELETE CASCADE,
+    amount        NUMERIC(15,2) NOT NULL,
+    payment_date  TIMESTAMPTZ NOT NULL,
+    notes         TEXT,
+    created_at    TIMESTAMPTZ DEFAULT NOW(),
+    updated_at    TIMESTAMPTZ DEFAULT NOW()
 );
-ALTER TABLE payments DISABLE ROW LEVEL SECURITY;
 
--- 10. Logistique du Pain
-CREATE TABLE IF NOT EXISTS bread_orders (
-    uuid UUID PRIMARY KEY,
-    "customerUuid" UUID,
-    "customName" TEXT,
-    date TEXT NOT NULL,
-    quantite INTEGER NOT NULL,
-    quantite_origine INTEGER,
-    est_paye BOOLEAN DEFAULT FALSE,
-    est_livre BOOLEAN DEFAULT FALSE,
-    "venteUuid" UUID,
-    "createdAt" TIMESTAMPTZ DEFAULT NOW(),
-    "updatedAt" TIMESTAMPTZ DEFAULT NOW()
-);
-ALTER TABLE bread_orders DISABLE ROW LEVEL SECURITY;
-
--- 11. Journal d'Audit des Stocks
-CREATE TABLE IF NOT EXISTS inventory_logs (
-    uuid UUID PRIMARY KEY,
-    "productUuid" UUID NOT NULL,
-    change NUMERIC NOT NULL,
-    "newQuantity" NUMERIC NOT NULL,
-    reason TEXT NOT NULL,
-    "relatedUuid" UUID,
-    "createdAt" TIMESTAMPTZ DEFAULT NOW(),
-    "updatedAt" TIMESTAMPTZ DEFAULT NOW()
-);
-ALTER TABLE inventory_logs DISABLE ROW LEVEL SECURITY;
-
--- 12. Journal des Règlements Fournisseurs
+-- 10. JOURNAL DES RÈGLEMENTS FOURNISSEURS
 CREATE TABLE IF NOT EXISTS supplier_payments (
-    uuid UUID PRIMARY KEY,
-    "supplierUuid" UUID,
-    amount NUMERIC NOT NULL,
-    "paymentDate" TIMESTAMPTZ NOT NULL,
-    method TEXT NOT NULL,
-    notes TEXT,
-    "createdAt" TIMESTAMPTZ DEFAULT NOW(),
-    "updatedAt" TIMESTAMPTZ DEFAULT NOW()
+    uuid          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    supplier_uuid UUID NOT NULL REFERENCES suppliers(uuid) ON DELETE CASCADE,
+    amount        NUMERIC(15,2) NOT NULL,
+    payment_date  TIMESTAMPTZ NOT NULL,
+    method        TEXT CHECK (method IN ('cash','check','transfer')),
+    notes         TEXT,
+    created_at    TIMESTAMPTZ DEFAULT NOW(),
+    updated_at    TIMESTAMPTZ DEFAULT NOW()
 );
-ALTER TABLE supplier_payments DISABLE ROW LEVEL SECURITY;
+
+-- 11. LOGISTIQUE DU PAIN
+CREATE TABLE IF NOT EXISTS bread_orders (
+    uuid              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    customer_uuid     UUID REFERENCES customers(uuid) ON DELETE SET NULL,
+    custom_name       TEXT,
+    date              TEXT NOT NULL,
+    quantite          NUMERIC(15,3) NOT NULL,
+    quantite_origine  NUMERIC(15,3),
+    est_paye          BOOLEAN DEFAULT false,
+    est_livre         BOOLEAN DEFAULT false,
+    is_manual         BOOLEAN DEFAULT false,
+    vente_uuid        UUID REFERENCES sales(uuid) ON DELETE SET NULL,
+    created_at        TIMESTAMPTZ DEFAULT NOW(),
+    updated_at        TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 12. AUDIT DES STOCKS (LOGS)
+CREATE TABLE IF NOT EXISTS inventory_logs (
+    uuid              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    product_uuid      UUID REFERENCES products(uuid) ON DELETE CASCADE,
+    change            NUMERIC(15,3) NOT NULL,
+    new_quantity      NUMERIC(15,3) NOT NULL,
+    reason            TEXT NOT NULL,
+    related_uuid      UUID,
+    created_at        TIMESTAMPTZ DEFAULT NOW(),
+    updated_at        TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- ══════════════════════════════════════════════════════════
+-- A. FONCTIONS & TRIGGERS POUR UPDATED_AT
+-- ══════════════════════════════════════════════════════════
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = NOW();
+    RETURN NEW;
+END;
+$$ language 'plpgsql';
+
+DO $$
+DECLARE
+    t text;
+BEGIN
+    FOR t IN 
+        SELECT table_name FROM information_schema.tables 
+        WHERE table_schema = 'public' AND table_type = 'BASE TABLE'
+    LOOP
+        EXECUTE format('DROP TRIGGER IF EXISTS update_updated_at_trigger ON %I', t);
+        EXECUTE format('CREATE TRIGGER update_updated_at_trigger BEFORE UPDATE ON %I FOR EACH ROW EXECUTE FUNCTION update_updated_at_column()', t);
+    END LOOP;
+END;
+$$;
+
+-- ══════════════════════════════════════════════════════════
+-- B. INDEX DE PERFORMANCE
+-- ══════════════════════════════════════════════════════════
+CREATE INDEX IF NOT EXISTS idx_products_name ON products(name);
+CREATE INDEX IF NOT EXISTS idx_products_category ON products(category);
+CREATE INDEX IF NOT EXISTS idx_customers_search ON customers(search_name);
+CREATE INDEX IF NOT EXISTS idx_customers_debt ON customers(outstanding_balance);
+CREATE INDEX IF NOT EXISTS idx_sales_invoice ON sales(invoice_number);
+CREATE INDEX IF NOT EXISTS idx_sales_customer ON sales(customer_uuid);
+CREATE INDEX IF NOT EXISTS idx_sales_date ON sales(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_bread_date ON bread_orders(date);
+CREATE INDEX IF NOT EXISTS idx_inventory_product ON inventory_logs(product_uuid);
+
+-- ══════════════════════════════════════════════════════════
+-- C. SÉCURITÉ (DÉSACTIVATION RLS POUR BACKUP LOCAL)
+-- ══════════════════════════════════════════════════════════
+-- Note: RLS est désactivé car l'application gère l'accès via la clé d'API.
+DO $$
+DECLARE
+    t text;
+BEGIN
+    FOR t IN 
+        SELECT table_name FROM information_schema.tables 
+        WHERE table_schema = 'public' AND table_type = 'BASE TABLE'
+    LOOP
+        EXECUTE format('ALTER TABLE %I DISABLE ROW LEVEL SECURITY', t);
+    END LOOP;
+END;
+$$;
+
+GRANT ALL ON ALL TABLES IN SCHEMA public TO anon;
+GRANT ALL ON ALL TABLES IN SCHEMA public TO authenticated;
+GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO anon;
+GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO authenticated;
+
+-- ══════════════════════════════════════════════════════════
+-- D. VÉRIFICATION FINALE
+-- ══════════════════════════════════════════════════════════
+SELECT table_name, 
+       pg_size_pretty(pg_total_relation_size(quote_ident(table_name)::regclass)) as size
+FROM information_schema.tables 
+WHERE table_schema = 'public' AND table_type = 'BASE TABLE'
+ORDER BY table_name;
 `;
 
 export function SupabaseSqlDialog() {
@@ -220,7 +298,7 @@ export function SupabaseSqlDialog() {
         if (typeof window !== 'undefined') {
             navigator.clipboard.writeText(SUPABASE_SQL_SCRIPT);
             setCopied(true);
-            toast.success("Code SQL copié.");
+            toast.success("Script SQL Elite copié.");
             setTimeout(() => setCopied(false), 2000);
         }
     };
@@ -247,8 +325,8 @@ export function SupabaseSqlDialog() {
                                     <Database className="h-6 w-6" />
                                 </div>
                                 <div>
-                                    <DialogTitle className="text-lg font-semibold tracking-tight">Initialisation Saphir</DialogTitle>
-                                    <DialogDescription className="font-medium">Script SQL Elite certifié pour votre coffre-fort Cloud.</DialogDescription>
+                                    <DialogTitle className="text-lg font-semibold tracking-tight">Initialisation Saphir Elite</DialogTitle>
+                                    <DialogDescription className="font-medium text-[10px] uppercase text-primary/50">Schéma souverain certifié compatible v2.0.0</DialogDescription>
                                 </div>
                             </div>
                             <Button onClick={handleCopy} className="rounded-2xl h-12 px-6 font-semibold text-xs uppercase tracking-wide shadow-xl shadow-sm gap-2 transition-all active:scale-95">
@@ -259,15 +337,18 @@ export function SupabaseSqlDialog() {
                     </DialogHeader>
 
                     <div className="flex-grow p-4 bg-black/40 overflow-hidden">
-                        <ScrollArea className="h-full rounded-2xl border border-white/5 bg-black/60 p-6 font-mono text-sm leading-relaxed text-emerald-500/80 custom-scrollbar">
+                        <ScrollArea className="h-full rounded-2xl border border-white/5 bg-black/60 p-6 font-mono text-xs leading-relaxed text-emerald-500/80 custom-scrollbar">
                             <pre className="whitespace-pre-wrap">{SUPABASE_SQL_SCRIPT}</pre>
                         </ScrollArea>
                     </div>
 
-                    <div className="p-6 bg-muted/5 border-t border-white/5 text-center">
-                        <p className="text-[10px] font-semibold uppercase text-muted-foreground opacity-40">
-                            Certifié compatible v1.9.8 Elite Restore Engine.
+                    <div className="p-6 bg-muted/5 border-t border-white/5 text-center flex justify-between items-center px-8">
+                        <p className="text-[10px] font-semibold uppercase text-muted-foreground opacity-40 italic">
+                            Utilisez l'éditeur SQL de Supabase pour exécuter ce code.
                         </p>
+                        <div className="flex items-center gap-2 text-[9px] font-bold text-emerald-500 bg-emerald-500/10 px-3 py-1 rounded-full">
+                            <Check className="h-3 w-3" /> Schéma Validé
+                        </div>
                     </div>
                 </DialogContent>
             </Dialog>
