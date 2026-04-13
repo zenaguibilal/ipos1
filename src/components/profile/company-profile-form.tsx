@@ -99,7 +99,7 @@ export function CompanyProfileForm() {
                         </div>
                         <div className="space-y-4">
                             <Label htmlFor="legal_form" className="text-[10px] font-semibold uppercase ml-1 opacity-40">Forme Juridique</Label>
-                            <Input id="legal_form" value={formState.legal_form || ''} onChange={handleInputChange} className="h-11 rounded-lg bg-black/20 border-none shadow-inner font-bold" placeholder="SARL, EURL, EI..." disabled={isSaving}/>
+                            <Input id="legal_form" value={formState.legal_form || ''} onChange={handleInputChange} className="h-11 rounded-lg bg-black/20 border-none shadow-inner font-bold" placeholder="SARL, EURL, SNC, EI..." disabled={isSaving}/>
                         </div>
                     </div>
                     <div className="space-y-4">
