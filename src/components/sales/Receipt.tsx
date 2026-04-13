@@ -35,67 +35,85 @@ interface DeliveryNoteData {
 }
 
 /**
- * Advanced French number to words converter (v2.1 - Supports Millions)
+ * Advanced French number to words converter (v2.2 - Corrected & Robust)
  */
 function numberToWordsFR(n: number): string {
-  if (n === 0) return "ZÉRO DINAR";
-  
-  const units = ['', 'UN', 'DEUX', 'TROIS', 'QUATRE', 'CINق', 'SIX', 'SEPT', 'HUIT', 'NEUF'];
-  const tens = ['', 'DIX', 'VINGT', 'TRENTE', 'QUARANTE', 'CINQUANTE', 'SOIXANTE', 'SOIXANTE-DIX', 'QUATRE-VINGTS', 'QUATRE-VINGT-DIX'];
-  const teens = ['DIX', 'ONZE', 'DOUZE', 'TREIZE', 'QUATORZE', 'QUINZE', 'SEIZE', 'DIX-SEPT', 'DIX-HUIT', 'DIX-NEUF'];
+  const intPart = Math.floor(n);
+  if (intPart === 0) return "ZÉRO DINAR";
 
-  function convertGroup(num: number): string {
+  const units = ["", "UN", "DEUX", "TROIS", "QUATRE", "CINQ", "SIX", "SEPT", "HUIT", "NEUF"];
+  const tens = ["", "DIX", "VINGT", "TRENTE", "QUARANTE", "CINQUANTE", "SOIXANTE", "SOIXANTE-DIX", "QUATRE-VINGTS", "QUATRE-VINGT-DIX"];
+  const teens = ["DIX", "ONZE", "DOUZE", "TREIZE", "QUATORZE", "QUINZE", "SEIZE", "DIX-SEPT", "DIX-HUIT", "DIX-NEUF"];
+
+  function convertGroup(num: number, isMille: boolean = false): string {
     let res = "";
+    
+    // Hundreds
     if (num >= 100) {
       const c = Math.floor(num / 100);
       const rest = num % 100;
       if (c === 1) {
         res += "CENT ";
       } else {
-        res += units[c] + " CENT" + (rest === 0 ? "S " : " ");
+        res += units[c] + " CENT" + (rest === 0 && !isMille ? "S " : " ");
       }
       num = rest;
     }
-    
+
+    // Tens and Units
     if (num >= 20) {
       const t = Math.floor(num / 10);
       const u = num % 10;
-      if (t === 7 || t === 9) {
-        res += tens[t - 1] + (u === 1 ? " ET " : "-") + teens[u];
+      
+      if (t === 7 || t === 9) { // 70s or 90s
+        const prefix = (t === 7) ? "SOIXANTE" : "QUATRE-VINGT";
+        if (u === 1 && t === 7) {
+          res += prefix + " ET ONZE";
+        } else {
+          res += prefix + "-" + teens[u];
+        }
       } else {
-        res += tens[t] + (u === 1 ? " ET " : u > 1 ? "-" : "") + units[u];
+        const prefix = tens[t];
+        if (u === 1) {
+          res += prefix + (t === 8 ? "-UN" : " ET UN");
+        } else if (u > 1) {
+          res += prefix + "-" + units[u];
+        } else {
+          // Special case for 80 (Quatre-vingts)
+          res += prefix + (t === 8 && !isMille ? "S" : "");
+        }
       }
     } else if (num >= 10) {
       res += teens[num - 10];
     } else if (num > 0) {
-      res += units[num];
+      // Mille is invariable and we don't say "Un Mille"
+      if (!(num === 1 && isMille)) {
+        res += units[num];
+      }
     }
+    
     return res.trim();
   }
 
-  const intPart = Math.floor(n);
   let result = "";
-
-  if (intPart >= 1000000) {
-    const m = Math.floor(intPart / 1000000);
-    result += convertGroup(m) + " MILLION" + (m > 1 ? "S" : "");
-    result += " ";
-  }
-  
+  const millions = Math.floor(intPart / 1000000);
   const thousands = Math.floor((intPart % 1000000) / 1000);
+  const remainder = intPart % 1000;
+
+  if (millions > 0) {
+    result += convertGroup(millions) + " MILLION" + (millions > 1 ? "S " : " ");
+  }
+
   if (thousands > 0) {
     if (thousands === 1) {
       result += "MILLE ";
     } else {
-      result += convertGroup(thousands) + " MILLE ";
+      result += convertGroup(thousands, true) + " MILLE ";
     }
   }
 
-  const remainder = intPart % 1000;
   if (remainder > 0) {
     result += convertGroup(remainder);
-  } else if (intPart === 0 && !result) {
-    result = "ZÉRO";
   }
 
   return result.trim().toUpperCase() + " DINARS";
