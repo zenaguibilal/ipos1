@@ -29,6 +29,7 @@ import {
 import { Switch } from '@/components/ui/switch';
 import { BREAD_WEEK_DAY_LABELS_FULL } from '@/lib/constants';
 import { cn } from '@/lib/utils';
+import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 
 // ─── État initial propre ───────────────────────────────────────
 const defaultJoursSemaine = {
@@ -80,8 +81,8 @@ export function BreadClientForm({
     }, [customer, isOpen]);
 
     const handleSubmit = useCallback(
-        async (e: React.FormEvent) => {
-            e.preventDefault();
+        async (e?: React.FormEvent) => {
+            e?.preventDefault();
             if (!customer?.uuid) return;
 
             setIsLoading(true);
@@ -93,18 +94,14 @@ export function BreadClientForm({
 
                 if (formState.bread_type_recurrence === 'quotidien') {
                     dataToSave.bread_quantite_defaut = formState.bread_quantite_defaut;
-                    // FIX #22 : effacer les données de l'autre mode
                     dataToSave.bread_jours_semaine = undefined;
                 } else if (formState.bread_type_recurrence === 'jours_specifiques') {
                     dataToSave.bread_jours_semaine = formState.bread_jours_semaine;
-                    // FIX #22 : effacer les données de l'autre mode
                     dataToSave.bread_quantite_defaut = 0;
                 }
 
                 await customerService.updateCustomer(customer.uuid, dataToSave);
-                toast.success(
-                    `Programme pain mis à jour pour ${customer.firstName}.`,
-                );
+                toast.success(`Programme pain mis à jour pour ${customer.firstName}.`);
                 onSuccess();
                 onOpenChange(false);
             } catch {
@@ -130,7 +127,6 @@ export function BreadClientForm({
     };
 
     const handleDayQuantityChange = (day: string, value: string) => {
-        // FIX #21 : parseFloat pour supporter les quantités fractionnaires
         const quantite = parseFloat(value) || 0;
         setFormState(prev => ({
             ...prev,
@@ -140,6 +136,23 @@ export function BreadClientForm({
             },
         }));
     };
+
+    // Raccourcis pour le formulaire d'abonnement
+    useKeyboardShortcuts([
+        {
+            key: 'Enter',
+            ctrl: true,
+            action: () => handleSubmit(),
+            description: 'Enregistrer l\'abonnement',
+            ignoreInputFocus: true
+        },
+        {
+            key: 'Escape',
+            action: () => onOpenChange(false),
+            description: 'Fermer',
+            ignoreInputFocus: true
+        }
+    ], 'AbonnementPain', isOpen);
 
     if (!customer) return null;
 
@@ -164,7 +177,6 @@ export function BreadClientForm({
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
             <DialogContent className="sm:max-w-2xl p-0 gap-0 overflow-hidden">
                 <form onSubmit={handleSubmit}>
-                    {/* Header */}
                     <DialogHeader className="bg-primary/5 p-4 border-b border-border">
                         <div className="flex items-center gap-3">
                             <div className="p-2 rounded-lg bg-primary text-primary-foreground">
@@ -175,95 +187,57 @@ export function BreadClientForm({
                                     Programme Pain
                                 </DialogTitle>
                                 <DialogDescription className="text-xs">
-                                    Commandes récurrentes pour{' '}
-                                    {customer.firstName} {customer.lastName}
+                                    Commandes récurrentes pour {customer.firstName} {customer.lastName}
                                 </DialogDescription>
                             </div>
                         </div>
                     </DialogHeader>
 
                     <div className="p-4 space-y-4 max-h-[65vh] overflow-y-auto custom-scrollbar">
-
-                        {/* Section: Statut & Type */}
                         <div className="p-4 rounded-lg border border-border bg-muted/20 space-y-4">
                             <SectionTitle title="Abonnement & Fréquence" icon={Settings} />
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                {/* Statut actif/inactif */}
                                 <div className="space-y-1.5">
-                                    <Label className="text-xs font-semibold text-muted-foreground">
-                                        Statut du programme
-                                    </Label>
-                                    <div
-                                        className={cn(
-                                            'flex items-center justify-between p-3 rounded-lg border transition-colors',
-                                            formState.isBreadClient
-                                                ? 'bg-emerald-500/5 border-emerald-500/20'
-                                                : 'bg-muted/30 border-border',
-                                        )}
-                                    >
-                                        <span
-                                            className={cn(
-                                                'text-xs font-bold uppercase',
-                                                formState.isBreadClient
-                                                    ? 'text-emerald-600'
-                                                    : 'text-muted-foreground',
-                                            )}
-                                        >
-                                            {formState.isBreadClient
-                                                ? 'ACTIF'
-                                                : 'INACTIF'}
+                                    <Label className="text-xs font-semibold text-muted-foreground">Statut du programme</Label>
+                                    <div className={cn(
+                                        'flex items-center justify-between p-3 rounded-lg border transition-colors',
+                                        formState.isBreadClient ? 'bg-emerald-500/5 border-emerald-500/20' : 'bg-muted/30 border-border',
+                                    )}>
+                                        <span className={cn('text-xs font-bold uppercase', formState.isBreadClient ? 'text-emerald-600' : 'text-muted-foreground')}>
+                                            {formState.isBreadClient ? 'ACTIF' : 'INACTIF'}
                                         </span>
                                         <Switch
                                             checked={formState.isBreadClient}
-                                            onCheckedChange={checked =>
-                                                setFormState(s => ({
-                                                    ...s,
-                                                    isBreadClient: checked,
-                                                }))
-                                            }
+                                            onCheckedChange={checked => setFormState(s => ({ ...s, isBreadClient: checked }))}
                                             className="data-[state=checked]:bg-emerald-500"
                                         />
                                     </div>
                                 </div>
 
-                                {/* Type de récurrence */}
                                 <div className="space-y-1.5">
-                                    <Label className="text-xs font-semibold text-muted-foreground">
-                                        Fréquence
-                                    </Label>
+                                    <Label className="text-xs font-semibold text-muted-foreground">Fréquence</Label>
                                     <Select
                                         value={formState.bread_type_recurrence}
-                                        onValueChange={value =>
-                                            setFormState(s => ({
-                                                ...s,
-                                                bread_type_recurrence: value as any,
-                                                // FIX #22 : on efface les données de
-                                                // l'ancien mode quand on change de type
-                                                bread_quantite_defaut: 0,
-                                                bread_jours_semaine:   defaultJoursSemaine,
-                                            }))
-                                        }
+                                        onValueChange={value => setFormState(s => ({
+                                            ...s,
+                                            bread_type_recurrence: value as any,
+                                            bread_quantite_defaut: 0,
+                                            bread_jours_semaine:   defaultJoursSemaine,
+                                        }))}
                                     >
                                         <SelectTrigger className="h-9 font-semibold">
                                             <SelectValue />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="quotidien">
-                                                Quotidien (quantité fixe)
-                                            </SelectItem>
-                                            <SelectItem value="jours_specifiques">
-                                                Jours spécifiques (calendrier)
-                                            </SelectItem>
-                                            <SelectItem value="aucun">
-                                                Manuel (à la demande)
-                                            </SelectItem>
+                                            <SelectItem value="quotidien">Quotidien (quantité fixe)</SelectItem>
+                                            <SelectItem value="jours_specifiques">Jours spécifiques (calendrier)</SelectItem>
+                                            <SelectItem value="aucun">Manuel (à la demande)</SelectItem>
                                         </SelectContent>
                                     </Select>
                                 </div>
                             </div>
                         </div>
 
-                        {/* Section: Quantité quotidienne */}
                         {formState.bread_type_recurrence === 'quotidien' && (
                             <div className="p-4 rounded-lg border border-primary/15 bg-primary/5 animate-in fade-in duration-200">
                                 <SectionTitle title="Quantité fixe par jour" icon={Package} />
@@ -275,106 +249,60 @@ export function BreadClientForm({
                                             step="0.5"
                                             min="0"
                                             value={formState.bread_quantite_defaut}
-                                            onChange={e =>
-                                                setFormState(s => ({
-                                                    ...s,
-                                                    // FIX #21 : parseFloat
-                                                    bread_quantite_defaut:
-                                                        parseFloat(e.target.value) || 0,
-                                                }))
-                                            }
+                                            onChange={e => setFormState(s => ({
+                                                ...s,
+                                                bread_quantite_defaut: parseFloat(e.target.value) || 0,
+                                            }))}
                                             className="h-10 text-center font-bold text-lg"
                                         />
-                                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs opacity-40 uppercase">
-                                            pcs
-                                        </span>
+                                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs opacity-40 uppercase">pcs</span>
                                     </div>
                                 </div>
                             </div>
                         )}
 
-                        {/* Section: Calendrier hebdomadaire */}
                         {formState.bread_type_recurrence === 'jours_specifiques' && (
                             <div className="p-4 rounded-lg border border-border bg-muted/10 animate-in fade-in duration-200">
                                 <SectionTitle title="Calendrier hebdomadaire" icon={Calendar} />
                                 <div className="space-y-2">
-                                    {Object.entries(BREAD_WEEK_DAY_LABELS_FULL).map(
-                                        ([key, label]) => {
-                                            const dayData =
-                                                formState.bread_jours_semaine?.[key] || {
-                                                    actif:   false,
-                                                    quantite: 0,
-                                                };
-                                            return (
-                                                <div
-                                                    key={key}
-                                                    className={cn(
-                                                        'flex items-center gap-3 p-2.5 rounded-lg border transition-opacity',
-                                                        dayData.actif
-                                                            ? 'bg-card border-border'
-                                                            : 'opacity-40 border-transparent',
-                                                    )}
-                                                >
-                                                    <Switch
-                                                        checked={dayData.actif}
-                                                        onCheckedChange={() =>
-                                                            handleDayToggle(key)
-                                                        }
-                                                        className="data-[state=checked]:bg-primary"
+                                    {Object.entries(BREAD_WEEK_DAY_LABELS_FULL).map(([key, label]) => {
+                                        const dayData = formState.bread_jours_semaine?.[key] || { actif: false, quantite: 0 };
+                                        return (
+                                            <div key={key} className={cn(
+                                                'flex items-center gap-3 p-2.5 rounded-lg border transition-opacity',
+                                                dayData.actif ? 'bg-card border-border' : 'opacity-40 border-transparent',
+                                            )}>
+                                                <Switch
+                                                    checked={dayData.actif}
+                                                    onCheckedChange={() => handleDayToggle(key)}
+                                                    className="data-[state=checked]:bg-primary"
+                                                />
+                                                <Label className="flex-1 text-xs font-semibold uppercase tracking-wide">{label}</Label>
+                                                <div className="relative w-24">
+                                                    <Input
+                                                        type="number"
+                                                        step="0.5"
+                                                        min="0"
+                                                        className="h-8 text-center text-sm font-bold"
+                                                        value={dayData.quantite}
+                                                        onChange={e => handleDayQuantityChange(key, e.target.value)}
+                                                        disabled={!dayData.actif}
                                                     />
-                                                    <Label className="flex-1 text-xs font-semibold uppercase tracking-wide">
-                                                        {label}
-                                                    </Label>
-                                                    <div className="relative w-24">
-                                                        <Input
-                                                            type="number"
-                                                            step="0.5"
-                                                            min="0"
-                                                            className="h-8 text-center text-sm font-bold"
-                                                            value={dayData.quantite}
-                                                            onChange={e =>
-                                                                handleDayQuantityChange(
-                                                                    key,
-                                                                    e.target.value,
-                                                                )
-                                                            }
-                                                            disabled={!dayData.actif}
-                                                        />
-                                                        <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[9px] opacity-30 uppercase">
-                                                            pcs
-                                                        </span>
-                                                    </div>
+                                                    <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[9px] opacity-30 uppercase">pcs</span>
                                                 </div>
-                                            );
-                                        },
-                                    )}
+                                            </div>
+                                        );
+                                    })}
                                 </div>
                             </div>
                         )}
                     </div>
 
-                    {/* Footer */}
                     <DialogFooter className="p-4 border-t border-border flex gap-2">
-                        <Button
-                            type="button"
-                            variant="outline"
-                            className="flex-1"
-                            onClick={() => onOpenChange(false)}
-                            disabled={isLoading}
-                        >
-                            Annuler
-                        </Button>
-                        <Button
-                            type="submit"
-                            className="flex-1"
-                            disabled={isLoading}
-                        >
-                            {isLoading ? (
-                                <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                            ) : (
-                                <CheckCircle2 className="h-4 w-4 mr-2" />
-                            )}
-                            Enregistrer
+                        <Button type="button" variant="outline" className="flex-1" onClick={() => onOpenChange(false)} disabled={isLoading}>Annuler</Button>
+                        <Button type="submit" className="flex-1" disabled={isLoading}>
+                            {isLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <CheckCircle2 className="h-4 w-4 mr-2" />}
+                            Enregistrer [Ctrl+Enter]
                         </Button>
                     </DialogFooter>
                 </form>

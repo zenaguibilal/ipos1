@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { db } from '@/lib/db';
 import { PrintReceiptDialog } from './PrintReceiptDialog';
+import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 
 interface SaleDetailsDialogProps {
     isOpen:       boolean;
@@ -52,6 +53,23 @@ export function SaleDetailsDialog({
         return sale.total - cogs;
     }, [sale]);
 
+    // Raccourcis pour les détails de vente
+    useKeyboardShortcuts([
+        {
+            key: 'p',
+            ctrl: true,
+            action: () => setIsPrintOpen(true),
+            description: 'Imprimer la facture',
+            ignoreInputFocus: true
+        },
+        {
+            key: 'Escape',
+            action: () => onOpenChange(false),
+            description: 'Fermer',
+            ignoreInputFocus: true
+        }
+    ], 'DétailsVente', isOpen);
+
     if (!sale) return null;
 
     const statusLabel =
@@ -68,7 +86,6 @@ export function SaleDetailsDialog({
         <>
             <Dialog open={isOpen} onOpenChange={onOpenChange}>
                 <DialogContent className="sm:max-w-lg max-h-[90vh] flex flex-col p-0 gap-0">
-                    {/* Header */}
                     <div className="p-4 border-b border-border bg-primary/5">
                         <DialogHeader>
                             <div className="flex items-center justify-between">
@@ -83,18 +100,13 @@ export function SaleDetailsDialog({
                                 </Badge>
                             </div>
                             <DialogDescription className="text-xs mt-1">
-                                {format(
-                                    safeToDate(sale.createdAt!),
-                                    "EEEE d MMMM yyyy 'à' HH:mm",
-                                    { locale: fr },
-                                )}
+                                {format(safeToDate(sale.createdAt!), "EEEE d MMMM yyyy 'à' HH:mm", { locale: fr })}
                             </DialogDescription>
                         </DialogHeader>
                     </div>
 
                     <ScrollArea className="flex-1 overflow-auto">
                         <div className="p-4 space-y-4">
-                            {/* Client */}
                             {customer && (
                                 <div className="flex items-center gap-2 p-3 rounded-lg bg-muted/50 border border-border">
                                     <User className="h-4 w-4 text-muted-foreground shrink-0" />
@@ -107,17 +119,12 @@ export function SaleDetailsDialog({
                                     {sale.dueDate && (
                                         <div className="ml-auto flex items-center gap-1.5 text-xs text-amber-600">
                                             <Calendar className="h-3.5 w-3.5" />
-                                            Échéance:{' '}
-                                            {format(
-                                                safeToDate(sale.dueDate),
-                                                'dd/MM/yyyy',
-                                            )}
+                                            Échéance: {format(safeToDate(sale.dueDate), 'dd/MM/yyyy')}
                                         </div>
                                     )}
                                 </div>
                             )}
 
-                            {/* Articles */}
                             <div>
                                 <div className="flex items-center gap-1.5 mb-2">
                                     <Package className="h-3.5 w-3.5 text-muted-foreground" />
@@ -140,12 +147,8 @@ export function SaleDetailsDialog({
                                                 <tr key={i} className="hover:bg-muted/30 transition-colors">
                                                     <td className="p-2 font-medium text-sm">{item.name}</td>
                                                     <td className="p-2 text-center font-mono text-sm">{item.quantity}</td>
-                                                    <td className="p-2 text-right font-mono text-sm">
-                                                        {Number(item.price).toFixed(2)}
-                                                    </td>
-                                                    <td className="p-2 text-right font-bold font-mono text-sm">
-                                                        {(Number(item.price) * Number(item.quantity)).toFixed(2)}
-                                                    </td>
+                                                    <td className="p-2 text-right font-mono text-sm">{Number(item.price).toFixed(2)}</td>
+                                                    <td className="p-2 text-right font-bold font-mono text-sm">{(Number(item.price) * Number(item.quantity)).toFixed(2)}</td>
                                                 </tr>
                                             ))}
                                         </tbody>
@@ -153,83 +156,41 @@ export function SaleDetailsDialog({
                                 </div>
                             </div>
 
-                            {/* Totaux */}
                             <div className="rounded-lg border border-border p-3 space-y-2">
                                 <div className="flex items-center gap-1.5 mb-2">
                                     <Tag className="h-3.5 w-3.5 text-muted-foreground" />
-                                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                                        Récapitulatif
-                                    </p>
+                                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Récapitulatif</p>
                                 </div>
-
                                 <div className="flex justify-between text-sm">
                                     <span className="text-muted-foreground">Sous-total</span>
                                     <span className="font-mono">{formatCurrency(sale.subtotal)}</span>
                                 </div>
-
                                 {sale.discountAmount && sale.discountAmount > 0 && (
                                     <div className="flex justify-between text-sm text-emerald-600">
                                         <span>Remise</span>
-                                        <span className="font-mono">
-                                            -{formatCurrency(sale.discountAmount)}
-                                        </span>
+                                        <span className="font-mono">-{formatCurrency(sale.discountAmount)}</span>
                                     </div>
                                 )}
-
                                 <Separator />
-
                                 <div className="flex justify-between font-bold text-base">
                                     <span>Total Net</span>
-                                    <span className="font-mono text-primary">
-                                        {formatCurrency(sale.total)}
-                                    </span>
+                                    <span className="font-mono text-primary">{formatCurrency(sale.total)}</span>
                                 </div>
-
                                 <Separator />
-
                                 <div className="flex justify-between text-sm">
-                                    <span className="text-muted-foreground flex items-center gap-1.5">
-                                        <CreditCard className="h-3.5 w-3.5" /> Reçu
-                                    </span>
-                                    <span className="font-mono font-semibold">
-                                        {formatCurrency(sale.amountPaid)}
-                                    </span>
+                                    <span className="text-muted-foreground flex items-center gap-1.5"><CreditCard className="h-3.5 w-3.5" /> Reçu</span>
+                                    <span className="font-mono font-semibold">{formatCurrency(sale.amountPaid)}</span>
                                 </div>
-
                                 <div className="flex justify-between text-sm font-bold">
-                                    <span>
-                                        {sale.remainingBalance > 0.01
-                                            ? 'Solde dû (dette)'
-                                            : 'Monnaie rendue'}
-                                    </span>
-                                    <span
-                                        className={cn(
-                                            'font-mono',
-                                            sale.remainingBalance > 0.01
-                                                ? 'text-destructive'
-                                                : 'text-emerald-600',
-                                        )}
-                                    >
-                                        {formatCurrency(
-                                            Math.abs(sale.remainingBalance),
-                                        )}
+                                    <span>{sale.remainingBalance > 0.01 ? 'Solde dû (dette)' : 'Monnaie rendue'}</span>
+                                    <span className={cn('font-mono', sale.remainingBalance > 0.01 ? 'text-destructive' : 'text-emerald-600')}>
+                                        {formatCurrency(Math.abs(sale.remainingBalance))}
                                     </span>
                                 </div>
-
-                                {/* Marge */}
                                 <Separator />
                                 <div className="flex justify-between text-sm">
-                                    <span className="text-muted-foreground flex items-center gap-1.5">
-                                        <TrendingUp className="h-3.5 w-3.5" /> Marge brute
-                                    </span>
-                                    <span
-                                        className={cn(
-                                            'font-mono font-semibold',
-                                            margin >= 0
-                                                ? 'text-emerald-600'
-                                                : 'text-destructive',
-                                        )}
-                                    >
+                                    <span className="text-muted-foreground flex items-center gap-1.5"><TrendingUp className="h-3.5 w-3.5" /> Marge brute</span>
+                                    <span className={cn('font-mono font-semibold', margin >= 0 ? 'text-emerald-600' : 'text-destructive')}>
                                         {formatCurrency(margin)}
                                     </span>
                                 </div>
@@ -237,25 +198,9 @@ export function SaleDetailsDialog({
                         </div>
                     </ScrollArea>
 
-                    {/* Footer */}
                     <div className="p-3 border-t border-border flex gap-2">
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            className="flex-1"
-                            onClick={() => onOpenChange(false)}
-                        >
-                            <X className="h-4 w-4 mr-1" />
-                            Fermer
-                        </Button>
-                        <Button
-                            size="sm"
-                            className="flex-1"
-                            onClick={() => setIsPrintOpen(true)}
-                        >
-                            <Printer className="h-4 w-4 mr-1" />
-                            Imprimer
-                        </Button>
+                        <Button variant="outline" size="sm" className="flex-1" onClick={() => onOpenChange(false)}><X className="h-4 w-4 mr-1" />Fermer [Esc]</Button>
+                        <Button size="sm" className="flex-1" onClick={() => setIsPrintOpen(true)}><Printer className="h-4 w-4 mr-1" />Imprimer [Ctrl+P]</Button>
                     </div>
                 </DialogContent>
             </Dialog>

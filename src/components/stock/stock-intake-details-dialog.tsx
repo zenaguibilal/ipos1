@@ -24,6 +24,7 @@ import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { Printer, X, Archive, Hash, Calendar, Building, Truck } from 'lucide-react';
 import { useAppStore } from '@/stores/appStore';
+import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 
 interface StockIntakeDetailsDialogProps {
     isOpen: boolean;
@@ -111,8 +112,6 @@ export function StockIntakeDetailsDialog({
     const printRef = useRef<HTMLDivElement>(null);
     const profile = useAppStore(state => state.companyProfile);
 
-    if (!intake) return null;
-
     const handlePrint = () => {
         const printableContent = document.getElementById('receipt-for-print');
         const element = printRef.current;
@@ -125,6 +124,25 @@ export function StockIntakeDetailsDialog({
 
         setTimeout(() => window.print(), 100);
     };
+
+    // Raccourcis pour les détails de réception
+    useKeyboardShortcuts([
+        {
+            key: 'p',
+            ctrl: true,
+            action: handlePrint,
+            description: 'Imprimer le bon',
+            ignoreInputFocus: true
+        },
+        {
+            key: 'Escape',
+            action: () => onOpenChange(false),
+            description: 'Fermer',
+            ignoreInputFocus: true
+        }
+    ], 'DétailsRéception', isOpen);
+
+    if (!intake) return null;
 
     return (
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -146,7 +164,6 @@ export function StockIntakeDetailsDialog({
                 </DialogHeader>
 
                 <div className="flex-grow overflow-y-auto p-6 space-y-6 custom-scrollbar">
-                    {/* Summary Info */}
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                         <div className="p-4 rounded-2xl bg-muted/30 border border-border/50">
                             <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-wide mb-1 flex items-center gap-1">
@@ -170,7 +187,6 @@ export function StockIntakeDetailsDialog({
                         </div>
                     </div>
 
-                    {/* Items Table */}
                     <div className="rounded-2xl border bg-card overflow-hidden shadow-sm">
                         <Table>
                             <TableHeader className="bg-muted/30">
@@ -205,17 +221,16 @@ export function StockIntakeDetailsDialog({
                     </div>
                 </div>
 
-                {/* Hidden Printable Area */}
                 <div className="hidden">
                     <PrintableIntake ref={printRef} intake={intake} supplierName={supplierName} profile={profile} />
                 </div>
 
                 <DialogFooter className="p-6 bg-card border-t flex gap-3">
                     <Button variant="ghost" onClick={() => onOpenChange(false)} className="rounded-xl h-12 font-bold flex-1">
-                        <X className="mr-2 h-4 w-4" /> Fermer
+                        <X className="mr-2 h-4 w-4" /> Fermer [Esc]
                     </Button>
                     <Button onClick={handlePrint} className="rounded-xl h-12 font-bold flex-1 shadow-lg shadow-sm">
-                        <Printer className="mr-2 h-4 w-4" /> Imprimer le Bon
+                        <Printer className="mr-2 h-4 w-4" /> Imprimer [Ctrl+P]
                     </Button>
                 </DialogFooter>
             </DialogContent>
