@@ -47,9 +47,12 @@ function PaymentDialogContent({
     const [customer,        setCustomer]        = useState<Customer | null>(null);
     const [approveOverLimit, setApproveOverLimit] = useState(false);
 
+    // Filter only active items for consistent totals
+    const activeItems = useMemo(() => cart?.items.filter(i => i.cartQuantity > 0) || [], [cart?.items]);
+
     const { total } = useMemo(
-        () => (cart ? calculateCartTotals(cart) : { total: 0 }),
-        [cart],
+        () => (cart ? calculateCartTotals({ ...cart, items: activeItems }) : { total: 0 }),
+        [cart, activeItems],
     );
 
     const amountPaid   = parseFloat(amountPaidStr) || 0;
@@ -61,7 +64,11 @@ function PaymentDialogContent({
 
     useEffect(() => {
         if (!isOpen || !isMounted || !cart) return;
-        const totals = calculateCartTotals(cart);
+        
+        // Use active items only for initial amount setting
+        const activeItemsOnly = cart.items.filter(i => i.cartQuantity > 0);
+        const totals = calculateCartTotals({ ...cart, items: activeItemsOnly });
+        
         setAmountPaidStr(totals.total.toFixed(2));
         setIsLoading(false);
         setLastSale(null);
@@ -128,7 +135,6 @@ function PaymentDialogContent({
         }
     }, [amountPaid, isLoading, dueDate, processSale, onOpenChange, canFinalize]);
 
-    // Raccourcis clavier pour le dialogue
     useKeyboardShortcuts([
         {
             key: 'Enter',
