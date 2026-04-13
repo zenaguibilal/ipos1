@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { formatDateToYYYYMMDD } from '@/lib/utils';
 import { addDays, format } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -59,6 +59,7 @@ export default function BreadPage() {
     const isToday = isMounted && currentDate && formatDateToYYYYMMDD(new Date()) === formattedDate;
     const isLoading = orders === undefined || !isMounted || !currentDate;
 
+    // Raccourcis pour la navigation par jour
     useKeyboardShortcuts([
         {
             key: 'ArrowLeft',

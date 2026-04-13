@@ -64,6 +64,7 @@ export default function ZakatPage() {
         return { assets, base, zakat, isEligible };
     }, [data, useSalePrice, cashInHand, cashInBank]);
 
+    // Raccourci pour actualiser le bilan
     useKeyboardShortcuts([
         {
             key: 'r',
@@ -291,7 +292,7 @@ export default function ZakatPage() {
                                 <p className="text-xl font-semibold text-amber-500 tracking-tighter">{formatCurrency(data.goldPrice)}/g</p>
                             </div>
                             <p className="text-[10px] text-muted-foreground/60 leading-relaxed italic text-center">
-                                Modifiez cette valeur dans votre <a href="/profile" className="text-primary font-semibold hover:underline">Profil Elite</a> pour ajuster le seuil.
+                                Modifiez cette valeur dans votre <a href="/profile" className="text-primary font-semibold hover:underline">Profil Elite</a> pour ajustير le seuil.
                             </p>
                         </CardContent>
                     </Card>

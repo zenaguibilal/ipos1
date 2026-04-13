@@ -70,6 +70,7 @@ export function SupplierDialog({ isOpen, onOpenChange, supplier, onSuccess }: Su
         }
     };
 
+    // Raccourcis pour le dialogue fournisseur
     useKeyboardShortcuts([
         {
             key: 'Enter',

@@ -100,6 +100,7 @@ export default function ExpenseDialog({ isOpen, onOpenChange, expense, onSuccess
         }
     };
 
+    // Raccourcis pour le dialogue de dépense
     useKeyboardShortcuts([
         {
             key: 'Enter',

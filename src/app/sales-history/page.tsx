@@ -317,6 +317,7 @@ export default function SalesHistoryPage() {
         setFilterStatus('all');
     };
 
+    // Raccourcis clavier pour le journal des ventes
     useKeyboardShortcuts([
         {
             key: 'F3',

@@ -165,6 +165,7 @@ export default function ReturnsPage() {
         setSearchQuery('');
     };
 
+    // Raccourcis pour la page des retours
     useKeyboardShortcuts([
         {
             key: 'F3',
@@ -280,7 +281,7 @@ export default function ReturnsPage() {
                     <EmptyState
                         icon={Undo2}
                         title="Aucun retour identifié"
-                        description={isFiltered ? "Ajustez vos filtres pour localiser les flux." : "Commenceز par enregistrer votre premier retour Premium."}
+                        description={isFiltered ? "Ajustez vos filtres pour localiser les flux." : "Commencez par enregistrer votre premier retour Premium."}
                     >
                         {isFiltered && <Button variant="outline" onClick={resetFilters} className="rounded-2xl h-12 font-bold px-8 border-primary/20 hover:bg-primary/5">Effacer les filtres</Button>}
                     </EmptyState>

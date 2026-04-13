@@ -56,6 +56,7 @@ export function PrintReceiptDialog({
         if (typeof window !== 'undefined') window.print();
     }, []);
 
+    // Raccourcis pour la fenêtre d'impression
     useKeyboardShortcuts([
         {
             key: 'p',
@@ -136,6 +137,7 @@ export function PrintReceiptDialog({
 
     return (
         <>
+            {/* Hidden Area for Browser Printing */}
             <div className="hidden print:block fixed inset-0 z-[100] bg-white">
                 <Receipt sale={sale} profile={profile} receiptType={receiptType} customerName={resolvedCustomerName} />
             </div>
@@ -171,6 +173,7 @@ export function PrintReceiptDialog({
                     </DialogHeader>
 
                     <div className="flex-grow overflow-y-auto bg-muted/30 p-6 custom-scrollbar flex justify-center">
+                        {/* Scale wrapper for UI preview */}
                         <div className="origin-top scale-[0.85] sm:scale-100 transition-transform shadow-2xl bg-white" ref={receiptRef}>
                             <Receipt sale={sale} profile={profile} receiptType={receiptType} customerName={resolvedCustomerName} />
                         </div>

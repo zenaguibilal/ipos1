@@ -239,7 +239,7 @@ export default function ExpensesPage() {
         })));
 
         const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-        const url = URL.createObjectURL(blob);
+        url = URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
         link.setAttribute('download', `ipos-depenses-${new Date().toISOString().split('T')[0]}.csv`);
@@ -360,6 +360,7 @@ export default function ExpensesPage() {
         setSortBy('date_desc');
     };
 
+    // Raccourcis pour la page des charges
     useKeyboardShortcuts([
         {
             key: 'F3',

@@ -12,6 +12,7 @@ import { StockIntakeCard } from '@/components/stock/stock-intake-card';
 import { StockIntakeTable } from '@/components/stock/stock-intake-table';
 import { StockIntakeDetailsDialog } from '@/components/stock/stock-intake-details-dialog';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -35,6 +36,7 @@ import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 type StockTab = 'intakes' | 'logs' | 'suppliers';
 
 export default function StockPage() {
+    const router = useRouter();
     const searchInputRef = useRef<HTMLInputElement>(null);
     const { viewMode, setViewMode } = useAppStore(state => ({
         viewMode: state.stockViewMode,
@@ -214,6 +216,7 @@ export default function StockPage() {
         return suppliers.reduce((sum, s) => sum + s.balance, 0);
     }, [suppliers]);
 
+    // Raccourcis pour la page logistique
     useKeyboardShortcuts([
         {
             key: 'F3',

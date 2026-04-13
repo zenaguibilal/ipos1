@@ -147,6 +147,7 @@ export default function DebtAlertsPage() {
         window.open(`https://wa.me/${customer.phone}?text=${message}`, '_blank');
     };
 
+    // Raccourci F3 pour la recherche
     useKeyboardShortcuts([
         {
             key: 'F3',
