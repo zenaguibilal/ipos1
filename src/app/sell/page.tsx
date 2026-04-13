@@ -20,6 +20,19 @@ function SellPageContent() {
     const searchInputRef = useRef<{ focusInput: () => void }>(null);
     const customerComboRef = useRef<{ focusInput: () => void }>(null);
 
+    const openPayment = useCallback(() => {
+        if (cart && cart.items.length > 0) {
+            const hasActiveItems = cart.items.some(i => i.cartQuantity > 0);
+            if (hasActiveItems) {
+                setIsPaymentOpen(true);
+            } else {
+                toast.error("Veuillez saisir des quantités valides");
+            }
+        } else {
+            toast.error("Le panier est vide");
+        }
+    }, [cart]);
+
     const shortcuts = [
         {
             key: 'F2',
@@ -35,11 +48,14 @@ function SellPageContent() {
         },
         {
             key: 'F4',
-            action: () => {
-                if (cart && cart.items.length > 0) setIsPaymentOpen(true);
-                else toast.error("Le panier est vide");
-            },
+            action: openPayment,
             description: 'Ouvrir l\'encaissement',
+            ignoreInputFocus: true
+        },
+        {
+            key: 'F10',
+            action: openPayment,
+            description: 'Finaliser la vente (Payer)',
             ignoreInputFocus: true
         },
         {
@@ -81,7 +97,7 @@ function SellPageContent() {
                         <CartTotalBar />
                         <SaleActions 
                             customerComboRef={customerComboRef}
-                            onOpenPayment={() => setIsPaymentOpen(true)}
+                            onOpenPayment={openPayment}
                         />
                     </div>
                 </div>
