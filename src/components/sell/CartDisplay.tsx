@@ -30,19 +30,19 @@ const CartItemRow = React.memo(({ item, isSelected, onUpdate, onRemove, onSelect
     useKeyboardShortcuts([
         {
             key: '+',
-            action: () => onUpdate(item.uuid, item.cartQuantity + 1),
+            action: () => onUpdate(item.uuid, Number((item.cartQuantity + 1).toFixed(3))),
             description: 'Quantité +1',
             ignoreInputFocus: false
         },
         {
             key: '=',
-            action: () => onUpdate(item.uuid, item.cartQuantity + 1),
+            action: () => onUpdate(item.uuid, Number((item.cartQuantity + 1).toFixed(3))),
             description: 'Quantité +1',
             ignoreInputFocus: false
         },
         {
             key: '-',
-            action: () => onUpdate(item.uuid, Math.max(0, item.cartQuantity - 1)),
+            action: () => onUpdate(item.uuid, Math.max(0, Number((item.cartQuantity - 1).toFixed(3)))),
             description: 'Quantité -1',
             ignoreInputFocus: false
         },
@@ -55,8 +55,9 @@ const CartItemRow = React.memo(({ item, isSelected, onUpdate, onRemove, onSelect
     ], `Article-${item.uuid}`, isSelected);
 
     const isCustom = item.uuid.startsWith('custom-');
-    const stepValue = item.unite === 'Kg' || item.unite === 'Litre' ? "0.001" : "1";
-    const isZero = item.cartQuantity === 0;
+    // On permet les décimales par défaut (0.001) pour tout le monde si besoin
+    const stepValue = "0.001"; 
+    const isZero = item.cartQuantity <= 0;
 
     return (
         <div 
@@ -92,7 +93,7 @@ const CartItemRow = React.memo(({ item, isSelected, onUpdate, onRemove, onSelect
             <div className="flex flex-col items-center gap-1">
                 <div className="flex items-center bg-background/50 rounded-xl border border-white/5 overflow-hidden shadow-inner">
                     <button 
-                        onClick={(e) => { e.stopPropagation(); onUpdate(item.uuid, Math.max(0, item.cartQuantity - 1)); }}
+                        onClick={(e) => { e.stopPropagation(); onUpdate(item.uuid, Math.max(0, Number((item.cartQuantity - 1).toFixed(3)))); }}
                         className="px-3 h-10 hover:bg-primary/10 text-muted-foreground hover:text-primary transition-colors font-bold"
                     >
                         −
@@ -103,13 +104,13 @@ const CartItemRow = React.memo(({ item, isSelected, onUpdate, onRemove, onSelect
                         value={item.cartQuantity}
                         onChange={(e) => handleQtyChange(e.target.value)}
                         className={cn(
-                            "w-16 text-center h-10 bg-transparent border-none shadow-none font-black text-lg focus-visible:ring-0",
+                            "w-20 text-center h-10 bg-transparent border-none shadow-none font-black text-lg focus-visible:ring-0",
                             isZero ? "text-destructive" : "text-primary"
                         )}
                         min="0"
                     />
                     <button 
-                        onClick={(e) => { e.stopPropagation(); onUpdate(item.uuid, item.cartQuantity + 1); }}
+                        onClick={(e) => { e.stopPropagation(); onUpdate(item.uuid, Number((item.cartQuantity + 1).toFixed(3))); }}
                         className="px-3 h-10 hover:bg-primary/10 text-muted-foreground hover:text-primary transition-colors font-bold"
                     >
                         +

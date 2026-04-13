@@ -8,7 +8,7 @@ import { salesService } from '@/services/sales.service';
 import { customerService } from '@/services/customer.service';
 import { companyProfileService } from '@/services/profile.service';
 import { useAppStore } from './appStore';
-import { FINANCIAL_EPSILON } from '@/lib/utils';
+import { FINANCIAL_EPSILON, safeNumber } from '@/lib/utils';
 
 // Types pour la gestion des paniers multiples
 interface CartState {
@@ -270,18 +270,20 @@ export const useCartStore = create<CartState>()(
                             const item = targetCart.items.find(
                                 i => i.uuid === product.uuid,
                             );
+                            
+                            const finalQtyToAdd = safeNumber(quantity);
+
                             if (item) {
-                                // CORRECTION BUG 2 : Si l'article était à 0, on remplace la quantité au lieu d'incrémenter
                                 if (item.cartQuantity === 0) {
-                                    item.cartQuantity = quantity;
+                                    item.cartQuantity = finalQtyToAdd;
                                 } else {
-                                    item.cartQuantity += quantity;
+                                    item.cartQuantity = Number((item.cartQuantity + finalQtyToAdd).toFixed(3));
                                 }
                                 item.flash = true;
                             } else {
                                 targetCart.items.unshift({
                                     ...product,
-                                    cartQuantity: quantity,
+                                    cartQuantity: finalQtyToAdd,
                                     flash: true,
                                 } as CartItem);
                             }
@@ -332,9 +334,11 @@ export const useCartStore = create<CartState>()(
                                 !item.uuid.startsWith('custom-') &&
                                 item.uuid !== 'BREAD_PRODUCT';
 
+                            const finalNewQty = safeNumber(newQuantity);
+
                             if (
                                 isStockedItem &&
-                                newQuantity > item.quantity + FINANCIAL_EPSILON
+                                finalNewQty > item.quantity + FINANCIAL_EPSILON
                             ) {
                                 toast.error('Stock insuffisant', {
                                     description: `Max disponible: ${item.quantity}`,
@@ -343,12 +347,9 @@ export const useCartStore = create<CartState>()(
                                 return;
                             }
 
-                            if (newQuantity > 0) {
-                                item.cartQuantity = Number(
-                                    newQuantity.toFixed(3),
-                                );
+                            if (finalNewQty > 0) {
+                                item.cartQuantity = Number(finalNewQty.toFixed(3));
                             } else {
-                                // CORRECTION BUG 1 : On garde l'article à 0 au lieu de le supprimer
                                 item.cartQuantity = 0;
                                 toast.info(`"${item.name}" mis à zéro`, {
                                     description: "Cliquez sur × pour retirer définitivement.",
