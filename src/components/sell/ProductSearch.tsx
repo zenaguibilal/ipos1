@@ -50,7 +50,13 @@ const SearchResultItem = React.memo(({ product, onSelect }: { product: Product, 
 });
 SearchResultItem.displayName = 'SearchResultItem';
 
-export const ProductSelector = forwardRef<{ focusInput: () => void }, any>((_, ref) => {
+interface ProductSelectorProps {
+    isCustomItemOpen: boolean;
+    onCustomItemOpenChange: (open: boolean) => void;
+}
+
+export const ProductSelector = forwardRef<{ focusInput: () => void }, ProductSelectorProps>((props, ref) => {
+    const { isCustomItemOpen, onCustomItemOpenChange } = props;
     const { addItemToCart } = useCartActions();
     const [searchQuery, setSearchQuery] = useState('');
     const debouncedSearchQuery = useDebounce(searchQuery, 150);
@@ -134,9 +140,10 @@ export const ProductSelector = forwardRef<{ focusInput: () => void }, any>((_, r
                         </div>
                     )}
                 </div>
-                <CustomItemDialog>
+                <CustomItemDialog isOpen={isCustomItemOpen} onOpenChange={onCustomItemOpenChange}>
                     <Button 
                         variant="outline" 
+                        onClick={() => onCustomItemOpenChange(true)}
                         className="h-9 w-16 flex-shrink-0 rounded-3xl border-none bg-primary/5 hover:bg-primary/20 hover:text-primary transition-all shadow-xl group" 
                     >
                         <ShoppingBag className="h-6 w-6 transition-transform group-hover:scale-110 group-hover:-rotate-12"/>

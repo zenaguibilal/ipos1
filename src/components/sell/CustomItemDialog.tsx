@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -19,12 +19,38 @@ import { useCartActions } from '@/stores/cartStore';
 import type { Product } from '@/lib/types';
 import { v4 as uuidv4 } from 'uuid';
 
-export function CustomItemDialog({ children }: { children: React.ReactNode }) {
-    const [isOpen, setIsOpen] = useState(false);
+interface CustomItemDialogProps {
+    children?: React.ReactNode;
+    isOpen?: boolean;
+    onOpenChange?: (open: boolean) => void;
+}
+
+/**
+ * نافذة إضافة منتج مخصص (يدوي).
+ * تدعم التحكم الداخلي أو الخارجي (عبر الاختصارات).
+ */
+export function CustomItemDialog({ children, isOpen: controlledOpen, onOpenChange: setControlledOpen }: CustomItemDialogProps) {
+    const [internalOpen, setInternalOpen] = useState(false);
+    
+    // إدارة الحالة المختلطة (Controlled vs Uncontrolled)
+    const isOpen = controlledOpen !== undefined ? controlledOpen : internalOpen;
+    const setIsOpen = (val: boolean) => {
+        if (setControlledOpen) setControlledOpen(val);
+        else setInternalOpen(val);
+    };
+
     const [name, setName] = useState('');
     const [price, setPrice] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const { addItemToCart } = useCartActions();
+
+    // تفريغ الحقول عند الفتح لضمان جاهزية الإدخال
+    useEffect(() => {
+        if (isOpen) {
+            setName('');
+            setPrice('');
+        }
+    }, [isOpen]);
 
     const handleAdd = () => {
         const priceNum = parseFloat(price);
@@ -40,7 +66,7 @@ export function CustomItemDialog({ children }: { children: React.ReactNode }) {
             name: name.trim(),
             price: priceNum,
             purchasePrice: 0,
-            quantity: Infinity, // Custom items don't have stock
+            quantity: Infinity, // Les articles personnalisés n'ont pas de stock
             minStockLevel: 0,
             category: 'Personnalisé',
             unite: 'Pièce',
@@ -50,45 +76,61 @@ export function CustomItemDialog({ children }: { children: React.ReactNode }) {
         
         toast.success(`"${name.trim()}" ajouté au panier.`);
         setIsLoading(false);
-        setIsOpen(false); // Close dialog on success
+        setIsOpen(false); // Fermeture après succès
     };
 
-    // Reset form when dialog is closed
-    const onOpenChange = (open: boolean) => {
-        if (!open) {
-            setName('');
-            setPrice('');
-        }
+    const handleOpenChange = (open: boolean) => {
         setIsOpen(open);
     }
 
     return (
-        <Dialog open={isOpen} onOpenChange={onOpenChange}>
-            <DialogTrigger asChild>
-                {children}
-            </DialogTrigger>
-            <DialogContent>
+        <Dialog open={isOpen} onOpenChange={handleOpenChange}>
+            {children && (
+                <DialogTrigger asChild>
+                    {children}
+                </DialogTrigger>
+            )}
+            <DialogContent className="sm:max-w-md rounded-3xl border-none shadow-sm bg-card">
                 <DialogHeader>
-                    <DialogTitle>Ajouter un article personnalisé</DialogTitle>
-                    <DialogDescription>
-                       Créez un article temporaire avec un nom et un prix personnalisés. Cet article ne sera pas sauvegardé dans votre inventaire.
+                    <DialogTitle className="text-xl font-bold tracking-tight">Article Personnalisé</DialogTitle>
+                    <DialogDescription className="text-xs font-medium">
+                       Ajout d'un flux manuel hors catalogue.
                     </DialogDescription>
                 </DialogHeader>
-                <div className="grid gap-4 py-4">
+                <div className="grid gap-6 py-6">
                     <div className="space-y-2">
-                        <Label htmlFor="custom-name">Nom de l'article</Label>
-                        <Input id="custom-name" value={name} onChange={(e) => setName(e.target.value)} autoFocus />
+                        <Label htmlFor="custom-name" className="text-[10px] font-bold uppercase ml-1 opacity-40">Désignation</Label>
+                        <Input 
+                            id="custom-name" 
+                            value={name} 
+                            onChange={(e) => setName(e.target.value)} 
+                            autoFocus 
+                            placeholder="Ex: Service de livraison, Réparation..."
+                            className="h-12 rounded-xl bg-muted/30 border-none shadow-inner font-bold"
+                            onKeyDown={(e) => { if(e.key === 'Enter') { e.preventDefault(); (document.getElementById('custom-price') as HTMLInputElement)?.focus(); } }}
+                        />
                     </div>
                     <div className="space-y-2">
-                        <Label htmlFor="custom-price">Prix de vente (DA)</Label>
-                        <Input id="custom-price" type="number" value={price} onChange={(e) => setPrice(e.target.value)} onKeyDown={(e) => { if(e.key === 'Enter') handleAdd() }} />
+                        <Label htmlFor="custom-price" className="text-[10px] font-bold uppercase ml-1 opacity-40">Prix de vente (DA)</Label>
+                        <div className="relative">
+                            <Input 
+                                id="custom-price" 
+                                type="number" 
+                                value={price} 
+                                onChange={(e) => setPrice(e.target.value)} 
+                                onKeyDown={(e) => { if(e.key === 'Enter') handleAdd() }} 
+                                className="h-12 rounded-xl bg-muted/30 border-none shadow-inner font-black text-lg text-primary text-center"
+                                placeholder="0.00"
+                            />
+                            <span className="absolute right-4 top-1/2 -translate-y-1/2 font-bold text-xs opacity-20 uppercase">DA</span>
+                        </div>
                     </div>
                 </div>
-                <DialogFooter>
-                    <Button variant="secondary" onClick={() => setIsOpen(false)}>Annuler</Button>
-                    <Button onClick={handleAdd} disabled={isLoading}>
-                        {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        Ajouter au panier
+                <DialogFooter className="gap-3">
+                    <Button variant="ghost" onClick={() => setIsOpen(false)} className="rounded-xl h-12 font-bold flex-1" disabled={isLoading}>Annuler</Button>
+                    <Button onClick={handleAdd} disabled={isLoading} className="rounded-xl h-12 font-black text-xs uppercase tracking-widest flex-1 shadow-lg shadow-sm">
+                        {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                        Valider Flux
                     </Button>
                 </DialogFooter>
             </DialogContent>

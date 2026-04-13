@@ -15,6 +15,7 @@ function SellPageContent() {
     const cart = useActiveCart();
     const { createCart, clearCart, selectCart } = useCartActions();
     const [isPaymentOpen, setIsPaymentOpen] = useState(false);
+    const [isCustomItemOpen, setIsCustomItemOpen] = useState(false);
     const [isClearConfirmOpen, setIsClearConfirmOpen] = useState(false);
 
     const searchInputRef = useRef<{ focusInput: () => void }>(null);
@@ -48,8 +49,8 @@ function SellPageContent() {
         },
         {
             key: 'F4',
-            action: openPayment,
-            description: 'Ouvrir l\'encaissement',
+            action: () => setIsCustomItemOpen(true),
+            description: 'Ajouter un article personnalisé',
             ignoreInputFocus: true
         },
         {
@@ -104,7 +105,11 @@ function SellPageContent() {
 
                 {/* Product search panel */}
                 <div className="lg:col-span-2 flex flex-col min-h-0">
-                    <ProductSelector ref={searchInputRef} />
+                    <ProductSelector 
+                        ref={searchInputRef} 
+                        isCustomItemOpen={isCustomItemOpen}
+                        onCustomItemOpenChange={setIsCustomItemOpen}
+                    />
                 </div>
             </div>
 
