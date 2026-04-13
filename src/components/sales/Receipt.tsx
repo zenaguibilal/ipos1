@@ -36,12 +36,11 @@ interface DeliveryNoteData {
 
 /**
  * Advanced French number to words converter (v2.1 - Supports Millions)
- * Conforme aux règles grammaticales françaises (cents/vingts/mille).
  */
 function numberToWordsFR(n: number): string {
   if (n === 0) return "ZÉRO DINAR";
   
-  const units = ['', 'UN', 'DEUX', 'TROIS', 'QUATRE', 'CINQ', 'SIX', 'SEPT', 'HUIT', 'NEUF'];
+  const units = ['', 'UN', 'DEUX', 'TROIS', 'QUATRE', 'CINق', 'SIX', 'SEPT', 'HUIT', 'NEUF'];
   const tens = ['', 'DIX', 'VINGT', 'TRENTE', 'QUARANTE', 'CINQUANTE', 'SOIXANTE', 'SOIXANTE-DIX', 'QUATRE-VINGTS', 'QUATRE-VINGT-DIX'];
   const teens = ['DIX', 'ONZE', 'DOUZE', 'TREIZE', 'QUATORZE', 'QUINZE', 'SEIZE', 'DIX-SEPT', 'DIX-HUIT', 'DIX-NEUF'];
 
@@ -119,7 +118,7 @@ export const Receipt = React.forwardRef<HTMLDivElement, ReceiptProps>(
 
     const docData: DeliveryNoteData = {
       docNumber: sale.invoiceNumber,
-      date: sale.createdAt ? format(new Date(sale.createdAt), 'dd/MM/yyyy') : format(new Date(), 'dd/MM/yyyy'),
+      date: sale.createdAt ? format(new Date(sale.createdAt), 'dd/MM/yyyy HH:mm') : format(new Date(), 'dd/MM/yyyy HH:mm'),
       companyName: profile?.companyName || 'iPOS ZEN ELITE',
       companyAddress: profile?.address || 'ALGÉRIE',
       companyPhone: profile?.phone || '',
@@ -145,41 +144,78 @@ export const Receipt = React.forwardRef<HTMLDivElement, ReceiptProps>(
 
     if (isThermal) {
       return (
-        <div ref={ref} className="bg-white text-black font-mono text-[10pt] w-[80mm] p-4 thermal-receipt">
-          <header className="text-center mb-4">
-            <p className="font-bold uppercase text-lg">{docData.companyName}</p>
-            <p className="text-[8pt]">{docData.companyAddress}</p>
-            <p className="text-[8pt]">Tél: {docData.companyPhone}</p>
+        <div ref={ref} className="bg-white text-black font-mono text-[9pt] w-[80mm] p-2 thermal-receipt">
+          {/* LOGO & COMPANY */}
+          <header className="text-center mb-2">
+            <p className="font-bold uppercase text-base leading-none">{docData.companyName}</p>
+            <p className="text-[7pt] mt-1">{docData.companyAddress}</p>
+            {docData.companyPhone && <p className="text-[7pt]">Tél: {docData.companyPhone}</p>}
           </header>
-          <div className="border-b-2 border-black mb-4" />
-          <p className="font-bold uppercase">Bon de Livraison</p>
-          <p>N°: {docData.docNumber}</p>
-          <p>Date: {docData.date}</p>
-          <p className="mb-4 truncate">Client: {docData.clientName}</p>
-          <table className="w-full text-left text-[9pt] mb-4">
+
+          <div className="border-b border-black border-dashed my-2" />
+
+          {/* DOC INFO */}
+          <div className="space-y-0.5 mb-2">
+            <p className="font-bold text-center underline mb-1">BON DE LIVRAISON</p>
+            <p><span className="font-bold">N°:</span> {docData.docNumber}</p>
+            <p><span className="font-bold">Date:</span> {docData.date}</p>
+            <p className="truncate"><span className="font-bold">Client:</span> {docData.clientName}</p>
+          </div>
+
+          <div className="border-b border-black my-2" />
+
+          {/* ITEMS TABLE */}
+          <table className="w-full text-left text-[8pt] mb-2 border-collapse">
             <thead>
               <tr className="border-b border-black">
-                <th className="text-left">Art</th>
-                <th className="text-center">Qté</th>
-                <th className="text-right">Tot</th>
+                <th className="text-left py-1">Désignation</th>
+                <th className="text-center py-1">Qté</th>
+                <th className="text-right py-1">Total</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="divide-y divide-gray-200">
               {docData.items.map((item) => (
-                <tr key={item.id} className="border-b border-gray-100">
-                  <td className="py-1">{item.designation}</td>
-                  <td className="text-center">{item.qty}</td>
-                  <td className="text-right">{formatNum(item.total)}</td>
+                <tr key={item.id}>
+                  <td className="py-1 align-top">{item.designation}</td>
+                  <td className="text-center py-1 align-top">{item.qty}</td>
+                  <td className="text-right py-1 align-top">{formatNum(item.total)}</td>
                 </tr>
               ))}
             </tbody>
           </table>
-          <div className="border-t-2 border-black pt-2 text-right font-bold space-y-1">
-            <p>Total Net: {formatNum(docData.grandTotal)} DA</p>
-            {docData.payment > 0 && <p>Payé: {formatNum(docData.payment)} DA</p>}
-            {docData.newBalance > 0.01 && <p>Solde dû: {formatNum(docData.newBalance)} DA</p>}
+
+          <div className="border-t border-black my-2" />
+
+          {/* TOTALS & BALANCES */}
+          <div className="space-y-1 font-bold">
+            <div className="flex justify-between">
+              <span>TOTAL FACTURE:</span>
+              <span>{formatNum(docData.grandTotal)} DA</span>
+            </div>
+            
+            {docData.oldBalance > 0.01 && (
+              <div className="flex justify-between font-normal text-[8pt]">
+                <span>ANCIEN SOLDE:</span>
+                <span>{formatNum(docData.oldBalance)} DA</span>
+              </div>
+            )}
+
+            <div className="flex justify-between text-emerald-700">
+              <span>VERSEMENT:</span>
+              <span>-{formatNum(docData.payment)} DA</span>
+            </div>
+
+            <div className="flex justify-between border-t border-black pt-1 text-[10pt]">
+              <span>NET A PAYER:</span>
+              <span>{formatNum(docData.newBalance)} DA</span>
+            </div>
           </div>
-          <footer className="text-center mt-6 text-[8pt] border-t border-dashed pt-2 uppercase">Merci de votre confiance</footer>
+
+          {/* FOOTER */}
+          <footer className="text-center mt-6 pt-2 border-t border-dashed border-gray-400 space-y-1">
+            <p className="font-bold uppercase">Merci de votre visite !</p>
+            <p className="text-[7pt] opacity-50">iPOS ZEN ELITE SYSTEM</p>
+          </footer>
         </div>
       );
     }
@@ -214,7 +250,7 @@ export const Receipt = React.forwardRef<HTMLDivElement, ReceiptProps>(
               <h2 className="text-3xl font-black text-blue-600 uppercase tracking-tighter">Bon de Livraison</h2>
               <div className="mt-2 text-right">
                 <p className="font-mono font-bold text-lg">N° : {docData.docNumber}</p>
-                <p className="text-sm font-bold text-gray-500 uppercase">Date : {docData.date}</p>
+                <p className="text-sm font-bold text-gray-500 uppercase">Date : {docData.date.split(' ')[0]}</p>
               </div>
             </div>
           </div>
@@ -231,7 +267,7 @@ export const Receipt = React.forwardRef<HTMLDivElement, ReceiptProps>(
                 { label: 'Réf. commande', val: docData.orderRef },
                 { label: 'Mode paiement', val: docData.paymentMode },
                 { label: 'Vendeur', val: docData.seller },
-                { label: 'Date livraison', val: docData.date },
+                { label: 'Date livraison', val: docData.date.split(' ')[0] },
               ].map((box, i) => (
                 <div key={i} className="border border-gray-200 p-3 rounded-xl flex flex-col justify-center bg-gray-50/50">
                   <span className="text-[8px] font-black uppercase text-gray-400 tracking-wider">{box.label}</span>
