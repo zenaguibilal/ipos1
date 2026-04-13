@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -13,6 +12,7 @@ import { toast } from 'sonner';
 import { Plus, User, UserPlus } from 'lucide-react';
 import type { Customer } from '@/lib/types';
 import { cn } from '@/lib/utils';
+import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 
 interface ManualAddDialogProps {
     currentDate: string;
@@ -64,6 +64,21 @@ export function ManualAddDialog({ currentDate, onSuccess }: ManualAddDialogProps
             toast.error("Erreur lors de l'ajout.", { description: error.message });
         }
     };
+
+    useKeyboardShortcuts([
+        {
+            key: 'Enter',
+            action: handleAdd,
+            description: 'Ajouter la commande de pain',
+            ignoreInputFocus: true
+        },
+        {
+            key: 'Escape',
+            action: () => setIsOpen(false),
+            description: 'Fermer la fenêtre',
+            ignoreInputFocus: true
+        }
+    ], 'Pain', isOpen);
 
     const resetForm = () => {
         setSelectedClientUuid('');
@@ -153,7 +168,7 @@ export function ManualAddDialog({ currentDate, onSuccess }: ManualAddDialogProps
                     <DialogFooter className="gap-2">
                         <Button variant="ghost" onClick={() => setIsOpen(false)} className="rounded-xl font-bold h-12 flex-1">Annuler</Button>
                         <Button onClick={handleAdd} className="rounded-xl font-semibold h-12 flex-1 shadow-lg shadow-sm">
-                            Confirmer
+                            Confirmer [Enter]
                         </Button>
                     </DialogFooter>
                 </DialogContent>

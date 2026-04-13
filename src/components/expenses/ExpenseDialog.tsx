@@ -11,6 +11,7 @@ import { Loader2, Banknote, FileText, Coins, CheckCircle2 } from 'lucide-react';
 import { expenseService } from '@/services/expense.service';
 import { DatePicker } from '../ui/date-picker';
 import { Combobox } from '../ui/combobox';
+import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 
 const defaultCategories: ExpenseCategory[] = ['Loyer', 'Salaires', 'Fournisseurs', 'Services Publics', 'Marketing', 'Maintenance', 'Assurance', 'Transport', 'Autre'];
 
@@ -62,8 +63,8 @@ export default function ExpenseDialog({ isOpen, onOpenChange, expense, onSuccess
         }
     };
 
-    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-        e.preventDefault();
+    const handleSubmit = async (e?: React.FormEvent) => {
+        e?.preventDefault();
         setError(null);
         setIsLoading(true);
 
@@ -98,6 +99,22 @@ export default function ExpenseDialog({ isOpen, onOpenChange, expense, onSuccess
             setIsLoading(false);
         }
     };
+
+    useKeyboardShortcuts([
+        {
+            key: 'Enter',
+            ctrl: true,
+            action: () => handleSubmit(),
+            description: 'Enregistrer la charge',
+            ignoreInputFocus: true
+        },
+        {
+            key: 'Escape',
+            action: () => onOpenChange(false),
+            description: 'Fermer la fenêtre',
+            ignoreInputFocus: true
+        }
+    ], 'Dépense', isOpen);
     
     const categoryOptions = Array.from(new Set([...defaultCategories, ...existingCategories]))
         .sort()
@@ -201,7 +218,7 @@ export default function ExpenseDialog({ isOpen, onOpenChange, expense, onSuccess
                         <Button type="button" variant="ghost" onClick={() => onOpenChange(false)} className="h-9 rounded-2xl font-semibold text-xs uppercase tracking-wide px-8" disabled={isLoading}>Annuler</Button>
                         <Button type="submit" disabled={isLoading} className="flex-1 h-9 rounded-2xl font-semibold text-xs uppercase tracking-wide shadow-xl shadow-sm transition-all active:scale-95 gap-3">
                              {isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <CheckCircle2 className="h-5 w-5" />}
-                            {expense ? 'Mettre à jour le Flux' : 'Valider le Décaissement'}
+                            {expense ? 'Mettre à jour [Ctrl+Enter]' : 'Valider [Ctrl+Enter]'}
                         </Button>
                     </DialogFooter>
                 </form>

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useEffect, Suspense } from 'react';
+import { useState, useCallback, useEffect, Suspense, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useDebounce } from '@/hooks/useDebounce';
 import type { Customer, ImportAnalysis } from '@/lib/types';
@@ -24,6 +24,7 @@ import { cn, formatCurrency } from '@/lib/utils';
 import { Checkbox } from '@/components/ui/checkbox';
 import Papa from 'papaparse';
 import { useAppStore } from '@/stores/appStore';
+import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 
 type FilterStatus = 'all' | 'has_debt' | 'overdue' | 'over_limit' | 'is_bread_client';
 
@@ -36,6 +37,7 @@ const sortOptions: { [key: string]: string } = {
 
 function CustomersContent() {
     const searchParams = useSearchParams();
+    const searchInputRef = useRef<HTMLInputElement>(null);
     const { viewMode, setViewMode } = useAppStore(state => ({
         viewMode: state.customersViewMode,
         setViewMode: state.actions.setCustomersViewMode,
@@ -252,6 +254,21 @@ function CustomersContent() {
         setSortBy('createdAt_desc');
     };
 
+    useKeyboardShortcuts([
+        {
+            key: 'F3',
+            action: () => searchInputRef.current?.focus(),
+            description: 'Rechercher un client',
+            ignoreInputFocus: true
+        },
+        {
+            key: 'n',
+            action: () => { setSelectedCustomer(null); setIsCustomerDialogOpen(true); },
+            description: 'Nouveau client',
+            ignoreInputFocus: false
+        }
+    ], 'Clients');
+
     const isFiltered = searchQuery !== '' || filterStatus !== 'all' || sortBy !== 'createdAt_desc';
     
     const renderContent = () => {
@@ -321,7 +338,7 @@ function CustomersContent() {
                         </label>
                     </Button>
                     <Button onClick={() => { setSelectedCustomer(null); setIsCustomerDialogOpen(true); }} className="rounded-xl font-bold shadow-lg">
-                        <Plus className="mr-2 h-4 w-4" /> Nouveau
+                        <Plus className="mr-2 h-4 w-4" /> Nouveau [N]
                     </Button>
                 </div>
             </PageHeader>
@@ -332,7 +349,8 @@ function CustomersContent() {
                 <div className="relative flex-grow">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/50" />
                     <Input 
-                        placeholder="Rechercher par nom ou téléphone..."
+                        ref={searchInputRef}
+                        placeholder="Rechercher un client [F3]..."
                         className="pl-10 h-11 rounded-xl bg-card border-none shadow-sm focus-visible:ring-primary/20"
                         value={searchQuery}
                         onChange={e => setSearchQuery(e.target.value)}

@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -17,6 +16,7 @@ import { productService } from '@/services/product.service';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { cn } from '@/lib/utils';
+import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 
 interface ProductDialogProps {
     isOpen: boolean;
@@ -111,11 +111,27 @@ export function ProductDialog({ isOpen, onOpenChange, product, categories, suppl
         }
     }
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
+    const handleSubmit = async (e?: React.FormEvent) => {
+        e?.preventDefault();
         if (Number(formState.price) < Number(formState.purchasePrice)) setShowPriceConfirm(true);
         else await proceedWithSubmit();
     };
+
+    useKeyboardShortcuts([
+        {
+            key: 'Enter',
+            ctrl: true,
+            action: () => handleSubmit(),
+            description: 'Enregistrer le produit',
+            ignoreInputFocus: true
+        },
+        {
+            key: 'Escape',
+            action: () => onOpenChange(false),
+            description: 'Fermer la fenêtre',
+            ignoreInputFocus: true
+        }
+    ], 'Produit', isOpen);
 
     const SectionTitle = ({ title, icon: Icon }: { title: string, icon: any }) => (
         <div className="flex items-center gap-2 mb-4">
@@ -262,7 +278,7 @@ export function ProductDialog({ isOpen, onOpenChange, product, categories, suppl
                         <Button type="button" variant="ghost" onClick={() => onOpenChange(false)} className="h-9 rounded-2xl font-semibold text-xs uppercase tracking-wide px-8" disabled={isLoading}>Annuler</Button>
                         <Button type="submit" disabled={isLoading} className="flex-1 h-9 rounded-2xl font-semibold text-xs uppercase tracking-wide shadow-xl shadow-sm transition-all active:scale-95 gap-3">
                              {isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Package className="h-5 w-5" />}
-                            {product ? 'Sauvegarder les modifications' : 'Confirmer la Création'}
+                            {product ? 'Sauvegarder [Ctrl+Enter]' : 'Confirmer [Ctrl+Enter]'}
                         </Button>
                     </DialogFooter>
                 </form>

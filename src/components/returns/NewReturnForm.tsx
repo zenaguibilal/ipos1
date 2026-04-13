@@ -17,6 +17,7 @@ import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { useAppActions } from '@/stores/appStore';
 import { toast } from 'sonner';
+import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 
 /**
  * @fileOverview Formulaire de gestion des retours clients.
@@ -141,6 +142,16 @@ export function NewReturnForm() {
             setIsSubmitting(false);
         }
     };
+
+    useKeyboardShortcuts([
+        {
+            key: 'Enter',
+            ctrl: true,
+            action: handleSaveReturn,
+            description: 'Valider le bon de retour',
+            ignoreInputFocus: true
+        }
+    ], 'Facturation', !!sale);
 
     return (
         <div className="grid lg:grid-cols-12 gap-6 animate-in slide-in-from-bottom-4 duration-700">
@@ -317,7 +328,7 @@ export function NewReturnForm() {
                                     className="w-full h-14 rounded-2xl font-black text-lg shadow-2xl transition-all active:scale-[0.98] gap-3 bg-amber-500 hover:bg-amber-600 text-white border-none"
                                 >
                                     {isSubmitting ? <Loader2 className="h-6 w-6 animate-spin" /> : <Save className="h-6 w-6" />}
-                                    Confirmer le Retour
+                                    Valider Retour [Ctrl+Enter]
                                 </Button>
                             </div>
                         ) : (

@@ -9,6 +9,7 @@ import { toast } from 'sonner';
 import type { Supplier } from '@/lib/types';
 import { Loader2, Building, Phone, Mail, MapPin, User } from 'lucide-react';
 import { supplierService } from '@/services/supplier.service';
+import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 
 interface SupplierDialogProps {
     isOpen: boolean;
@@ -43,8 +44,8 @@ export function SupplierDialog({ isOpen, onOpenChange, supplier, onSuccess }: Su
         }
     }, [supplier, isOpen]);
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
+    const handleSubmit = async (e?: React.FormEvent) => {
+        e?.preventDefault();
         if (!formState.name) {
             toast.error("Le nom du fournisseur est requis.");
             return;
@@ -68,6 +69,22 @@ export function SupplierDialog({ isOpen, onOpenChange, supplier, onSuccess }: Su
             setIsLoading(false);
         }
     };
+
+    useKeyboardShortcuts([
+        {
+            key: 'Enter',
+            ctrl: true,
+            action: () => handleSubmit(),
+            description: 'Enregistrer le partenaire',
+            ignoreInputFocus: true
+        },
+        {
+            key: 'Escape',
+            action: () => onOpenChange(false),
+            description: 'Fermer la fenêtre',
+            ignoreInputFocus: true
+        }
+    ], 'Fournisseur', isOpen);
 
     return (
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -163,7 +180,7 @@ export function SupplierDialog({ isOpen, onOpenChange, supplier, onSuccess }: Su
                         <Button type="button" variant="ghost" onClick={() => onOpenChange(false)} className="rounded-xl h-12 font-bold flex-1">Annuler</Button>
                         <Button type="submit" disabled={isLoading} className="rounded-xl h-12 font-bold flex-1 shadow-lg shadow-sm">
                             {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                            Enregistrer
+                            Valider [Ctrl+Enter]
                         </Button>
                     </DialogFooter>
                 </form>

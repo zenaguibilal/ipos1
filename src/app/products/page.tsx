@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, Suspense } from 'react';
+import { useState, useEffect, useCallback, Suspense, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useDebounce } from '@/hooks/useDebounce';
 import type { Product, Supplier, ProductImportAnalysis } from '@/lib/types';
@@ -53,6 +53,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { useLiveQuery } from '@/hooks/useLiveQuery';
 import { db } from '@/lib/db';
 import Papa from 'papaparse';
+import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 
 type StockStatus = 'all' | 'in_stock' | 'low_stock' | 'out_of_stock' | 'expiring_soon' | 'expired';
 
@@ -67,6 +68,7 @@ const sortOptions: { [key: string]: string } = {
 
 function ProductsContent() {
     const searchParams = useSearchParams();
+    const searchInputRef = useRef<HTMLInputElement>(null);
     
     const viewMode = useAppStore(state => state.productViewMode);
     const setViewMode = useAppStore(state => state.actions.setProductViewMode);
@@ -230,6 +232,21 @@ function ProductsContent() {
         toast.success("Exportation terminée.");
     };
 
+    useKeyboardShortcuts([
+        {
+            key: 'F3',
+            action: () => searchInputRef.current?.focus(),
+            description: 'Rechercher un produit',
+            ignoreInputFocus: true
+        },
+        {
+            key: 'n',
+            action: () => { setSelectedProduct(null); setIsProductDialogOpen(true); },
+            description: 'Nouveau produit',
+            ignoreInputFocus: false
+        }
+    ], 'Catalogue');
+
     const isFiltered = searchQuery !== '' || selectedCategory !== 'all' || selectedSupplier !== 'all' || stockStatus !== 'all' || sortBy !== 'createdAt_desc';
     
     return (
@@ -250,7 +267,7 @@ function ProductsContent() {
                         </label>
                     </Button>
                     <Button onClick={() => { setSelectedProduct(null); setIsProductDialogOpen(true); }} className="flex-1 sm:flex-none h-12 rounded-2xl font-semibold text-xs uppercase tracking-wide shadow-xl shadow-sm transition-all active:scale-95">
-                        <Plus className="mr-2 h-4 w-4" /> Nouveau Produit
+                        <Plus className="mr-2 h-4 w-4" /> Nouveau [N]
                     </Button>
                 </div>
             </PageHeader>
@@ -261,7 +278,8 @@ function ProductsContent() {
                 <div className="relative group flex-grow max-w-xl px-4">
                     <Search className="absolute left-8 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground group-focus-within:text-primary transition-colors duration-500" />
                     <Input 
-                        placeholder="Rechercher par nom ou code-barres..."
+                        ref={searchInputRef}
+                        placeholder="Rechercher un produit [F3]..."
                         className="pl-14 h-9 rounded-2xl bg-black/20 border-none shadow-inner focus-visible:ring-primary/20 font-bold text-lg"
                         value={searchQuery}
                         onChange={e => setSearchQuery(e.target.value)}

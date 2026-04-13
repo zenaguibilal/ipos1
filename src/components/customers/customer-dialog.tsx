@@ -9,6 +9,7 @@ import { toast } from 'sonner';
 import type { Customer } from '@/lib/types';
 import { Loader2, User, Phone, MapPin, Calendar, ShieldCheck, Coins, Landmark } from 'lucide-react';
 import { customerService } from '@/services/customer.service';
+import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 
 interface CustomerDialogProps {
     isOpen: boolean;
@@ -49,8 +50,8 @@ export function CustomerDialog({ isOpen, onOpenChange, customer, onSuccess }: Cu
     }, [customer, isOpen]);
 
 
-    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-        e.preventDefault();
+    const handleSubmit = async (e?: React.FormEvent) => {
+        e?.preventDefault();
         setError(null);
         setIsLoading(true);
 
@@ -84,6 +85,22 @@ export function CustomerDialog({ isOpen, onOpenChange, customer, onSuccess }: Cu
             setIsLoading(false);
         }
     };
+
+    useKeyboardShortcuts([
+        {
+            key: 'Enter',
+            ctrl: true,
+            action: () => handleSubmit(),
+            description: 'Valider le dossier client',
+            ignoreInputFocus: true
+        },
+        {
+            key: 'Escape',
+            action: () => onOpenChange(false),
+            description: 'Fermer la fenêtre',
+            ignoreInputFocus: true
+        }
+    ], 'Client', isOpen);
 
     const SectionTitle = ({ title, icon: Icon }: { title: string, icon: any }) => (
         <div className="flex items-center gap-2 mb-4">
@@ -190,7 +207,7 @@ export function CustomerDialog({ isOpen, onOpenChange, customer, onSuccess }: Cu
                         <Button type="button" variant="ghost" onClick={() => onOpenChange(false)} className="h-9 rounded-2xl font-semibold text-xs uppercase tracking-wide px-8" disabled={isLoading}>Annuler</Button>
                         <Button type="submit" disabled={isLoading} className="flex-1 h-9 rounded-2xl font-semibold text-xs uppercase tracking-wide shadow-xl shadow-sm transition-all active:scale-95 gap-3">
                              {isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <ShieldCheck className="h-5 w-5" />}
-                            Valider Dossier
+                            Valider Dossier [Ctrl+Enter]
                         </Button>
                     </DialogFooter>
                 </form>
