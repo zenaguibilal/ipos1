@@ -6,7 +6,7 @@ import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 
 /**
- * Interface structure for the Delivery Note (Standard iPOS Zen)
+ * Interface structure for the Delivery Note (Standard iPOS Zen Elite)
  */
 interface DeliveryNoteData {
   docNumber: string;
@@ -35,7 +35,8 @@ interface DeliveryNoteData {
 }
 
 /**
- * Advanced French number to words converter (Supports Millions)
+ * Advanced French number to words converter (v2.1 - Supports Millions)
+ * Conforme aux règles grammaticales françaises (cents/vingts/mille).
  */
 function numberToWordsFR(n: number): string {
   if (n === 0) return "ZÉRO DINAR";
@@ -113,7 +114,7 @@ export const Receipt = React.forwardRef<HTMLDivElement, ReceiptProps>(
   ({ sale, profile, receiptType, customerName, oldBalance = 0 }, ref) => {
     const isThermal = receiptType === 'thermal';
 
-    // DZ Standard Number Formatter
+    // Formattage monétaire algérien (DZ)
     const formatNum = (val: number) => val.toLocaleString('fr-DZ', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
     const docData: DeliveryNoteData = {
@@ -124,9 +125,9 @@ export const Receipt = React.forwardRef<HTMLDivElement, ReceiptProps>(
       companyPhone: profile?.phone || '',
       clientName: customerName || 'Client de passage',
       clientAddress: 'ALGER, ALGÉRIE',
-      paymentMode: sale.paymentStatus === 'paid' ? 'COMPTANT' : sale.paymentStatus === 'partial' ? 'VERSEMENT PARTIEL' : 'À CRÉDIT',
+      paymentMode: sale.paymentStatus === 'paid' ? 'COMPTANT' : sale.paymentStatus === 'partial' ? 'PARTIEL' : 'À CRÉDIT',
       seller: 'ADMINISTRATEUR',
-      orderRef: 'Vente Directه',
+      orderRef: 'Vente Directe',
       items: sale.items.map((item, idx) => ({
         id: idx + 1,
         designation: item.name,
@@ -151,20 +152,21 @@ export const Receipt = React.forwardRef<HTMLDivElement, ReceiptProps>(
             <p className="text-[8pt]">Tél: {docData.companyPhone}</p>
           </header>
           <div className="border-b-2 border-black mb-4" />
-          <p className="font-bold">BL N°: {docData.docNumber}</p>
-          <p>DATE: {docData.date}</p>
-          <p className="mb-4">CLIENT: {docData.clientName}</p>
+          <p className="font-bold uppercase">Bon de Livraison</p>
+          <p>N°: {docData.docNumber}</p>
+          <p>Date: {docData.date}</p>
+          <p className="mb-4 truncate">Client: {docData.clientName}</p>
           <table className="w-full text-left text-[9pt] mb-4">
             <thead>
               <tr className="border-b border-black">
-                <th>ART</th>
-                <th className="text-center">QTÉ</th>
-                <th className="text-right">TOT</th>
+                <th className="text-left">Art</th>
+                <th className="text-center">Qté</th>
+                <th className="text-right">Tot</th>
               </tr>
             </thead>
             <tbody>
               {docData.items.map((item) => (
-                <tr key={item.id}>
+                <tr key={item.id} className="border-b border-gray-100">
                   <td className="py-1">{item.designation}</td>
                   <td className="text-center">{item.qty}</td>
                   <td className="text-right">{formatNum(item.total)}</td>
@@ -173,11 +175,11 @@ export const Receipt = React.forwardRef<HTMLDivElement, ReceiptProps>(
             </tbody>
           </table>
           <div className="border-t-2 border-black pt-2 text-right font-bold space-y-1">
-            <p>TOTAL NET: {formatNum(docData.grandTotal)} DA</p>
-            {docData.payment > 0 && <p>PAYÉ: {formatNum(docData.payment)} DA</p>}
-            {docData.newBalance > 0.01 && <p>SOLDE DÛ: {formatNum(docData.newBalance)} DA</p>}
+            <p>Total Net: {formatNum(docData.grandTotal)} DA</p>
+            {docData.payment > 0 && <p>Payé: {formatNum(docData.payment)} DA</p>}
+            {docData.newBalance > 0.01 && <p>Solde dû: {formatNum(docData.newBalance)} DA</p>}
           </div>
-          <footer className="text-center mt-6 text-[8pt]">MERCI DE VOTRE CONFIANCE</footer>
+          <footer className="text-center mt-6 text-[8pt] border-t border-dashed pt-2 uppercase">Merci de votre confiance</footer>
         </div>
       );
     }
@@ -196,6 +198,7 @@ export const Receipt = React.forwardRef<HTMLDivElement, ReceiptProps>(
             padding: 14mm;
             background: white;
             margin: 0 auto;
+            position: relative;
           }
         `}} />
         
@@ -242,22 +245,22 @@ export const Receipt = React.forwardRef<HTMLDivElement, ReceiptProps>(
           <div className="flex-grow">
             <table className="w-full border-collapse">
               <thead>
-                <tr className="bg-[#111827] text-white">
-                  <th className="py-4 px-4 text-left text-[10px] font-black uppercase rounded-tl-xl w-12">N°</th>
-                  <th className="py-4 px-4 text-left text-[10px] font-black uppercase">Désignation</th>
-                  <th className="py-4 px-4 text-center text-[10px] font-black uppercase w-20">Qté</th>
-                  <th className="py-4 px-4 text-right text-[10px] font-black uppercase w-32">Prix U. (DA)</th>
-                  <th className="py-4 px-4 text-right text-[10px] font-black uppercase rounded-tr-xl w-32">Total (DA)</th>
+                <tr className="bg-[#111827] text-white text-left">
+                  <th className="py-4 px-4 text-[10px] font-black uppercase rounded-tl-xl w-12 text-center">N°</th>
+                  <th className="py-4 px-4 text-[10px] font-black uppercase">Désignation</th>
+                  <th className="py-4 px-4 text-[10px] font-black uppercase w-20 text-center">Qté</th>
+                  <th className="py-4 px-4 text-[10px] font-black uppercase w-32 text-right">P.U (DA)</th>
+                  <th className="py-4 px-4 text-[10px] font-black uppercase rounded-tr-xl w-32 text-right">Total (DA)</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {docData.items.map((item, idx) => (
                   <tr key={item.id} className={idx % 2 === 0 ? 'bg-white' : 'bg-[#F9FAFB]'}>
-                    <td className="py-4 px-4 font-mono text-xs text-gray-400">{item.id}</td>
+                    <td className="py-4 px-4 font-mono text-xs text-gray-400 text-center">{item.id}</td>
                     <td className="py-4 px-4 font-bold text-sm uppercase tracking-tight text-[#111827]">{item.designation}</td>
-                    <td className="py-4 px-4 text-center font-mono font-bold text-sm">{item.qty}</td>
-                    <td className="py-4 px-4 text-right font-mono font-bold text-sm">{formatNum(item.unitPrice)}</td>
-                    <td className="py-4 px-4 text-right font-mono font-black text-sm">{formatNum(item.total)}</td>
+                    <td className="py-4 px-4 font-mono font-bold text-sm text-center">{item.qty}</td>
+                    <td className="py-4 px-4 font-mono font-bold text-sm text-right">{formatNum(item.unitPrice)}</td>
+                    <td className="py-4 px-4 font-mono font-black text-sm text-right">{formatNum(item.total)}</td>
                   </tr>
                 ))}
               </tbody>
