@@ -33,7 +33,7 @@ const isInputFocused = (): boolean => {
 };
 
 /**
- * Hook لبرمجة مختصرات لوحة المفاتيح مع حماية ضد التكرار اللانهائي.
+ * Hook لبرمجة مختصرات لوحة المفاتيح مع حماية ضد التكرار اللانهائية.
  */
 export function useKeyboardShortcuts(
   shortcuts: ShortcutConfig[],
@@ -61,7 +61,13 @@ export function useKeyboardShortcuts(
     const handleKeyDown = (event: KeyboardEvent) => {
       const pressedKey = event.key;
       
+      // Sécurité : ignorer si la touche pressée est indéfinie
+      if (!pressedKey) return;
+      
       for (const config of shortcutsRef.current) {
+        // Sécurité : ignorer les configurations mal formées
+        if (!config.key) continue;
+
         const matchKey = config.key.toLowerCase() === pressedKey.toLowerCase();
         const matchCtrl = !!config.ctrl === (event.ctrlKey || event.metaKey);
         const matchShift = !!config.shift === event.shiftKey;
