@@ -38,6 +38,15 @@ export function safeNumber(val: any): number {
     return isNaN(parsed) ? 0 : parsed;
 }
 
+/**
+ * Multiplie deux nombres avec une précision fixe pour éviter les erreurs de virgule flottante.
+ * Utile pour : Quantité (3 décimales) * Prix (2 décimales)
+ */
+export function preciseMultiply(a: number, b: number): number {
+    const SCALE = 100000; // 10^5 pour couvrir 3+2 décimales
+    return Math.round(safeNumber(a) * safeNumber(b) * SCALE) / SCALE;
+}
+
 export function formatDateToYYYYMMDD(date: Date): string {
     return date.toISOString().split('T')[0];
 }

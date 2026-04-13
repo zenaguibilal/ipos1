@@ -3,6 +3,7 @@
 import type { DashboardData, TopCustomer } from '@/lib/types';
 import { eachDayOfInterval, format, startOfDay } from 'date-fns';
 import { db } from '@/lib/db';
+import { preciseMultiply, safeNumber } from '@/lib/utils';
 
 class DashboardService {
     async getDashboardData(from: Date, to: Date): Promise<DashboardData> {
@@ -73,12 +74,13 @@ class DashboardService {
                 let saleCOGS = 0;
 
                 sale.items.forEach(item => {
-                    const qty = Number(item.quantity);
+                    const qty = safeNumber(item.quantity);
                     const purchasePrice =
-                        Number(item.purchasePrice) ||
+                        safeNumber(item.purchasePrice) ||
                         productPurchaseMap.get(item.productUuid || '') ||
                         0;
-                    saleCOGS += purchasePrice * qty;
+                    
+                    saleCOGS += preciseMultiply(purchasePrice, qty);
 
                     if (isCurrent && item.productUuid) {
                         const current = productSales.get(item.productUuid) || {
@@ -86,21 +88,21 @@ class DashboardService {
                             revenueGenerated: 0,
                         };
                         current.quantitySold   += qty;
-                        current.revenueGenerated += Number(item.price) * qty;
+                        current.revenueGenerated += preciseMultiply(safeNumber(item.price), qty);
                         productSales.set(item.productUuid, current);
                     }
                 });
 
                 if (isCurrent) {
-                    totalRevenue += Number(sale.total);
+                    totalRevenue += safeNumber(sale.total);
                     totalCOGS   += saleCOGS;
-                    const saleGrossProfit = Number(sale.total) - saleCOGS;
+                    const saleGrossProfit = safeNumber(sale.total) - saleCOGS;
 
                     if (sale.customerUuid) {
                         customerSpending.set(
                             sale.customerUuid,
                             (customerSpending.get(sale.customerUuid) || 0) +
-                                Number(sale.total),
+                                safeNumber(sale.total),
                         );
                     }
 
@@ -110,21 +112,21 @@ class DashboardService {
                     );
                     const daily = salesByDayMap.get(dayKey);
                     if (daily) {
-                        daily.total  += Number(sale.total);
+                        daily.total  += safeNumber(sale.total);
                         daily.profit += saleGrossProfit;
                     }
                 } else {
-                    prevTotalRevenue += Number(sale.total);
+                    prevTotalRevenue += safeNumber(sale.total);
                     prevTotalCOGS   += saleCOGS;
                 }
             });
 
             const totalExpenses = allExpenses
                 .filter(e => new Date(e.expenseDate) >= from)
-                .reduce((sum, e) => sum + Number(e.amount), 0);
+                .reduce((sum, e) => sum + safeNumber(e.amount), 0);
             const prevTotalExpenses = allExpenses
                 .filter(e => new Date(e.expenseDate) < from)
-                .reduce((sum, e) => sum + Number(e.amount), 0);
+                .reduce((sum, e) => sum + safeNumber(e.amount), 0);
 
             const netProfit     = totalRevenue - totalCOGS - totalExpenses;
             const prevNetProfit = prevTotalRevenue - prevTotalCOGS - prevTotalExpenses;
@@ -136,9 +138,6 @@ class DashboardService {
 
             const currentSales = allSales.filter(
                 s => new Date(s.createdAt!) >= from,
-            );
-            const prevSales = allSales.filter(
-                s => new Date(s.createdAt!) < from,
             );
 
             const topProducts = Array.from(productSales.entries())
@@ -173,12 +172,12 @@ class DashboardService {
                     netProfit,
                     saleCount: currentSales.length,
                     totalOutstandingDebt: customers.reduce(
-                        (sum, c) => sum + Number(c.outstandingBalance),
+                        (sum, c) => sum + safeNumber(c.outstandingBalance),
                         0,
                     ),
                     totalInventoryValue: allProducts.reduce(
                         (sum, p) =>
-                            sum + Number(p.quantity) * Number(p.purchasePrice),
+                            sum + preciseMultiply(safeNumber(p.quantity), safeNumber(p.purchasePrice)),
                         0,
                     ),
                     averageBasket:
@@ -190,7 +189,7 @@ class DashboardService {
                     totalRevenueChange:  calculateChange(totalRevenue, prevTotalRevenue),
                     netProfitChange:     calculateChange(netProfit, prevNetProfit),
                     totalExpensesChange: calculateChange(totalExpenses, prevTotalExpenses),
-                    saleCountChange:     calculateChange(currentSales.length, prevSales.length),
+                    saleCountChange:     calculateChange(currentSales.length, allSales.length - currentSales.length),
                 },
                 salesByDay: Array.from(salesByDayMap.entries()).map(
                     ([date, v]) => ({ date, ...v }),

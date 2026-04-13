@@ -1,6 +1,7 @@
 'use client';
 
 import { db } from '@/lib/db';
+import { preciseMultiply, safeNumber } from '@/lib/utils';
 import { companyProfileService } from './profile.service';
 
 /**
@@ -17,23 +18,23 @@ class ZakatService {
         ]);
 
         const inventoryValueCost = products.reduce(
-            (sum, p) => sum + (p.quantity > 0 ? p.quantity * p.purchasePrice : 0),
+            (sum, p) => sum + (safeNumber(p.quantity) > 0 ? preciseMultiply(safeNumber(p.quantity), safeNumber(p.purchasePrice)) : 0),
             0,
         );
         const inventoryValueSale = products.reduce(
-            (sum, p) => sum + (p.quantity > 0 ? p.quantity * p.price : 0),
+            (sum, p) => sum + (safeNumber(p.quantity) > 0 ? preciseMultiply(safeNumber(p.quantity), safeNumber(p.price)) : 0),
             0,
         );
         const customerDebts = customers.reduce(
-            (sum, c) => sum + (c.outstandingBalance || 0),
+            (sum, c) => sum + safeNumber(c.outstandingBalance),
             0,
         );
         const supplierDebts = suppliers.reduce(
-            (sum, s) => sum + (s.balance || 0),
+            (sum, s) => sum + safeNumber(s.balance),
             0,
         );
 
-        const goldPrice = profile?.goldPricePerGram || 0;
+        const goldPrice = safeNumber(profile?.goldPricePerGram);
 
         // Le seuil (Nissab) correspond à la valeur de 85g d'or.
         const nisabThreshold = goldPrice > 0 ? goldPrice * 85 : null;

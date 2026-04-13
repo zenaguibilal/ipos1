@@ -207,6 +207,7 @@ export function NewIntakeForm() {
                                                     <TableCell className="p-4">
                                                         <Input 
                                                             type="number" 
+                                                            step="0.001"
                                                             value={item.quantity} 
                                                             onChange={e => updateItem(item.id, 'quantity', parseFloat(e.target.value) || 0)}
                                                             className="w-16 h-8 text-center bg-black/20 border-none shadow-inner mx-auto font-black focus-visible:ring-primary/20"
@@ -302,6 +303,7 @@ export function NewIntakeForm() {
                                     </Label>
                                     <Input 
                                         type="number" 
+                                        step="0.01"
                                         value={shippingCost || ''} 
                                         onChange={e => setShippingCost(parseFloat(e.target.value) || 0)}
                                         className="w-24 h-9 text-right rounded-lg bg-black/20 border-none shadow-inner font-mono font-black"
