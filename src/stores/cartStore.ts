@@ -271,7 +271,12 @@ export const useCartStore = create<CartState>()(
                                 i => i.uuid === product.uuid,
                             );
                             if (item) {
-                                item.cartQuantity += quantity;
+                                // CORRECTION BUG 2 : Si l'article était à 0, on remplace la quantité au lieu d'incrémenter
+                                if (item.cartQuantity === 0) {
+                                    item.cartQuantity = quantity;
+                                } else {
+                                    item.cartQuantity += quantity;
+                                }
                                 item.flash = true;
                             } else {
                                 targetCart.items.unshift({
@@ -343,9 +348,12 @@ export const useCartStore = create<CartState>()(
                                     newQuantity.toFixed(3),
                                 );
                             } else {
-                                cart!.items = cart!.items.filter(
-                                    i => i.uuid !== productUuid,
-                                );
+                                // CORRECTION BUG 1 : On garde l'article à 0 au lieu de le supprimer
+                                item.cartQuantity = 0;
+                                toast.info(`"${item.name}" mis à zéro`, {
+                                    description: "Cliquez sur × pour retirer définitivement.",
+                                    duration: 2000
+                                });
                             }
                         }),
                     );
@@ -413,9 +421,18 @@ export const useCartStore = create<CartState>()(
                         return null;
                     }
 
+                    // CORRECTION CAS 3 : Filtrer les articles actifs uniquement
+                    const activeItems = activeCart.items.filter(i => i.cartQuantity > 0);
+                    if (activeItems.length === 0) {
+                        toast.error('Aucun article actif dans le panier.', {
+                            description: 'Augmentez les quantités ou retirez les articles à zéro.'
+                        });
+                        return null;
+                    }
+
                     try {
                         const sale = await salesService.createSale({
-                            items:         activeCart.items,
+                            items:         activeItems,
                             discountType:  activeCart.discount.type,
                             discountValue: activeCart.discount.value,
                             amountPaid,

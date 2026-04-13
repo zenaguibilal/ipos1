@@ -5,7 +5,7 @@ import { useActiveCart, useCartActions } from "@/stores/cartStore";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Trash2, ShoppingCart, Tag } from 'lucide-react';
+import { Trash2, ShoppingCart, Tag, X } from 'lucide-react';
 import { formatCurrency } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 import type { CartItem } from "@/lib/types";
@@ -55,8 +55,8 @@ const CartItemRow = React.memo(({ item, isSelected, onUpdate, onRemove, onSelect
     ], `Article-${item.uuid}`, isSelected);
 
     const isCustom = item.uuid.startsWith('custom-');
-    const isService = item.uuid === 'BREAD_PRODUCT';
     const stepValue = item.unite === 'Kg' || item.unite === 'Litre' ? "0.001" : "1";
+    const isZero = item.cartQuantity === 0;
 
     return (
         <div 
@@ -65,13 +65,24 @@ const CartItemRow = React.memo(({ item, isSelected, onUpdate, onRemove, onSelect
             className={cn(
                 "grid grid-cols-[1fr_auto_auto_auto] gap-x-6 items-center p-4 rounded-lg border transition-all duration-500 group outline-none",
                 isSelected ? "bg-primary/10 border-primary/30 ring-1 ring-primary/20 shadow-sm" : "bg-muted/20 border-white/5 hover:bg-muted/40",
+                isZero && "opacity-50 bg-muted/30 border-dashed border-muted-foreground/30",
                 item.flash && 'animate-flash ring-2 ring-primary/30'
             )}
         >
             <div className="flex-grow min-w-0">
                 <div className="flex items-center gap-2 mb-1">
-                    <p className="font-semibold text-sm tracking-tight truncate group-hover:text-primary transition-colors">{item.name}</p>
+                    <p className={cn(
+                        "font-semibold text-sm tracking-tight truncate group-hover:text-primary transition-colors",
+                        isZero && "text-muted-foreground line-through decoration-1"
+                    )}>
+                        {item.name}
+                    </p>
                     {isCustom && <Tag className="h-3 w-3 text-amber-500 opacity-50" />}
+                    {isZero && (
+                        <span className="text-[10px] font-bold uppercase tracking-widest text-destructive/70 bg-destructive/5 px-2 py-0.5 rounded border border-destructive/10 animate-in fade-in zoom-in duration-300">
+                            Non facturé
+                        </span>
+                    )}
                 </div>
                 <p className="text-[10px] font-bold text-muted-foreground/50">
                     {formatCurrency(item.price)} <span className="mx-1 opacity-30">/</span> {item.unite || 'pcs'}
@@ -79,18 +90,38 @@ const CartItemRow = React.memo(({ item, isSelected, onUpdate, onRemove, onSelect
             </div>
             
             <div className="flex flex-col items-center gap-1">
-                <Input
-                    type="number"
-                    step={stepValue}
-                    value={item.cartQuantity}
-                    onChange={(e) => handleQtyChange(e.target.value)}
-                    className="w-24 text-center h-10 rounded-xl bg-background/50 border-none shadow-inner font-semibold text-primary"
-                    min="0"
-                />
+                <div className="flex items-center bg-background/50 rounded-xl border border-white/5 overflow-hidden shadow-inner">
+                    <button 
+                        onClick={(e) => { e.stopPropagation(); onUpdate(item.uuid, Math.max(0, item.cartQuantity - 1)); }}
+                        className="px-3 h-10 hover:bg-primary/10 text-muted-foreground hover:text-primary transition-colors font-bold"
+                    >
+                        −
+                    </button>
+                    <Input
+                        type="number"
+                        step={stepValue}
+                        value={item.cartQuantity}
+                        onChange={(e) => handleQtyChange(e.target.value)}
+                        className={cn(
+                            "w-16 text-center h-10 bg-transparent border-none shadow-none font-black text-lg focus-visible:ring-0",
+                            isZero ? "text-destructive" : "text-primary"
+                        )}
+                        min="0"
+                    />
+                    <button 
+                        onClick={(e) => { e.stopPropagation(); onUpdate(item.uuid, item.cartQuantity + 1); }}
+                        className="px-3 h-10 hover:bg-primary/10 text-muted-foreground hover:text-primary transition-colors font-bold"
+                    >
+                        +
+                    </button>
+                </div>
             </div>
 
             <div className="w-24 text-right">
-                <p className="font-semibold text-base tracking-tighter text-foreground">
+                <p className={cn(
+                    "font-semibold text-base tracking-tighter",
+                    isZero ? "text-muted-foreground/30 line-through" : "text-foreground"
+                )}>
                     {formatCurrency(item.price * item.cartQuantity)}
                 </p>
             </div>
@@ -98,10 +129,16 @@ const CartItemRow = React.memo(({ item, isSelected, onUpdate, onRemove, onSelect
             <Button 
                 variant="ghost" 
                 size="icon" 
-                className="text-muted-foreground/20 hover:text-destructive hover:bg-destructive/10 h-10 w-10 rounded-xl transition-all opacity-0 group-hover:opacity-100"
-                onClick={() => onRemove(item.uuid)}
+                className={cn(
+                    "h-10 w-10 rounded-xl transition-all",
+                    isZero 
+                        ? "text-destructive opacity-100 bg-destructive/5 hover:bg-destructive/10" 
+                        : "text-muted-foreground/20 hover:text-destructive hover:bg-destructive/10 opacity-0 group-hover:opacity-100"
+                )}
+                onClick={(e) => { e.stopPropagation(); onRemove(item.uuid); }}
+                title="Retirer du panier"
             >
-                <Trash2 className="h-4 w-4" />
+                {isZero ? <X className="h-4 w-4" /> : <Trash2 className="h-4 w-4" />}
             </Button>
         </div>
     );
