@@ -133,13 +133,13 @@ function PaymentDialogContent({
         {
             key: 'Enter',
             action: handleProcessSale,
-            description: 'Valider la transaction',
+            description: 'Valider l\'encaissement',
             ignoreInputFocus: true
         },
         {
             key: 'Escape',
             action: () => onOpenChange(false),
-            description: 'Fermer la fenêtre',
+            description: 'Annuler et fermer',
             ignoreInputFocus: true
         }
     ], 'Encaissement', isOpen);
@@ -160,7 +160,6 @@ function PaymentDialogContent({
                         </DialogDescription>
                     </DialogHeader>
 
-                    {/* Total net */}
                     <div className="text-center py-3 bg-muted/50 rounded-lg">
                         <p className="text-xs text-muted-foreground mb-0.5">
                             Total net à payer
@@ -170,7 +169,6 @@ function PaymentDialogContent({
                         </p>
                     </div>
 
-                    {/* Montant reçu + monnaie */}
                     <div className="grid grid-cols-2 gap-3">
                         <div className="space-y-1.5">
                             <Label htmlFor="amount-paid" className="text-xs font-medium">
@@ -204,7 +202,6 @@ function PaymentDialogContent({
                         </div>
                     </div>
 
-                    {/* Avertissement vente à crédit */}
                     {isCreditSale && (
                         <div className="space-y-3 p-3 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded-lg">
                             <div className="flex items-start gap-2">
@@ -246,7 +243,6 @@ function PaymentDialogContent({
                         </div>
                     )}
 
-                    {/* Actions */}
                     <div className="flex gap-2 pt-1">
                         <Button
                             variant="outline"

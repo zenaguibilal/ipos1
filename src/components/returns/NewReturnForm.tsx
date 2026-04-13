@@ -19,10 +19,6 @@ import { useAppActions } from '@/stores/appStore';
 import { toast } from 'sonner';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 
-/**
- * @fileOverview Formulaire de gestion des retours clients.
- * Gère la réintégration au stock, le remboursement partiel et la génération d'avoirs.
- */
 export function NewReturnForm() {
     const router = useRouter();
     const searchParams = useSearchParams();
@@ -156,7 +152,7 @@ export function NewReturnForm() {
     return (
         <div className="grid lg:grid-cols-12 gap-6 animate-in slide-in-from-bottom-4 duration-700">
             <div className="lg:col-span-8 space-y-6">
-                <Card className="app-card rounded-lg border-white/5 bg-card/40 backdrop-blur-sm overflow-hidden">
+                <Card className="app-card rounded-lg border-white/5 bg-card/40 backdrop-blur-sm overflow-hidden shadow-sm">
                     <CardHeader className="bg-muted/20 border-b border-white/5 p-4 flex flex-col sm:flex-row items-center gap-4">
                         <div className="flex items-center gap-3">
                             <div className="p-2.5 rounded-xl bg-primary text-primary-foreground shadow-sm">

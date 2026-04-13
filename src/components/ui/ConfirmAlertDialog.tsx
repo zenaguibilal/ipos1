@@ -9,6 +9,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
+import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 
 interface ConfirmAlertDialogProps {
     isOpen: boolean;
@@ -38,19 +39,34 @@ export function ConfirmAlertDialog({
             onOpenChange(false);
         } catch (error: any) {
             toast.error(error.message || "L'opération a échoué.", {
-                description: "Veuillez réessayer ou contacter le support si le problème persiste."
+                description: "Veuillez réessayer أو contacter le support."
             });
         } finally {
             setIsMutating(false);
         }
     };
 
+    // Raccourcis pour les dialogues de confirmation
+    useKeyboardShortcuts([
+        {
+            key: 'Enter',
+            action: handleConfirm,
+            description: 'Confirmer l\'action',
+            ignoreInputFocus: true
+        },
+        {
+            key: 'Escape',
+            action: () => onOpenChange(false),
+            description: 'Annuler',
+            ignoreInputFocus: true
+        }
+    ], 'Confirmation', isOpen);
+
     return (
         <AlertDialog open={isOpen} onOpenChange={(open) => !isMutating && onOpenChange(open)}>
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle>{title}</AlertDialogTitle>
-              {/* Use asChild to allow div/complex content inside description without invalid HTML nesting */}
               <AlertDialogDescription asChild>
                 <div className="pt-2">{description}</div>
               </AlertDialogDescription>

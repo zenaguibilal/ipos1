@@ -17,7 +17,6 @@ function SellPageContent() {
     const [isPaymentOpen, setIsPaymentOpen] = useState(false);
     const [isClearConfirmOpen, setIsClearConfirmOpen] = useState(false);
 
-    // Références pour le focus programmatique
     const searchInputRef = useRef<{ focusInput: () => void }>(null);
     const customerComboRef = useRef<{ focusInput: () => void }>(null);
 

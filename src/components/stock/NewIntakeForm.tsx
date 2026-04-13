@@ -18,9 +18,6 @@ import { v4 as uuidv4 } from 'uuid';
 import { DatePicker } from '../ui/date-picker';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 
-/**
- * @fileOverview Formulaire de gestion des réceptions de stock Elite.
- */
 export function NewIntakeForm() {
     const router = useRouter();
     const { processStockIntake } = useAppActions();
@@ -32,12 +29,10 @@ export function NewIntakeForm() {
     const [items, setItems] = useState<StockIntakeItem[]>([]);
     const [isSubmitting, setIsSaving] = useState(false);
 
-    // Calcul du sous-total des articles
     const itemsTotalValue = useMemo(() => {
         return items.reduce((sum, item) => sum + (item.quantity * item.purchasePrice), 0);
     }, [items]);
 
-    // Calcul du facteur de transport pour le coût de revient
     const shippingFactor = useMemo(() => {
         return itemsTotalValue > 0 ? shippingCost / itemsTotalValue : 0;
     }, [itemsTotalValue, shippingCost]);
