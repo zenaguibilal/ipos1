@@ -126,7 +126,7 @@ export const Receipt = React.forwardRef<HTMLDivElement, ReceiptProps>(
       clientAddress: 'ALGER, ALGÉRIE',
       paymentMode: sale.paymentStatus === 'paid' ? 'COMPTANT' : sale.paymentStatus === 'partial' ? 'VERSEMENT PARTIEL' : 'À CRÉDIT',
       seller: 'ADMINISTRATEUR',
-      orderRef: 'Vente Directe',
+      orderRef: 'Vente Directه',
       items: sale.items.map((item, idx) => ({
         id: idx + 1,
         designation: item.name,
@@ -282,6 +282,10 @@ export const Receipt = React.forwardRef<HTMLDivElement, ReceiptProps>(
               <div className="flex justify-between px-4 py-2 text-sm font-bold text-gray-500">
                 <span>Quantité Totale</span>
                 <span className="font-mono text-[#111827]">{docData.totalQty}</span>
+              </div>
+              <div className="flex justify-between px-4 py-2 text-sm font-bold text-[#111827] border-b border-gray-100">
+                <span>Montant Facture</span>
+                <span className="font-mono">{formatNum(docData.grandTotal)} DA</span>
               </div>
               <div className="flex justify-between px-4 py-2 text-sm font-bold text-gray-500">
                 <span>Ancien solde</span>
