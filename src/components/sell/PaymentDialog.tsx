@@ -269,16 +269,15 @@ function PaymentDialogContent({
                             Confirmer [Enter]
                         </Button>
                     </div>
-                </div>
-            </DialogContent>
-        </Dialog>
+                </DialogContent>
+            </Dialog>
 
-        <PrintReceiptDialog
-            isOpen={isReceiptOpen}
-            onOpenChange={setIsReceiptOpen}
-            sale={lastSale}
-            customerName={customer ? `${customer.firstName} ${customer.lastName}` : 'Client de passage'}
-        />
+            <PrintReceiptDialog
+                isOpen={isReceiptOpen}
+                onOpenChange={setIsReceiptOpen}
+                sale={lastSale}
+                customerName={customer ? `${customer.firstName} ${customer.lastName}` : 'Client de passage'}
+            />
         </>
     );
 }
