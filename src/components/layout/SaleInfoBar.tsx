@@ -38,8 +38,11 @@ export function SaleInfoBar() {
     if (!isMounted) return null;
 
     const hasItems  = !!(cart && cart.items.length > 0);
+    const hasCustomer = !!cart?.customerUuid;
     const isSellPage = pathname === '/sell';
-    if (!cart || (!hasItems && !isSellPage)) return null;
+
+    // Show Infobar if: has items OR we are on sell page OR a customer is selected
+    if (!cart || (!hasItems && !isSellPage && !hasCustomer)) return null;
 
     const { total, discountAmount } = calculateCartTotals(cart);
     const itemCount  = cart.items.reduce((s, i) => s + i.cartQuantity, 0);
@@ -76,7 +79,7 @@ export function SaleInfoBar() {
 
                 <div className="h-4 w-px bg-border" />
 
-                {/* Customer Section - Now always visible as requested */}
+                {/* Customer Section */}
                 <div className="flex items-center gap-1.5 min-w-0">
                     {customer ? (
                         <>
