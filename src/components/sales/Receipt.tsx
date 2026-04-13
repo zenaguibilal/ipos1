@@ -6,7 +6,7 @@ import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 
 /**
- * Interface exacte pour le Bon de Livraison
+ * Interface structure for the Delivery Note
  */
 interface DeliveryNoteData {
   docNumber: string;
@@ -35,10 +35,10 @@ interface DeliveryNoteData {
 }
 
 /**
- * Fonction de conversion des nombres en lettres françaises (Optimisée pour iPOS)
+ * Sophisticated French number to words converter
  */
 function numberToWordsFR(n: number): string {
-  if (n === 0) return "ZÉRO DINARS";
+  if (n === 0) return "ZÉRO DINAR";
   
   const units = ['', 'UN', 'DEUX', 'TROIS', 'QUATRE', 'CINQ', 'SIX', 'SEPT', 'HUIT', 'NEUF'];
   const tens = ['', 'DIX', 'VINGT', 'TRENTE', 'QUARANTE', 'CINQUANTE', 'SOIXANTE', 'SOIXANTE-DIX', 'QUATRE-VINGTS', 'QUATRE-VINGT-DIX'];
@@ -48,21 +48,26 @@ function numberToWordsFR(n: number): string {
     let res = "";
     if (num >= 100) {
       const c = Math.floor(num / 100);
-      res += (c === 1 ? "" : units[c] + " ") + "CENT" + (c > 1 && num % 100 === 0 ? "S" : "") + " ";
-      num %= 100;
+      const rest = num % 100;
+      if (c === 1) {
+        res += "CENT ";
+      } else {
+        res += units[c] + " CENT" + (rest === 0 ? "S " : " ");
+      }
+      num = rest;
     }
+    
     if (num >= 20) {
       const t = Math.floor(num / 10);
       const u = num % 10;
       if (t === 7 || t === 9) {
-        res += tens[t - 1] + (u === 1 ? " ET " : "-") + (t === 7 ? teens[u] : teens[u]);
-        if (t === 9) res = res.replace(tens[8], tens[8]); // Correct handle for 90s
+        res += tens[t - 1] + (u === 1 ? " ET " : "-") + teens[u];
       } else {
         res += tens[t] + (u === 1 ? " ET " : u > 1 ? "-" : "") + units[u];
       }
     } else if (num >= 10) {
       res += teens[num - 10];
-    } else {
+    } else if (num > 0) {
       res += units[num];
     }
     return res.trim();
@@ -73,17 +78,24 @@ function numberToWordsFR(n: number): string {
 
   if (intPart >= 1000000) {
     const m = Math.floor(intPart / 1000000);
-    result += convertGroup(m) + " MILLION" + (m > 1 ? "S" : "") + " ";
+    result += convertGroup(m) + " MILLION" + (m > 1 ? "S " : " ");
+    result += " ";
   }
   
   const thousands = Math.floor((intPart % 1000000) / 1000);
   if (thousands > 0) {
-    result += (thousands === 1 ? "" : convertGroup(thousands) + " ") + "MILLE ";
+    if (thousands === 1) {
+      result += "MILLE ";
+    } else {
+      result += convertGroup(thousands) + " MILLE ";
+    }
   }
 
   const remainder = intPart % 1000;
-  if (remainder > 0 || intPart === 0) {
+  if (remainder > 0) {
     result += convertGroup(remainder);
+  } else if (intPart === 0) {
+    result = "ZÉRO";
   }
 
   return result.trim() + " DINARS";
@@ -101,7 +113,7 @@ export const Receipt = React.forwardRef<HTMLDivElement, ReceiptProps>(
   ({ sale, profile, receiptType, customerName, oldBalance = 0 }, ref) => {
     const isThermal = receiptType === 'thermal';
 
-    // Formatage des nombres localisé fr-DZ
+    // Formatter for DZ currency
     const formatNum = (val: number) => val.toLocaleString('fr-DZ', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
     const docData: DeliveryNoteData = {
@@ -189,9 +201,9 @@ export const Receipt = React.forwardRef<HTMLDivElement, ReceiptProps>(
           {/* HEADER HORIZONTAL */}
           <div className="flex justify-between items-start border-b-2 border-[#111827] pb-6 mb-8">
             <div className="flex flex-col gap-1 max-w-[60%]">
-              <h1 className="text-3xl font-black uppercase tracking-tighter">{docData.companyName}</h1>
-              <p className="text-sm font-medium opacity-70">{docData.companyAddress}</p>
-              <p className="text-sm font-bold mt-1">Tél: {docData.companyPhone}</p>
+              <h1 className="text-3xl font-black uppercase tracking-tighter leading-none">{docData.companyName}</h1>
+              <p className="text-sm font-medium opacity-70 mt-2">{docData.companyAddress}</p>
+              <p className="text-sm font-bold">Tél: {docData.companyPhone}</p>
             </div>
             <div className="flex flex-col items-end">
               <h2 className="text-3xl font-black text-blue-600 uppercase tracking-tighter">Bon de Livraison</h2>

@@ -33,8 +33,8 @@ export function PrintReceiptDialog({
     const receiptRef = useRef<HTMLDivElement>(null);
 
     /**
-     * Calcul critique du solde avant opération :
-     * Solde Ancien = Solde Actuel (DB) - (Total Vente - Déjà Payé)
+     * Critical balance calculation:
+     * Old Balance = Current DB Balance - (Total of this sale - What was already paid)
      */
     const oldBalance = useMemo(() => {
         if (!customer || !sale) return 0;
@@ -139,7 +139,7 @@ export function PrintReceiptDialog({
 
     return (
         <>
-            {/* Conteneur masqué pour l'impression système réelle */}
+            {/* Hidden container for real system printing */}
             <div className="hidden print:block fixed inset-0 z-[100] bg-white">
                 <Receipt 
                     sale={sale} 
