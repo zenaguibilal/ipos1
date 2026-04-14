@@ -101,12 +101,12 @@
 .app-card:hover { @apply shadow-md; border-color: hsl(var(--primary) / 0.25); }
 
 /* ─────────────────────────────────────────
-   Impression thermique 80mm
+   Impression Dynamique (A4 & 80mm)
 ───────────────────────────────────────── */
 @media print {
   @page {
-    margin: 0;
-    size: 80mm auto;
+    margin: 5mm;
+    size: auto;
   }
   body {
     background: white !important;
@@ -115,10 +115,11 @@
     padding: 0;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
+    overflow: visible !important;
   }
   /* Masquer toute l'interface */
-  nav, header, aside,
-  [data-print-hide], .print-hide { display: none !important; }
+  nav, header, aside, footer,
+  [data-print-hide], .print-hide, .toaster, button { display: none !important; }
   .print-only { display: block !important; }
 
   * {
@@ -127,6 +128,11 @@
     box-shadow: none !important;
   }
 
+  /* Force multi-page break */
+  tr { page-break-inside: avoid !important; }
+  thead { display: table-header-group !important; }
+  tfoot { display: table-footer-group !important; }
+
   /* Template thermique */
   .thermal-receipt {
     width: 80mm !important;
@@ -134,6 +140,15 @@
     font-size: 9pt !important;
     margin: 0 auto;
     padding: 4mm 3mm;
+    page-break-after: always;
+  }
+
+  /* Template A4 */
+  .a4-receipt-wrapper {
+    width: 210mm !important;
+    margin: 0 auto !important;
+    background: white !important;
+    min-height: auto !important;
   }
 }
 

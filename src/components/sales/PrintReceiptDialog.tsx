@@ -83,11 +83,9 @@ export function PrintReceiptDialog({
             const { jsPDF } = await import('jspdf');
             const html2canvas = (await import('html2canvas')).default;
 
-            // منطقة الرندرة المخفية للالتقاط لضمان عدم تداخل النصوص
             const element = document.getElementById('pdf-capture-render-area');
             if (!element) throw new Error("Zone de rendu introuvable");
 
-            // تأخير لضمان جاهزية النصوص والخطوط
             await new Promise(resolve => setTimeout(resolve, 400));
 
             const canvas = await html2canvas(element, {
@@ -96,7 +94,6 @@ export function PrintReceiptDialog({
                 allowTaint: true,
                 backgroundColor: "#ffffff",
                 logging: false,
-                // تثبيت العرض لضمان توزيع الكلمات بشكل طبيعي
                 windowWidth: receiptType === 'a4' ? 794 : 302, 
                 onclone: (clonedDoc) => {
                     const target = clonedDoc.getElementById('pdf-capture-render-area');
@@ -107,6 +104,7 @@ export function PrintReceiptDialog({
                         target.style.top = '0';
                         target.style.letterSpacing = 'normal'; 
                         target.style.visibility = 'visible';
+                        target.style.width = receiptType === 'a4' ? '210mm' : '80mm';
                     }
                 }
             });
@@ -165,7 +163,7 @@ export function PrintReceiptDialog({
     return (
         <>
             {/* منطقة الرندرة الحقيقية للطباعة والالتقاط (مخفية تماماً عن المستخدم) */}
-            <div className="fixed left-[-9999px] top-0 print:left-0 print:relative print:block z-[-1] bg-white overflow-visible">
+            <div className="fixed left-[-9999px] top-0 print:left-0 print:relative print:block z-[-1] bg-white overflow-visible w-full h-auto">
                 <div id="pdf-capture-render-area" className="bg-white">
                     <Receipt 
                         sale={sale} 
@@ -211,7 +209,7 @@ export function PrintReceiptDialog({
                     <div className="flex-grow overflow-y-auto bg-muted/30 p-6 custom-scrollbar flex justify-center">
                         <div 
                             className={cn(
-                                "bg-white shadow-2xl transition-all origin-top", 
+                                "bg-white shadow-2xl transition-all origin-top h-auto", 
                                 receiptType === 'a4' ? "scale-[0.7] sm:scale-[0.85] lg:scale-100" : "scale-100"
                             )} 
                         >

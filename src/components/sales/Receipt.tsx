@@ -123,7 +123,7 @@ function numberToWordsFR(n: number): string {
 
   if (decPart > 0) {
     if (intPart > 0) finalStr += " ET ";
-    finalStr += getWords(decPart) + (decPart > 1 ? " CENTIMES" : " CENTIME");
+    finalStr += convertGroup(decPart) + (decPart > 1 ? " CENTIMES" : " CENTIME");
   }
 
   return finalStr.trim().toUpperCase();
@@ -237,8 +237,8 @@ export const Receipt = React.forwardRef<HTMLDivElement, ReceiptProps>(
     }
 
     return (
-      <div ref={ref} className="bg-white text-[#111827] font-sans" style={{ letterSpacing: 'normal', lineHeight: '1.5' }}>
-        <div className="w-[210mm] min-h-[297mm] p-[15mm] bg-white mx-auto flex flex-col">
+      <div ref={ref} className="bg-white text-[#111827] font-sans a4-receipt-wrapper" style={{ letterSpacing: 'normal', lineHeight: '1.5' }}>
+        <div className="w-full p-[10mm] bg-white mx-auto">
           {/* Header */}
           <div className="flex justify-between items-start border-b-2 border-[#111827] pb-8 mb-8">
             <div className="flex flex-col gap-1 max-w-[60%]">
@@ -276,9 +276,9 @@ export const Receipt = React.forwardRef<HTMLDivElement, ReceiptProps>(
           </div>
 
           {/* Table */}
-          <div className="flex-grow">
+          <div className="mb-10">
             <table className="w-full border-collapse">
-              <thead>
+              <thead className="display-table-header-group">
                 <tr className="bg-[#111827] text-white">
                   <th className="text-center w-12 rounded-tl-xl p-4 text-[10px] font-black uppercase">N°</th>
                   <th className="text-left p-4 text-[10px] font-black uppercase">Désignation</th>
@@ -302,45 +302,47 @@ export const Receipt = React.forwardRef<HTMLDivElement, ReceiptProps>(
           </div>
 
           {/* Totals & Signature */}
-          <div className="mt-12 grid grid-cols-2 gap-12 items-end">
-            <div className="space-y-10">
-              <div className="bg-gray-50 p-6 rounded-2xl border border-gray-100">
-                <p className="text-[10px] font-black uppercase text-gray-400 mb-2 tracking-widest">Arrêté à la somme de :</p>
-                <p className="text-sm font-black italic text-gray-800 leading-relaxed uppercase">
-                  {docData.amountInWords}
-                </p>
-              </div>
-              <p className="text-[10px] font-black uppercase text-gray-300 tracking-[0.2em] border-t border-dashed pt-4">Visa & Signature Client</p>
+          <div className="mt-auto">
+            <div className="grid grid-cols-2 gap-12 items-end">
+                <div className="space-y-10">
+                <div className="bg-gray-50 p-6 rounded-2xl border border-gray-100">
+                    <p className="text-[10px] font-black uppercase text-gray-400 mb-2 tracking-widest">Arrêté à la somme de :</p>
+                    <p className="text-sm font-black italic text-gray-800 leading-relaxed uppercase">
+                    {docData.amountInWords}
+                    </p>
+                </div>
+                <p className="text-[10px] font-black uppercase text-gray-300 tracking-[0.2em] border-t border-dashed pt-4">Visa & Signature Client</p>
+                </div>
+
+                <div className="space-y-2">
+                <div className="flex justify-between px-4 py-2 text-sm font-bold text-gray-500">
+                    <span>Quantité Totale</span>
+                    <span className="font-mono text-[#111827]">{docData.totalQty}</span>
+                </div>
+                <div className="flex justify-between px-4 py-2 text-sm font-bold text-[#111827] border-b border-gray-100">
+                    <span>Montant Facture</span>
+                    <span className="font-mono">{formatNum(docData.grandTotal)} DA</span>
+                </div>
+                <div className="flex justify-between px-4 py-2 text-sm font-bold text-gray-500">
+                    <span>Ancien solde</span>
+                    <span className="font-mono text-[#111827]">{formatNum(docData.oldBalance)} DA</span>
+                </div>
+                <div className="flex justify-between px-4 py-2 text-sm font-bold text-emerald-600">
+                    <span>Versement Effectué</span>
+                    <span className="font-mono">-{formatNum(docData.payment)} DA</span>
+                </div>
+                <div className="bg-[#111827] text-white p-6 rounded-2xl flex justify-between items-center mt-6">
+                    <span className="text-xs font-black uppercase tracking-widest opacity-60">TOTAL NET DU (DA)</span>
+                    <span className="text-3xl font-black font-mono tracking-tighter">{formatNum(docData.newBalance)}</span>
+                </div>
+                </div>
             </div>
 
-            <div className="space-y-2">
-              <div className="flex justify-between px-4 py-2 text-sm font-bold text-gray-500">
-                <span>Quantité Totale</span>
-                <span className="font-mono text-[#111827]">{docData.totalQty}</span>
-              </div>
-              <div className="flex justify-between px-4 py-2 text-sm font-bold text-[#111827] border-b border-gray-100">
-                <span>Montant Facture</span>
-                <span className="font-mono">{formatNum(docData.grandTotal)} DA</span>
-              </div>
-              <div className="flex justify-between px-4 py-2 text-sm font-bold text-gray-500">
-                <span>Ancien solde</span>
-                <span className="font-mono text-[#111827]">{formatNum(docData.oldBalance)} DA</span>
-              </div>
-              <div className="flex justify-between px-4 py-2 text-sm font-bold text-emerald-600">
-                <span>Versement Effectué</span>
-                <span className="font-mono">-{formatNum(docData.payment)} DA</span>
-              </div>
-              <div className="bg-[#111827] text-white p-6 rounded-2xl flex justify-between items-center mt-6">
-                <span className="text-xs font-black uppercase tracking-widest opacity-60">TOTAL NET DU (DA)</span>
-                <span className="text-3xl font-black font-mono tracking-tighter">{formatNum(docData.newBalance)}</span>
-              </div>
-            </div>
+            <footer className="mt-12 pt-8 border-t border-gray-100 flex justify-between items-center text-[8px] font-bold text-gray-300 uppercase tracking-[0.3em]">
+                <span>{docData.companyName} — ELITE POS SYSTEM</span>
+                <span>Généré par iPOS ZEN — {format(new Date(), 'dd/MM/yyyy HH:mm', { locale: fr })}</span>
+            </footer>
           </div>
-
-          <footer className="mt-auto pt-12 border-t border-gray-100 flex justify-between items-center text-[8px] font-bold text-gray-300 uppercase tracking-[0.3em]">
-            <span>{docData.companyName} — ELITE POS SYSTEM</span>
-            <span>Généré par iPOS ZEN — {format(new Date(), 'dd/MM/yyyy HH:mm', { locale: fr })}</span>
-          </footer>
         </div>
       </div>
     );
