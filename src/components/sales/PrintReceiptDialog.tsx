@@ -4,7 +4,7 @@ import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Receipt } from './Receipt';
-import { Printer, X, FileText, Smartphone, MessageCircle, Loader2 } from 'lucide-react';
+import { Printer, X, FileText, Smartphone, MessageCircle, Loader2, Download } from 'lucide-react';
 import type { Sale, Customer } from '@/lib/types';
 import { useAppStore } from '@/stores/appStore';
 import { Switch } from '@/components/ui/switch';
@@ -32,10 +32,6 @@ export function PrintReceiptDialog({
     const [customer, setCustomer] = useState<Customer | null>(null);
     const receiptRef = useRef<HTMLDivElement>(null);
 
-    /**
-     * LOGIQUE COMPTABLE ELITE :
-     * Calcule le solde antérieur à cette transaction
-     */
     const oldBalance = useMemo(() => {
         if (!customer || !sale) return 0;
         const currentDebtOfThisSale = Math.max(0, sale.total - sale.amountPaid);
@@ -80,7 +76,7 @@ export function PrintReceiptDialog({
         }
     ], 'Impression', isOpen);
 
-    const handleWhatsAppShare = useCallback(async () => {
+    const handleGeneratePDF = useCallback(async (isShare: boolean) => {
         if (!sale) return;
         setIsGenerating(true);
 
@@ -91,69 +87,66 @@ export function PrintReceiptDialog({
             const element = receiptRef.current;
             if (!element) throw new Error("Référence document non trouvée");
 
-            // Capture avec paramètres haute précision pour éviter les coupures
+            // عرض افتراضي للمستند لضمان التقاط صحيح
+            const captureWidth = receiptType === 'a4' ? 794 : 302; // بكسلات تقريبية لـ 210mm و 80mm
+
             const canvas = await html2canvas(element, {
-                scale: 3, // Résolution augmentée
+                scale: 4, // دقة فائقة الوضوح
                 useCORS: true,
                 logging: false,
                 backgroundColor: "#ffffff",
-                width: element.scrollWidth,
-                height: element.scrollHeight,
-                windowWidth: element.scrollWidth,
+                windowWidth: captureWidth,
                 onclone: (clonedDoc) => {
-                    // Force l'affichage complet dans le clone pour la capture
-                    const el = clonedDoc.getElementById('receipt-capture-area');
-                    if (el) {
-                        el.style.transform = 'none';
-                        el.style.width = receiptType === 'a4' ? '210mm' : '80mm';
+                    const clonedEl = clonedDoc.getElementById('receipt-print-container');
+                    if (clonedEl) {
+                        clonedEl.style.transform = 'none';
+                        clonedEl.style.position = 'relative';
+                        clonedEl.style.display = 'block';
+                        clonedEl.style.margin = '0';
+                        clonedEl.style.padding = '0';
                     }
                 }
             });
 
-            const imgData = canvas.toDataURL('image/jpeg', 0.95);
-            const imgWidth = receiptType === 'a4' ? 210 : 80;
-            const imgHeight = (canvas.height * imgWidth) / canvas.width;
+            const imgData = canvas.toDataURL('image/png', 1.0);
+            const pdfWidth = receiptType === 'a4' ? 210 : 80;
+            const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
 
             const pdf = new jsPDF({
                 orientation: 'portrait',
                 unit: 'mm',
-                format: [imgWidth, imgHeight] // Taille dynamique pour éviter de couper le bas
+                format: [pdfWidth, pdfHeight] // حجم ديناميكي للطول لمنع القص
             });
 
-            pdf.addImage(imgData, 'JPEG', 0, 0, imgWidth, imgHeight);
-            const pdfBlob = pdf.output('blob');
+            pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight, undefined, 'FAST');
+            
             const fileName = `${receiptType === 'a4' ? 'BL' : 'TICKET'}-${sale.invoiceNumber}.pdf`;
 
-            if (navigator.share && navigator.canShare && navigator.canShare({ files: [new File([pdfBlob], fileName, { type: 'application/pdf' })] })) {
+            if (isShare && navigator.share) {
+                const pdfBlob = pdf.output('blob');
                 const file = new File([pdfBlob], fileName, { type: 'application/pdf' });
                 await navigator.share({
                     files: [file],
-                    title: `Bon de Livraison iPOS ${sale.invoiceNumber}`,
-                    text: `Bonjour, voici votre document n°${sale.invoiceNumber}.`
+                    title: `Bon de Livraison ${sale.invoiceNumber}`,
+                    text: `Bonjour, voici votre document iPOS n°${sale.invoiceNumber}.`
                 });
             } else {
-                // Fallback: Download
-                const url = URL.createObjectURL(pdfBlob);
-                const link = document.createElement('a');
-                link.href = url;
-                link.download = fileName;
-                link.click();
-                URL.revokeObjectURL(url);
-                toast.success("Document PDF généré.");
+                pdf.save(fileName);
+                toast.success("Document PDF HD généré.");
             }
         } catch (error: any) {
             console.error("Erreur PDF:", error);
-            toast.error("Échec de la génération complète du PDF.");
+            toast.error("Échec de la génération du PDF.");
         } finally {
             setIsGenerating(false);
         }
-    }, [sale, receiptType, customer]);
+    }, [sale, receiptType]);
 
     if (!sale) return null;
 
     return (
         <>
-            {/* Zone de capture réelle pour l'imprimante système (Contexte A4) */}
+            {/* المنطقة الحقيقية للطباعة الورقية */}
             <div className="hidden print:block fixed inset-0 z-[100] bg-white">
                 <Receipt 
                     sale={sale} 
@@ -174,7 +167,7 @@ export function PrintReceiptDialog({
                                 </div>
                                 <div>
                                     <DialogTitle className="text-lg font-bold tracking-tight">Gestion Documentaire Elite</DialogTitle>
-                                    <DialogDescription className="text-[10px] uppercase font-semibold text-primary/50 tracking-wider">Document : Bon de Livraison #{sale.invoiceNumber}</DialogDescription>
+                                    <DialogDescription className="text-[10px] uppercase font-semibold text-primary/50 tracking-wider">Document : #{sale.invoiceNumber}</DialogDescription>
                                 </div>
                             </div>
                             <div className="flex items-center gap-4 bg-background/50 p-1.5 rounded-xl border border-primary/10">
@@ -188,7 +181,7 @@ export function PrintReceiptDialog({
                                 />
                                 <div className={cn("flex items-center gap-2 px-3 py-1.5 rounded-lg transition-all", receiptType === 'a4' ? "bg-primary text-primary-foreground shadow-sm" : "opacity-40")}>
                                     <FileText className="h-3.5 w-3.5" />
-                                    <span className="text-[10px] font-bold uppercase">A4 Standard</span>
+                                    <span className="text-[10px] font-bold uppercase">A4</span>
                                 </div>
                             </div>
                         </div>
@@ -196,13 +189,12 @@ export function PrintReceiptDialog({
 
                     <div className="flex-grow overflow-y-auto bg-muted/30 p-6 custom-scrollbar flex justify-center">
                         <div 
-                            id="receipt-capture-area"
                             className={cn(
                                 "bg-white shadow-2xl transition-all origin-top", 
                                 receiptType === 'a4' ? "scale-[0.7] sm:scale-[0.85] lg:scale-100" : "scale-100"
                             )} 
                         >
-                            <div ref={receiptRef}>
+                            <div id="receipt-print-container" ref={receiptRef} className="bg-white">
                                 <Receipt 
                                     sale={sale} 
                                     profile={profile} 
@@ -221,17 +213,27 @@ export function PrintReceiptDialog({
                         
                         <Button 
                             variant="outline"
-                            onClick={handleWhatsAppShare} 
+                            onClick={() => handleGeneratePDF(true)} 
                             disabled={isGenerating}
                             className="rounded-xl h-10 font-bold border-emerald-500/20 bg-emerald-500/5 text-emerald-600 hover:bg-emerald-500 hover:text-white transition-all gap-2"
                         >
                             {isGenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : <MessageCircle className="h-4 w-4" />}
-                            Partager PDF
+                            Partager WhatsApp
+                        </Button>
+
+                        <Button 
+                            variant="outline"
+                            onClick={() => handleGeneratePDF(false)} 
+                            disabled={isGenerating}
+                            className="rounded-xl h-10 font-bold border-primary/20 hover:bg-primary/5 transition-all gap-2"
+                        >
+                            {isGenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+                            Télécharger PDF
                         </Button>
 
                         <Button onClick={handlePrint} className="rounded-xl h-10 font-bold flex-1 shadow-lg shadow-sm transition-all active:scale-95 gap-2">
                             <Printer className="h-4 w-4" /> 
-                            Lancer Impression [P]
+                            Imprimer [P]
                         </Button>
                     </DialogFooter>
                 </DialogContent>
