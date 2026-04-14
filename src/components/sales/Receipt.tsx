@@ -4,6 +4,7 @@ import React from 'react';
 import type { Sale, CompanyProfile } from '@/lib/types';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import { cn } from '@/lib/utils';
 
 interface DeliveryNoteData {
   docNumber: string;
