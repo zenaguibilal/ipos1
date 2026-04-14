@@ -59,35 +59,35 @@ export function PrintReceiptDialog({
     /**
      * Isolated Printing Protocol:
      * Clones only the receipt content into a clean, top-level container for true printing.
+     * This avoids capturing the UI (buttons, modals, etc).
      */
     const handlePrint = useCallback(() => {
         if (!sale) return;
         
-        const printableContainer = document.getElementById('receipt-for-print');
+        const printablePortal = document.getElementById('receipt-for-print');
         const sourceElement = document.getElementById('receipt-render-target-inner');
 
-        if (!printableContainer || !sourceElement) {
-            window.print();
+        if (!printablePortal || !sourceElement) {
+            toast.error("Canal de sortie introuvable.");
             return;
         }
 
-        // Clone the receipt content
+        // Deep clone the pure receipt
         const clone = sourceElement.cloneNode(true) as HTMLDivElement;
         
-        // Strip preview-only classes and reset styles
-        clone.classList.remove('shadow-2xl', 'scale-[0.7]', 'sm:scale-[0.85]', 'lg:scale-100', 'origin-top');
+        // Ensure dimensions are absolute for the printer
         clone.style.transform = 'none';
-        clone.style.margin = '0 auto';
+        clone.style.margin = '0';
         clone.style.width = receiptType === 'a4' ? '210mm' : '80mm';
         
-        // Inject into the isolated portal
-        printableContainer.innerHTML = '';
-        printableContainer.appendChild(clone);
+        // Prepare the portal
+        printablePortal.innerHTML = '';
+        printablePortal.appendChild(clone);
 
-        // Execute print with a slight delay for assets
+        // Allow browser to process layout then print
         setTimeout(() => {
             window.print();
-        }, 250);
+        }, 300);
     }, [sale, receiptType]);
 
     useKeyboardShortcuts([
@@ -105,6 +105,10 @@ export function PrintReceiptDialog({
         }
     ], 'Impression', isOpen);
 
+    /**
+     * High-Fidelity PDF Generation Engine:
+     * Uses a hidden high-scale rendering area to ensure crisp text and dynamic heights.
+     */
     const handleGeneratePDF = useCallback(async (isShare: boolean) => {
         if (!sale) return;
         setIsGenerating(true);
@@ -114,14 +118,15 @@ export function PrintReceiptDialog({
             const html2canvas = (await import('html2canvas')).default;
 
             const element = document.getElementById('receipt-render-target-inner');
-            if (!element) throw new Error("Zone de rendu introuvable");
+            if (!element) throw new Error("Source de rendu manquante");
 
-            // Setup capture environment (Isolated 1:1 scale)
+            // Setup capture context (Ultra HD Scale)
             const canvas = await html2canvas(element, {
-                scale: 2,
+                scale: 3, 
                 useCORS: true,
                 backgroundColor: "#ffffff",
                 logging: false,
+                windowWidth: receiptType === 'a4' ? 794 : 302, // Native 96DPI width
                 onclone: (clonedDoc) => {
                     const target = clonedDoc.getElementById('receipt-render-target-inner');
                     if (target) {
@@ -129,6 +134,7 @@ export function PrintReceiptDialog({
                         target.style.display = 'block';
                         target.style.position = 'relative';
                         target.style.width = receiptType === 'a4' ? '210mm' : '80mm';
+                        target.style.letterSpacing = 'normal';
                     }
                 }
             });
@@ -137,6 +143,7 @@ export function PrintReceiptDialog({
             const pdfWidth = receiptType === 'a4' ? 210 : 80;
             const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
 
+            // Generate Dynamic Page Height PDF
             const pdf = new jsPDF({
                 orientation: 'portrait',
                 unit: 'mm',
@@ -145,32 +152,28 @@ export function PrintReceiptDialog({
 
             pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight, undefined, 'FAST');
             
-            const fileName = `${receiptType === 'a4' ? 'BL' : 'TICKET'}-${sale.invoiceNumber}.pdf`;
+            const fileName = `${receiptType === 'a4' ? 'BL' : 'TKT'}-${sale.invoiceNumber}.pdf`;
 
-            // Smart Share Protocol
+            // WhatsApp / Social Share Logic
             if (isShare && navigator.canShare && navigator.share) {
                 const pdfBlob = pdf.output('blob');
                 const file = new File([pdfBlob], fileName, { type: 'application/pdf' });
                 
-                if (navigator.canShare({ files: [file] })) {
-                    try {
-                        await navigator.share({
-                            files: [file],
-                            title: `iPOS Zen - ${sale.invoiceNumber}`,
-                        });
-                    } catch (e) {
-                        // User cancelled share, no error toast needed
-                    }
-                } else {
+                try {
+                    await navigator.share({
+                        files: [file],
+                        title: `iPOS Zen - ${sale.invoiceNumber}`,
+                    });
+                } catch (e) {
+                    // Fallback to download if shared cancelled or fails silently
                     pdf.save(fileName);
-                    toast.info("Partage non supporté sur ce navigateur. Fichier téléchargé.");
                 }
             } else {
                 pdf.save(fileName);
-                if (isShare) toast.info("Partage direct indisponible. Fichier téléchargé.");
+                if (isShare) toast.info("Mise en attente du partage direct. Fichier téléchargé.");
             }
         } catch (error: any) {
-            toast.error("Échec de la génération PDF.");
+            toast.error("Échec de la génération HD.");
         } finally {
             setIsGenerating(false);
         }
@@ -210,6 +213,7 @@ export function PrintReceiptDialog({
                 </DialogHeader>
 
                 <div className="flex-grow overflow-y-auto bg-muted/30 p-6 custom-scrollbar flex justify-center">
+                    {/* Visual Preview Container */}
                     <div 
                         id="receipt-render-target"
                         className={cn(
@@ -217,6 +221,7 @@ export function PrintReceiptDialog({
                             receiptType === 'a4' ? "scale-[0.7] sm:scale-[0.85] lg:scale-100" : "scale-100"
                         )} 
                     >
+                        {/* Pure Content Target (Captured by engine and cloned by print) */}
                         <div id="receipt-render-target-inner" className="bg-white shadow-2xl">
                             <Receipt 
                                 sale={sale} 
@@ -241,7 +246,7 @@ export function PrintReceiptDialog({
                         className="rounded-xl h-10 font-bold border-emerald-500/20 bg-emerald-500/5 text-emerald-600 hover:bg-emerald-500 hover:text-white transition-all gap-2"
                     >
                         {isGenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : <MessageCircle className="h-4 w-4" />}
-                        Partager
+                        Envoyer
                     </Button>
 
                     <Button 
@@ -251,7 +256,7 @@ export function PrintReceiptDialog({
                         className="rounded-xl h-10 font-bold border-primary/20 hover:bg-primary/5 transition-all gap-2"
                     >
                         {isGenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
-                        Télécharger
+                        PDF
                     </Button>
 
                     <Button onClick={handlePrint} className="rounded-xl h-10 font-bold flex-1 shadow-lg shadow-sm transition-all active:scale-95 gap-2">

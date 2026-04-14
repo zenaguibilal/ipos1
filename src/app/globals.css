@@ -80,7 +80,7 @@
 .app-card:hover { @apply shadow-md; border-color: hsl(var(--primary) / 0.25); }
 
 /* ─────────────────────────────────────────
-   Elite Printing Engine (Multi-page & A4)
+   Elite Printing Engine (Isolated Context)
 ───────────────────────────────────────── */
 @media print {
   @page {
@@ -99,7 +99,7 @@
     print-color-adjust: exact;
   }
 
-  /* Masquer tout sauf le container de طباعة المعزول */
+  /* CRITICAL: Hide everything except the print portal */
   body > *:not(#receipt-for-print) {
     display: none !important;
   }
@@ -114,35 +114,48 @@
     padding: 0;
     margin: 0;
     visibility: visible !important;
-    z-index: 9999;
+    z-index: 99999;
+    background: white !important;
   }
 
-  /* Force elements inside to be visible and clear */
+  /* Force child elements to show and reset scales */
   #receipt-for-print * {
     visibility: visible !important;
     opacity: 1 !important;
     transform: none !important;
-    box-shadow: none !important;
     animation: none !important;
+    box-shadow: none !important;
     color: black !important;
   }
 
-  /* Multi-page breaking rules */
-  tr { page-break-inside: avoid !important; break-inside: avoid !important; }
-  thead { display: table-header-group !important; }
-  tfoot { display: table-footer-group !important; }
-
-  /* Width enforcement */
+  /* Logic for A4 Multi-page Flow */
   .a4-receipt-wrapper {
     width: 210mm !important;
     margin: 0 auto !important;
     background: white !important;
+    min-height: 100vh;
   }
 
+  table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+  }
+
+  thead {
+    display: table-header-group !important; /* Forces header on every page */
+  }
+
+  tr {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  /* Logic for Thermal 80mm Flow */
   .thermal-receipt {
     width: 80mm !important;
     margin: 0 auto !important;
     padding: 4mm 2mm !important;
+    page-break-inside: auto;
   }
 }
 
