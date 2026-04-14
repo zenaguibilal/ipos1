@@ -7,6 +7,7 @@ import { toast } from 'sonner';
 /**
  * Service de synchronisation souverain pour iPOS Zen.
  * Gère le transfert bidirectionnel intelligent entre IndexedDB et Supabase.
+ * Inclut désormais un mappeur automatique CamelCase <-> SnakeCase.
  */
 class SupabaseSyncService {
 
@@ -28,26 +29,49 @@ class SupabaseSyncService {
         { name: 'supplier_payments', table: db.supplier_payments },
     ];
 
-    /** Nettoyage des données pour le stockage Cloud */
+    /** Utilitaire: camelCase -> snake_case */
+    private camelToSnake(str: string): string {
+        return str.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
+    }
+
+    /** Utilitaire: snake_case -> camelCase */
+    private snakeToCamel(str: string): string {
+        return str.replace(/(_\w)/g, m => m[1].toUpperCase());
+    }
+
+    /** Nettoyage et mapping des données pour le stockage Cloud (SnakeCase) */
     private sanitizeForCloud(data: any): any {
         if (data === null || data === undefined) return data;
         if (data instanceof Date) return data.toISOString();
         if (Array.isArray(data)) return data.map(i => this.sanitizeForCloud(i));
+        
         if (typeof data === 'object') {
             const clean: any = {};
             for (const key in data) {
+                // On ignore l'ID auto-incrémenté local de Dexie
                 if (key === 'id') continue;
-                clean[key] = this.sanitizeForCloud(data[key]);
+                
+                // Conversion de la clé pour Postgres (SnakeCase)
+                const snakeKey = this.camelToSnake(key);
+                clean[snakeKey] = this.sanitizeForCloud(data[key]);
             }
             return clean;
         }
         return data;
     }
 
-    /** Suppression des IDs distants pour IndexedDB */
-    private stripRemoteId(record: any): any {
-        const { id: _ignored, ...rest } = record;
-        return rest;
+    /** Mapping des données distantes vers IndexedDB (CamelCase) */
+    private mapToLocal(record: any): any {
+        if (!record) return record;
+        const clean: any = {};
+        for (const key in record) {
+            // On ignore l'ID distant pour laisser Dexie gérer son propre index local
+            if (key === 'id') continue;
+            
+            const camelKey = this.snakeToCamel(key);
+            clean[camelKey] = record[key];
+        }
+        return clean;
     }
 
     /** Mécanisme de retry intelligent */
@@ -105,6 +129,7 @@ class SupabaseSyncService {
                 const records = await item.table.toArray();
                 if (records.length === 0) continue;
 
+                // CRITICAL: Transformation vers le schéma Cloud (SnakeCase)
                 const dataToSync = this.sanitizeForCloud(records);
 
                 await this.withRetry(async () => {
@@ -125,9 +150,10 @@ class SupabaseSyncService {
             }
 
             toast.success('Sauvegarde cloud réussie ✓', {
-                description: `${this.tableSyncOrder.length} tables synchronisées.`,
+                description: `Toutes les tables ont été harmonisées.`,
             });
         } catch (err: any) {
+            console.error('Push Error Details:', err);
             toast.error('Échec de la sauvegarde cloud', {
                 description: err.message,
             });
@@ -169,23 +195,26 @@ class SupabaseSyncService {
                                 .equals(remoteRecord.uuid)
                                 .first();
 
+                            // CRITICAL: Transformation vers le schéma Local (CamelCase)
+                            const sanitizedRemoteRecord = this.mapToLocal(remoteRecord);
+
                             if (localRecord) {
                                 const localUpdate = localRecord.updatedAt
                                     ? new Date(localRecord.updatedAt).getTime()
                                     : 0;
-                                const remoteUpdate = remoteRecord.updatedAt
-                                    ? new Date(remoteRecord.updatedAt).getTime()
+                                const remoteUpdate = remoteRecord.updated_at // C'est en snake_case dans le cloud
+                                    ? new Date(remoteRecord.updated_at).getTime()
                                     : 0;
 
                                 if (remoteUpdate > localUpdate) {
                                     await item.table.update(
                                         localRecord.id,
-                                        this.stripRemoteId(remoteRecord),
+                                        sanitizedRemoteRecord,
                                     );
                                 }
                             } else {
                                 await item.table.add(
-                                    this.stripRemoteId(remoteRecord),
+                                    sanitizedRemoteRecord,
                                 );
                             }
                         }
@@ -194,7 +223,7 @@ class SupabaseSyncService {
             }
 
             toast.success('Restauration cloud réussie ✓', {
-                description: 'Données locales mises à jour.',
+                description: 'Les données distantes ont été converties au format local.',
             });
         } catch (err: any) {
             toast.error('Échec de la restauration cloud', {
