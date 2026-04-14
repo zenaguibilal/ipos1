@@ -153,7 +153,7 @@ export const Receipt = React.forwardRef<HTMLDivElement, ReceiptProps>(
             </thead>
             <tbody className="divide-y divide-gray-200">
               {docData.items.map((item) => (
-                <tr key={item.id}>
+                <tr key={item.id} className="break-inside-avoid">
                   <td className="py-2 pr-2 leading-tight">{item.designation}</td>
                   <td className="text-center py-2">{item.qty}</td>
                   <td className="text-right py-2">{formatNum(item.total)}</td>

@@ -75,9 +75,10 @@ export function PrintReceiptDialog({
         // Deep clone the pure receipt
         const clone = sourceElement.cloneNode(true) as HTMLDivElement;
         
-        // Ensure dimensions are absolute for the printer
+        // Remove scale and relative transforms
         clone.style.transform = 'none';
         clone.style.margin = '0';
+        clone.style.position = 'relative';
         clone.style.width = receiptType === 'a4' ? '210mm' : '80mm';
         
         // Prepare the portal

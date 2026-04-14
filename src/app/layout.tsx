@@ -70,7 +70,8 @@ export default function RootLayout({
             </AppSyncManager>
           </KeyboardShortcutsProvider>
         </ClientProviders>
-        {/* Container global pour l'impression A4 */}
+        
+        {/* CRITICAL: Isolated Print Portal for A4 and Thermal output */}
         <div id="receipt-for-print" className="hidden print:block bg-white min-h-screen w-full"></div>
       </body>
     </html>

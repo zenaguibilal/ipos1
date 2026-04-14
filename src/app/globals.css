@@ -93,8 +93,8 @@
     overflow: visible !important;
     background: white !important;
     color: black !important;
-    margin: 0;
-    padding: 0;
+    margin: 0 !important;
+    padding: 0 !important;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
   }
@@ -128,14 +128,6 @@
     color: black !important;
   }
 
-  /* Logic for A4 Multi-page Flow */
-  .a4-receipt-wrapper {
-    width: 210mm !important;
-    margin: 0 auto !important;
-    background: white !important;
-    min-height: 100vh;
-  }
-
   table {
     width: 100% !important;
     border-collapse: collapse !important;
@@ -148,6 +140,14 @@
   tr {
     page-break-inside: avoid !important;
     break-inside: avoid !important;
+  }
+
+  /* Logic for A4 Multi-page Flow */
+  .a4-receipt-wrapper {
+    width: 210mm !important;
+    margin: 0 auto !important;
+    background: white !important;
+    min-height: auto;
   }
 
   /* Logic for Thermal 80mm Flow */
