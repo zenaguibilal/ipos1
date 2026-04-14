@@ -38,7 +38,7 @@
     --foreground:          38  70% 88%;   /* #F5E6D0 */
     --card:                22  68% 10%;   /* #2A1A08 */
     --card-foreground:     38  70% 88%;
-    --popover:             22  68% 10%;
+    --popover:             22  68% 10%;   /* #2A1A08 */
     --popover-foreground:  38  70% 88%;
     --primary:             42  93% 43%;   /* #D4A017 or */
     --primary-foreground:  22  72%  8%;
@@ -65,32 +65,12 @@
 }
 
 /* ─────────────────────────────────────────
-   Boutons 3D (Light Mode uniquement)
-───────────────────────────────────────── */
-:root .btn-3d {
-  box-shadow: 0 4px 0 hsl(20 76% 20%), 0 6px 8px rgba(0,0,0,0.18);
-  transform: translateY(0);
-  transition: box-shadow 0.1s ease, transform 0.1s ease;
-}
-:root .btn-3d:active {
-  box-shadow: 0 1px 0 hsl(20 76% 20%);
-  transform: translateY(3px);
-}
-.dark .btn-3d {
-  box-shadow: none;
-}
-
-/* ─────────────────────────────────────────
    Scrollbar
 ───────────────────────────────────────── */
 ::-webkit-scrollbar            { width: 5px; height: 5px; }
 ::-webkit-scrollbar-track      { background: transparent; }
 ::-webkit-scrollbar-thumb      { background: hsl(var(--border)); border-radius: 10px; }
 ::-webkit-scrollbar-thumb:hover{ background: hsl(var(--primary) / 0.35); }
-
-.custom-scrollbar::-webkit-scrollbar       { width: 4px; }
-.custom-scrollbar::-webkit-scrollbar-thumb { background: hsl(var(--primary) / 0.15); border-radius: 10px; }
-.custom-scrollbar::-webkit-scrollbar-thumb:hover { background: hsl(var(--primary) / 0.35); }
 
 /* ─────────────────────────────────────────
    App Card
@@ -101,25 +81,29 @@
 .app-card:hover { @apply shadow-md; border-color: hsl(var(--primary) / 0.25); }
 
 /* ─────────────────────────────────────────
-   Impression Dynamique (A4 & 80mm)
+   Impression Dynamique (Multi-page A4 & 80mm)
 ───────────────────────────────────────── */
 @media print {
   @page {
-    margin: 5mm;
+    margin: 10mm;
     size: auto;
   }
-  body {
+  
+  html, body {
+    height: auto !important;
+    overflow: visible !important;
     background: white !important;
     color: black !important;
     margin: 0;
     padding: 0;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
-    overflow: visible !important;
   }
+
   /* Masquer toute l'interface */
   nav, header, aside, footer,
   [data-print-hide], .print-hide, .toaster, button { display: none !important; }
+  
   .print-only { display: block !important; }
 
   * {
@@ -128,10 +112,19 @@
     box-shadow: none !important;
   }
 
-  /* Force multi-page break */
-  tr { page-break-inside: avoid !important; }
+  /* Règles de cassure de page */
+  tr { page-break-inside: avoid !important; break-inside: avoid !important; }
   thead { display: table-header-group !important; }
   tfoot { display: table-footer-group !important; }
+
+  /* Template A4 */
+  .a4-receipt-wrapper {
+    width: 210mm !important;
+    margin: 0 auto !important;
+    background: white !important;
+    min-height: auto !important;
+    display: block !important;
+  }
 
   /* Template thermique */
   .thermal-receipt {
@@ -140,15 +133,7 @@
     font-size: 9pt !important;
     margin: 0 auto;
     padding: 4mm 3mm;
-    page-break-after: always;
-  }
-
-  /* Template A4 */
-  .a4-receipt-wrapper {
-    width: 210mm !important;
-    margin: 0 auto !important;
-    background: white !important;
-    min-height: auto !important;
+    page-break-after: auto;
   }
 }
 

@@ -32,8 +32,7 @@ interface DeliveryNoteData {
 }
 
 /**
- * Moteur de conversion haute précision (FR v2.2)
- * Gère Dinars et Centimes avec les règles de grammaire officielles.
+ * Moteur de conversion عالية الدقة لعملة الدينار (فرنسي)
  */
 function numberToWordsFR(n: number): string {
   const intPart = Math.floor(Math.abs(n));
@@ -45,47 +44,28 @@ function numberToWordsFR(n: number): string {
 
   function convertGroup(num: number, isMille: boolean = false): string {
     let res = "";
-    
     if (num >= 100) {
       const c = Math.floor(num / 100);
       const rest = num % 100;
-      if (c === 1) {
-        res += "CENT ";
-      } else {
-        res += units[c] + " CENT" + (rest === 0 && !isMille ? "S " : " ");
-      }
+      if (c === 1) res += "CENT ";
+      else res += units[c] + " CENT" + (rest === 0 && !isMille ? "S " : " ");
       num = rest;
     }
-
     if (num >= 20) {
       const t = Math.floor(num / 10);
       const u = num % 10;
-      
       if (t === 7 || t === 9) {
         const prefix = (t === 7) ? "SOIXANTE" : "QUATRE-VINGT";
-        if (u === 1 && t === 7) {
-          res += prefix + " ET ONZE";
-        } else {
-          res += prefix + "-" + teens[u];
-        }
+        if (u === 1 && t === 7) res += prefix + " ET ONZE";
+        else res += prefix + "-" + teens[u];
       } else {
         const prefix = tens[t];
-        if (u === 1) {
-          res += prefix + (t === 8 ? "-UN" : " ET UN");
-        } else if (u > 1) {
-          res += prefix + "-" + units[u];
-        } else {
-          res += prefix + (t === 8 && !isMille ? "S" : "");
-        }
+        if (u === 1) res += prefix + (t === 8 ? "-UN" : " ET UN");
+        else if (u > 1) res += prefix + "-" + units[u];
+        else res += prefix + (t === 8 && !isMille ? "S" : "");
       }
-    } else if (num >= 10) {
-      res += teens[num - 10];
-    } else if (num > 0) {
-      if (!(num === 1 && isMille)) {
-        res += units[num];
-      }
-    }
-    
+    } else if (num >= 10) res += teens[num - 10];
+    else if (num > 0) if (!(num === 1 && isMille)) res += units[num];
     return res.trim();
   }
 
@@ -95,37 +75,19 @@ function numberToWordsFR(n: number): string {
     const millions = Math.floor(amount / 1000000);
     const thousands = Math.floor((amount % 1000000) / 1000);
     const remainder = amount % 1000;
-
-    if (millions > 0) {
-      res += convertGroup(millions) + " MILLION" + (millions > 1 ? "S " : " ");
-    }
-
-    if (thousands > 0) {
-      if (thousands === 1) {
-        res += "MILLE ";
-      } else {
-        res += convertGroup(thousands, true) + " MILLE ";
-      }
-    }
-
-    if (remainder > 0) {
-      res += convertGroup(remainder);
-    }
+    if (millions > 0) res += convertGroup(millions) + " MILLION" + (millions > 1 ? "S " : " ");
+    if (thousands > 0) res += (thousands === 1 ? "MILLE " : convertGroup(thousands, true) + " MILLE ");
+    if (remainder > 0) res += convertGroup(remainder);
     return res.trim();
   }
 
-  let finalStr = n < 0 ? "MOINS " : "";
   if (intPart === 0 && decPart === 0) return "ZÉRO DINAR";
-
-  if (intPart > 0) {
-    finalStr += getWords(intPart) + (intPart > 1 ? " DINARS" : " DINAR");
-  }
-
+  let finalStr = n < 0 ? "MOINS " : "";
+  if (intPart > 0) finalStr += getWords(intPart) + (intPart > 1 ? " DINARS" : " DINAR");
   if (decPart > 0) {
     if (intPart > 0) finalStr += " ET ";
     finalStr += convertGroup(decPart) + (decPart > 1 ? " CENTIMES" : " CENTIME");
   }
-
   return finalStr.trim().toUpperCase();
 }
 
@@ -152,7 +114,7 @@ export const Receipt = React.forwardRef<HTMLDivElement, ReceiptProps>(
       clientAddress: 'ALGÉRIE',
       paymentMode: sale.paymentStatus === 'paid' ? 'COMPTANT' : sale.paymentStatus === 'partial' ? 'PARTIEL' : 'À CRÉDIT',
       seller: 'ADMIN',
-      orderRef: 'Vente Directe',
+      orderRef: 'Vente Directه',
       items: sale.items.map((item, idx) => ({
         id: idx + 1,
         designation: item.name,
@@ -176,16 +138,13 @@ export const Receipt = React.forwardRef<HTMLDivElement, ReceiptProps>(
             <p className="text-[7pt] mt-1">{docData.companyAddress}</p>
             {docData.companyPhone && <p className="text-[7pt]">Tél: {docData.companyPhone}</p>}
           </header>
-
           <div className="border-b border-black border-dashed my-2" />
-
           <div className="space-y-1 mb-4">
             <p className="font-bold text-center underline mb-2">BON DE LIVRAISON</p>
             <p><span className="font-bold">N°:</span> {docData.docNumber}</p>
             <p><span className="font-bold">Date:</span> {docData.date}</p>
             <p><span className="font-bold">Client:</span> {docData.clientName}</p>
           </div>
-
           <table className="w-full text-left text-[8pt] mb-4 border-collapse">
             <thead>
               <tr className="border-b border-black">
@@ -204,33 +163,16 @@ export const Receipt = React.forwardRef<HTMLDivElement, ReceiptProps>(
               ))}
             </tbody>
           </table>
-
           <div className="border-t border-black my-2" />
-
           <div className="space-y-1 font-bold">
-            <div className="flex justify-between">
-              <span>TOTAL FACTURE:</span>
-              <span>{formatNum(docData.grandTotal)} DA</span>
-            </div>
-            {docData.oldBalance > 0.01 && (
-              <div className="flex justify-between font-normal text-[8pt]">
-                <span>ANCIEN SOLDE:</span>
-                <span>{formatNum(docData.oldBalance)} DA</span>
-              </div>
-            )}
-            <div className="flex justify-between text-emerald-700">
-              <span>VERSEMENT:</span>
-              <span>-{formatNum(docData.payment)} DA</span>
-            </div>
-            <div className="flex justify-between border-t border-black pt-2 text-[10pt]">
-              <span>NET A PAYER:</span>
-              <span>{formatNum(docData.newBalance)} DA</span>
-            </div>
+            <div className="flex justify-between"><span>TOTAL FACTURE:</span><span>{formatNum(docData.grandTotal)} DA</span></div>
+            {docData.oldBalance > 0.01 && <div className="flex justify-between font-normal text-[8pt]"><span>ANCIEN SOLDE:</span><span>{formatNum(docData.oldBalance)} DA</span></div>}
+            <div className="flex justify-between text-emerald-700"><span>VERSEMENT:</span><span>-{formatNum(docData.payment)} DA</span></div>
+            <div className="flex justify-between border-t border-black pt-2 text-[10pt]"><span>NET A PAYER:</span><span>{formatNum(docData.newBalance)} DA</span></div>
           </div>
-
           <footer className="text-center mt-8 pt-4 border-t border-dashed border-gray-400">
             <p className="font-bold uppercase">Merci de votre confiance !</p>
-            <p className="text-[7pt] opacity-50 mt-1">Généré par iPOS Zen Elite</p>
+            <p className="text-[7pt] opacity-50 mt-1">iPOS Zen Elite</p>
           </footer>
         </div>
       );
@@ -275,10 +217,10 @@ export const Receipt = React.forwardRef<HTMLDivElement, ReceiptProps>(
             </div>
           </div>
 
-          {/* Table */}
+          {/* Table - Optimized for Multi-page */}
           <div className="mb-10">
             <table className="w-full border-collapse">
-              <thead className="display-table-header-group">
+              <thead className="table-header-group">
                 <tr className="bg-[#111827] text-white">
                   <th className="text-center w-12 rounded-tl-xl p-4 text-[10px] font-black uppercase">N°</th>
                   <th className="text-left p-4 text-[10px] font-black uppercase">Désignation</th>
@@ -302,7 +244,7 @@ export const Receipt = React.forwardRef<HTMLDivElement, ReceiptProps>(
           </div>
 
           {/* Totals & Signature */}
-          <div className="mt-auto">
+          <div className="mt-12">
             <div className="grid grid-cols-2 gap-12 items-end">
                 <div className="space-y-10">
                 <div className="bg-gray-50 p-6 rounded-2xl border border-gray-100">
