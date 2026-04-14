@@ -110,6 +110,7 @@
     transition: none !important;
     animation: none !important;
     box-shadow: none !important;
+    letter-spacing: normal !important;
   }
 
   /* Règles de cassure de page */
@@ -122,8 +123,8 @@
     width: 210mm !important;
     margin: 0 auto !important;
     background: white !important;
-    min-height: auto !important;
     display: block !important;
+    position: relative !important;
   }
 
   /* Template thermique */

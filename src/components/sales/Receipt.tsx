@@ -32,7 +32,7 @@ interface DeliveryNoteData {
 }
 
 /**
- * Moteur de conversion عالية الدقة لعملة الدينار (فرنسي)
+ * Moteur de conversion haute précision pour la monnaie (Dinars).
  */
 function numberToWordsFR(n: number): string {
   const intPart = Math.floor(Math.abs(n));
@@ -114,7 +114,7 @@ export const Receipt = React.forwardRef<HTMLDivElement, ReceiptProps>(
       clientAddress: 'ALGÉRIE',
       paymentMode: sale.paymentStatus === 'paid' ? 'COMPTANT' : sale.paymentStatus === 'partial' ? 'PARTIEL' : 'À CRÉDIT',
       seller: 'ADMIN',
-      orderRef: 'Vente Directه',
+      orderRef: 'Vente Directe',
       items: sale.items.map((item, idx) => ({
         id: idx + 1,
         designation: item.name,
@@ -146,7 +146,7 @@ export const Receipt = React.forwardRef<HTMLDivElement, ReceiptProps>(
             <p><span className="font-bold">Client:</span> {docData.clientName}</p>
           </div>
           <table className="w-full text-left text-[8pt] mb-4 border-collapse">
-            <thead>
+            <thead className="table-header-group">
               <tr className="border-b border-black">
                 <th className="text-left py-1">Designation</th>
                 <th className="text-center py-1">Qté</th>
@@ -245,7 +245,7 @@ export const Receipt = React.forwardRef<HTMLDivElement, ReceiptProps>(
 
           {/* Totals & Signature */}
           <div className="mt-12">
-            <div className="grid grid-cols-2 gap-12 items-end">
+            <div className="grid grid-cols-2 gap-12 items-start">
                 <div className="space-y-10">
                 <div className="bg-gray-50 p-6 rounded-2xl border border-gray-100">
                     <p className="text-[10px] font-black uppercase text-gray-400 mb-2 tracking-widest">Arrêté à la somme de :</p>

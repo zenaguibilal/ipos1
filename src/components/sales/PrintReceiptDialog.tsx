@@ -34,7 +34,7 @@ export function PrintReceiptDialog({
     const oldBalance = useMemo(() => {
         if (!customer || !sale) return 0;
         const currentDebtOfThisSale = Math.max(0, sale.total - sale.amountPaid);
-        const balanceBeforeThisSale = customer.outstandingBalance - currentDebtOfThisSale;
+        const balanceBeforeThisSale = (customer.outstandingBalance || 0) - currentDebtOfThisSale;
         return Math.max(0, balanceBeforeThisSale);
     }, [customer, sale]);
 
@@ -86,7 +86,8 @@ export function PrintReceiptDialog({
             const element = document.getElementById('pdf-capture-render-area');
             if (!element) throw new Error("Zone de rendu introuvable");
 
-            await new Promise(resolve => setTimeout(resolve, 400));
+            // Attendre la fin du cycle de rendu React
+            await new Promise(resolve => setTimeout(resolve, 500));
 
             const canvas = await html2canvas(element, {
                 scale: 2,
@@ -94,7 +95,7 @@ export function PrintReceiptDialog({
                 allowTaint: true,
                 backgroundColor: "#ffffff",
                 logging: false,
-                windowWidth: receiptType === 'a4' ? 794 : 302, 
+                windowWidth: receiptType === 'a4' ? 794 : 302, // Résolution standard pour capture
                 onclone: (clonedDoc) => {
                     const target = clonedDoc.getElementById('pdf-capture-render-area');
                     if (target) {
@@ -139,12 +140,12 @@ export function PrintReceiptDialog({
                     } catch (e: any) {
                         if (e.name !== 'AbortError') {
                             pdf.save(fileName);
-                            toast.info("Le partage direct n'est pas supporté. Fichier téléchargé.");
+                            toast.info("Partage direct indisponible. Document téléchargé.");
                         }
                     }
                 } else {
                     pdf.save(fileName);
-                    toast.info("Le partage direct n'est pas supporté. Fichier téléchargé.");
+                    toast.info("Le partage direct n'est pas supporté sur ce navigateur. Fichier téléchargé.");
                 }
             } else {
                 pdf.save(fileName);
@@ -162,7 +163,7 @@ export function PrintReceiptDialog({
 
     return (
         <>
-            {/* منطقة الرندرة الحقيقية للطباعة والالتقاط (مخفية تماماً عن المستخدم) */}
+            {/* Zone de rendu réelle (invisible) pour capture et impression */}
             <div className="fixed left-[-9999px] top-0 print:left-0 print:relative print:block z-[-1] bg-white overflow-visible w-full h-auto">
                 <div id="pdf-capture-render-area" className="bg-white">
                     <Receipt 
@@ -205,7 +206,7 @@ export function PrintReceiptDialog({
                         </div>
                     </DialogHeader>
 
-                    {/* المعاينة البصرية للمستخدم (مصغرة) */}
+                    {/* Aperçu visuel pour l'utilisateur */}
                     <div className="flex-grow overflow-y-auto bg-muted/30 p-6 custom-scrollbar flex justify-center">
                         <div 
                             className={cn(
