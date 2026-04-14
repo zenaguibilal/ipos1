@@ -30,7 +30,10 @@ export function PrintReceiptDialog({
     const [receiptType, setReceiptType] = useState<'a4' | 'thermal'>('a4'); 
     const [isGenerating, setIsGenerating] = useState(false);
     const [customer, setCustomer] = useState<Customer | null>(null);
-    const receiptRef = useRef<HTMLDivElement>(null);
+    
+    // المراجع الخاصة بالمعاينة والالتقاط
+    const previewRef = useRef<HTMLDivElement>(null);
+    const captureRef = useRef<HTMLDivElement>(null);
 
     const oldBalance = useMemo(() => {
         if (!customer || !sale) return 0;
@@ -84,26 +87,26 @@ export function PrintReceiptDialog({
             const { jsPDF } = await import('jspdf');
             const html2canvas = (await import('html2canvas')).default;
 
-            const element = receiptRef.current;
+            // نستخدم مرجع الالتقاط المعزول بعيداً عن المعاينة المصغرة
+            const element = captureRef.current;
             if (!element) throw new Error("Référence document non trouvée");
 
-            // عرض افتراضي للمستند لضمان التقاط صحيح
-            const captureWidth = receiptType === 'a4' ? 794 : 302; // بكسلات تقريبية لـ 210mm و 80mm
+            // العرض المثالي للالتقاط (بكسل)
+            const captureWidth = receiptType === 'a4' ? 794 : 302; 
 
             const canvas = await html2canvas(element, {
-                scale: 4, // دقة فائقة الوضوح
+                scale: 2, // دقة متوازنة لمنع تداخل الحروف
                 useCORS: true,
                 logging: false,
                 backgroundColor: "#ffffff",
                 windowWidth: captureWidth,
                 onclone: (clonedDoc) => {
-                    const clonedEl = clonedDoc.getElementById('receipt-print-container');
-                    if (clonedEl) {
-                        clonedEl.style.transform = 'none';
-                        clonedEl.style.position = 'relative';
-                        clonedEl.style.display = 'block';
-                        clonedEl.style.margin = '0';
-                        clonedEl.style.padding = '0';
+                    // نضمن أن النسخة المستنسخة لا تحتوي على أي تحويلات بصرية
+                    const target = clonedDoc.getElementById('pdf-capture-area');
+                    if (target) {
+                        target.style.display = 'block';
+                        target.style.transform = 'none';
+                        target.style.position = 'relative';
                     }
                 }
             });
@@ -115,7 +118,7 @@ export function PrintReceiptDialog({
             const pdf = new jsPDF({
                 orientation: 'portrait',
                 unit: 'mm',
-                format: [pdfWidth, pdfHeight] // حجم ديناميكي للطول لمنع القص
+                format: [pdfWidth, pdfHeight]
             });
 
             pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight, undefined, 'FAST');
@@ -127,16 +130,16 @@ export function PrintReceiptDialog({
                 const file = new File([pdfBlob], fileName, { type: 'application/pdf' });
                 await navigator.share({
                     files: [file],
-                    title: `Bon de Livraison ${sale.invoiceNumber}`,
-                    text: `Bonjour, voici votre document iPOS n°${sale.invoiceNumber}.`
+                    title: `Document iPOS ${sale.invoiceNumber}`,
+                    text: `Bonjour, voici votre document n°${sale.invoiceNumber}.`
                 });
             } else {
                 pdf.save(fileName);
-                toast.success("Document PDF HD généré.");
+                toast.success("PDF généré avec succès.");
             }
         } catch (error: any) {
             console.error("Erreur PDF:", error);
-            toast.error("Échec de la génération du PDF.");
+            toast.error("Échec de la génération.");
         } finally {
             setIsGenerating(false);
         }
@@ -146,7 +149,7 @@ export function PrintReceiptDialog({
 
     return (
         <>
-            {/* المنطقة الحقيقية للطباعة الورقية */}
+            {/* 1. المنطقة الخاصة بالطباعة الورقية (A4/Thermal) */}
             <div className="hidden print:block fixed inset-0 z-[100] bg-white">
                 <Receipt 
                     sale={sale} 
@@ -155,6 +158,19 @@ export function PrintReceiptDialog({
                     customerName={resolvedCustomerName} 
                     oldBalance={oldBalance}
                 />
+            </div>
+
+            {/* 2. المنطقة الخاصة بالتقاط الـ PDF (معزولة تماماً لمنع تداخل الكلمات) */}
+            <div className="fixed left-[-9999px] top-0 overflow-hidden pointer-events-none" aria-hidden="true">
+                <div id="pdf-capture-area" ref={captureRef} className="bg-white">
+                    <Receipt 
+                        sale={sale} 
+                        profile={profile} 
+                        receiptType={receiptType} 
+                        customerName={resolvedCustomerName} 
+                        oldBalance={oldBalance}
+                    />
+                </div>
             </div>
 
             <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -166,8 +182,8 @@ export function PrintReceiptDialog({
                                     <FileText className="h-5 w-5" />
                                 </div>
                                 <div>
-                                    <DialogTitle className="text-lg font-bold tracking-tight">Gestion Documentaire Elite</DialogTitle>
-                                    <DialogDescription className="text-[10px] uppercase font-semibold text-primary/50 tracking-wider">Document : #{sale.invoiceNumber}</DialogDescription>
+                                    <DialogTitle className="text-lg font-bold tracking-tight">Gestion Documentaire</DialogTitle>
+                                    <DialogDescription className="text-[10px] uppercase font-semibold text-primary/50">Doc : #{sale.invoiceNumber}</DialogDescription>
                                 </div>
                             </div>
                             <div className="flex items-center gap-4 bg-background/50 p-1.5 rounded-xl border border-primary/10">
@@ -187,6 +203,7 @@ export function PrintReceiptDialog({
                         </div>
                     </DialogHeader>
 
+                    {/* المعاينة البصرية للمستخدم */}
                     <div className="flex-grow overflow-y-auto bg-muted/30 p-6 custom-scrollbar flex justify-center">
                         <div 
                             className={cn(
@@ -194,7 +211,7 @@ export function PrintReceiptDialog({
                                 receiptType === 'a4' ? "scale-[0.7] sm:scale-[0.85] lg:scale-100" : "scale-100"
                             )} 
                         >
-                            <div id="receipt-print-container" ref={receiptRef} className="bg-white">
+                            <div ref={previewRef} className="bg-white">
                                 <Receipt 
                                     sale={sale} 
                                     profile={profile} 
@@ -218,7 +235,7 @@ export function PrintReceiptDialog({
                             className="rounded-xl h-10 font-bold border-emerald-500/20 bg-emerald-500/5 text-emerald-600 hover:bg-emerald-500 hover:text-white transition-all gap-2"
                         >
                             {isGenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : <MessageCircle className="h-4 w-4" />}
-                            Partager WhatsApp
+                            WhatsApp
                         </Button>
 
                         <Button 
@@ -228,7 +245,7 @@ export function PrintReceiptDialog({
                             className="rounded-xl h-10 font-bold border-primary/20 hover:bg-primary/5 transition-all gap-2"
                         >
                             {isGenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
-                            Télécharger PDF
+                            PDF
                         </Button>
 
                         <Button onClick={handlePrint} className="rounded-xl h-10 font-bold flex-1 shadow-lg shadow-sm transition-all active:scale-95 gap-2">
