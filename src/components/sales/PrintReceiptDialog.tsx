@@ -83,11 +83,12 @@ export function PrintReceiptDialog({
             const { jsPDF } = await import('jspdf');
             const html2canvas = (await import('html2canvas')).default;
 
+            // Utilisation de la zone de rendu isolée pour une capture fidèle
             const element = document.getElementById('pdf-capture-render-area');
             if (!element) throw new Error("Zone de rendu introuvable");
 
-            // Attendre la fin du cycle de rendu React
-            await new Promise(resolve => setTimeout(resolve, 500));
+            // Attendre la stabilisation du rendu
+            await new Promise(resolve => setTimeout(resolve, 600));
 
             const canvas = await html2canvas(element, {
                 scale: 2,
@@ -95,7 +96,7 @@ export function PrintReceiptDialog({
                 allowTaint: true,
                 backgroundColor: "#ffffff",
                 logging: false,
-                windowWidth: receiptType === 'a4' ? 794 : 302, // Résolution standard pour capture
+                windowWidth: receiptType === 'a4' ? 794 : 302,
                 onclone: (clonedDoc) => {
                     const target = clonedDoc.getElementById('pdf-capture-render-area');
                     if (target) {
@@ -103,9 +104,9 @@ export function PrintReceiptDialog({
                         target.style.position = 'relative';
                         target.style.left = '0';
                         target.style.top = '0';
-                        target.style.letterSpacing = 'normal'; 
                         target.style.visibility = 'visible';
                         target.style.width = receiptType === 'a4' ? '210mm' : '80mm';
+                        target.style.height = 'auto';
                     }
                 }
             });
@@ -124,14 +125,19 @@ export function PrintReceiptDialog({
             
             const fileName = `${receiptType === 'a4' ? 'BL' : 'TICKET'}-${sale.invoiceNumber}.pdf`;
 
-            if (isShare && typeof navigator.share === 'function' && typeof navigator.canShare === 'function') {
+            // Stratégie de partage intelligente
+            const canShareNative = typeof navigator !== 'undefined' && 
+                                 typeof navigator.share === 'function' && 
+                                 typeof navigator.canShare === 'function';
+
+            if (isShare && canShareNative) {
                 const pdfBlob = pdf.output('blob');
                 const file = new File([pdfBlob], fileName, { type: 'application/pdf' });
                 
                 const shareData = {
                     files: [file],
                     title: `iPOS Zen - ${sale.invoiceNumber}`,
-                    text: `Document commercial n°${sale.invoiceNumber}`
+                    text: `Facture n°${sale.invoiceNumber}`
                 };
 
                 if (navigator.canShare(shareData)) {
@@ -140,16 +146,20 @@ export function PrintReceiptDialog({
                     } catch (e: any) {
                         if (e.name !== 'AbortError') {
                             pdf.save(fileName);
-                            toast.info("Partage direct indisponible. Document téléchargé.");
+                            toast.info("Partage direct impossible. Fichier téléchargé.");
                         }
                     }
                 } else {
                     pdf.save(fileName);
-                    toast.info("Le partage direct n'est pas supporté sur ce navigateur. Fichier téléchargé.");
+                    toast.info("Le format PDF n'est pas partageable ici. Fichier téléchargé.");
                 }
+            } else if (isShare) {
+                // Fallback pour les navigateurs PC ou non compatibles share
+                pdf.save(fileName);
+                toast.success("Document généré. Veuillez l'envoyer manuellement.");
             } else {
                 pdf.save(fileName);
-                toast.success("Document PDF généré.");
+                toast.success("Document PDF téléchargé.");
             }
         } catch (error: any) {
             console.error("PDF Export Error:", error);
@@ -163,7 +173,7 @@ export function PrintReceiptDialog({
 
     return (
         <>
-            {/* Zone de rendu réelle (invisible) pour capture et impression */}
+            {/* Zone de rendu isolée (hors écran) pour capture et impression */}
             <div className="fixed left-[-9999px] top-0 print:left-0 print:relative print:block z-[-1] bg-white overflow-visible w-full h-auto">
                 <div id="pdf-capture-render-area" className="bg-white">
                     <Receipt 
@@ -206,7 +216,6 @@ export function PrintReceiptDialog({
                         </div>
                     </DialogHeader>
 
-                    {/* Aperçu visuel pour l'utilisateur */}
                     <div className="flex-grow overflow-y-auto bg-muted/30 p-6 custom-scrollbar flex justify-center">
                         <div 
                             className={cn(

@@ -231,7 +231,7 @@ export const Receipt = React.forwardRef<HTMLDivElement, ReceiptProps>(
               </thead>
               <tbody>
                 {docData.items.map((item, idx) => (
-                  <tr key={item.id} className={idx % 2 === 0 ? 'bg-white' : 'bg-[#F9FAFB]'}>
+                  <tr key={item.id} className={cn(idx % 2 === 0 ? 'bg-white' : 'bg-[#F9FAFB]', "break-inside-avoid")}>
                     <td className="text-center font-mono text-xs text-gray-400 border-b border-gray-100 p-4">{item.id}</td>
                     <td className="font-bold text-sm uppercase text-[#111827] border-b border-gray-100 p-4">{item.designation}</td>
                     <td className="text-center font-mono font-bold text-sm border-b border-gray-100 p-4">{item.qty}</td>
@@ -244,7 +244,7 @@ export const Receipt = React.forwardRef<HTMLDivElement, ReceiptProps>(
           </div>
 
           {/* Totals & Signature */}
-          <div className="mt-12">
+          <div className="mt-12 break-inside-avoid">
             <div className="grid grid-cols-2 gap-12 items-start">
                 <div className="space-y-10">
                 <div className="bg-gray-50 p-6 rounded-2xl border border-gray-100">
