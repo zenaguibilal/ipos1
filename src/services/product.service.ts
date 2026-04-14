@@ -7,7 +7,14 @@ import { calculateStockStatus, safeNumber } from '@/lib/utils';
 import { inventoryService } from './inventory.service';
 import Papa from 'papaparse';
 import { supplierService } from './supplier.service';
-import { useAppStore } from '@/stores/appStore';
+
+const triggerSync = () => {
+    if (typeof window !== 'undefined') {
+        import('@/stores/appStore').then(mod => {
+            mod.useAppStore.getState().actions.triggerSmartSync();
+        });
+    }
+};
 
 class ProductService {
 
@@ -81,7 +88,11 @@ class ProductService {
                 return 0;
             });
         } else {
-            products.sort((a,b) => (b.createdAt?.getTime() || 0) - (a.createdAt?.getTime() || 0));
+            products.sort((a,b) => {
+                const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+                const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+                return dateB - dateA;
+            });
         }
 
         return products;
@@ -123,7 +134,7 @@ class ProductService {
         const id = await db.products.add(newProduct);
         newProduct.id = id;
 
-        useAppStore.getState().actions.triggerSmartSync();
+        triggerSync();
         return newProduct;
     }
 
@@ -161,7 +172,6 @@ class ProductService {
         dataToUpdate.stockStatus = calculateStockStatus(newQuantity, newMinStock);
         
         await db.transaction('rw', [db.products, db.inventory_logs], async () => {
-            // Audit trail automatique pour les changements manuels de quantité
             if (productData.quantity !== undefined && newQuantity !== existingProduct.quantity) {
                 const diff = Number((newQuantity - existingProduct.quantity).toFixed(3));
                 const logEntry: InventoryLog = {
@@ -178,7 +188,7 @@ class ProductService {
             await db.products.update(existingProduct.id!, dataToUpdate);
         });
 
-        useAppStore.getState().actions.triggerSmartSync();
+        triggerSync();
         return { ...existingProduct, ...dataToUpdate };
     }
 
@@ -204,7 +214,7 @@ class ProductService {
         const product = await this.getProductByUuid(uuid);
         if (product?.id) {
             await db.products.delete(product.id);
-            useAppStore.getState().actions.triggerSmartSync();
+            triggerSync();
         }
     }
     
@@ -219,7 +229,7 @@ class ProductService {
         const productsToDelete = await db.products.where('uuid').anyOf(uuids).toArray();
         const idsToDelete = productsToDelete.map(p => p.id!);
         await db.products.bulkDelete(idsToDelete);
-        useAppStore.getState().actions.triggerSmartSync();
+        triggerSync();
     }
 
     async analyzeImport(file: File): Promise<ProductImportAnalysis> {
@@ -319,7 +329,7 @@ class ProductService {
             if (toUpdate.length > 0) await db.products.bulkPut(toUpdate);
         });
 
-        useAppStore.getState().actions.triggerSmartSync();
+        triggerSync();
     }
 }
 

@@ -6,8 +6,18 @@ import { db } from '@/lib/db';
 import Papa from 'papaparse';
 import { startOfMonth, subMonths, format } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { useAppStore } from '@/stores/appStore';
 import { safeNumber } from '@/lib/utils';
+
+/**
+ * دالة مساعدة لإطلاق المزامنة دون التسبب في تعارض استيراد
+ */
+const triggerSync = () => {
+    if (typeof window !== 'undefined') {
+        import('@/stores/appStore').then(mod => {
+            mod.useAppStore.getState().actions.triggerSmartSync();
+        });
+    }
+};
 
 class CustomerService {
 
@@ -34,7 +44,7 @@ class CustomerService {
             if (filters.status === 'over_limit')
                 collection = collection.filter(c => c.isOverLimit === true);
             if (filters.status === 'is_bread_client')
-                collection = collection.filter(c => c.isBreadClient === true);
+                collection = collection.filter(c => !!c.isBreadClient);
         }
 
         let customers = await collection.toArray();
@@ -63,9 +73,12 @@ class CustomerService {
                 return 0;
             });
         } else {
-            customers.sort(
-                (a, b) => (b.createdAt?.getTime() || 0) - (a.createdAt?.getTime() || 0),
-            );
+            // فرز آمن يعالج التواريخ سواء كانت كائنات Date أو نصوص ISO
+            customers.sort((a, b) => {
+                const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+                const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+                return dateB - dateA;
+            });
         }
 
         return customers;
@@ -112,7 +125,7 @@ class CustomerService {
         const id = await db.customers.add(newCustomer);
         newCustomer.id = id;
 
-        useAppStore.getState().actions.triggerSmartSync();
+        triggerSync();
         return newCustomer;
     }
 
@@ -144,7 +157,7 @@ class CustomerService {
         
         const updated = await this.recalculateCustomerStatus(uuid);
 
-        useAppStore.getState().actions.triggerSmartSync();
+        triggerSync();
         return updated;
     }
 
@@ -179,7 +192,7 @@ class CustomerService {
 
         if (customer.id) {
             await db.customers.delete(customer.id);
-            useAppStore.getState().actions.triggerSmartSync();
+            triggerSync();
         }
     }
 
@@ -214,7 +227,7 @@ class CustomerService {
             .toArray();
         const idsToDelete = customersToDelete.map(c => c.id!);
         await db.customers.bulkDelete(idsToDelete);
-        useAppStore.getState().actions.triggerSmartSync();
+        triggerSync();
     }
 
     async getStats(): Promise<{
@@ -322,10 +335,6 @@ class CustomerService {
             .reverse();
     }
 
-    /**
-     * محرك الحسابات الذهبي:
-     * الدين الكلي = الرصيد الابتدائي + ديون الفواتير (إجمالي الفواتير - ما دُفع عند الكاشير) - المدفوعات اللاحقة - أرصدة المرتجعات
-     */
     async recalculateCustomerStatus(customerUuid: string): Promise<Customer> {
         const customer = await this.getCustomerByUuid(customerUuid);
         if (!customer?.id)
@@ -344,23 +353,13 @@ class CustomerService {
                 .toArray(),
         ]);
 
-        // 1. حساب ديون المبيعات الحالية (مجموع المبالغ المتبقية في الفواتير)
         const currentSalesDebt = sales.reduce((sum, s) => sum + safeNumber(s.remainingBalance), 0);
-        
-        // 2. حساب إجمالي الفواتير الصادرة
         const totalSalesInvoiced = sales.reduce((sum, s) => sum + safeNumber(s.total), 0);
-
-        // 3. حساب المدفوعات اللاحقة (من سجل المدفوعات)
         const totalPaymentsFromLogs = payments.reduce((sum, p) => sum + safeNumber(p.amount), 0);
-        
-        // 4. حساب صافي أرصدة المرتجعات (قيمة المرتجع - ما تم رده نقداً)
         const netCreditFromReturns = returns.reduce((sum, r) => sum + (safeNumber(r.totalReturnValue) - safeNumber(r.amountRefunded)), 0);
 
-        // المعادلة النهائية المطلوبة: الدين الكلي = الرصيد الابتدائي + ديون الفواتير - التسديدات اللاحقة - أرصدة المرتجعات
         const initial = safeNumber(customer.initialBalance);
         const newBalance = initial + currentSalesDebt - totalPaymentsFromLogs - netCreditFromReturns;
-            
-        // إجمالي الاستهلاك يشمل الموروث + المبيعات الجديدة
         const totalSpent = totalSalesInvoiced + initial;
 
         const creditLimit = safeNumber(customer.creditLimit);
@@ -397,7 +396,7 @@ class CustomerService {
         };
 
         await db.customers.update(customer.id, customerUpdate);
-        useAppStore.getState().actions.triggerSmartSync();
+        triggerSync();
         return { ...customer, ...customerUpdate };
     }
 
@@ -511,7 +510,7 @@ class CustomerService {
             await this.recalculateCustomerStatus(c.uuid);
         }
 
-        useAppStore.getState().actions.triggerSmartSync();
+        triggerSync();
     }
 }
 
