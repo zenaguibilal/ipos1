@@ -31,9 +31,6 @@ export function PrintReceiptDialog({
     const [isGenerating, setIsGenerating] = useState(false);
     const [customer, setCustomer] = useState<Customer | null>(null);
     
-    // المراجع الخاصة بالالتقاط
-    const captureRef = useRef<HTMLDivElement>(null);
-
     const oldBalance = useMemo(() => {
         if (!customer || !sale) return 0;
         const currentDebtOfThisSale = Math.max(0, sale.total - sale.amountPaid);
@@ -86,12 +83,12 @@ export function PrintReceiptDialog({
             const { jsPDF } = await import('jspdf');
             const html2canvas = (await import('html2canvas')).default;
 
-            // نستخدم النسخة المخفية للالتقاط لضمان ثبات التنسيق
+            // منطقة الرندرة المخفية للالتقاط
             const element = document.getElementById('pdf-capture-render-area');
             if (!element) throw new Error("Zone de rendu introuvable");
 
-            // انتظار الرندرة الكاملة
-            await new Promise(resolve => setTimeout(resolve, 500));
+            // تأخير لضمان جاهزية النصوص والخطوط
+            await new Promise(resolve => setTimeout(resolve, 400));
 
             const canvas = await html2canvas(element, {
                 scale: 2,
@@ -99,6 +96,7 @@ export function PrintReceiptDialog({
                 allowTaint: true,
                 backgroundColor: "#ffffff",
                 logging: false,
+                windowWidth: receiptType === 'a4' ? 794 : 302, // أبعاد ثابتة لمنع التداخل
                 onclone: (clonedDoc) => {
                     const target = clonedDoc.getElementById('pdf-capture-render-area');
                     if (target) {
@@ -106,7 +104,8 @@ export function PrintReceiptDialog({
                         target.style.position = 'relative';
                         target.style.left = '0';
                         target.style.top = '0';
-                        target.style.letterSpacing = 'normal';
+                        target.style.letterSpacing = 'normal'; // منع تداخل الكلمات
+                        target.style.visibility = 'visible';
                     }
                 }
             });
@@ -125,7 +124,8 @@ export function PrintReceiptDialog({
             
             const fileName = `${receiptType === 'a4' ? 'BL' : 'TICKET'}-${sale.invoiceNumber}.pdf`;
 
-            if (isShare && typeof navigator.share === 'function') {
+            // منطق المشاركة الذكي
+            if (isShare && typeof navigator.share === 'function' && typeof navigator.canShare === 'function') {
                 const pdfBlob = pdf.output('blob');
                 const file = new File([pdfBlob], fileName, { type: 'application/pdf' });
                 
@@ -135,11 +135,14 @@ export function PrintReceiptDialog({
                     text: `Document commercial n°${sale.invoiceNumber}`
                 };
 
-                if (navigator.canShare && navigator.canShare(shareData)) {
+                if (navigator.canShare(shareData)) {
                     try {
                         await navigator.share(shareData);
                     } catch (e: any) {
-                        if (e.name !== 'AbortError') throw e;
+                        if (e.name !== 'AbortError') {
+                            pdf.save(fileName);
+                            toast.info("Partage impossible. Le fichier a été téléchargé.");
+                        }
                     }
                 } else {
                     pdf.save(fileName);
@@ -147,7 +150,7 @@ export function PrintReceiptDialog({
                 }
             } else {
                 pdf.save(fileName);
-                toast.success("PDF généré avec succès.");
+                toast.success("Document PDF généré.");
             }
         } catch (error: any) {
             console.error("PDF Export Error:", error);
@@ -161,8 +164,8 @@ export function PrintReceiptDialog({
 
     return (
         <>
-            {/* 1. منطقة الطباعة والالتقاط (مخفية عن الواجهة) */}
-            <div className="hidden print:block fixed inset-0 z-[100] bg-white overflow-visible">
+            {/* منطقة الرندرة الحقيقية للطباعة والالتقاط (مخفية تماماً عن المستخدم) */}
+            <div className="fixed left-[-9999px] top-0 print:left-0 print:relative print:block z-[-1] bg-white overflow-visible">
                 <div id="pdf-capture-render-area" className="bg-white">
                     <Receipt 
                         sale={sale} 
@@ -204,7 +207,7 @@ export function PrintReceiptDialog({
                         </div>
                     </DialogHeader>
 
-                    {/* المعاينة البصرية للمستخدم */}
+                    {/* المعاينة البصرية للمستخدم (مصغرة) */}
                     <div className="flex-grow overflow-y-auto bg-muted/30 p-6 custom-scrollbar flex justify-center">
                         <div 
                             className={cn(
@@ -234,7 +237,7 @@ export function PrintReceiptDialog({
                             className="rounded-xl h-10 font-bold border-emerald-500/20 bg-emerald-500/5 text-emerald-600 hover:bg-emerald-500 hover:text-white transition-all gap-2"
                         >
                             {isGenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : <MessageCircle className="h-4 w-4" />}
-                            WhatsApp
+                            Partager
                         </Button>
 
                         <Button 
@@ -244,7 +247,7 @@ export function PrintReceiptDialog({
                             className="rounded-xl h-10 font-bold border-primary/20 hover:bg-primary/5 transition-all gap-2"
                         >
                             {isGenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
-                            PDF
+                            Télécharger
                         </Button>
 
                         <Button onClick={handlePrint} className="rounded-xl h-10 font-bold flex-1 shadow-lg shadow-sm transition-all active:scale-95 gap-2">

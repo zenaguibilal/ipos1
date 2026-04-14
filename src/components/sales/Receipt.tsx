@@ -5,9 +5,6 @@ import type { Sale, CompanyProfile } from '@/lib/types';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 
-/**
- * Interface structure for the Delivery Note
- */
 interface DeliveryNoteData {
   docNumber: string;
   date: string;
@@ -35,11 +32,12 @@ interface DeliveryNoteData {
 }
 
 /**
- * Advanced French number to words converter (v2.8 - High Precision)
+ * Moteur de conversion haute précision (FR v2.2)
+ * Gère Dinars et Centimes avec les règles de grammaire officielles.
  */
 function numberToWordsFR(n: number): string {
-  const intPart = Math.floor(n);
-  const decPart = Math.round((n - intPart) * 100);
+  const intPart = Math.floor(Math.abs(n));
+  const decPart = Math.round((Math.abs(n) - intPart) * 100);
 
   const units = ["", "UN", "DEUX", "TROIS", "QUATRE", "CINQ", "SIX", "SEPT", "HUIT", "NEUF"];
   const tens = ["", "DIX", "VINGT", "TRENTE", "QUARANTE", "CINQUANTE", "SOIXANTE", "SOIXANTE-DIX", "QUATRE-VINGTS", "QUATRE-VINGT-DIX"];
@@ -116,7 +114,7 @@ function numberToWordsFR(n: number): string {
     return res.trim();
   }
 
-  let finalStr = "";
+  let finalStr = n < 0 ? "MOINS " : "";
   if (intPart === 0 && decPart === 0) return "ZÉRO DINAR";
 
   if (intPart > 0) {
@@ -124,7 +122,7 @@ function numberToWordsFR(n: number): string {
   }
 
   if (decPart > 0) {
-    if (finalStr !== "") finalStr += " ET ";
+    if (intPart > 0) finalStr += " ET ";
     finalStr += getWords(decPart) + (decPart > 1 ? " CENTIMES" : " CENTIME");
   }
 
@@ -172,7 +170,7 @@ export const Receipt = React.forwardRef<HTMLDivElement, ReceiptProps>(
 
     if (isThermal) {
       return (
-        <div ref={ref} className="bg-white text-black font-mono text-[9pt] w-[80mm] p-4 thermal-receipt" style={{ lineHeight: '1.3', letterSpacing: 'normal' }}>
+        <div ref={ref} className="bg-white text-black font-mono text-[9pt] w-[80mm] p-4 thermal-receipt" style={{ lineHeight: '1.4', letterSpacing: 'normal' }}>
           <header className="text-center mb-4">
             <p className="font-bold uppercase text-base">{docData.companyName}</p>
             <p className="text-[7pt] mt-1">{docData.companyAddress}</p>
@@ -199,7 +197,7 @@ export const Receipt = React.forwardRef<HTMLDivElement, ReceiptProps>(
             <tbody className="divide-y divide-gray-200">
               {docData.items.map((item) => (
                 <tr key={item.id}>
-                  <td className="py-2 pr-2">{item.designation}</td>
+                  <td className="py-2 pr-2 leading-tight">{item.designation}</td>
                   <td className="text-center py-2">{item.qty}</td>
                   <td className="text-right py-2">{formatNum(item.total)}</td>
                 </tr>
@@ -232,14 +230,14 @@ export const Receipt = React.forwardRef<HTMLDivElement, ReceiptProps>(
 
           <footer className="text-center mt-8 pt-4 border-t border-dashed border-gray-400">
             <p className="font-bold uppercase">Merci de votre confiance !</p>
-            <p className="text-[7pt] opacity-50 mt-1">iPOS ZEN ELITE</p>
+            <p className="text-[7pt] opacity-50 mt-1">Généré par iPOS Zen Elite</p>
           </footer>
         </div>
       );
     }
 
     return (
-      <div ref={ref} className="bg-white text-[#111827] font-sans" style={{ letterSpacing: 'normal', lineHeight: '1.4' }}>
+      <div ref={ref} className="bg-white text-[#111827] font-sans" style={{ letterSpacing: 'normal', lineHeight: '1.5' }}>
         <div className="w-[210mm] min-h-[297mm] p-[15mm] bg-white mx-auto flex flex-col">
           {/* Header */}
           <div className="flex justify-between items-start border-b-2 border-[#111827] pb-8 mb-8">
@@ -266,9 +264,7 @@ export const Receipt = React.forwardRef<HTMLDivElement, ReceiptProps>(
             </div>
             <div className="col-span-5 grid grid-cols-2 gap-3">
               {[
-                { label: 'Réf. commande', val: docData.orderRef },
                 { label: 'Mode paiement', val: docData.paymentMode },
-                { label: 'Vendeur', val: docData.seller },
                 { label: 'Date livraison', val: docData.date.split(' ')[0] },
               ].map((box, i) => (
                 <div key={i} className="border border-gray-200 p-4 rounded-2xl bg-gray-50/50">
