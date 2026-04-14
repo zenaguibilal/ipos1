@@ -32,9 +32,6 @@ interface DeliveryNoteData {
   amountInWords: string;
 }
 
-/**
- * Moteur de conversion haute précision pour la monnaie (Dinars).
- */
 function numberToWordsFR(n: number): string {
   const intPart = Math.floor(Math.abs(n));
   const decPart = Math.round((Math.abs(n) - intPart) * 100);

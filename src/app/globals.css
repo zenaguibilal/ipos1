@@ -80,11 +80,11 @@
 .app-card:hover { @apply shadow-md; border-color: hsl(var(--primary) / 0.25); }
 
 /* ─────────────────────────────────────────
-   Impression Dynamique (Multi-page A4 & 80mm)
+   Elite Printing Engine (Multi-page & A4)
 ───────────────────────────────────────── */
 @media print {
   @page {
-    margin: 5mm;
+    margin: 0;
     size: auto;
   }
   
@@ -99,7 +99,7 @@
     print-color-adjust: exact;
   }
 
-  /* Masquer TOUT sauf le container dédié à l'impression */
+  /* Masquer tout sauf le container de طباعة المعزول */
   body > *:not(#receipt-for-print) {
     display: none !important;
   }
@@ -114,23 +114,25 @@
     padding: 0;
     margin: 0;
     visibility: visible !important;
+    z-index: 9999;
   }
 
-  /* Force display of cloned content */
+  /* Force elements inside to be visible and clear */
   #receipt-for-print * {
     visibility: visible !important;
     opacity: 1 !important;
     transform: none !important;
     box-shadow: none !important;
     animation: none !important;
+    color: black !important;
   }
 
-  /* Règles de cassure de page */
+  /* Multi-page breaking rules */
   tr { page-break-inside: avoid !important; break-inside: avoid !important; }
   thead { display: table-header-group !important; }
   tfoot { display: table-footer-group !important; }
 
-  /* Templates */
+  /* Width enforcement */
   .a4-receipt-wrapper {
     width: 210mm !important;
     margin: 0 auto !important;
@@ -145,3 +147,4 @@
 }
 
 .print-only { display: none; }
+.print-hide { @apply print:hidden; }

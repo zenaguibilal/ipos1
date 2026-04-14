@@ -57,37 +57,37 @@ export function PrintReceiptDialog({
     }, [customer, customerName]);
 
     /**
-     * ميزة الطباعة النخبوية: تقوم باستنساخ الفاتورة إلى حاوية معزولة خارج السلة
-     * لضمان عدم طباعة أي عناصر من واجهة المستخدم.
+     * Isolated Printing Protocol:
+     * Clones only the receipt content into a clean, top-level container for true printing.
      */
     const handlePrint = useCallback(() => {
         if (!sale) return;
         
-        const printableContent = document.getElementById('receipt-for-print');
-        const sourceElement = document.getElementById('receipt-render-target');
+        const printableContainer = document.getElementById('receipt-for-print');
+        const sourceElement = document.getElementById('receipt-render-target-inner');
 
-        if (!printableContent || !sourceElement) {
+        if (!printableContainer || !sourceElement) {
             window.print();
             return;
         }
 
-        // استنساخ محتوى الفاتورة
+        // Clone the receipt content
         const clone = sourceElement.cloneNode(true) as HTMLDivElement;
         
-        // تنظيف التنسيقات البصرية التي قد تعيق الطباعة
+        // Strip preview-only classes and reset styles
         clone.classList.remove('shadow-2xl', 'scale-[0.7]', 'sm:scale-[0.85]', 'lg:scale-100', 'origin-top');
         clone.style.transform = 'none';
         clone.style.margin = '0 auto';
         clone.style.width = receiptType === 'a4' ? '210mm' : '80mm';
         
-        // حقن الفاتورة في الحاوية المخصصة للطباعة في layout.tsx
-        printableContent.innerHTML = '';
-        printableContent.appendChild(clone);
+        // Inject into the isolated portal
+        printableContainer.innerHTML = '';
+        printableContainer.appendChild(clone);
 
-        // إطلاق أمر الطباعة
+        // Execute print with a slight delay for assets
         setTimeout(() => {
             window.print();
-        }, 200);
+        }, 250);
     }, [sale, receiptType]);
 
     useKeyboardShortcuts([
@@ -113,20 +113,22 @@ export function PrintReceiptDialog({
             const { jsPDF } = await import('jspdf');
             const html2canvas = (await import('html2canvas')).default;
 
-            const element = document.getElementById('receipt-render-target');
+            const element = document.getElementById('receipt-render-target-inner');
             if (!element) throw new Error("Zone de rendu introuvable");
 
+            // Setup capture environment (Isolated 1:1 scale)
             const canvas = await html2canvas(element, {
                 scale: 2,
                 useCORS: true,
                 backgroundColor: "#ffffff",
                 logging: false,
                 onclone: (clonedDoc) => {
-                    const target = clonedDoc.getElementById('receipt-render-target');
+                    const target = clonedDoc.getElementById('receipt-render-target-inner');
                     if (target) {
                         target.style.transform = 'none';
                         target.style.display = 'block';
                         target.style.position = 'relative';
+                        target.style.width = receiptType === 'a4' ? '210mm' : '80mm';
                     }
                 }
             });
@@ -145,20 +147,27 @@ export function PrintReceiptDialog({
             
             const fileName = `${receiptType === 'a4' ? 'BL' : 'TICKET'}-${sale.invoiceNumber}.pdf`;
 
-            if (isShare && navigator.share) {
+            // Smart Share Protocol
+            if (isShare && navigator.canShare && navigator.share) {
                 const pdfBlob = pdf.output('blob');
                 const file = new File([pdfBlob], fileName, { type: 'application/pdf' });
-                try {
-                    await navigator.share({
-                        files: [file],
-                        title: `iPOS Zen - ${sale.invoiceNumber}`,
-                    });
-                } catch (e) {
+                
+                if (navigator.canShare({ files: [file] })) {
+                    try {
+                        await navigator.share({
+                            files: [file],
+                            title: `iPOS Zen - ${sale.invoiceNumber}`,
+                        });
+                    } catch (e) {
+                        // User cancelled share, no error toast needed
+                    }
+                } else {
                     pdf.save(fileName);
+                    toast.info("Partage non supporté sur ce navigateur. Fichier téléchargé.");
                 }
             } else {
                 pdf.save(fileName);
-                if (isShare) toast.info("Partage direct non supporté. Fichier téléchargé.");
+                if (isShare) toast.info("Partage direct indisponible. Fichier téléchargé.");
             }
         } catch (error: any) {
             toast.error("Échec de la génération PDF.");
@@ -204,17 +213,19 @@ export function PrintReceiptDialog({
                     <div 
                         id="receipt-render-target"
                         className={cn(
-                            "bg-white shadow-2xl transition-all origin-top h-auto", 
+                            "transition-all origin-top h-auto", 
                             receiptType === 'a4' ? "scale-[0.7] sm:scale-[0.85] lg:scale-100" : "scale-100"
                         )} 
                     >
-                        <Receipt 
-                            sale={sale} 
-                            profile={profile} 
-                            receiptType={receiptType} 
-                            customerName={resolvedCustomerName} 
-                            oldBalance={oldBalance}
-                        />
+                        <div id="receipt-render-target-inner" className="bg-white shadow-2xl">
+                            <Receipt 
+                                sale={sale} 
+                                profile={profile} 
+                                receiptType={receiptType} 
+                                customerName={resolvedCustomerName} 
+                                oldBalance={oldBalance}
+                            />
+                        </div>
                     </div>
                 </div>
 
