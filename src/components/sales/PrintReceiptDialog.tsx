@@ -34,9 +34,7 @@ export function PrintReceiptDialog({
 
     /**
      * LOGIQUE COMPTABLE ELITE :
-     * Pour afficher l'état du solde *au moment de cette facture* :
-     * Solde actuel DB = [Ancien Historique] + [Dette de cette Facture]
-     * Donc, Ancien Solde = Solde actuel DB - (Total Facture - Versement Immédiat)
+     * Calcule le solde antérieur à cette transaction
      */
     const oldBalance = useMemo(() => {
         if (!customer || !sale) return 0;
@@ -93,46 +91,59 @@ export function PrintReceiptDialog({
             const element = receiptRef.current;
             if (!element) throw new Error("Référence document non trouvée");
 
+            // Capture avec paramètres haute précision pour éviter les coupures
             const canvas = await html2canvas(element, {
-                scale: 2,
+                scale: 3, // Résolution augmentée
                 useCORS: true,
                 logging: false,
-                backgroundColor: "#ffffff"
+                backgroundColor: "#ffffff",
+                width: element.scrollWidth,
+                height: element.scrollHeight,
+                windowWidth: element.scrollWidth,
+                onclone: (clonedDoc) => {
+                    // Force l'affichage complet dans le clone pour la capture
+                    const el = clonedDoc.getElementById('receipt-capture-area');
+                    if (el) {
+                        el.style.transform = 'none';
+                        el.style.width = receiptType === 'a4' ? '210mm' : '80mm';
+                    }
+                }
             });
 
-            const imgData = canvas.toDataURL('image/png');
+            const imgData = canvas.toDataURL('image/jpeg', 0.95);
+            const imgWidth = receiptType === 'a4' ? 210 : 80;
+            const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
             const pdf = new jsPDF({
                 orientation: 'portrait',
                 unit: 'mm',
-                format: receiptType === 'a4' ? 'a4' : [80, 297]
+                format: [imgWidth, imgHeight] // Taille dynamique pour éviter de couper le bas
             });
 
-            const imgWidth = receiptType === 'a4' ? 210 : 80;
-            const imgHeight = canvas.height * imgWidth / canvas.width;
-
-            pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
+            pdf.addImage(imgData, 'JPEG', 0, 0, imgWidth, imgHeight);
             const pdfBlob = pdf.output('blob');
-            const fileName = `BL-${sale.invoiceNumber}.pdf`;
+            const fileName = `${receiptType === 'a4' ? 'BL' : 'TICKET'}-${sale.invoiceNumber}.pdf`;
 
             if (navigator.share && navigator.canShare && navigator.canShare({ files: [new File([pdfBlob], fileName, { type: 'application/pdf' })] })) {
                 const file = new File([pdfBlob], fileName, { type: 'application/pdf' });
                 await navigator.share({
                     files: [file],
                     title: `Bon de Livraison iPOS ${sale.invoiceNumber}`,
-                    text: `Bonjour, voici votre bon de livraison n°${sale.invoiceNumber}.`
+                    text: `Bonjour, voici votre document n°${sale.invoiceNumber}.`
                 });
             } else {
+                // Fallback: Download
                 const url = URL.createObjectURL(pdfBlob);
                 const link = document.createElement('a');
                 link.href = url;
                 link.download = fileName;
                 link.click();
                 URL.revokeObjectURL(url);
-                toast.success("PDF généré et téléchargé.");
+                toast.success("Document PDF généré.");
             }
         } catch (error: any) {
             console.error("Erreur PDF:", error);
-            toast.error("Échec de la génération du PDF.");
+            toast.error("Échec de la génération complète du PDF.");
         } finally {
             setIsGenerating(false);
         }
@@ -184,14 +195,22 @@ export function PrintReceiptDialog({
                     </DialogHeader>
 
                     <div className="flex-grow overflow-y-auto bg-muted/30 p-6 custom-scrollbar flex justify-center">
-                        <div className={cn("bg-white shadow-2xl transition-all origin-top", receiptType === 'a4' ? "scale-[0.7] sm:scale-[0.85] lg:scale-100" : "scale-100")} ref={receiptRef}>
-                            <Receipt 
-                                sale={sale} 
-                                profile={profile} 
-                                receiptType={receiptType} 
-                                customerName={resolvedCustomerName} 
-                                oldBalance={oldBalance}
-                            />
+                        <div 
+                            id="receipt-capture-area"
+                            className={cn(
+                                "bg-white shadow-2xl transition-all origin-top", 
+                                receiptType === 'a4' ? "scale-[0.7] sm:scale-[0.85] lg:scale-100" : "scale-100"
+                            )} 
+                        >
+                            <div ref={receiptRef}>
+                                <Receipt 
+                                    sale={sale} 
+                                    profile={profile} 
+                                    receiptType={receiptType} 
+                                    customerName={resolvedCustomerName} 
+                                    oldBalance={oldBalance}
+                                />
+                            </div>
                         </div>
                     </div>
 
