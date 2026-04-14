@@ -84,7 +84,7 @@
 ───────────────────────────────────────── */
 @media print {
   @page {
-    margin: 10mm;
+    margin: 5mm;
     size: auto;
   }
   
@@ -99,17 +99,30 @@
     print-color-adjust: exact;
   }
 
-  /* Masquer toute l'interface */
-  nav, header, aside, footer,
-  [data-print-hide], .print-hide, .toaster, button { display: none !important; }
-  
-  .print-only { display: block !important; }
+  /* Masquer TOUT sauf le container dédié à l'impression */
+  body > *:not(#receipt-for-print) {
+    display: none !important;
+  }
 
-  * {
-    transition: none !important;
-    animation: none !important;
+  #receipt-for-print {
+    display: block !important;
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: auto;
+    padding: 0;
+    margin: 0;
+    visibility: visible !important;
+  }
+
+  /* Force display of cloned content */
+  #receipt-for-print * {
+    visibility: visible !important;
+    opacity: 1 !important;
+    transform: none !important;
     box-shadow: none !important;
-    letter-spacing: normal !important;
+    animation: none !important;
   }
 
   /* Règles de cassure de page */
@@ -117,23 +130,17 @@
   thead { display: table-header-group !important; }
   tfoot { display: table-footer-group !important; }
 
-  /* Template A4 */
+  /* Templates */
   .a4-receipt-wrapper {
     width: 210mm !important;
     margin: 0 auto !important;
     background: white !important;
-    display: block !important;
-    position: relative !important;
   }
 
-  /* Template thermique */
   .thermal-receipt {
     width: 80mm !important;
-    font-family: 'Courier New', Courier, monospace !important;
-    font-size: 9pt !important;
-    margin: 0 auto;
-    padding: 4mm 3mm;
-    page-break-after: auto;
+    margin: 0 auto !important;
+    padding: 4mm 2mm !important;
   }
 }
 
