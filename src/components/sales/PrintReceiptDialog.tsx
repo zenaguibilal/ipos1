@@ -87,26 +87,31 @@ export function PrintReceiptDialog({
             const { jsPDF } = await import('jspdf');
             const html2canvas = (await import('html2canvas')).default;
 
-            // نستخدم مرجع الالتقاط المعزول بعيداً عن المعاينة المصغرة
             const element = captureRef.current;
             if (!element) throw new Error("Référence document non trouvée");
+
+            // تأخير بسيط لضمان رندرة الأصول (الصور والخطوط)
+            await new Promise(resolve => setTimeout(resolve, 350));
 
             // العرض المثالي للالتقاط (بكسل)
             const captureWidth = receiptType === 'a4' ? 794 : 302; 
 
             const canvas = await html2canvas(element, {
-                scale: 2, // دقة متوازنة لمنع تداخل الحروف
+                scale: 2,
                 useCORS: true,
+                allowTaint: true,
                 logging: false,
                 backgroundColor: "#ffffff",
-                windowWidth: captureWidth,
+                width: captureWidth,
                 onclone: (clonedDoc) => {
-                    // نضمن أن النسخة المستنسخة لا تحتوي على أي تحويلات بصرية
                     const target = clonedDoc.getElementById('pdf-capture-area');
                     if (target) {
                         target.style.display = 'block';
+                        target.style.visibility = 'visible';
                         target.style.transform = 'none';
                         target.style.position = 'relative';
+                        target.style.left = '0';
+                        target.style.top = '0';
                     }
                 }
             });
@@ -125,21 +130,42 @@ export function PrintReceiptDialog({
             
             const fileName = `${receiptType === 'a4' ? 'BL' : 'TICKET'}-${sale.invoiceNumber}.pdf`;
 
-            if (isShare && navigator.share) {
+            if (isShare && typeof navigator.share === 'function') {
                 const pdfBlob = pdf.output('blob');
                 const file = new File([pdfBlob], fileName, { type: 'application/pdf' });
-                await navigator.share({
+                
+                const shareData = {
                     files: [file],
                     title: `Document iPOS ${sale.invoiceNumber}`,
                     text: `Bonjour, voici votre document n°${sale.invoiceNumber}.`
-                });
+                };
+
+                // التحقق من إمكانية المشاركة الفعلية للملفات
+                if (navigator.canShare && navigator.canShare(shareData)) {
+                    try {
+                        await navigator.share(shareData);
+                    } catch (shareError: any) {
+                        // تجاهل خطأ الإلغاء من قبل المستخدم
+                        if (shareError.name !== 'AbortError') {
+                            throw shareError;
+                        }
+                    }
+                } else {
+                    // Fallback للتحميل إذا كانت المشاركة غير مدعومة للملفات
+                    pdf.save(fileName);
+                    toast.info("Le partage direct n'est pas supporté par ce navigateur. Fichier téléchargé.");
+                }
+            } else if (isShare) {
+                // الحالة التي يطلب فيها المستخدم المشاركة ولكنها غير مدعومة برمجياً
+                pdf.save(fileName);
+                toast.info("Partage non disponible. Le fichier a été téléchargé.");
             } else {
                 pdf.save(fileName);
                 toast.success("PDF généré avec succès.");
             }
         } catch (error: any) {
             console.error("Erreur PDF:", error);
-            toast.error("Échec de la génération.");
+            toast.error("Échec de la génération : " + (error.message || "Erreur inconnue"));
         } finally {
             setIsGenerating(false);
         }
