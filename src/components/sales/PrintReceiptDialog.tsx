@@ -83,7 +83,7 @@ export function PrintReceiptDialog({
             const { jsPDF } = await import('jspdf');
             const html2canvas = (await import('html2canvas')).default;
 
-            // منطقة الرندرة المخفية للالتقاط
+            // منطقة الرندرة المخفية للالتقاط لضمان عدم تداخل النصوص
             const element = document.getElementById('pdf-capture-render-area');
             if (!element) throw new Error("Zone de rendu introuvable");
 
@@ -96,7 +96,8 @@ export function PrintReceiptDialog({
                 allowTaint: true,
                 backgroundColor: "#ffffff",
                 logging: false,
-                windowWidth: receiptType === 'a4' ? 794 : 302, // أبعاد ثابتة لمنع التداخل
+                // تثبيت العرض لضمان توزيع الكلمات بشكل طبيعي
+                windowWidth: receiptType === 'a4' ? 794 : 302, 
                 onclone: (clonedDoc) => {
                     const target = clonedDoc.getElementById('pdf-capture-render-area');
                     if (target) {
@@ -104,7 +105,7 @@ export function PrintReceiptDialog({
                         target.style.position = 'relative';
                         target.style.left = '0';
                         target.style.top = '0';
-                        target.style.letterSpacing = 'normal'; // منع تداخل الكلمات
+                        target.style.letterSpacing = 'normal'; 
                         target.style.visibility = 'visible';
                     }
                 }
@@ -124,7 +125,6 @@ export function PrintReceiptDialog({
             
             const fileName = `${receiptType === 'a4' ? 'BL' : 'TICKET'}-${sale.invoiceNumber}.pdf`;
 
-            // منطق المشاركة الذكي
             if (isShare && typeof navigator.share === 'function' && typeof navigator.canShare === 'function') {
                 const pdfBlob = pdf.output('blob');
                 const file = new File([pdfBlob], fileName, { type: 'application/pdf' });
@@ -141,7 +141,7 @@ export function PrintReceiptDialog({
                     } catch (e: any) {
                         if (e.name !== 'AbortError') {
                             pdf.save(fileName);
-                            toast.info("Partage impossible. Le fichier a été téléchargé.");
+                            toast.info("Le partage direct n'est pas supporté. Fichier téléchargé.");
                         }
                     }
                 } else {
