@@ -31,8 +31,7 @@ export function PrintReceiptDialog({
     const [isGenerating, setIsGenerating] = useState(false);
     const [customer, setCustomer] = useState<Customer | null>(null);
     
-    // المراجع الخاصة بالمعاينة والالتقاط
-    const previewRef = useRef<HTMLDivElement>(null);
+    // المراجع الخاصة بالالتقاط
     const captureRef = useRef<HTMLDivElement>(null);
 
     const oldBalance = useMemo(() => {
@@ -87,31 +86,27 @@ export function PrintReceiptDialog({
             const { jsPDF } = await import('jspdf');
             const html2canvas = (await import('html2canvas')).default;
 
-            const element = captureRef.current;
-            if (!element) throw new Error("Référence document non trouvée");
+            // نستخدم النسخة المخفية للالتقاط لضمان ثبات التنسيق
+            const element = document.getElementById('pdf-capture-render-area');
+            if (!element) throw new Error("Zone de rendu introuvable");
 
-            // تأخير بسيط لضمان رندرة الأصول (الصور والخطوط)
-            await new Promise(resolve => setTimeout(resolve, 350));
-
-            // العرض المثالي للالتقاط (بكسل)
-            const captureWidth = receiptType === 'a4' ? 794 : 302; 
+            // انتظار الرندرة الكاملة
+            await new Promise(resolve => setTimeout(resolve, 500));
 
             const canvas = await html2canvas(element, {
                 scale: 2,
                 useCORS: true,
                 allowTaint: true,
-                logging: false,
                 backgroundColor: "#ffffff",
-                width: captureWidth,
+                logging: false,
                 onclone: (clonedDoc) => {
-                    const target = clonedDoc.getElementById('pdf-capture-area');
+                    const target = clonedDoc.getElementById('pdf-capture-render-area');
                     if (target) {
                         target.style.display = 'block';
-                        target.style.visibility = 'visible';
-                        target.style.transform = 'none';
                         target.style.position = 'relative';
                         target.style.left = '0';
                         target.style.top = '0';
+                        target.style.letterSpacing = 'normal';
                     }
                 }
             });
@@ -136,36 +131,27 @@ export function PrintReceiptDialog({
                 
                 const shareData = {
                     files: [file],
-                    title: `Document iPOS ${sale.invoiceNumber}`,
-                    text: `Bonjour, voici votre document n°${sale.invoiceNumber}.`
+                    title: `iPOS Zen - ${sale.invoiceNumber}`,
+                    text: `Document commercial n°${sale.invoiceNumber}`
                 };
 
-                // التحقق من إمكانية المشاركة الفعلية للملفات
                 if (navigator.canShare && navigator.canShare(shareData)) {
                     try {
                         await navigator.share(shareData);
-                    } catch (shareError: any) {
-                        // تجاهل خطأ الإلغاء من قبل المستخدم
-                        if (shareError.name !== 'AbortError') {
-                            throw shareError;
-                        }
+                    } catch (e: any) {
+                        if (e.name !== 'AbortError') throw e;
                     }
                 } else {
-                    // Fallback للتحميل إذا كانت المشاركة غير مدعومة للملفات
                     pdf.save(fileName);
-                    toast.info("Le partage direct n'est pas supporté par ce navigateur. Fichier téléchargé.");
+                    toast.info("Le partage direct n'est pas supporté. Fichier téléchargé.");
                 }
-            } else if (isShare) {
-                // الحالة التي يطلب فيها المستخدم المشاركة ولكنها غير مدعومة برمجياً
-                pdf.save(fileName);
-                toast.info("Partage non disponible. Le fichier a été téléchargé.");
             } else {
                 pdf.save(fileName);
                 toast.success("PDF généré avec succès.");
             }
         } catch (error: any) {
-            console.error("Erreur PDF:", error);
-            toast.error("Échec de la génération : " + (error.message || "Erreur inconnue"));
+            console.error("PDF Export Error:", error);
+            toast.error("Échec de la génération du document.");
         } finally {
             setIsGenerating(false);
         }
@@ -175,20 +161,9 @@ export function PrintReceiptDialog({
 
     return (
         <>
-            {/* 1. المنطقة الخاصة بالطباعة الورقية (A4/Thermal) */}
-            <div className="hidden print:block fixed inset-0 z-[100] bg-white">
-                <Receipt 
-                    sale={sale} 
-                    profile={profile} 
-                    receiptType={receiptType} 
-                    customerName={resolvedCustomerName} 
-                    oldBalance={oldBalance}
-                />
-            </div>
-
-            {/* 2. المنطقة الخاصة بالتقاط الـ PDF (معزولة تماماً لمنع تداخل الكلمات) */}
-            <div className="fixed left-[-9999px] top-0 overflow-hidden pointer-events-none" aria-hidden="true">
-                <div id="pdf-capture-area" ref={captureRef} className="bg-white">
+            {/* 1. منطقة الطباعة والالتقاط (مخفية عن الواجهة) */}
+            <div className="hidden print:block fixed inset-0 z-[100] bg-white overflow-visible">
+                <div id="pdf-capture-render-area" className="bg-white">
                     <Receipt 
                         sale={sale} 
                         profile={profile} 
@@ -237,15 +212,13 @@ export function PrintReceiptDialog({
                                 receiptType === 'a4' ? "scale-[0.7] sm:scale-[0.85] lg:scale-100" : "scale-100"
                             )} 
                         >
-                            <div ref={previewRef} className="bg-white">
-                                <Receipt 
-                                    sale={sale} 
-                                    profile={profile} 
-                                    receiptType={receiptType} 
-                                    customerName={resolvedCustomerName} 
-                                    oldBalance={oldBalance}
-                                />
-                            </div>
+                            <Receipt 
+                                sale={sale} 
+                                profile={profile} 
+                                receiptType={receiptType} 
+                                customerName={resolvedCustomerName} 
+                                oldBalance={oldBalance}
+                            />
                         </div>
                     </div>
 
