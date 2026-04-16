@@ -34,7 +34,7 @@ import { Progress } from '@/components/ui/progress';
 import { useLiveQuery } from '@/hooks/useLiveQuery';
 
 /**
- * بطاقة إحصائية متميزة (StatCard) مع دعم دقيق للحالة المالية.
+ * Composant StatCard durci avec gestion sémantique des variations.
  */
 const StatCard = React.memo(({ title, value, icon: Icon, change, isLoading, href, positiveIsGood = true, suffix }: { 
     title: string, 
@@ -80,7 +80,7 @@ const StatCard = React.memo(({ title, value, icon: Icon, change, isLoading, href
                             </div>
                             <span className="text-[9px] font-bold text-muted-foreground uppercase opacity-30 tracking-wide">vs période préc.</span>
                         </div>
-                    ) : <div className="h-8"></div>
+                    ) : <div className="h-8 opacity-0">—</div>
                 )}
             </CardContent>
         </Card>
@@ -95,7 +95,7 @@ const StatCard = React.memo(({ title, value, icon: Icon, change, isLoading, href
 StatCard.displayName = 'StatCard';
 
 /**
- * مخطط المبيعات والأرباح الصافية.
+ * Graphe de flux optimisé.
  */
 const SalesChart = React.memo(({ data, isLoading }: { data: SalesByDay[], isLoading: boolean }) => (
     <Card className="app-card lg:col-span-2 bg-card/40 backdrop-blur-sm border-white/5 overflow-hidden rounded-lg shadow-sm">
@@ -106,7 +106,7 @@ const SalesChart = React.memo(({ data, isLoading }: { data: SalesByDay[], isLoad
                 </div>
                 <div>
                     <CardTitle className="text-xl font-black tracking-tighter uppercase">Courbe de Flux</CardTitle>
-                    <CardDescription className="text-[10px] font-bold uppercase text-primary/50 tracking-widest">Performance Nette & Rentabilité</CardDescription>
+                    <CardDescription className="text-[10px] font-bold uppercase text-primary/50 tracking-widest">Recettes Nettes vs Rentabilité Brute</CardDescription>
                 </div>
             </div>
         </CardHeader>
@@ -114,13 +114,13 @@ const SalesChart = React.memo(({ data, isLoading }: { data: SalesByDay[], isLoad
              {isLoading ? (
                 <div className="h-full w-full flex flex-col items-center justify-center bg-muted/5 rounded-lg border border-dashed border-white/5">
                     <RefreshCw className="h-10 w-10 text-primary/20 animate-spin mb-4" />
-                    <p className="text-[10px] font-black uppercase text-primary/20 tracking-[0.2em]">Synchronisation des flux...</p>
+                    <p className="text-[10px] font-black uppercase text-primary/20 tracking-[0.2em]">Chargement des flux...</p>
                 </div>
             ) : (
             <ResponsiveContainer>
                 <AreaChart data={data} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                     <defs>
-                        <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
+                        <linearGradient id="colorTotal" x1="0" y1="0" x2="0" y2="1">
                             <stop offset="5%" stopColor="hsl(var(--chart-primary))" stopOpacity={0.4}/>
                             <stop offset="95%" stopColor="hsl(var(--chart-primary))" stopOpacity={0}/>
                         </linearGradient>
@@ -158,9 +158,9 @@ const SalesChart = React.memo(({ data, isLoading }: { data: SalesByDay[], isLoad
                             boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)'
                         }}
                         itemStyle={{ fontSize: '12px', fontWeight: '900', textTransform: 'uppercase' }}
-                        formatter={(value: number, name: string) => [formatCurrency(value), name === 'total' ? "Recettes Nettes" : "Profit Brut"]}
+                        formatter={(value: number, name: string) => [formatCurrency(value), name === 'total' ? "Recettes Nettes" : "Marge Brute"]}
                     />
-                    <Area type="monotone" dataKey="total" name="total" stroke="hsl(var(--chart-primary))" strokeWidth={5} fillOpacity={1} fill="url(#colorRevenue)" isAnimationActive={false} />
+                    <Area type="monotone" dataKey="total" name="total" stroke="hsl(var(--chart-primary))" strokeWidth={5} fillOpacity={1} fill="url(#colorTotal)" isAnimationActive={false} />
                     <Area type="monotone" dataKey="profit" name="profit" stroke="hsl(var(--chart-tertiary))" strokeWidth={3} fillOpacity={1} fill="url(#colorProfit)" strokeDasharray="10 5" isAnimationActive={false} />
                 </AreaChart>
             </ResponsiveContainer>
@@ -171,13 +171,13 @@ const SalesChart = React.memo(({ data, isLoading }: { data: SalesByDay[], isLoad
 SalesChart.displayName = 'SalesChart';
 
 /**
- * سجل الحركات الأخيرة (بيعات ومرتجعات).
+ * Journal de flux récent.
  */
 const RecentActivity = React.memo(({ sales, returns, isLoading }: { sales: RecentSale[], returns: RecentReturn[], isLoading: boolean }) => (
     <Card className="app-card bg-card/40 backdrop-blur-sm border-white/5 overflow-hidden rounded-lg shadow-sm">
         <CardHeader className="bg-muted/20 border-b border-white/5 p-4">
-            <CardTitle className="text-xl font-black tracking-tighter uppercase">Journal de Flux</CardTitle>
-            <CardDescription className="text-[10px] font-bold uppercase text-muted-foreground/40 tracking-widest">Derniers mouvements certifiés</CardDescription>
+            <CardTitle className="text-xl font-black tracking-tighter uppercase">Flux de Trésorerie</CardTitle>
+            <CardDescription className="text-[10px] font-bold uppercase text-muted-foreground/40 tracking-widest">Ventes et Retours Certifiés</CardDescription>
         </CardHeader>
         <CardContent className="p-6 space-y-4 max-h-[400px] overflow-y-auto custom-scrollbar">
              {isLoading ? (
@@ -189,7 +189,7 @@ const RecentActivity = React.memo(({ sales, returns, isLoading }: { sales: Recen
                     {sales.length === 0 && returns.length === 0 ? (
                         <div className="py-20 text-center flex flex-col items-center gap-4 opacity-20">
                             <Sparkles className="h-12 w-12" />
-                            <p className="text-[10px] font-black uppercase tracking-[0.2em]">Aucun flux détecté</p>
+                            <p className="text-[10px] font-black uppercase tracking-[0.2em]">Silence Radio</p>
                         </div>
                     ) : (
                         <>
@@ -214,7 +214,7 @@ const RecentActivity = React.memo(({ sales, returns, isLoading }: { sales: Recen
                                     </div>
                                     <div className="flex-grow min-w-0">
                                         <p className="font-bold text-sm tracking-tight truncate">{r.customerName}</p>
-                                        <p className="text-[9px] font-black text-muted-foreground/40 uppercase tracking-widest">{format(safeToDate(r.createdAt!), 'HH:mm')} • Retour Marchandise</p>
+                                        <p className="text-[9px] font-black text-muted-foreground/40 uppercase tracking-widest">{format(safeToDate(r.createdAt!), 'HH:mm')} • Retour Client</p>
                                     </div>
                                     <div className="text-right">
                                         <p className="font-black text-base text-destructive tracking-tighter tabular-nums">-{formatCurrency(r.totalReturnValue)}</p>
@@ -245,7 +245,7 @@ export default function DashboardPage() {
 
     return (
         <div className="p-6 sm:p-4 space-y-4 max-w-[1800px] mx-auto animate-in fade-in duration-1000 pb-20">
-            <PageHeader title="Pilotage de Précision" description="Surveillance souveraine des flux de trésorerie et de la rentabilité Elite">
+            <PageHeader title="Intelligence Analytique" description="Surveillance souveraine des indicateurs de performance et de rentabilité">
                 <div className="flex items-center gap-4">
                     <div className="bg-card/40 backdrop-blur-md rounded-2xl border border-white/5 p-1 shadow-inner flex items-center">
                         <DateRangePicker date={dateRange} setDate={setDate} />
@@ -253,37 +253,37 @@ export default function DashboardPage() {
                 </div>
             </PageHeader>
 
-            {/* بطاقات الإحصائيات الرئيسية - تم إصلاح المنطق الحسابي */}
+            {/* KPI Section */}
             <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-4 2xl:grid-cols-8">
                 <StatCard title="Recettes Nettes" value={formatCurrency(data?.stats.totalRevenue ?? 0)} icon={TrendingUp} isLoading={isLoading} change={data?.stats.totalRevenueChange} href="/sales-history" />
                 <StatCard title="Bénéfice Net" value={formatCurrency(data?.stats.netProfit ?? 0)} icon={Star} isLoading={isLoading} change={data?.stats.netProfitChange} />
                 <StatCard title="Panier Moyen" value={formatCurrency(data?.stats.averageBasket ?? 0)} icon={ShoppingCart} isLoading={isLoading} />
-                <StatCard title="Marge de Flux" value={`${(data?.stats.profitMargin ?? 0).toFixed(1)}%`} icon={Percent} isLoading={isLoading} />
+                <StatCard title="Marge Nette" value={`${(data?.stats.profitMargin ?? 0).toFixed(1)}%`} icon={Percent} isLoading={isLoading} />
                 <StatCard title="Total Charges" value={formatCurrency(data?.stats.totalExpenses ?? 0)} icon={Wallet} isLoading={isLoading} change={data?.stats.totalExpensesChange} positiveIsGood={false} href="/expenses" />
-                <StatCard title="Créances Clients" value={formatCurrency(data?.stats.totalOutstandingDebt ?? 0)} icon={CreditCard} isLoading={isLoading} href="/customers?status=has_debt" />
+                <StatCard title="Créances Clients" value={formatCurrency(data?.stats.totalOutstandingDebt ?? 0)} icon={CreditCard} isLoading={isLoading} href="/customers?status=has_debt" positiveIsGood={false} />
                 <StatCard title="Valeur Stock" value={formatCurrency(data?.stats.totalInventoryValue ?? 0)} icon={Archive} isLoading={isLoading} href="/products" />
-                <StatCard title="Volume Ventes" value={String(data?.stats.saleCount ?? 0)} icon={Receipt} isLoading={isLoading} change={data?.stats.saleCountChange} />
+                <StatCard title="Ventes Brutes" value={String(data?.stats.saleCount ?? 0)} icon={Receipt} isLoading={isLoading} change={data?.stats.saleCountChange} />
             </div>
 
-            {/* المخططات والنشاط */}
+            {/* Charts & Activity */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                 <SalesChart data={data?.salesByDay ?? []} isLoading={isLoading}/>
                 <RecentActivity sales={data?.recentSales ?? []} returns={data?.recentReturns ?? []} isLoading={isLoading}/>
             </div>
 
-            {/* قوائم التميز (أكثر المنتجات والعملاء مبيعاً) */}
+            {/* Rankings Section */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                 <Card className="app-card bg-card/40 backdrop-blur-sm border-white/5 overflow-hidden rounded-lg shadow-sm">
                     <CardHeader className="bg-muted/20 border-b border-white/5 p-4">
                         <CardTitle className="text-xl font-black tracking-tighter uppercase flex items-center gap-3">
                             <div className="p-2 rounded-xl bg-primary/10 text-primary"><Star className="h-5 w-5" /></div>
-                            Best-Sellers Elite
+                            Top Produits
                         </CardTitle>
                     </CardHeader>
                     <CardContent className="p-4 space-y-6">
                         {isLoading ? [...Array(5)].map((_, i) => <Skeleton key={`skel-prod-${i}`} className="h-9 w-full rounded-2xl bg-muted/10" />) : 
                             data?.topProducts.length === 0 ? (
-                                <p className="text-center py-10 text-[10px] font-bold uppercase opacity-20 tracking-widest">En attente de ventes</p>
+                                <p className="text-center py-10 text-[10px] font-bold uppercase opacity-20 tracking-widest">En attente de flux</p>
                             ) : data?.topProducts.map((p, i) => (
                                 <div key={`prod-list-${p.productUuid}`} className="flex items-center gap-5 group">
                                     <span className="text-xl font-black text-muted-foreground/20 w-8 tabular-nums">{(i + 1).toString().padStart(2, '0')}</span>
@@ -302,13 +302,13 @@ export default function DashboardPage() {
                     <CardHeader className="bg-muted/20 border-b border-white/5 p-4">
                         <CardTitle className="text-xl font-black tracking-tighter uppercase flex items-center gap-3">
                             <div className="p-2 rounded-xl bg-primary/10 text-primary"><Users className="h-5 w-5" /></div>
-                            Cercle des Clients
+                            Meilleurs Clients
                         </CardTitle>
                     </CardHeader>
                     <CardContent className="p-4 space-y-6">
                         {isLoading ? [...Array(5)].map((_, i) => <Skeleton key={`skel-cust-${i}`} className="h-9 w-full rounded-2xl bg-muted/10" />) : 
                             data?.topCustomers.length === 0 ? (
-                                <p className="text-center py-10 text-[10px] font-bold uppercase opacity-20 tracking-widest">En attente de flux</p>
+                                <p className="text-center py-10 text-[10px] font-bold uppercase opacity-20 tracking-widest">Aucun client actif</p>
                             ) : data?.topCustomers.map((c, i) => (
                                 <Link href={`/customers/detail?uuid=${c.customerUuid}`} key={`cust-list-${c.customerUuid}`} className="flex items-center gap-5 group">
                                     <div className="h-12 w-12 rounded-xl bg-muted/50 flex items-center justify-center font-black text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary transition-all shadow-inner border border-white/5">
@@ -329,7 +329,7 @@ export default function DashboardPage() {
                     <CardHeader className="bg-muted/20 border-b border-white/5 p-4 text-amber-500">
                         <CardTitle className="text-xl font-black tracking-tighter uppercase flex items-center gap-3">
                             <div className="p-2 rounded-xl bg-amber-500/10 text-amber-500"><Archive className="h-5 w-5" /></div>
-                            Alertes Inventaire
+                            Alertes Stocks
                         </CardTitle>
                     </CardHeader>
                     <CardContent className="p-4 space-y-4">
@@ -337,7 +337,7 @@ export default function DashboardPage() {
                             data?.lowStockProducts.length === 0 ? (
                                 <div className="flex flex-col items-center justify-center py-10 gap-3 opacity-20">
                                     <Sparkles className="h-10 w-10 text-emerald-500" />
-                                    <p className="text-[10px] font-black uppercase tracking-widest">Stocks Optimaux</p>
+                                    <p className="text-[10px] font-black uppercase tracking-widest">Niveaux Optimaux</p>
                                 </div>
                             ) : data?.lowStockProducts.map(p => (
                                 <div key={`stock-list-${p.uuid}`} className="space-y-3 p-3 rounded-xl bg-black/20 border border-white/5 group hover:border-amber-500/30 transition-all">
@@ -353,16 +353,16 @@ export default function DashboardPage() {
                 </Card>
             </div>
 
-            {/* Footer الذكاء الاصطناعي للمراقبة */}
+            {/* AI Monitoring Footer */}
             <div className="p-4 bg-primary/5 rounded-2xl border border-primary/10 flex items-start gap-4 shadow-inner relative overflow-hidden group">
                 <Sparkles className="absolute -right-6 -top-6 h-32 w-32 text-primary/5 group-hover:opacity-20 transition-opacity duration-1000" />
                 <div className="p-4 rounded-2xl bg-black/40 text-primary shadow-lg border border-white/5 relative z-10">
                     <AlertCircle className="h-6 w-6" />
                 </div>
                 <div className="space-y-2 relative z-10">
-                    <p className="text-xs font-black uppercase text-primary tracking-widest">Intelligence Analytique iPOS Zen</p>
+                    <p className="text-xs font-black uppercase text-primary tracking-widest">Moteur d'Audit iPOS Zen</p>
                     <p className="text-[11px] text-muted-foreground/70 font-medium leading-relaxed max-w-5xl uppercase tracking-wider italic">
-                        Les calculs de rentabilité incluent désormais les amortissements liés aux retours marchandises et les frais logistiques. Votre marge nette est calculée sur la base du coût de revient (Landing Cost) réel indexé lors des réceptions.
+                        Les calculs de rentabilité intègrent désormais la réintégration automatique de la marge perdue lors des retours marchandises. Le profit net affiché déduit les charges opérationnelles et les coûts de revient réels indexés lors des entrées en stock.
                     </p>
                 </div>
             </div>

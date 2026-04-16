@@ -1,184 +1,160 @@
 'use client';
 
 import type { DashboardData, TopCustomer, SalesByDay, RecentSale, RecentReturn } from '@/lib/types';
-import { eachDayOfInterval, format, startOfDay } from 'date-fns';
+import { eachDayOfInterval, format, startOfDay, endOfDay } from 'date-fns';
 import { db } from '@/lib/db';
 import { preciseMultiply, safeNumber } from '@/lib/utils';
 
 /**
- * @fileOverview Service nخبوي لحساب بيانات لوحة التحكم بدقة محاسبية.
- * يقوم بتحليل التدفقات المالية، الأرباح، والمخزون مع معالجة دقيقة للمرتجعات والمصاريف.
+ * @fileOverview Service de pilotage analytique iPOS Zen.
+ * Effectue des calculs financiers complexes avec déduction des retours et amortissement des coûts.
  */
 class DashboardService {
     async getDashboardData(from: Date, to: Date): Promise<DashboardData> {
         try {
-            // حساب الفترة السابقة للمقارنة
-            const duration = to.getTime() - from.getTime();
-            const prevTo = new Date(from.getTime() - 1);
-            const prevFrom = new Date(prevTo.getTime() - duration);
+            // Dates normalisées pour l'inclusion totale
+            const startDate = startOfDay(from);
+            const endDate = endOfDay(to);
 
-            // جلب البيانات للفترتين (الحالية والسابقة) للمقارنة
-            const [allSales, allExpenses, allReturns, customers, allProducts] =
+            // Calcul de la période de comparaison (précédente)
+            const duration = endDate.getTime() - startDate.getTime();
+            const prevEndDate = new Date(startDate.getTime() - 1);
+            const prevStartDate = new Date(prevEndDate.getTime() - duration);
+
+            // Récupération globale des flux
+            const [allSales, allExpenses, allReturns, allCustomers, allProducts] =
                 await Promise.all([
-                    db.sales
-                        .where('createdAt')
-                        .between(prevFrom, to, true, true)
-                        .toArray(),
-                    db.expenses
-                        .where('expenseDate')
-                        .between(prevFrom, to, true, true)
-                        .toArray(),
-                    db.product_returns
-                        .where('createdAt')
-                        .between(prevFrom, to, true, true)
-                        .toArray(),
+                    db.sales.where('createdAt').between(prevStartDate, endDate, true, true).toArray(),
+                    db.expenses.where('expenseDate').between(prevStartDate, endDate, true, true).toArray(),
+                    db.product_returns.where('createdAt').between(prevStartDate, endDate, true, true).toArray(),
                     db.customers.toArray(),
                     db.products.toArray(),
                 ]);
 
             const productPurchaseMap = new Map(allProducts.map(p => [p.uuid, safeNumber(p.purchasePrice)]));
-            const customerMap = new Map(customers.map(c => [c.uuid, `${c.firstName} ${c.lastName}`]));
+            const customerMap = new Map(allCustomers.map(c => [c.uuid, `${c.firstName} ${c.lastName}`]));
 
-            // عدادات الفترة الحالية
-            let currentRevenue = 0;
-            let currentCOGS = 0;
-            let currentReturns = 0;
-            let currentReturnCOGS = 0;
-            let currentExpenses = 0;
-            let currentSaleCount = 0;
+            // Initialisation des accumulateurs
+            let currRev = 0; let currCogs = 0; let currExp = 0; let currRetVal = 0; let currRetCogs = 0; let currCount = 0;
+            let prevRev = 0; let prevCogs = 0; let prevExp = 0; let prevRetVal = 0; let prevRetCogs = 0; let prevCount = 0;
 
-            // عدادات الفترة السابقة
-            let prevRevenue = 0;
-            let prevCOGS = 0;
-            let prevReturns = 0;
-            let prevReturnCOGS = 0;
-            let prevExpenses = 0;
-            let prevSaleCount = 0;
+            const productStatsMap = new Map<string, { quantity: number; revenue: number }>();
+            const customerSpendingMap = new Map<string, number>();
+            const dailyMap = new Map<string, { total: number; profit: number }>();
 
-            const productSales = new Map<string, { quantitySold: number; revenueGenerated: number }>();
-            const customerSpending = new Map<string, number>();
-            const salesByDayMap = new Map<string, { total: number; profit: number }>();
-
-            // تهيئة خريطة الأيام للرسم البياني
-            eachDayOfInterval({ start: from, end: to }).forEach(day => {
-                salesByDayMap.set(format(day, 'yyyy-MM-dd'), { total: 0, profit: 0 });
+            // Préparation du graphe
+            eachDayOfInterval({ start: startDate, end: endDate }).forEach(day => {
+                dailyMap.set(format(day, 'yyyy-MM-dd'), { total: 0, profit: 0 });
             });
 
-            // 1. تحليل المبيعات
+            // 1. Analyse des Ventes
             allSales.forEach(sale => {
                 const saleDate = new Date(sale.createdAt!);
-                const isCurrent = saleDate >= from;
+                const isCurrent = saleDate >= startDate;
                 let saleCOGS = 0;
 
                 sale.items.forEach(item => {
                     const qty = safeNumber(item.quantity);
-                    const pPrice = safeNumber(item.purchasePrice) || productPurchaseMap.get(item.productUuid || '') || 0;
-                    saleCOGS += preciseMultiply(pPrice, qty);
+                    const cost = safeNumber(item.purchasePrice) || productPurchaseMap.get(item.productUuid || '') || 0;
+                    const lineCOGS = preciseMultiply(cost, qty);
+                    saleCOGS += lineCOGS;
 
                     if (isCurrent && item.productUuid) {
-                        const stats = productSales.get(item.productUuid) || { quantitySold: 0, revenueGenerated: 0 };
-                        stats.quantitySold += qty;
-                        stats.revenueGenerated += preciseMultiply(safeNumber(item.price), qty);
-                        productSales.set(item.productUuid, stats);
+                        const ps = productStatsMap.get(item.productUuid) || { quantity: 0, revenue: 0 };
+                        ps.quantity += qty;
+                        ps.revenue += preciseMultiply(safeNumber(item.price), qty);
+                        productStatsMap.set(item.productUuid, ps);
                     }
                 });
 
                 if (isCurrent) {
-                    currentRevenue += safeNumber(sale.total);
-                    currentCOGS += saleCOGS;
-                    currentSaleCount++;
-                    
-                    const dayKey = format(startOfDay(saleDate), 'yyyy-MM-dd');
-                    const daily = salesByDayMap.get(dayKey);
-                    if (daily) {
-                        daily.total += safeNumber(sale.total);
-                        daily.profit += (safeNumber(sale.total) - saleCOGS);
+                    currRev += safeNumber(sale.total);
+                    currCogs += saleCOGS;
+                    currCount++;
+                    const dayKey = format(saleDate, 'yyyy-MM-dd');
+                    const d = dailyMap.get(dayKey);
+                    if (d) {
+                        d.total += safeNumber(sale.total);
+                        d.profit += (safeNumber(sale.total) - saleCOGS);
                     }
-
                     if (sale.customerUuid) {
-                        customerSpending.set(sale.customerUuid, (customerSpending.get(sale.customerUuid) || 0) + safeNumber(sale.total));
+                        customerSpendingMap.set(sale.customerUuid, (customerSpendingMap.get(sale.customerUuid) || 0) + safeNumber(sale.total));
                     }
                 } else {
-                    prevRevenue += safeNumber(sale.total);
-                    prevCOGS += saleCOGS;
-                    prevSaleCount++;
+                    prevRev += safeNumber(sale.total);
+                    prevCogs += saleCOGS;
+                    prevCount++;
                 }
             });
 
-            // 2. تحليل المرتجعات (خصمها من الإيرادات والأرباح)
+            // 2. Analyse des Retours (Déduction du Chiffre d'Affaires et Ajustement COGS)
             allReturns.forEach(ret => {
                 const retDate = new Date(ret.createdAt!);
-                const isCurrent = retDate >= from;
-                let returnCOGS = 0;
+                const isCurrent = retDate >= startDate;
+                let retCOGS = 0;
 
                 ret.items.forEach(item => {
-                    // فقط إذا عادت السلعة للمخزون، نعيد احتساب تكلفتها لصالح المحل
                     if (item.wasRestocked) {
-                        const pPrice = safeNumber(item.purchasePrice) || productPurchaseMap.get(item.productUuid || '') || 0;
-                        returnCOGS += preciseMultiply(pPrice, item.quantity);
+                        const cost = safeNumber(item.purchasePrice) || productPurchaseMap.get(item.productUuid || '') || 0;
+                        retCOGS += preciseMultiply(cost, item.quantity);
                     }
                 });
 
                 if (isCurrent) {
-                    currentReturns += safeNumber(ret.totalReturnValue);
-                    currentReturnCOGS += returnCOGS;
-                    
-                    const dayKey = format(startOfDay(retDate), 'yyyy-MM-dd');
-                    const daily = salesByDayMap.get(dayKey);
-                    if (daily) {
-                        daily.total -= safeNumber(ret.totalReturnValue);
-                        daily.profit -= (safeNumber(ret.totalReturnValue) - returnCOGS);
+                    currRetVal += safeNumber(ret.totalReturnValue);
+                    currRetCogs += retCOGS;
+                    const dayKey = format(retDate, 'yyyy-MM-dd');
+                    const d = dailyMap.get(dayKey);
+                    if (d) {
+                        d.total -= safeNumber(ret.totalReturnValue);
+                        d.profit -= (safeNumber(ret.totalReturnValue) - retCOGS);
                     }
-                    
                     if (ret.customerUuid) {
-                        customerSpending.set(ret.customerUuid, (customerSpending.get(ret.customerUuid) || 0) - safeNumber(ret.totalReturnValue));
+                        customerSpendingMap.set(ret.customerUuid, (customerSpendingMap.get(ret.customerUuid) || 0) - safeNumber(ret.totalReturnValue));
                     }
                 } else {
-                    prevReturns += safeNumber(ret.totalReturnValue);
-                    prevReturnCOGS += returnCOGS;
+                    prevRetVal += safeNumber(ret.totalReturnValue);
+                    prevRetCogs += retCOGS;
                 }
             });
 
-            // 3. تحليل المصاريف
+            // 3. Analyse des Charges
             allExpenses.forEach(exp => {
-                const expDate = new Date(exp.expenseDate);
-                if (expDate >= from) {
-                    currentExpenses += safeNumber(exp.amount);
-                } else {
-                    prevExpenses += safeNumber(exp.amount);
-                }
+                const val = safeNumber(exp.amount);
+                if (new Date(exp.expenseDate) >= startDate) currExp += val;
+                else prevExp += val;
             });
 
-            // 4. الحسابات النهائية الصافية
-            const netRevenue = currentRevenue - currentReturns;
-            const netProfit = netRevenue - (currentCOGS - currentReturnCOGS) - currentExpenses;
+            // 4. Calculs Finaux (Net)
+            const netRevenue = currRev - currRetVal;
+            const prevNetRevenue = prevRev - prevRetVal;
+            
+            const netProfit = netRevenue - (currCogs - currRetCogs) - currExp;
+            const prevNetProfit = prevNetRevenue - (prevCogs - prevRetCogs) - prevExp;
 
-            const prevNetRevenue = prevRevenue - prevReturns;
-            const prevNetProfit = prevNetRevenue - (prevCOGS - prevReturnCOGS) - prevExpenses;
-
-            const calculateChange = (curr: number, prev: number) => {
-                if (Math.abs(prev) < 0.01) return curr > 0.01 ? 100 : 0;
+            const calcChange = (curr: number, prev: number) => {
+                if (Math.abs(prev) < 0.1) return curr > 0.1 ? 100 : 0;
                 return ((curr - prev) / Math.abs(prev)) * 100;
             };
 
             return {
                 stats: {
                     totalRevenue: netRevenue,
-                    totalExpenses: currentExpenses,
+                    totalExpenses: currExp,
                     netProfit: netProfit,
-                    saleCount: currentSaleCount,
-                    totalOutstandingDebt: customers.reduce((sum, c) => sum + safeNumber(c.outstandingBalance), 0),
+                    saleCount: currCount,
+                    totalOutstandingDebt: allCustomers.reduce((sum, c) => sum + safeNumber(c.outstandingBalance), 0),
                     totalInventoryValue: allProducts.reduce((sum, p) => sum + preciseMultiply(safeNumber(p.quantity), safeNumber(p.purchasePrice)), 0),
-                    averageBasket: currentSaleCount > 0 ? netRevenue / currentSaleCount : 0,
-                    profitMargin: netRevenue > 0.01 ? (netProfit / netRevenue) * 100 : 0,
-                    totalRevenueChange: calculateChange(netRevenue, prevNetRevenue),
-                    netProfitChange: calculateChange(netProfit, prevNetProfit),
-                    totalExpensesChange: calculateChange(currentExpenses, prevExpenses),
-                    saleCountChange: calculateChange(currentSaleCount, prevSaleCount),
+                    averageBasket: currCount > 0 ? netRevenue / currCount : 0,
+                    profitMargin: netRevenue > 0.1 ? (netProfit / netRevenue) * 100 : 0,
+                    totalRevenueChange: calcChange(netRevenue, prevNetRevenue),
+                    netProfitChange: calcChange(netProfit, prevNetProfit),
+                    totalExpensesChange: calcChange(currExp, prevExp),
+                    saleCountChange: calcChange(currCount, prevCount),
                 },
-                salesByDay: Array.from(salesByDayMap.entries()).map(([date, v]) => ({ date, ...v })),
+                salesByDay: Array.from(dailyMap.entries()).map(([date, v]) => ({ date, ...v })),
                 recentSales: allSales
-                    .filter(s => new Date(s.createdAt!) >= from)
+                    .filter(s => new Date(s.createdAt!) >= startDate)
                     .sort((a, b) => new Date(b.createdAt!).getTime() - new Date(a.createdAt!).getTime())
                     .slice(0, 5)
                     .map(s => ({
@@ -186,10 +162,10 @@ class DashboardService {
                         invoiceNumber: s.invoiceNumber,
                         total: safeNumber(s.total),
                         createdAt: s.createdAt,
-                        customerName: s.customerUuid ? (customerMap.get(s.customerUuid) || 'Inconnu') : 'Client de passage',
+                        customerName: s.customerUuid ? (customerMap.get(s.customerUuid) || 'Client Elite') : 'Client de passage',
                     })),
                 recentReturns: allReturns
-                    .filter(r => new Date(r.createdAt!) >= from)
+                    .filter(r => new Date(r.createdAt!) >= startDate)
                     .sort((a, b) => new Date(b.createdAt!).getTime() - new Date(a.createdAt!).getTime())
                     .slice(0, 5)
                     .map(r => ({
@@ -197,22 +173,22 @@ class DashboardService {
                         originalInvoiceNumber: r.originalInvoiceNumber,
                         totalReturnValue: safeNumber(r.totalReturnValue),
                         createdAt: r.createdAt,
-                        customerName: r.customerUuid ? (customerMap.get(r.customerUuid) || 'Inconnu') : 'Client de passage',
+                        customerName: r.customerUuid ? (customerMap.get(r.customerUuid) || 'Client Elite') : 'Client de passage',
                     })),
-                topProducts: Array.from(productSales.entries())
-                    .sort((a, b) => b[1].revenueGenerated - a[1].revenueGenerated)
+                topProducts: Array.from(productStatsMap.entries())
+                    .sort((a, b) => b[1].revenue - a[1].revenue)
                     .slice(0, 5)
                     .map(([uuid, stats]) => {
                         const p = allProducts.find(prod => prod.uuid === uuid);
                         return {
                             productUuid: uuid,
-                            name: p?.name || 'Produit Inconnu',
-                            quantitySold: stats.quantitySold,
-                            revenueGenerated: stats.revenueGenerated,
+                            name: p?.name || 'Produit Archivé',
+                            quantitySold: stats.quantity,
+                            revenueGenerated: stats.revenue,
                             category: p?.category,
                         };
                     }),
-                topCustomers: Array.from(customerSpending.entries())
+                topCustomers: Array.from(customerSpendingMap.entries())
                     .sort((a, b) => b[1] - a[1])
                     .slice(0, 5)
                     .map(([uuid, spent]) => ({
@@ -226,7 +202,7 @@ class DashboardService {
                     .slice(0, 5),
             };
         } catch (error) {
-            console.error('Critical Dashboard Service Error:', error);
+            console.error('Audit Analytics Error:', error);
             throw error;
         }
     }

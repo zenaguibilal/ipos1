@@ -16,14 +16,16 @@ export const FINANCIAL_EPSILON = 0.00001;
  * Convertit un Date ou une ISO string en objet Date fiable.
  */
 export function safeToDate(date: Date | string): Date {
+    if (!date) return new Date();
     if (date instanceof Date) return date;
-    return new Date(date);
+    const d = new Date(date);
+    return isNaN(d.getTime()) ? new Date() : d;
 }
 
 /**
  * Convertit n'importe quelle valeur en nombre sain.
  * Gère les formats internationaux (1.250,50 ou 1,250.50).
- * Très robuste pour les imports CSV/JSON pollués.
+ * Élimine les espaces et nettoie les caractères non numériques sauf point/virgule.
  */
 export function safeNumber(val: any): number {
     if (typeof val === 'number') return isNaN(val) ? 0 : val;
@@ -31,15 +33,15 @@ export function safeNumber(val: any): number {
     
     let str = String(val).trim().replace(/\s/g, '');
     
-    // Détection du séparateur décimal pour les formats mixtes
+    // Détection du séparateur décimal
     if (str.includes(',') && str.includes('.')) {
         const lastDot = str.lastIndexOf('.');
         const lastComma = str.lastIndexOf(',');
         if (lastDot > lastComma) {
-            // Le point est le séparateur décimal (1,250.50)
+            // Le point est le séparateur décimal (format US: 1,250.50)
             str = str.replace(/,/g, '');
         } else {
-            // La virgule est le séparateur décimal (1.250,50)
+            // La virgule est le séparateur décimal (format FR: 1.250,50)
             str = str.replace(/\./g, '').replace(',', '.');
         }
     } else if (str.includes(',')) {
@@ -53,11 +55,12 @@ export function safeNumber(val: any): number {
 
 /**
  * Multiplie deux nombres avec une précision fixe pour éviter les erreurs de virgule flottante.
- * Utile pour : Quantité (3 décimales) * Prix (2 décimales)
  */
 export function preciseMultiply(a: number, b: number): number {
-    const SCALE = 100000; // 10^5 pour couvrir 3+2 décimales
-    return Math.round(safeNumber(a) * safeNumber(b) * SCALE) / SCALE;
+    const valA = safeNumber(a);
+    const valB = safeNumber(b);
+    // Utilisation d'un multiplicateur pour traiter les entiers
+    return Math.round((valA * valB) * 1000) / 1000;
 }
 
 export function formatDateToYYYYMMDD(date: Date): string {
@@ -77,24 +80,21 @@ interface CalculableCart {
 /**
  * Calculateur financier durci — arithmétique entière mise à l'échelle.
  * Élimine les erreurs IEEE 754 communes en JS.
- * Arrondit le total final à 2 décimales pour la conformité monétaire.
  */
 export function calculateCartTotals(cart: CalculableCart) {
-    const SCALE = 1000;
+    const SCALE = 1000; // Travailler en millièmes pour la précision (3 décimales)
 
     const subtotalRaw = cart.items.reduce((acc, item) => {
-        const priceCents = Math.round(safeNumber(item.price) * SCALE);
-        const qty        = safeNumber(item.cartQuantity);
-        return acc + Math.round(priceCents * qty);
+        const priceScale = Math.round(safeNumber(item.price) * SCALE);
+        const qty = safeNumber(item.cartQuantity);
+        return acc + Math.round(priceScale * qty);
     }, 0);
 
     const subtotal = subtotalRaw / SCALE;
 
     let discountAmountRaw = 0;
     if (cart.discount.type === 'percentage') {
-        discountAmountRaw = Math.round(
-            subtotalRaw * (safeNumber(cart.discount.value) / 100),
-        );
+        discountAmountRaw = Math.round(subtotalRaw * (safeNumber(cart.discount.value) / 100));
     } else {
         discountAmountRaw = Math.round(safeNumber(cart.discount.value) * SCALE);
     }
