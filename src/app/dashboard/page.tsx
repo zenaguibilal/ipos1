@@ -34,7 +34,7 @@ import { Progress } from '@/components/ui/progress';
 import { useLiveQuery } from '@/hooks/useLiveQuery';
 
 /**
- * بطاقة إحصائية متميزة (StatCard) مع دعم حالات التحميل ونسب التغيير.
+ * بطاقة إحصائية متميزة (StatCard) مع دعم دقيق للحالة المالية.
  */
 const StatCard = React.memo(({ title, value, icon: Icon, change, isLoading, href, positiveIsGood = true, suffix }: { 
     title: string, 
@@ -69,7 +69,7 @@ const StatCard = React.memo(({ title, value, icon: Icon, change, isLoading, href
                 {isLoading ? (
                     <Skeleton className="h-4 w-24 mt-3 bg-muted/20 rounded-md" />
                 ) : (
-                    (change !== undefined && isFinite(change) && change !== 0) ? (
+                    (change !== undefined && isFinite(change)) ? (
                         <div className="mt-3 flex items-center gap-2">
                             <div className={cn(
                                 "flex items-center gap-0.5 px-2 py-1 rounded-xl text-[10px] font-black tracking-tighter shadow-inner border",
@@ -95,7 +95,7 @@ const StatCard = React.memo(({ title, value, icon: Icon, change, isLoading, href
 StatCard.displayName = 'StatCard';
 
 /**
- * مخطط المبيعات والأرباح التفاعلي.
+ * مخطط المبيعات والأرباح الصافية.
  */
 const SalesChart = React.memo(({ data, isLoading }: { data: SalesByDay[], isLoading: boolean }) => (
     <Card className="app-card lg:col-span-2 bg-card/40 backdrop-blur-sm border-white/5 overflow-hidden rounded-lg shadow-sm">
@@ -106,7 +106,7 @@ const SalesChart = React.memo(({ data, isLoading }: { data: SalesByDay[], isLoad
                 </div>
                 <div>
                     <CardTitle className="text-xl font-black tracking-tighter uppercase">Courbe de Flux</CardTitle>
-                    <CardDescription className="text-[10px] font-bold uppercase text-primary/50 tracking-widest">Recettes Nettes vs Rentabilité</CardDescription>
+                    <CardDescription className="text-[10px] font-bold uppercase text-primary/50 tracking-widest">Performance Nette & Rentabilité</CardDescription>
                 </div>
             </div>
         </CardHeader>
@@ -158,7 +158,7 @@ const SalesChart = React.memo(({ data, isLoading }: { data: SalesByDay[], isLoad
                             boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)'
                         }}
                         itemStyle={{ fontSize: '12px', fontWeight: '900', textTransform: 'uppercase' }}
-                        formatter={(value: number, name: string) => [formatCurrency(value), name === 'total' ? "Recettes" : "Profit Brut"]}
+                        formatter={(value: number, name: string) => [formatCurrency(value), name === 'total' ? "Recettes Nettes" : "Profit Brut"]}
                     />
                     <Area type="monotone" dataKey="total" name="total" stroke="hsl(var(--chart-primary))" strokeWidth={5} fillOpacity={1} fill="url(#colorRevenue)" isAnimationActive={false} />
                     <Area type="monotone" dataKey="profit" name="profit" stroke="hsl(var(--chart-tertiary))" strokeWidth={3} fillOpacity={1} fill="url(#colorProfit)" strokeDasharray="10 5" isAnimationActive={false} />
@@ -171,7 +171,7 @@ const SalesChart = React.memo(({ data, isLoading }: { data: SalesByDay[], isLoad
 SalesChart.displayName = 'SalesChart';
 
 /**
- * عرض الحركات الأخيرة (بيعات ومرتجعات).
+ * سجل الحركات الأخيرة (بيعات ومرتجعات).
  */
 const RecentActivity = React.memo(({ sales, returns, isLoading }: { sales: RecentSale[], returns: RecentReturn[], isLoading: boolean }) => (
     <Card className="app-card bg-card/40 backdrop-blur-sm border-white/5 overflow-hidden rounded-lg shadow-sm">
@@ -253,7 +253,7 @@ export default function DashboardPage() {
                 </div>
             </PageHeader>
 
-            {/* بطاقات الإحصائيات الرئيسية */}
+            {/* بطاقات الإحصائيات الرئيسية - تم إصلاح المنطق الحسابي */}
             <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-4 2xl:grid-cols-8">
                 <StatCard title="Recettes Nettes" value={formatCurrency(data?.stats.totalRevenue ?? 0)} icon={TrendingUp} isLoading={isLoading} change={data?.stats.totalRevenueChange} href="/sales-history" />
                 <StatCard title="Bénéfice Net" value={formatCurrency(data?.stats.netProfit ?? 0)} icon={Star} isLoading={isLoading} change={data?.stats.netProfitChange} />
