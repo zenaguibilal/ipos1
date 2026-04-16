@@ -5,11 +5,17 @@ import { useActiveCart, useCartActions } from "@/stores/cartStore";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Trash2, ShoppingCart, Tag, X, Coins } from 'lucide-react';
+import { Trash2, ShoppingCart, Tag, X, Coins, AlertTriangle } from 'lucide-react';
 import { formatCurrency } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 import type { CartItem } from "@/lib/types";
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface CartItemRowProps {
     item: CartItem;
@@ -72,6 +78,9 @@ const CartItemRow = React.memo(({ item, isSelected, onUpdate, onPriceUpdate, onR
     const isCustom = item.uuid.startsWith('custom-');
     const stepValue = "0.001"; 
     const isZero = item.cartQuantity <= 0;
+    
+    // Alerte de vente à perte : prix de vente < prix d'achat (si P.A renseigné)
+    const isSellingAtLoss = item.price < item.purchasePrice && item.purchasePrice > 0;
 
     return (
         <div 
@@ -109,11 +118,32 @@ const CartItemRow = React.memo(({ item, isSelected, onUpdate, onPriceUpdate, onR
                             type="number"
                             value={item.price}
                             onChange={(e) => handlePriceChange(e.target.value)}
-                            className="h-6 w-24 pl-6 pr-1 text-[10px] font-bold bg-black/10 border-none shadow-inner focus-visible:ring-primary/20"
+                            className={cn(
+                                "h-6 w-24 pl-6 pr-1 text-[10px] font-bold bg-black/10 border-none shadow-inner focus-visible:ring-primary/20",
+                                isSellingAtLoss && "text-destructive"
+                            )}
                             step="0.01"
                         />
                     </div>
                     <span className="text-[10px] font-bold text-muted-foreground/30">/ {item.unite || 'pcs'}</span>
+                    
+                    {/* Alerte Vente à perte */}
+                    {isSellingAtLoss && (
+                        <TooltipProvider>
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <div className="p-1 rounded-md bg-destructive/10 animate-pulse cursor-help">
+                                        <AlertTriangle className="h-3.5 w-3.5 text-destructive" />
+                                    </div>
+                                </TooltipTrigger>
+                                <TooltipContent className="bg-destructive text-destructive-foreground border-none">
+                                    <p className="text-[10px] font-bold uppercase tracking-wider">
+                                        Vente à perte ! Coût achat : {formatCurrency(item.purchasePrice)}
+                                    </p>
+                                </TooltipContent>
+                            </Tooltip>
+                        </TooltipProvider>
+                    )}
                 </div>
             </div>
             
