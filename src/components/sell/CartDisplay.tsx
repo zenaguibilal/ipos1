@@ -1,11 +1,11 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useActiveCart, useCartActions } from "@/stores/cartStore";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Trash2, ShoppingCart, Tag, X } from 'lucide-react';
+import { Trash2, ShoppingCart, Tag, X, Coins } from 'lucide-react';
 import { formatCurrency } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 import type { CartItem } from "@/lib/types";
@@ -15,15 +15,24 @@ interface CartItemRowProps {
     item: CartItem;
     isSelected: boolean;
     onUpdate: (uuid: string, quantity: number) => void;
+    onPriceUpdate: (uuid: string, price: number) => void;
     onRemove: (uuid: string) => void;
     onSelect: () => void;
 }
 
-const CartItemRow = React.memo(({ item, isSelected, onUpdate, onRemove, onSelect }: CartItemRowProps) => {
+const CartItemRow = React.memo(({ item, isSelected, onUpdate, onPriceUpdate, onRemove, onSelect }: CartItemRowProps) => {
+    const priceInputRef = useRef<HTMLInputElement>(null);
+
     const handleQtyChange = (val: string) => {
         const num = parseFloat(val);
         if (isNaN(num)) return;
         onUpdate(item.uuid, Math.max(0, num));
+    };
+
+    const handlePriceChange = (val: string) => {
+        const num = parseFloat(val);
+        if (isNaN(num)) return;
+        onPriceUpdate(item.uuid, Math.max(0, num));
     };
 
     // Raccourcis clavier locaux pour la ligne sélectionnée
@@ -47,6 +56,12 @@ const CartItemRow = React.memo(({ item, isSelected, onUpdate, onRemove, onSelect
             ignoreInputFocus: false
         },
         {
+            key: '*',
+            action: () => priceInputRef.current?.focus(),
+            description: 'Modifier le prix',
+            ignoreInputFocus: false
+        },
+        {
             key: 'Delete',
             action: () => onRemove(item.uuid),
             description: 'Supprimer article',
@@ -55,7 +70,6 @@ const CartItemRow = React.memo(({ item, isSelected, onUpdate, onRemove, onSelect
     ], `Article-${item.uuid}`, isSelected);
 
     const isCustom = item.uuid.startsWith('custom-');
-    // On permet les décimales par défaut (0.001) pour tout le monde si besoin
     const stepValue = "0.001"; 
     const isZero = item.cartQuantity <= 0;
 
@@ -85,9 +99,22 @@ const CartItemRow = React.memo(({ item, isSelected, onUpdate, onRemove, onSelect
                         </span>
                     )}
                 </div>
-                <p className="text-[10px] font-bold text-muted-foreground/50">
-                    {formatCurrency(item.price)} <span className="mx-1 opacity-30">/</span> {item.unite || 'pcs'}
-                </p>
+                
+                {/* Editable Price Field */}
+                <div className="flex items-center gap-2 mt-1">
+                    <div className="relative group/price">
+                        <Coins className="absolute left-2 top-1/2 -translate-y-1/2 h-2.5 w-2.5 text-muted-foreground/30 group-focus-within/price:text-primary transition-colors" />
+                        <Input 
+                            ref={priceInputRef}
+                            type="number"
+                            value={item.price}
+                            onChange={(e) => handlePriceChange(e.target.value)}
+                            className="h-6 w-24 pl-6 pr-1 text-[10px] font-bold bg-black/10 border-none shadow-inner focus-visible:ring-primary/20"
+                            step="0.01"
+                        />
+                    </div>
+                    <span className="text-[10px] font-bold text-muted-foreground/30">/ {item.unite || 'pcs'}</span>
+                </div>
             </div>
             
             <div className="flex flex-col items-center gap-1">
@@ -150,7 +177,7 @@ export function CartDisplay() {
     const [isMounted, setIsMounted] = useState(false);
     const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
     const cart = useActiveCart();
-    const { updateItemQuantity, removeItemFromCart } = useCartActions();
+    const { updateItemQuantity, updateItemPrice, removeItemFromCart } = useCartActions();
     
     useEffect(() => {
         setIsMounted(true);
@@ -213,6 +240,7 @@ export function CartDisplay() {
                             item={item} 
                             isSelected={selectedIndex === index}
                             onUpdate={updateItemQuantity} 
+                            onPriceUpdate={updateItemPrice}
                             onRemove={removeItemFromCart} 
                             onSelect={() => setSelectedIndex(index)}
                         />

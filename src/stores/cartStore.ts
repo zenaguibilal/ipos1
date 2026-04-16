@@ -27,6 +27,7 @@ interface CartActions {
     addItemToCart:       (product: Product, quantity?: number) => void;
     removeItemFromCart:  (productUuid: string) => void;
     updateItemQuantity:  (productUuid: string, newQuantity: number) => void;
+    updateItemPrice:     (productUuid: string, newPrice: number) => void;
 
     setCustomer:  (customerUuid: string | null) => void;
     setDiscount:  (type: 'fixed' | 'percentage', value: number) => void;
@@ -360,6 +361,22 @@ export const useCartStore = create<CartState>()(
                     );
                 },
 
+                updateItemPrice: (productUuid, newPrice) => {
+                    set(
+                        produce((state: CartState) => {
+                            const cart = state.carts.find(
+                                c => c.id === state.activeCartId,
+                            );
+                            const item = cart?.items.find(
+                                i => i.uuid === productUuid,
+                            );
+                            if (item) {
+                                item.price = Math.max(0, safeNumber(newPrice));
+                            }
+                        }),
+                    );
+                },
+
                 setCustomer: (customerUuid) => {
                     set(
                         produce((state: CartState) => {
@@ -422,7 +439,6 @@ export const useCartStore = create<CartState>()(
                         return null;
                     }
 
-                    // CORRECTION CAS 3 : Filtrer les articles actifs uniquement
                     const activeItems = activeCart.items.filter(i => i.cartQuantity > 0);
                     if (activeItems.length === 0) {
                         toast.error('Aucun article actif dans le panier.', {
