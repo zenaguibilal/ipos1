@@ -22,19 +22,32 @@ export function safeToDate(date: Date | string): Date {
 
 /**
  * Convertit n'importe quelle valeur en nombre sain.
- * Gère les espaces (milliers), les virgules (décimales) et les valeurs nulles.
+ * Gère les formats internationaux (1.250,50 ou 1,250.50).
  * Très robuste pour les imports CSV/JSON pollués.
  */
 export function safeNumber(val: any): number {
     if (typeof val === 'number') return isNaN(val) ? 0 : val;
     if (val === null || val === undefined || val === '') return 0;
     
-    // Nettoyage agressif : on ne garde que les chiffres, le point, la virgule et le signe moins
-    const sanitized = String(val)
-        .replace(/[^\d.,-]/g, '') 
-        .replace(/,/g, '.');
-        
-    const parsed = parseFloat(sanitized);
+    let str = String(val).trim().replace(/\s/g, '');
+    
+    // Détection du séparateur décimal pour les formats mixtes
+    if (str.includes(',') && str.includes('.')) {
+        const lastDot = str.lastIndexOf('.');
+        const lastComma = str.lastIndexOf(',');
+        if (lastDot > lastComma) {
+            // Le point est le séparateur décimal (1,250.50)
+            str = str.replace(/,/g, '');
+        } else {
+            // La virgule est le séparateur décimal (1.250,50)
+            str = str.replace(/\./g, '').replace(',', '.');
+        }
+    } else if (str.includes(',')) {
+        // Uniquement une virgule (1250,50)
+        str = str.replace(',', '.');
+    }
+    
+    const parsed = parseFloat(str);
     return isNaN(parsed) ? 0 : parsed;
 }
 
@@ -53,7 +66,7 @@ export function formatDateToYYYYMMDD(date: Date): string {
 
 export function formatCurrency(value: number | string, currency = 'DA') {
     const numValue = safeNumber(value);
-    return `${numValue.toFixed(2)} ${currency}`;
+    return `${numValue.toLocaleString('fr-DZ', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${currency}`;
 }
 
 interface CalculableCart {

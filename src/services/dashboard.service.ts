@@ -6,7 +6,7 @@ import { db } from '@/lib/db';
 import { preciseMultiply, safeNumber } from '@/lib/utils';
 
 /**
- * @fileOverview Service نخبوي لحساب بيانات لوحة التحكم بدقة محاسبية.
+ * @fileOverview Service nخبوي لحساب بيانات لوحة التحكم بدقة محاسبية.
  * يقوم بتحليل التدفقات المالية، الأرباح، والمخزون مع معالجة دقيقة للمرتجعات والمصاريف.
  */
 class DashboardService {
@@ -18,7 +18,6 @@ class DashboardService {
             const prevFrom = new Date(prevTo.getTime() - duration);
 
             // جلب البيانات للفترتين (الحالية والسابقة) للمقارنة
-            // ملاحظة: نستخدم كائنات التاريخ مباشرة لأن Dexie يخزنها كـ Date
             const [allSales, allExpenses, allReturns, customers, allProducts] =
                 await Promise.all([
                     db.sales
@@ -130,6 +129,10 @@ class DashboardService {
                         daily.total -= safeNumber(ret.totalReturnValue);
                         daily.profit -= (safeNumber(ret.totalReturnValue) - returnCOGS);
                     }
+                    
+                    if (ret.customerUuid) {
+                        customerSpending.set(ret.customerUuid, (customerSpending.get(ret.customerUuid) || 0) - safeNumber(ret.totalReturnValue));
+                    }
                 } else {
                     prevReturns += safeNumber(ret.totalReturnValue);
                     prevReturnCOGS += returnCOGS;
@@ -154,7 +157,7 @@ class DashboardService {
             const prevNetProfit = prevNetRevenue - (prevCOGS - prevReturnCOGS) - prevExpenses;
 
             const calculateChange = (curr: number, prev: number) => {
-                if (prev === 0) return curr > 0 ? 100 : 0;
+                if (Math.abs(prev) < 0.01) return curr > 0.01 ? 100 : 0;
                 return ((curr - prev) / Math.abs(prev)) * 100;
             };
 
@@ -167,7 +170,7 @@ class DashboardService {
                     totalOutstandingDebt: customers.reduce((sum, c) => sum + safeNumber(c.outstandingBalance), 0),
                     totalInventoryValue: allProducts.reduce((sum, p) => sum + preciseMultiply(safeNumber(p.quantity), safeNumber(p.purchasePrice)), 0),
                     averageBasket: currentSaleCount > 0 ? netRevenue / currentSaleCount : 0,
-                    profitMargin: netRevenue > 0 ? (netProfit / netRevenue) * 100 : 0,
+                    profitMargin: netRevenue > 0.01 ? (netProfit / netRevenue) * 100 : 0,
                     totalRevenueChange: calculateChange(netRevenue, prevNetRevenue),
                     netProfitChange: calculateChange(netProfit, prevNetProfit),
                     totalExpensesChange: calculateChange(currentExpenses, prevExpenses),
