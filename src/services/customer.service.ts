@@ -73,7 +73,6 @@ class CustomerService {
                 return 0;
             });
         } else {
-            // فرز آمن يعالج التواريخ سواء كانت كائنات Date أو نصوص ISO
             customers.sort((a, b) => {
                 const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
                 const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
@@ -237,14 +236,14 @@ class CustomerService {
         totalOutstanding: number;
     }> {
         const allCustomers = await db.customers.toArray();
-        let totalDebt = 0;
+        let totalDebtCents = 0;
         let overdue = 0;
         let overLimit = 0;
 
         allCustomers.forEach(c => {
             const balance = safeNumber(c.outstandingBalance);
-            if (balance > 0.01) {
-                totalDebt += balance;
+            if (balance > 0.009) {
+                totalDebtCents += Math.round(balance * 100);
                 if (c.debtStatus === 'overdue') overdue++;
                 if (c.isOverLimit) overLimit++;
             }
@@ -254,7 +253,7 @@ class CustomerService {
             total: allCustomers.length,
             overdue,
             overLimit,
-            totalOutstanding: Math.round(totalDebt * 100) / 100,
+            totalOutstanding: totalDebtCents / 100,
         };
     }
 

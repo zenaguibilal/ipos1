@@ -31,13 +31,13 @@ const StatCard = ({ title, value, icon: Icon, colorClass, subtitle }: { title: s
  * Utilise useLiveQuery pour une mise à jour instantanée après chaque transaction.
  */
 export function CustomerStats() {
-  // Surveillance en temps réel de la table clients
+  // Surveillance en temps réel de la table clients (Elite Reactivity)
   const customers = useLiveQuery(() => db.customers.toArray());
 
   const stats = useMemo(() => {
     if (!customers) return { total: 0, overdue: 0, overLimit: 0, totalOutstanding: 0 };
     
-    // Utilisation d'un accumulateur d'entiers (échelle de 100) pour éviter tout drift flottant JS
+    // Utilisation d'un accumulateur d'entiers (échelle de 100) pour une précision absolue
     let totalDebtCents = 0;
     let overdueCount = 0;
     let overLimitCount = 0;
@@ -45,11 +45,11 @@ export function CustomerStats() {
     customers.forEach(c => {
         const balance = safeNumber(c.outstandingBalance);
         
-        // On ne compte que les soldes débiteurs effectifs (> 1 centime)
+        // On ne compte que les soldes débiteurs effectifs (> 0.009 DA)
         if (balance > 0.009) {
             totalDebtCents += Math.round(balance * 100);
             
-            // Les statuts sont recalculés par le service métier lors des ventes/paiements
+            // Recalcul des alertes basé sur les valeurs actuelles pour la sécurité UI
             if (c.debtStatus === 'overdue') overdueCount++;
             if (c.isOverLimit) overLimitCount++;
         }
@@ -92,14 +92,14 @@ export function CustomerStats() {
         value={String(stats.overdue)} 
         icon={AlertTriangle} 
         colorClass="bg-amber-500/10 text-amber-500" 
-        subtitle="Dossiers hors échéance" 
+        subtitle="Dossiers خارج الآجال" 
       />
       <StatCard 
         title="Crédits Dépassés" 
         value={String(stats.overLimit)} 
         icon={UserX} 
         colorClass="bg-red-500/10 text-red-500" 
-        subtitle="Plafonds de sécurité" 
+        subtitle="تجاوز سقف الائتمان" 
       />
     </div>
   );

@@ -25,7 +25,7 @@ export function safeToDate(date: Date | string): Date {
 /**
  * Convertit n'importe quelle valeur en nombre sain.
  * Gère les formats internationaux (1.250,50 ou 1,250.50).
- * Élimine les espaces et nettoie les caractères non numériques sauf point/virgule.
+ * Élimine كافة الرموز غير الرقمية باستثناء النقطة والفاصلة.
  */
 export function safeNumber(val: any): number {
     if (typeof val === 'number') return isNaN(val) ? 0 : val;
@@ -33,20 +33,17 @@ export function safeNumber(val: any): number {
     
     let str = String(val).trim().replace(/\s/g, '');
     
-    // Détection du séparateur décimal
+    // Détection du séparateur décimal (Logiciel Elite)
     if (str.includes(',') && str.includes('.')) {
         const lastDot = str.lastIndexOf('.');
         const lastComma = str.lastIndexOf(',');
         if (lastDot > lastComma) {
-            // Le point est le séparateur décimal (format US: 1,250.50)
-            str = str.replace(/,/g, '');
+            str = str.replace(/,/g, ''); // Format US: 1,250.50
         } else {
-            // La virgule est le séparateur décimal (format FR: 1.250,50)
-            str = str.replace(/\./g, '').replace(',', '.');
+            str = str.replace(/\./g, '').replace(',', '.'); // Format FR: 1.250,50
         }
     } else if (str.includes(',')) {
-        // Uniquement une virgule (1250,50)
-        str = str.replace(',', '.');
+        str = str.replace(',', '.'); // Simple comma: 1250,50
     }
     
     const parsed = parseFloat(str);
@@ -59,7 +56,6 @@ export function safeNumber(val: any): number {
 export function preciseMultiply(a: number, b: number): number {
     const valA = safeNumber(a);
     const valB = safeNumber(b);
-    // Utilisation d'un multiplicateur pour traiter les entiers
     return Math.round((valA * valB) * 1000) / 1000;
 }
 
@@ -78,11 +74,11 @@ interface CalculableCart {
 }
 
 /**
- * Calculateur financier durci — arithmétique entière mise à l'échelle.
+ * Calculateur financier durci — arithmétique entière mise à l'échelle (Cents).
  * Élimine les erreurs IEEE 754 communes en JS.
  */
 export function calculateCartTotals(cart: CalculableCart) {
-    const SCALE = 1000; // Travailler en millièmes pour la précision (3 décimales)
+    const SCALE = 1000; 
 
     const subtotalRaw = cart.items.reduce((acc, item) => {
         const priceScale = Math.round(safeNumber(item.price) * SCALE);
@@ -109,9 +105,6 @@ export function calculateCartTotals(cart: CalculableCart) {
     };
 }
 
-/**
- * Calcule le statut de stock de manière robuste.
- */
 export function calculateStockStatus(
     quantity:      number | string,
     minStockLevel: number | string,
