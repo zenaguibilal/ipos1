@@ -6,7 +6,7 @@ import { db } from '@/lib/db';
 import { inventoryService } from './inventory.service';
 import { customerService } from './customer.service';
 import { useAppStore } from '@/stores/appStore';
-import { safeToDate } from '@/lib/utils';
+import { safeToDate, safeNumber } from '@/lib/utils';
 import { startOfDay, endOfDay } from 'date-fns';
 
 class SalesService {
@@ -27,36 +27,45 @@ class SalesService {
         to?: Date;
         status?: 'all' | 'paid' | 'partial' | 'unpaid';
     }): Promise<Sale[]> {
-        let collection = db.sales.toCollection();
+        let collection;
 
-        if (filters.from) {
+        // Optimization: Use index for date range if provided
+        if (filters.from && filters.to) {
             const start = startOfDay(filters.from);
-            collection = collection.filter(s => safeToDate(s.createdAt!) >= start);
-        }
-        if (filters.to) {
             const end = endOfDay(filters.to);
-            collection = collection.filter(s => safeToDate(s.createdAt!) <= end);
+            collection = db.sales.where('createdAt').between(start, end, true, true);
+        } else if (filters.from) {
+            const start = startOfDay(filters.from);
+            collection = db.sales.where('createdAt').aboveOrEqual(start);
+        } else if (filters.to) {
+            const end = endOfDay(filters.to);
+            collection = db.sales.where('createdAt').belowOrEqual(end);
+        } else {
+            collection = db.sales.toCollection();
         }
-        if (filters.status && filters.status !== 'all')
-            collection = collection.filter(
-                s => s.paymentStatus === filters.status,
-            );
+
+        if (filters.status && filters.status !== 'all') {
+            collection = collection.filter(s => s.paymentStatus === filters.status);
+        }
 
         let sales = await collection.toArray();
 
         if (filters.query) {
             const lowerQuery = filters.query.toLowerCase().trim();
+            // We search in invoice number and customer names
             const customers = await db.customers
                 .filter(c => (c.firstName + ' ' + c.lastName).toLowerCase().includes(lowerQuery))
                 .toArray();
-            const customerUuids = customers.map(c => c.uuid);
+            const customerUuids = new Set(customers.map(c => c.uuid));
+            
             sales = sales.filter(
                 s =>
                     s.invoiceNumber.toLowerCase().includes(lowerQuery) ||
-                    (s.customerUuid && customerUuids.includes(s.customerUuid)),
+                    (s.customerUuid && customerUuids.has(s.customerUuid)),
             );
         }
 
+        // Sort descending by date
         return sales.sort(
             (a, b) =>
                 new Date(b.createdAt!).getTime() -
@@ -72,14 +81,12 @@ class SalesService {
         const now = new Date();
         const year = now.getFullYear();
         
-        // Récupérer le compteur depuis le profil
         const profile = await db.company_profile.toCollection().first();
         const currentCounter = profile?.invoice_counter || 1;
         const prefix = profile?.invoice_prefix || String(year);
 
         const invoiceNumber = `${prefix}-${String(currentCounter).padStart(6, '0')}`;
 
-        // Mettre à jour le compteur dans Dexie
         if (profile?.id) {
             await db.company_profile.update(profile.id, {
                 invoice_counter: currentCounter + 1,
@@ -100,16 +107,16 @@ class SalesService {
     }): Promise<Sale> {
         const now = new Date();
         const subtotal = saleData.items.reduce(
-            (acc, item) => acc + item.price * item.cartQuantity,
+            (acc, item) => acc + safeNumber(item.price) * safeNumber(item.cartQuantity),
             0,
         );
         const discountAmount =
             saleData.discountType === 'percentage'
-                ? (subtotal * saleData.discountValue) / 100
-                : saleData.discountValue;
+                ? (subtotal * safeNumber(saleData.discountValue)) / 100
+                : safeNumber(saleData.discountValue);
         const total = Math.max(0, subtotal - discountAmount);
 
-        const remainingBalance = total - saleData.amountPaid;
+        const remainingBalance = total - safeNumber(saleData.amountPaid);
         const paymentStatus =
             remainingBalance <= 0.01
                 ? 'paid'
@@ -122,9 +129,9 @@ class SalesService {
         const saleItems: SaleItem[] = saleData.items.map(item => ({
             productUuid: item.uuid.startsWith('custom-') ? null : item.uuid,
             name: item.name,
-            price: item.price,
-            purchasePrice: item.purchasePrice,
-            quantity: item.cartQuantity,
+            price: safeNumber(item.price),
+            purchasePrice: safeNumber(item.purchasePrice),
+            quantity: safeNumber(item.cartQuantity),
             tva_rate: profile?.tva_rate || 19
         }));
 
@@ -134,12 +141,12 @@ class SalesService {
             uuid: uuidv4(),
             invoiceNumber,
             items: saleItems,
-            subtotal,
+            subtotal: Number(subtotal.toFixed(2)),
             discountType: saleData.discountType,
-            discountAmount,
-            total,
-            amountPaid: saleData.amountPaid,
-            remainingBalance,
+            discountAmount: Number(discountAmount.toFixed(2)),
+            total: Number(total.toFixed(2)),
+            amountPaid: Number(safeNumber(saleData.amountPaid).toFixed(2)),
+            remainingBalance: Number(remainingBalance.toFixed(2)),
             paymentStatus,
             customerUuid: saleData.customerUuid || undefined,
             createdAt: now,

@@ -31,19 +31,20 @@ export function safeNumber(val: any): number {
     if (typeof val === 'number') return isNaN(val) ? 0 : val;
     if (val === null || val === undefined || val === '') return 0;
     
+    // Nettoyage agressif des espaces et caractères non numériques sauf , et .
     let str = String(val).trim().replace(/\s/g, '');
     
-    // Détection du séparateur décimal (Logiciel Elite)
+    // Détection et standardisation du séparateur décimal
     if (str.includes(',') && str.includes('.')) {
         const lastDot = str.lastIndexOf('.');
         const lastComma = str.lastIndexOf(',');
         if (lastDot > lastComma) {
-            str = str.replace(/,/g, ''); // Format US: 1,250.50
+            str = str.replace(/,/g, ''); // Format US: 1,250.50 -> 1250.50
         } else {
-            str = str.replace(/\./g, '').replace(',', '.'); // Format FR: 1.250,50
+            str = str.replace(/\./g, '').replace(',', '.'); // Format FR: 1.250,50 -> 1250.50
         }
     } else if (str.includes(',')) {
-        str = str.replace(',', '.'); // Simple comma: 1250,50
+        str = str.replace(',', '.'); // Simple comma: 1250,50 -> 1250.50
     }
     
     const parsed = parseFloat(str);
@@ -78,12 +79,12 @@ interface CalculableCart {
  * Élimine les erreurs IEEE 754 communes en JS.
  */
 export function calculateCartTotals(cart: CalculableCart) {
-    const SCALE = 1000; 
+    const SCALE = 100; // Travailler en centimes
 
     const subtotalRaw = cart.items.reduce((acc, item) => {
-        const priceScale = Math.round(safeNumber(item.price) * SCALE);
+        const priceCents = Math.round(safeNumber(item.price) * SCALE);
         const qty = safeNumber(item.cartQuantity);
-        return acc + Math.round(priceScale * qty);
+        return acc + Math.round(priceCents * qty);
     }, 0);
 
     const subtotal = subtotalRaw / SCALE;
@@ -99,9 +100,9 @@ export function calculateCartTotals(cart: CalculableCart) {
     const finalTotal = totalRaw / SCALE;
 
     return {
-        subtotal: Math.round(subtotal * 100) / 100,
-        discountAmount: Math.round((discountAmountRaw / SCALE) * 100) / 100,
-        total: Math.round(finalTotal * 100) / 100,
+        subtotal: Number(subtotal.toFixed(2)),
+        discountAmount: Number((discountAmountRaw / SCALE).toFixed(2)),
+        total: Number(finalTotal.toFixed(2)),
     };
 }
 

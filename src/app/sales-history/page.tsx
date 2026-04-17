@@ -72,7 +72,7 @@ export default function SalesHistoryPage() {
     const [isPrintOpen, setIsPrintOpen] = useState(false);
     const [isBulkCancelConfirmOpen, setIsBulkCancelConfirmOpen] = useState(false);
 
-    // Surveillance en temps réel des ventes filtrées pour une précision absolue
+    // Surveillance en temps réel des ventes filtrées avec une précision absolue
     const sales = useLiveQuery(
         () => salesService.filterSales({
             query: debouncedSearchQuery,
@@ -91,7 +91,10 @@ export default function SalesHistoryPage() {
 
     const isLoading = sales === undefined || !isMounted;
 
-    // Calculateur de statistiques durci avec arithmétique entière
+    /**
+     * Calculateur de statistiques durci avec arithmétique entière (Cents).
+     * Garantit la précision même avec des milliers de transactions.
+     */
     const stats = useMemo(() => {
         if (!sales) return { total: 0, received: 0, debt: 0, count: 0, discount: 0 };
         
@@ -116,6 +119,9 @@ export default function SalesHistoryPage() {
         };
     }, [sales]);
 
+    /**
+     * Préparation des données du graphique avec le même محرك الدقة.
+     */
     const chartData = useMemo(() => {
         if (!sales) return [];
         const dataMap = new Map<string, { date: string, totalCents: number, receivedCents: number }>();
@@ -298,8 +304,8 @@ export default function SalesHistoryPage() {
                                         <td><b>${s.invoiceNumber}</b></td>
                                         <td>${customer ? `${customer.firstName} ${customer.lastName}` : 'Passage'}</td>
                                         <td>${s.paymentStatus.toUpperCase()}</td>
-                                        <td class="amount">${s.total.toFixed(1)}</td>
-                                        <td class="amount">${s.amountPaid.toFixed(1)}</td>
+                                        <td class="amount">${s.total.toFixed(2)}</td>
+                                        <td class="amount">${s.amountPaid.toFixed(2)}</td>
                                     </tr>
                                 `;
                             }).join('')}
@@ -336,7 +342,7 @@ export default function SalesHistoryPage() {
     return (
         <div className="p-6 sm:p-4 space-y-4 max-w-[1800px] mx-auto animate-in fade-in duration-1000">
             <PageHeader
-                title="Registre des Ventes"
+                title="Registre des Ventes Elite"
                 description="Suivi souverain des flux de trésorerie et gestion des créances"
             >
                 <div className="flex gap-3 w-full sm:w-auto">
@@ -350,7 +356,7 @@ export default function SalesHistoryPage() {
                         variant="outline" 
                         size="icon" 
                         className="h-12 w-12 rounded-2xl border-white/5 bg-card/40 hover:bg-primary/10 transition-all group"
-                        onClick={() => {}} // useLiveQuery handles refresh
+                        disabled={isLoading}
                     >
                         <RefreshCw className={cn("h-5 w-5 text-primary transition-all duration-1000", isLoading && "animate-spin")} />
                     </Button>
@@ -358,6 +364,7 @@ export default function SalesHistoryPage() {
             </PageHeader>
 
             <div className="grid grid-cols-1 lg:grid-cols-4 gap-3">
+                {/* Stats Sidebar */}
                 <div className="lg:col-span-1 space-y-4">
                     <Card className="app-card rounded-lg bg-card/40 backdrop-blur-sm border-white/5 overflow-hidden">
                         <CardHeader className="bg-primary/5 border-b border-white/5 p-6">
@@ -368,7 +375,7 @@ export default function SalesHistoryPage() {
                         <CardContent className="p-4 space-y-4">
                             <div className="space-y-1">
                                 <p className="text-[10px] font-semibold text-muted-foreground/40 uppercase tracking-wide">Revenue Facturé</p>
-                                <p className="text-xl font-semibold tracking-tighter text-primary">{formatCurrency(stats.total)}</p>
+                                <p className="text-xl font-semibold tracking-tighter text-primary tabular-nums">{formatCurrency(stats.total)}</p>
                                 <p className="text-[10px] font-bold text-muted-foreground/60">{stats.count} transactions validées</p>
                             </div>
                             
@@ -377,13 +384,13 @@ export default function SalesHistoryPage() {
                                     <p className="text-[9px] font-semibold uppercase text-emerald-600 mb-1 flex items-center gap-2">
                                         <CheckCircle2 className="h-3 w-3" /> Recettes Réelles
                                     </p>
-                                    <p className="font-semibold text-xl text-emerald-600 tracking-tight">{formatCurrency(stats.received)}</p>
+                                    <p className="font-semibold text-xl text-emerald-600 tracking-tight tabular-nums">{formatCurrency(stats.received)}</p>
                                 </div>
                                 <div className="p-5 rounded-3xl bg-destructive/5 border border-destructive/10 group hover:bg-destructive/10 transition-all duration-500 shadow-inner">
                                     <p className="text-[9px] font-semibold uppercase text-destructive mb-1 flex items-center gap-2">
                                         <Landmark className="h-3 w-3" /> Créances Clients
                                     </p>
-                                    <p className="font-semibold text-xl text-destructive tracking-tight">{formatCurrency(stats.debt)}</p>
+                                    <p className="font-semibold text-xl text-destructive tracking-tight tabular-nums">{formatCurrency(stats.debt)}</p>
                                 </div>
                             </div>
 
@@ -392,7 +399,7 @@ export default function SalesHistoryPage() {
                                     <div className="p-2 rounded-xl bg-amber-500/10 text-amber-600"><RefreshCw className="h-3.5 w-3.5" /></div>
                                     <span className="text-[10px] font-semibold uppercase tracking-wide text-amber-600/70">Remises Accordées</span>
                                 </div>
-                                <span className="font-semibold text-sm text-amber-600">{formatCurrency(stats.discount)}</span>
+                                <span className="font-semibold text-sm text-amber-600 tabular-nums">{formatCurrency(stats.discount)}</span>
                             </div>
                         </CardContent>
                     </Card>
@@ -448,6 +455,7 @@ export default function SalesHistoryPage() {
                     </Card>
                 </div>
 
+                {/* Main Content */}
                 <div className="lg:col-span-3 space-y-4">
                     <Card className="app-card rounded-lg bg-card/40 backdrop-blur-sm border-white/5 overflow-hidden">
                         <CardHeader className="flex flex-row items-center justify-between p-4 border-b border-white/5 bg-muted/20">
@@ -512,7 +520,7 @@ export default function SalesHistoryPage() {
                                             axisLine={false} 
                                             stroke="hsl(var(--muted-foreground) / 0.4)"
                                             dx={-15}
-                                            tickFormatter={(v) => `${v / 1000}k`}
+                                            tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`}
                                         />
                                         <Tooltip 
                                             contentStyle={{
@@ -534,6 +542,7 @@ export default function SalesHistoryPage() {
                         </CardContent>
                     </Card>
 
+                    {/* Sales List */}
                     <div className="min-h-[600px] animate-in fade-in slide-in-from-bottom-4 duration-1000">
                         {isLoading ? (
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -585,7 +594,7 @@ export default function SalesHistoryPage() {
                             <EmptyState
                                 icon={History}
                                 title="Le Grand Livre est vide"
-                                description={isFiltered ? "Ajustez vos filtres pour déنيcher les transactions." : "Lancez votre première vente Premium dès maintenant."}
+                                description={isFiltered ? "Ajustez vos filtres pour dénicher les transactions." : "Lancez votre première vente Premium dès maintenant."}
                             >
                                 {isFiltered && <Button variant="outline" onClick={resetFilters} className="rounded-2xl h-12 font-bold px-8 border-primary/20 hover:bg-primary/5">Effacer les filtres</Button>}
                             </EmptyState>
@@ -594,6 +603,7 @@ export default function SalesHistoryPage() {
                 </div>
             </div>
 
+            {/* Bulk Actions Bar */}
             {selectedSales.size > 0 && (
                 <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 animate-in slide-in-from-bottom-10 duration-500">
                     <div className="bg-card/80 backdrop-blur-sm border-2 border-primary/20 shadow-sm rounded-full px-8 py-4 flex items-center gap-4">
@@ -602,7 +612,7 @@ export default function SalesHistoryPage() {
                                 {selectedSales.size}
                             </div>
                             <div className="flex flex-col">
-                                <span className="text-[10px] font-semibold uppercase text-muted-foreground">Commandes Elite</span>
+                                <span className="text-[10px] font-semibold uppercase text-muted-foreground">Ventes Sélectionnées</span>
                                 <span className="text-xs font-semibold text-primary">{formatCurrency(stats.total)}</span>
                             </div>
                         </div>
@@ -631,7 +641,7 @@ export default function SalesHistoryPage() {
                 isOpen={isCancelOpen}
                 onOpenChange={setIsCancelOpen}
                 sale={selectedSale}
-                onSuccess={() => {}}
+                onSuccess={() => setSelectedSales(new Set())}
             />
 
             <PrintReceiptDialog 
@@ -651,7 +661,7 @@ export default function SalesHistoryPage() {
                         <ul className="list-disc list-inside text-xs space-y-1 opacity-70 ml-2">
                             <li>Réintégration totale des articles au stock</li>
                             <li>Annulation des écritures comptables</li>
-                            <li>Recالcul automatique des soldes clients (créances)</li>
+                            <li>Recalcul automatique des soldes clients (créances)</li>
                         </ul>
                     </div>
                 }
