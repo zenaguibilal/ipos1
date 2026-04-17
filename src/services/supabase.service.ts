@@ -7,13 +7,11 @@ import { toast } from 'sonner';
 /**
  * Service de synchronisation souverain pour iPOS Zen.
  * Gère le transfert bidirectionnel intelligent entre IndexedDB et Supabase.
- * Inclut désormais un mappeur automatique CamelCase <-> SnakeCase.
  */
 class SupabaseSyncService {
 
     private isSyncing = false;
 
-    /** Ordonnancement strict pour l'intégrité référentielle */
     private readonly tableSyncOrder = [
         { name: 'company_profile',   table: db.company_profile },
         { name: 'suppliers',         table: db.suppliers },
@@ -29,17 +27,17 @@ class SupabaseSyncService {
         { name: 'supplier_payments', table: db.supplier_payments },
     ];
 
-    /** Utilitaire: camelCase -> snake_case */
     private camelToSnake(str: string): string {
         return str.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
     }
 
-    /** Utilitaire: snake_case -> camelCase */
     private snakeToCamel(str: string): string {
         return str.replace(/(_\w)/g, m => m[1].toUpperCase());
     }
 
-    /** Nettoyage et mapping des données pour le stockage Cloud (SnakeCase) */
+    /**
+     * Mappeur intelligent SnakeCase <-> CamelCase.
+     */
     private sanitizeForCloud(data: any): any {
         if (data === null || data === undefined) return data;
         if (data instanceof Date) return data.toISOString();
@@ -48,10 +46,7 @@ class SupabaseSyncService {
         if (typeof data === 'object') {
             const clean: any = {};
             for (const key in data) {
-                // On ignore l'ID auto-incrémenté local de Dexie
                 if (key === 'id') continue;
-                
-                // Conversion de la clé pour Postgres (SnakeCase)
                 const snakeKey = this.camelToSnake(key);
                 clean[snakeKey] = this.sanitizeForCloud(data[key]);
             }
@@ -60,21 +55,17 @@ class SupabaseSyncService {
         return data;
     }
 
-    /** Mapping des données distantes vers IndexedDB (CamelCase) */
     private mapToLocal(record: any): any {
         if (!record) return record;
         const clean: any = {};
         for (const key in record) {
-            // On ignore l'ID distant pour laisser Dexie gérer son propre index local
             if (key === 'id') continue;
-            
             const camelKey = this.snakeToCamel(key);
             clean[camelKey] = record[key];
         }
         return clean;
     }
 
-    /** Mécanisme de retry intelligent */
     private async withRetry<T>(
         fn: () => Promise<T>,
         attempts = 3,
@@ -101,10 +92,7 @@ class SupabaseSyncService {
                 .from('company_profile')
                 .select('uuid')
                 .limit(1);
-            if (error && error.code !== 'PGRST116') {
-                console.error('Supabase connection error:', error);
-                return false;
-            }
+            if (error && error.code !== 'PGRST116') return false;
             return true;
         } catch {
             return false;
@@ -112,10 +100,7 @@ class SupabaseSyncService {
     }
 
     async pushAllData(url: string, key: string): Promise<void> {
-        if (this.isSyncing) {
-            toast.info('Synchronisation déjà en cours…');
-            return;
-        }
+        if (this.isSyncing) return;
         this.isSyncing = true;
 
         const supabase = getSupabaseClient(url, key);
@@ -129,7 +114,6 @@ class SupabaseSyncService {
                 const records = await item.table.toArray();
                 if (records.length === 0) continue;
 
-                // CRITICAL: Transformation vers le schéma Cloud (SnakeCase)
                 const dataToSync = this.sanitizeForCloud(records);
 
                 await this.withRetry(async () => {
@@ -138,25 +122,12 @@ class SupabaseSyncService {
                         .upsert(dataToSync, { onConflict: 'uuid' });
 
                     if (error) {
-                        if (error.code === '42501')
-                            throw new Error(
-                                `Permission refusée sur ${item.name}. Vérifiez les politiques RLS.`,
-                            );
-                        throw new Error(
-                            `Push [${item.name}] échoué: ${error.message}`,
-                        );
+                        throw new Error(`Push [${item.name}] échoué: ${error.message}`);
                     }
                 });
             }
-
-            toast.success('Sauvegarde cloud réussie ✓', {
-                description: `Toutes les tables ont été harmonisées.`,
-            });
         } catch (err: any) {
-            console.error('Push Error Details:', err);
-            toast.error('Échec de la sauvegarde cloud', {
-                description: err.message,
-            });
+            console.error('Push Error:', err);
             throw err;
         } finally {
             this.isSyncing = false;
@@ -164,10 +135,7 @@ class SupabaseSyncService {
     }
 
     async pullAllData(url: string, key: string): Promise<void> {
-        if (this.isSyncing) {
-            toast.info('Synchronisation déjà en cours…');
-            return;
-        }
+        if (this.isSyncing) return;
         this.isSyncing = true;
 
         const supabase = getSupabaseClient(url, key);
@@ -182,53 +150,33 @@ class SupabaseSyncService {
                     supabase.from(item.name).select('*'),
                 );
 
-                if (error) {
-                    console.warn(`Pull [${item.name}] échoué: ${error.message}`);
-                    continue;
-                }
+                if (error) continue;
 
                 if (data && data.length > 0) {
                     await db.transaction('rw', item.table, async () => {
                         for (const remoteRecord of data) {
+                            const sanitizedRemoteRecord = this.mapToLocal(remoteRecord);
                             const localRecord = await item.table
                                 .where('uuid')
-                                .equals(remoteRecord.uuid)
+                                .equals(sanitizedRemoteRecord.uuid)
                                 .first();
 
-                            // CRITICAL: Transformation vers le schéma Local (CamelCase)
-                            const sanitizedRemoteRecord = this.mapToLocal(remoteRecord);
-
                             if (localRecord) {
-                                const localUpdate = localRecord.updatedAt
-                                    ? new Date(localRecord.updatedAt).getTime()
-                                    : 0;
-                                const remoteUpdate = remoteRecord.updated_at // C'est en snake_case dans le cloud
-                                    ? new Date(remoteRecord.updated_at).getTime()
-                                    : 0;
+                                const localUpdate = localRecord.updatedAt ? new Date(localRecord.updatedAt).getTime() : 0;
+                                const remoteUpdate = remoteRecord.updated_at ? new Date(remoteRecord.updated_at).getTime() : 0;
 
                                 if (remoteUpdate > localUpdate) {
-                                    await item.table.update(
-                                        localRecord.id,
-                                        sanitizedRemoteRecord,
-                                    );
+                                    await item.table.update(localRecord.id, sanitizedRemoteRecord);
                                 }
                             } else {
-                                await item.table.add(
-                                    sanitizedRemoteRecord,
-                                );
+                                await item.table.add(sanitizedRemoteRecord);
                             }
                         }
                     });
                 }
             }
-
-            toast.success('Restauration cloud réussie ✓', {
-                description: 'Les données distantes ont été converties au format local.',
-            });
         } catch (err: any) {
-            toast.error('Échec de la restauration cloud', {
-                description: err.message,
-            });
+            console.error('Pull Error:', err);
             throw err;
         } finally {
             this.isSyncing = false;

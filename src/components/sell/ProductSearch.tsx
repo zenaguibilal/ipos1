@@ -67,11 +67,16 @@ export const ProductSelector = forwardRef<{ focusInput: () => void }, ProductSel
     const [searchError, setSearchError] = useState<string | null>(null);
     const inputRef = useRef<HTMLInputElement>(null);
 
-    useImperativeHandle(ref, () => ({
-        focusInput: () => {
-            inputRef.current?.focus();
-            inputRef.current?.select();
+    // محرك التركيز التلقائي لضمان تدفق المسح بالباركود
+    const refocusInput = () => {
+        if (inputRef.current) {
+            inputRef.current.focus();
+            inputRef.current.select();
         }
+    };
+
+    useImperativeHandle(ref, () => ({
+        focusInput: refocusInput
     }));
 
     useEffect(() => {
@@ -108,10 +113,8 @@ export const ProductSelector = forwardRef<{ focusInput: () => void }, ProductSel
         addItemToCart(product);
         setSearchQuery('');
         setSearchResults([]);
-        // Force immediate refocus for continuous scanning
-        setTimeout(() => {
-            inputRef.current?.focus();
-        }, 50);
+        // إعادة التركيز فوراً للمسح التالي
+        setTimeout(refocusInput, 10);
     };
     
     const isActiveSearch = searchQuery.trim().length > 0;
@@ -196,7 +199,7 @@ export const ProductSelector = forwardRef<{ focusInput: () => void }, ProductSel
                         ) : !isSearching && (
                             <div className="py-24 text-center space-y-4 opacity-20 flex flex-col items-center">
                                 <ShoppingBag className="h-16 w-16 mb-4" />
-                                <p className="text-[10px] font-black uppercase tracking-[0.3em]">Silence Radio. Produit non répertorié.</p>
+                                <p className="text-[10px] font-black uppercase tracking-[0.3em]">Silence Radio. Produit non répertوريé.</p>
                             </div>
                         )}
                     </div>

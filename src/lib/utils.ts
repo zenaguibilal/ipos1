@@ -8,9 +8,15 @@ export function cn(...inputs: ClassValue[]) {
 
 /**
  * Epsilon pour les comparaisons financières haute précision.
- * Évite les erreurs floating-point bloquant des opérations logiques.
  */
 export const FINANCIAL_EPSILON = 0.00001;
+
+/**
+ * Arrondi financier standard à 2 décimales.
+ */
+export function roundFinancial(val: number): number {
+    return Math.round((val + Number.EPSILON) * 100) / 100;
+}
 
 /**
  * Convertit un Date ou une ISO string en objet Date fiable.
@@ -23,28 +29,24 @@ export function safeToDate(date: Date | string): Date {
 }
 
 /**
- * Convertit n'importe quelle valeur en nombre sain.
- * Gère les formats internationaux (1.250,50 ou 1,250.50).
- * Supporte les espaces comme séparateurs de milliers (format DZ/FR).
+ * محرك الأرقام الفولاذي: يقرأ المبالغ المالية بأمان تام ويدعم كافة التنسيقات.
  */
 export function safeNumber(val: any): number {
     if (typeof val === 'number') return isNaN(val) ? 0 : val;
     if (val === null || val === undefined || val === '') return 0;
     
-    // Nettoyage agressif des espaces et caractères non numériques sauf , et .
     let str = String(val).trim().replace(/\s/g, '');
     
-    // Détection et standardisation du séparateur décimal
     if (str.includes(',') && str.includes('.')) {
         const lastDot = str.lastIndexOf('.');
         const lastComma = str.lastIndexOf(',');
         if (lastDot > lastComma) {
-            str = str.replace(/,/g, ''); // Format US: 1,250.50 -> 1250.50
+            str = str.replace(/,/g, ''); 
         } else {
-            str = str.replace(/\./g, '').replace(',', '.'); // Format FR: 1.250,50 -> 1250.50
+            str = str.replace(/\./g, '').replace(',', '.');
         }
     } else if (str.includes(',')) {
-        str = str.replace(',', '.'); // Simple comma: 1250,50 -> 1250.50
+        str = str.replace(',', '.');
     }
     
     const parsed = parseFloat(str);
@@ -52,7 +54,7 @@ export function safeNumber(val: any): number {
 }
 
 /**
- * Multiplie deux nombres avec une précision fixe pour éviter les erreurs de virgule flottante.
+ * Multiplie deux nombres باحترافية لتجنب أخطاء الفاصلة العائمة.
  */
 export function preciseMultiply(a: number, b: number): number {
     const valA = safeNumber(a);
@@ -75,34 +77,26 @@ interface CalculableCart {
 }
 
 /**
- * Calculateur financier durci — arithmétique entière mise à l'échelle (Cents).
- * Élimine les erreurs IEEE 754 communes en JS.
+ * محرك الحسابات المتقدم للفاتورة - دقة السنتيم المحاسبية.
  */
 export function calculateCartTotals(cart: CalculableCart) {
-    const SCALE = 100; // Travailler en centimes
-
-    const subtotalRaw = cart.items.reduce((acc, item) => {
-        const priceCents = Math.round(safeNumber(item.price) * SCALE);
-        const qty = safeNumber(item.cartQuantity);
-        return acc + Math.round(priceCents * qty);
+    const subtotal = cart.items.reduce((acc, item) => {
+        return acc + preciseMultiply(item.price, item.cartQuantity);
     }, 0);
 
-    const subtotal = subtotalRaw / SCALE;
-
-    let discountAmountRaw = 0;
+    let discountAmount = 0;
     if (cart.discount.type === 'percentage') {
-        discountAmountRaw = Math.round(subtotalRaw * (safeNumber(cart.discount.value) / 100));
+        discountAmount = (subtotal * safeNumber(cart.discount.value)) / 100;
     } else {
-        discountAmountRaw = Math.round(safeNumber(cart.discount.value) * SCALE);
+        discountAmount = safeNumber(cart.discount.value);
     }
 
-    const totalRaw = Math.max(0, subtotalRaw - discountAmountRaw);
-    const finalTotal = totalRaw / SCALE;
+    const total = Math.max(0, subtotal - discountAmount);
 
     return {
-        subtotal: Number(subtotal.toFixed(2)),
-        discountAmount: Number((discountAmountRaw / SCALE).toFixed(2)),
-        total: Number(finalTotal.toFixed(2)),
+        subtotal: roundFinancial(subtotal),
+        discountAmount: roundFinancial(discountAmount),
+        total: roundFinancial(total),
     };
 }
 

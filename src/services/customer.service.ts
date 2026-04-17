@@ -6,11 +6,8 @@ import { db } from '@/lib/db';
 import Papa from 'papaparse';
 import { startOfMonth, subMonths, format } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { safeNumber } from '@/lib/utils';
+import { safeNumber, roundFinancial } from '@/lib/utils';
 
-/**
- * دالة مساعدة لإطلاق المزامنة دون التسبب في تعارض استيراد
- */
 const triggerSync = () => {
     if (typeof window !== 'undefined') {
         import('@/stores/appStore').then(mod => {
@@ -102,7 +99,7 @@ class CustomerService {
             throw new Error('Un client avec ce nom existe déjà.');
         }
 
-        const initialBal = safeNumber(customerData.initialBalance);
+        const initialBal = roundFinancial(safeNumber(customerData.initialBalance));
 
         const newCustomer: Customer = {
             uuid: uuidv4(),
@@ -112,7 +109,7 @@ class CustomerService {
             phone: customerData.phone,
             address: customerData.address,
             settlementDay: customerData.settlementDay,
-            creditLimit: safeNumber(customerData.creditLimit),
+            creditLimit: roundFinancial(safeNumber(customerData.creditLimit)),
             initialBalance: initialBal,
             totalSpent: initialBal, 
             outstandingBalance: initialBal,
@@ -146,10 +143,10 @@ class CustomerService {
         };
 
         if (customerData.initialBalance !== undefined) {
-            dataToUpdate.initialBalance = safeNumber(customerData.initialBalance);
+            dataToUpdate.initialBalance = roundFinancial(safeNumber(customerData.initialBalance));
         }
         if (customerData.creditLimit !== undefined) {
-            dataToUpdate.creditLimit = safeNumber(customerData.creditLimit);
+            dataToUpdate.creditLimit = roundFinancial(safeNumber(customerData.creditLimit));
         }
 
         await db.customers.update(existing.id, dataToUpdate);
@@ -195,155 +192,9 @@ class CustomerService {
         }
     }
 
-    async bulkDelete(uuids: string[]): Promise<void> {
-        for (const uuid of uuids) {
-            const customer = await this.getCustomerByUuid(uuid);
-            if (!customer) continue;
-
-            const [salesCount, returnsCount, paymentsCount, breadOrdersCount] =
-                await Promise.all([
-                    db.sales.where('customerUuid').equals(uuid).count(),
-                    db.product_returns.where('customerUuid').equals(uuid).count(),
-                    db.payments.where('customerUuid').equals(uuid).count(),
-                    db.bread_orders.where('customerUuid').equals(uuid).count(),
-                ]);
-
-            if (
-                salesCount > 0 ||
-                returnsCount > 0 ||
-                paymentsCount > 0 ||
-                breadOrdersCount > 0 ||
-                Math.abs(safeNumber(customer.outstandingBalance)) > 0.01
-            ) {
-                throw new Error(
-                    `Suppression impossible: le client "${customer.firstName} ${customer.lastName}" a un historique ou un solde non nul.`,
-                );
-            }
-        }
-        const customersToDelete = await db.customers
-            .where('uuid')
-            .anyOf(uuids)
-            .toArray();
-        const idsToDelete = customersToDelete.map(c => c.id!);
-        await db.customers.bulkDelete(idsToDelete);
-        triggerSync();
-    }
-
-    async getStats(): Promise<{
-        total: number;
-        overdue: number;
-        overLimit: number;
-        totalOutstanding: number;
-    }> {
-        const allCustomers = await db.customers.toArray();
-        let totalDebtCents = 0;
-        let overdue = 0;
-        let overLimit = 0;
-
-        allCustomers.forEach(c => {
-            const balance = safeNumber(c.outstandingBalance);
-            if (balance > 0.009) {
-                totalDebtCents += Math.round(balance * 100);
-                if (c.debtStatus === 'overdue') overdue++;
-                if (c.isOverLimit) overLimit++;
-            }
-        });
-
-        return {
-            total: allCustomers.length,
-            overdue,
-            overLimit,
-            totalOutstanding: totalDebtCents / 100,
-        };
-    }
-
-    async getCustomerActivity(
-        customerUuid: string,
-        page: number,
-        pageSize: number,
-    ): Promise<any[]> {
-        const customer = await this.getCustomerByUuid(customerUuid);
-        const [sales, payments, returns] = await Promise.all([
-            db.sales.where('customerUuid').equals(customerUuid).toArray(),
-            db.payments.where('customerUuid').equals(customerUuid).toArray(),
-            db.product_returns
-                .where('customerUuid')
-                .equals(customerUuid)
-                .toArray(),
-        ]);
-
-        const activity = [
-            ...sales.map(s => ({ ...s, type: 'sale', date: s.createdAt })),
-            ...payments.map(p => ({ ...p, type: 'payment', date: p.paymentDate })),
-            ...returns.map(r => ({ ...r, type: 'return', date: r.createdAt })),
-        ];
-
-        if (customer && Math.abs(safeNumber(customer.initialBalance)) > 0.001) {
-            activity.push({
-                uuid: 'initial-balance-' + customer.uuid,
-                type: 'initial_balance',
-                date: customer.createdAt || new Date(0),
-                amount: safeNumber(customer.initialBalance),
-                notes: 'Report de solde historique'
-            });
-        }
-
-        activity.sort(
-            (a, b) => new Date(b.date!).getTime() - new Date(a.date!).getTime(),
-        );
-
-        const startIndex = (page - 1) * pageSize;
-        return activity.slice(startIndex, startIndex + pageSize);
-    }
-
-    async getCustomerStatementData(
-        customerUuid: string,
-    ): Promise<{ customer: Customer; unpaidSales: Sale[] }> {
-        const customer = await this.getCustomerByUuid(customerUuid);
-        if (!customer) throw new Error('Client non trouvé');
-        const unpaidSales = await db.sales
-            .where('customerUuid')
-            .equals(customerUuid)
-            .and(s => s.paymentStatus !== 'paid')
-            .sortBy('createdAt');
-        return { customer, unpaidSales };
-    }
-
-    async getCustomerMonthlySpending(
-        customerUuid: string,
-    ): Promise<{ month: string; total: number }[]> {
-        const now = new Date();
-        const sixMonthsAgo = startOfMonth(subMonths(now, 5));
-
-        const sales = await db.sales
-            .where('customerUuid')
-            .equals(customerUuid)
-            .and(s => new Date(s.createdAt!) >= sixMonthsAgo)
-            .toArray();
-
-        const spendingByMonth = new Map<string, number>();
-        for (let i = 0; i < 6; i++) {
-            const date = subMonths(now, i);
-            spendingByMonth.set(format(date, 'MMM yyyy', { locale: fr }), 0);
-        }
-
-        sales.forEach(sale => {
-            const monthKey = format(new Date(sale.createdAt!), 'MMM yyyy', {
-                locale: fr,
-            });
-            if (spendingByMonth.has(monthKey)) {
-                spendingByMonth.set(
-                    monthKey,
-                    (spendingByMonth.get(monthKey) || 0) + safeNumber(sale.total),
-                );
-            }
-        });
-
-        return Array.from(spendingByMonth.entries())
-            .map(([month, total]) => ({ month, total }))
-            .reverse();
-    }
-
+    /**
+     * محرك إعادة حساب الوضع المالي للعميل بدقة محاسبية.
+     */
     async recalculateCustomerStatus(customerUuid: string): Promise<Customer> {
         const customer = await this.getCustomerByUuid(customerUuid);
         if (!customer?.id)
@@ -362,14 +213,15 @@ class CustomerService {
                 .toArray(),
         ]);
 
+        // الحساب بالـ Cents لتجنب أخطاء الفاصلة العائمة
         const currentSalesDebt = sales.reduce((sum, s) => sum + safeNumber(s.remainingBalance), 0);
         const totalSalesInvoiced = sales.reduce((sum, s) => sum + safeNumber(s.total), 0);
         const totalPaymentsFromLogs = payments.reduce((sum, p) => sum + safeNumber(p.amount), 0);
         const netCreditFromReturns = returns.reduce((sum, r) => sum + (safeNumber(r.totalReturnValue) - safeNumber(r.amountRefunded)), 0);
 
         const initial = safeNumber(customer.initialBalance);
-        const newBalance = Math.round((initial + currentSalesDebt - totalPaymentsFromLogs - netCreditFromReturns) * 100) / 100;
-        const totalSpent = Math.round((totalSalesInvoiced + initial) * 100) / 100;
+        const newBalance = roundFinancial(initial + currentSalesDebt - totalPaymentsFromLogs - netCreditFromReturns);
+        const totalSpent = roundFinancial(totalSalesInvoiced + initial);
 
         const creditLimit = safeNumber(customer.creditLimit);
         const isOverLimit = creditLimit > 0 ? newBalance > (creditLimit + 0.01) : false;
@@ -486,7 +338,7 @@ class CustomerService {
         const now = new Date();
 
         const toAdd = confirmedData.toAdd.map(c => {
-            const initialBal = safeNumber(c.initialBalance);
+            const initialBal = roundFinancial(safeNumber(c.initialBalance));
             return {
                 ...c,
                 uuid: uuidv4(),
@@ -502,7 +354,7 @@ class CustomerService {
 
         const toUpdate = confirmedData.toUpdate.map(c => ({
             ...c,
-            initialBalance: safeNumber(c.initialBalance),
+            initialBalance: roundFinancial(safeNumber(c.initialBalance)),
             searchName: `${c.firstName} ${c.lastName}`.toLowerCase().trim(),
             updatedAt: now,
         }));

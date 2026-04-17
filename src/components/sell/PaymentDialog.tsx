@@ -16,7 +16,7 @@ import { Badge }    from '@/components/ui/badge';
 import { useActiveCart, useCartActions } from '@/stores/cartStore';
 import {
     calculateCartTotals, formatCurrency,
-    cn, FINANCIAL_EPSILON, safeNumber
+    cn, FINANCIAL_EPSILON, safeNumber, roundFinancial
 } from '@/lib/utils';
 import {
     Loader2, CheckCircle2, AlertCircle,
@@ -57,7 +57,7 @@ function PaymentDialogContent({
 
     const total = totals.total;
     const amountPaid   = safeNumber(amountPaidStr);
-    const change       = Math.max(0, amountPaid - total);
+    const change       = roundFinancial(Math.max(0, amountPaid - total));
     
     const isFullPay    = amountPaid >= total - 0.009;
     const isCreditSale = !!(cart?.customerUuid && amountPaid < total - 0.009);
@@ -67,8 +67,7 @@ function PaymentDialogContent({
     useEffect(() => {
         if (!isOpen || !isMounted || !cart) return;
         
-        const activeItemsOnly = cart.items.filter(i => i.cartQuantity > 0);
-        const currentTotals = calculateCartTotals({ ...cart, items: activeItemsOnly });
+        const currentTotals = calculateCartTotals({ ...cart, items: activeItems });
         
         setAmountPaidStr(currentTotals.total.toFixed(2));
         setIsLoading(false);
@@ -95,7 +94,7 @@ function PaymentDialogContent({
             setDueDate(undefined);
             setCustomer(null);
         }
-    }, [isOpen, cart, isMounted]);
+    }, [isOpen, cart, isMounted, activeItems]);
 
     const projectedBalance = useMemo(() => {
         if (!customer) return 0;
