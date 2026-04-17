@@ -1,3 +1,4 @@
+
 'use client';
 
 import { v4 as uuidv4 } from 'uuid';
@@ -241,6 +242,7 @@ class CustomerService {
             total: allCustomers.length,
             overdue: allCustomers.filter(c => c.debtStatus === 'overdue').length,
             overLimit: allCustomers.filter(c => c.isOverLimit === true).length,
+            // ضمان جمع المبالغ بدقة محاسبية
             totalOutstanding: allCustomers.reduce(
                 (sum, c) => sum + safeNumber(c.outstandingBalance),
                 0,

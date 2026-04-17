@@ -4,10 +4,9 @@
 import { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import type { Product } from '@/lib/types';
 import { Package, AlertTriangle, PackageX, CalendarClock, TrendingUp } from 'lucide-react';
 import { differenceInDays } from 'date-fns';
-import { formatCurrency, cn } from '@/lib/utils';
+import { formatCurrency, cn, safeNumber, preciseMultiply } from '@/lib/utils';
 import { useLiveQuery } from '@/hooks/useLiveQuery';
 import { db } from '@/lib/db';
 
@@ -27,18 +26,32 @@ const StatCard = ({ title, value, icon: Icon, colorClass, subtitle }: { title: s
 );
 
 export const InventoryStats = ({ isLoading: externalLoading }: { isLoading?: boolean }) => {
-    // Live query for the products table to update stats instantly
+    // مراقبة حية لجدول المنتجات لتحديث الإحصائيات فوراً
     const products = useLiveQuery(() => db.products.toArray());
 
     const stats = useMemo(() => {
         if (!products) return { total: 0, low: 0, out: 0, expiring: 0, totalValue: 0 };
         const now = new Date();
+        
         return {
             total: products.length,
-            low: products.filter(p => p.quantity > 0 && p.quantity <= p.minStockLevel).length,
-            out: products.filter(p => p.quantity <= 0).length,
-            expiring: products.filter(p => p.dateExpiration && differenceInDays(new Date(p.dateExpiration), now) <= 30 && differenceInDays(new Date(p.dateExpiration), now) >= 0).length,
-            totalValue: products.reduce((acc, p) => acc + (p.quantity > 0 ? p.quantity * p.purchasePrice : 0), 0),
+            low: products.filter(p => {
+                const qty = safeNumber(p.quantity);
+                return qty > 0 && qty <= safeNumber(p.minStockLevel);
+            }).length,
+            out: products.filter(p => safeNumber(p.quantity) <= 0).length,
+            expiring: products.filter(p => {
+                if (!p.dateExpiration) return false;
+                const d = new Date(p.dateExpiration);
+                const diff = differenceInDays(d, now);
+                return diff <= 30 && diff >= 0;
+            }).length,
+            // حساب القيمة الإجمالية بدقة محاسبية عالية
+            totalValue: products.reduce((acc, p) => {
+                const qty = safeNumber(p.quantity);
+                const cost = safeNumber(p.purchasePrice);
+                return acc + (qty > 0 ? preciseMultiply(qty, cost) : 0);
+            }, 0),
         };
     }, [products]);
 
@@ -56,9 +69,9 @@ export const InventoryStats = ({ isLoading: externalLoading }: { isLoading?: boo
         <div className="grid gap-6 grid-cols-2 lg:grid-cols-5">
             <StatCard title="Catalogue" value={String(stats.total)} icon={Package} colorClass="bg-primary/10 text-primary" subtitle="Produits référencés" />
             <StatCard title="Valeur Stock" value={formatCurrency(stats.totalValue)} icon={TrendingUp} colorClass="bg-emerald-500/10 text-emerald-500" subtitle="Investissement total" />
-            <StatCard title="Stock Faible" value={String(stats.low)} icon={AlertTriangle} colorClass="bg-amber-500/10 text-amber-500" subtitle="Réapprovisionnement requis" />
-            <StatCard title="Ruptures" value={String(stats.out)} icon={PackageX} colorClass="bg-destructive/10 text-destructive" subtitle="Ventes perdues potentielles" />
-            <StatCard title="Péremptions" value={String(stats.expiring)} icon={CalendarClock} colorClass="bg-purple-500/10 text-purple-500" subtitle="Échéances < 30 jours" />
+            <StatCard title="Stock Faible" value={String(stats.low)} icon={AlertTriangle} colorClass="bg-amber-500/10 text-amber-500" subtitle="Réapprovisionnement" />
+            <StatCard title="Ruptures" value={String(stats.out)} icon={PackageX} colorClass="bg-destructive/10 text-destructive" subtitle="Ventes perdues" />
+            <StatCard title="Péremptions" value={String(stats.expiring)} icon={CalendarClock} colorClass="bg-purple-500/10 text-purple-500" subtitle="Moins de 30 jours" />
         </div>
     );
 };
