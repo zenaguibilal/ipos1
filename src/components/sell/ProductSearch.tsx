@@ -30,7 +30,7 @@ const SearchResultItem = React.memo(({ product, onSelect }: { product: Product, 
                     </span>
                     {product.quantity <= product.minStockLevel && (
                         <span className="px-2 py-0.5 rounded-lg bg-destructive/10 text-destructive text-[8px] font-black uppercase border border-destructive/20 animate-pulse tracking-tighter">
-                            Alerte Stock
+                            Aلة المخزون
                         </span>
                     )}
                 </div>
@@ -108,8 +108,10 @@ export const ProductSelector = forwardRef<{ focusInput: () => void }, ProductSel
         addItemToCart(product);
         setSearchQuery('');
         setSearchResults([]);
-        // Re-focus immediately for fast scanning
-        setTimeout(() => inputRef.current?.focus(), 10);
+        // Force immediate refocus for continuous scanning
+        setTimeout(() => {
+            inputRef.current?.focus();
+        }, 50);
     };
     
     const isActiveSearch = searchQuery.trim().length > 0;
@@ -131,6 +133,7 @@ export const ProductSelector = forwardRef<{ focusInput: () => void }, ProductSel
                         autoComplete="off"
                         onKeyDown={(e) => {
                             if (e.key === 'Enter' && searchResults.length > 0) {
+                                e.preventDefault();
                                 handleSelect(searchResults[0]);
                             }
                         }}
@@ -170,7 +173,7 @@ export const ProductSelector = forwardRef<{ focusInput: () => void }, ProductSel
                                 Prêt pour l'indexation [F3]
                             </p>
                             <p className="text-[10px] font-bold text-muted-foreground/10 uppercase tracking-widest">
-                                Utilisez le lecteur ou saisissez une référence
+                                Utilisez le lecteur أو saisissez une référence
                             </p>
                         </div>
                     </div>

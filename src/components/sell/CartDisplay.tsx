@@ -28,6 +28,7 @@ interface CartItemRowProps {
 
 const CartItemRow = React.memo(({ item, isSelected, onUpdate, onPriceUpdate, onRemove, onSelect }: CartItemRowProps) => {
     const priceInputRef = useRef<HTMLInputElement>(null);
+    const qtyInputRef = useRef<HTMLInputElement>(null);
 
     const handleQtyChange = (val: string) => {
         const num = parseFloat(val);
@@ -64,6 +65,12 @@ const CartItemRow = React.memo(({ item, isSelected, onUpdate, onPriceUpdate, onR
             key: '*',
             action: () => priceInputRef.current?.focus(),
             description: 'Modifier le سعر',
+            ignoreInputFocus: false
+        },
+        {
+            key: 'q',
+            action: () => qtyInputRef.current?.focus(),
+            description: 'Focus Quantité',
             ignoreInputFocus: false
         },
         {
@@ -108,6 +115,7 @@ const CartItemRow = React.memo(({ item, isSelected, onUpdate, onPriceUpdate, onR
                             type="number"
                             value={item.price}
                             onChange={(e) => handlePriceChange(e.target.value)}
+                            onFocus={e => e.target.select()}
                             className={cn(
                                 "h-6 w-24 pl-6 pr-1 text-[10px] font-black bg-black/20 border-none shadow-inner focus-visible:ring-primary/20 rounded-lg",
                                 isSellingAtLoss && "text-destructive"
@@ -145,10 +153,12 @@ const CartItemRow = React.memo(({ item, isSelected, onUpdate, onPriceUpdate, onR
                         −
                     </button>
                     <Input
+                        ref={qtyInputRef}
                         type="number"
                         step="0.001"
                         value={item.cartQuantity}
                         onChange={(e) => handleQtyChange(e.target.value)}
+                        onFocus={e => e.target.select()}
                         className={cn(
                             "w-20 text-center h-10 bg-transparent border-none shadow-none font-black text-lg focus-visible:ring-0",
                             isZero ? "text-destructive" : "text-primary"

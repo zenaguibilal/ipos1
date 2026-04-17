@@ -16,7 +16,7 @@ import { Badge }    from '@/components/ui/badge';
 import { useActiveCart, useCartActions } from '@/stores/cartStore';
 import {
     calculateCartTotals, formatCurrency,
-    cn, FINANCIAL_EPSILON,
+    cn, FINANCIAL_EPSILON, safeNumber
 } from '@/lib/utils';
 import {
     Loader2, CheckCircle2, AlertCircle,
@@ -50,12 +50,13 @@ function PaymentDialogContent({
 
     const activeItems = useMemo(() => cart?.items.filter(i => i.cartQuantity > 0) || [], [cart?.items]);
 
-    const { total } = useMemo(
+    const totals = useMemo(
         () => (cart ? calculateCartTotals({ ...cart, items: activeItems }) : { total: 0 }),
         [cart, activeItems],
     );
 
-    const amountPaid   = parseFloat(amountPaidStr) || 0;
+    const total = totals.total;
+    const amountPaid   = safeNumber(amountPaidStr);
     const change       = Math.max(0, amountPaid - total);
     
     const isFullPay    = amountPaid >= total - 0.009;
@@ -67,9 +68,9 @@ function PaymentDialogContent({
         if (!isOpen || !isMounted || !cart) return;
         
         const activeItemsOnly = cart.items.filter(i => i.cartQuantity > 0);
-        const totals = calculateCartTotals({ ...cart, items: activeItemsOnly });
+        const currentTotals = calculateCartTotals({ ...cart, items: activeItemsOnly });
         
-        setAmountPaidStr(totals.total.toFixed(2));
+        setAmountPaidStr(currentTotals.total.toFixed(2));
         setIsLoading(false);
         setLastSale(null);
         setApproveOverLimit(false);
@@ -121,7 +122,7 @@ function PaymentDialogContent({
     );
 
     const handleProcessSale = useCallback(async () => {
-        if (amountPaid < 0 || isLoading || !canFinalize) return;
+        if (!canFinalize) return;
         setIsLoading(true);
         try {
             const sale = await processSale(amountPaid, dueDate);
@@ -133,7 +134,7 @@ function PaymentDialogContent({
         } finally {
             setIsLoading(false);
         }
-    }, [amountPaid, isLoading, dueDate, processSale, onOpenChange, canFinalize]);
+    }, [amountPaid, dueDate, processSale, onOpenChange, canFinalize]);
 
     useKeyboardShortcuts([
         {
@@ -155,7 +156,7 @@ function PaymentDialogContent({
     return (
         <>
             <Dialog open={isOpen} onOpenChange={onOpenChange}>
-                <DialogContent className="sm:max-w-md p-0 overflow-hidden border-none shadow-2xl rounded-3xl">
+                <DialogContent className="sm:max-w-md p-0 overflow-hidden border-none shadow-2xl rounded-3xl bg-card">
                     <DialogHeader className="p-6 bg-primary/5 border-b border-primary/10">
                         <div className="flex items-center gap-4">
                             <div className="p-3 rounded-2xl bg-primary text-primary-foreground shadow-lg">
@@ -203,7 +204,6 @@ function PaymentDialogContent({
                             </div>
                         </div>
 
-                        {/* Customer Identification Status */}
                         <div className={cn(
                             "p-4 rounded-2xl border flex items-center gap-4 transition-all duration-500",
                             customer ? "bg-primary/5 border-primary/20" : "bg-amber-500/5 border-amber-500/20"
@@ -214,9 +214,9 @@ function PaymentDialogContent({
                             )}>
                                 {customer ? <UserCheck className="h-5 w-5" /> : <UserX className="h-5 w-5" />}
                             </div>
-                            <div className="flex-grow">
+                            <div className="flex-grow min-w-0">
                                 <p className="text-[9px] font-black uppercase tracking-widest opacity-40">Statut Client</p>
-                                <p className="text-sm font-bold tracking-tight">
+                                <p className="text-sm font-bold tracking-tight truncate">
                                     {customer ? `${customer.firstName} ${customer.lastName}` : "Client de passage"}
                                 </p>
                             </div>

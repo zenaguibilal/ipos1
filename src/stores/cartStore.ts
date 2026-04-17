@@ -10,7 +10,6 @@ import { companyProfileService } from '@/services/profile.service';
 import { useAppStore } from './appStore';
 import { FINANCIAL_EPSILON, safeNumber } from '@/lib/utils';
 
-// Types pour la gestion des paniers multiples
 interface CartState {
     carts:        Cart[];
     activeCartId: string | null;
@@ -153,7 +152,7 @@ async function triggerAutoPrint(sale: Sale): Promise<void> {
             win.close();
         }, 350);
     } catch (_e) {
-        // Erreur d'impression non critique
+        // Silent error
     }
 }
 
@@ -238,50 +237,33 @@ export const useCartStore = create<CartState>()(
                         !product.uuid.startsWith('custom-') &&
                         product.uuid !== 'BREAD_PRODUCT';
 
-                    if (isStockedItem) {
-                        const currentCartQty = existingItem
-                            ? existingItem.cartQuantity
-                            : 0;
-                        const requestedTotal = currentCartQty + quantity;
+                    const finalQtyToAdd = Number(safeNumber(quantity).toFixed(3));
 
-                        if (
-                            product.quantity <
-                            requestedTotal - FINANCIAL_EPSILON
-                        ) {
-                            toast.error(
-                                `Stock insuffisant pour "${product.name}"`,
-                                {
-                                    description: `Demandé: ${requestedTotal}, Disponible: ${product.quantity}.`,
-                                },
-                            );
+                    if (isStockedItem) {
+                        const currentCartQty = existingItem ? existingItem.cartQuantity : 0;
+                        const requestedTotal = currentCartQty + finalQtyToAdd;
+
+                        if (product.quantity < requestedTotal - FINANCIAL_EPSILON) {
+                            toast.error(`Stock insuffisant pour "${product.name}"`, {
+                                description: `Disponible: ${product.quantity}, Demandé: ${requestedTotal}.`,
+                            });
                             return;
                         }
                     }
 
                     set(
                         produce((state: CartState) => {
-                            const targetCart = state.carts.find(
-                                c => c.id === state.activeCartId,
-                            );
+                            const targetCart = state.carts.find(c => c.id === state.activeCartId);
                             if (!targetCart) return;
 
-                            const item = targetCart.items.find(
-                                i => i.uuid === product.uuid,
-                            );
-                            
-                            const finalQtyToAdd = safeNumber(quantity);
-
+                            const item = targetCart.items.find(i => i.uuid === product.uuid);
                             if (item) {
-                                if (item.cartQuantity === 0) {
-                                    item.cartQuantity = finalQtyToAdd;
-                                } else {
-                                    item.cartQuantity = Number((item.cartQuantity + finalQtyToAdd).toFixed(3));
-                                }
+                                item.cartQuantity = Number((item.cartQuantity + finalQtyToAdd).toFixed(3));
                                 item.flash = true;
                             } else {
                                 targetCart.items.unshift({
                                     ...product,
-                                    cartQuantity: Number(finalQtyToAdd.toFixed(3)),
+                                    cartQuantity: finalQtyToAdd,
                                     flash: true,
                                 } as CartItem);
                             }
@@ -291,12 +273,8 @@ export const useCartStore = create<CartState>()(
                     setTimeout(() => {
                         set(
                             produce((state: CartState) => {
-                                const targetCart = state.carts.find(
-                                    c => c.id === state.activeCartId,
-                                );
-                                const item = targetCart?.items.find(
-                                    i => i.uuid === product.uuid,
-                                );
+                                const targetCart = state.carts.find(c => c.id === state.activeCartId);
+                                const item = targetCart?.items.find(i => i.uuid === product.uuid);
                                 if (item) item.flash = false;
                             }),
                         );
@@ -306,13 +284,8 @@ export const useCartStore = create<CartState>()(
                 removeItemFromCart: (productUuid) => {
                     set(
                         produce((state: CartState) => {
-                            const cart = state.carts.find(
-                                c => c.id === state.activeCartId,
-                            );
-                            if (cart)
-                                cart.items = cart.items.filter(
-                                    item => item.uuid !== productUuid,
-                                );
+                            const cart = state.carts.find(c => c.id === state.activeCartId);
+                            if (cart) cart.items = cart.items.filter(item => item.uuid !== productUuid);
                         }),
                     );
                 },
@@ -320,36 +293,20 @@ export const useCartStore = create<CartState>()(
                 updateItemQuantity: (productUuid, newQuantity) => {
                     set(
                         produce((state: CartState) => {
-                            const cart = state.carts.find(
-                                c => c.id === state.activeCartId,
-                            );
-                            const item = cart?.items.find(
-                                i => i.uuid === productUuid,
-                            );
+                            const cart = state.carts.find(c => c.id === state.activeCartId);
+                            const item = cart?.items.find(i => i.uuid === productUuid);
                             if (!item) return;
 
-                            const isStockedItem =
-                                !item.uuid.startsWith('custom-') &&
-                                item.uuid !== 'BREAD_PRODUCT';
+                            const isStockedItem = !item.uuid.startsWith('custom-') && item.uuid !== 'BREAD_PRODUCT';
+                            const finalNewQty = Number(safeNumber(newQuantity).toFixed(3));
 
-                            const finalNewQty = safeNumber(newQuantity);
-
-                            if (
-                                isStockedItem &&
-                                finalNewQty > item.quantity + FINANCIAL_EPSILON
-                            ) {
-                                toast.error('Stock insuffisant', {
-                                    description: `Max disponible: ${item.quantity}`,
-                                });
+                            if (isStockedItem && finalNewQty > item.quantity + FINANCIAL_EPSILON) {
+                                toast.error('Stock insuffisant', { description: `Max: ${item.quantity}` });
                                 item.cartQuantity = item.quantity;
                                 return;
                             }
 
-                            if (finalNewQty > 0) {
-                                item.cartQuantity = Number(finalNewQty.toFixed(3));
-                            } else {
-                                item.cartQuantity = 0;
-                            }
+                            item.cartQuantity = Math.max(0, finalNewQty);
                         }),
                     );
                 },
@@ -357,12 +314,8 @@ export const useCartStore = create<CartState>()(
                 updateItemPrice: (productUuid, newPrice) => {
                     set(
                         produce((state: CartState) => {
-                            const cart = state.carts.find(
-                                c => c.id === state.activeCartId,
-                            );
-                            const item = cart?.items.find(
-                                i => i.uuid === productUuid,
-                            );
+                            const cart = state.carts.find(c => c.id === state.activeCartId);
+                            const item = cart?.items.find(i => i.uuid === productUuid);
                             if (item) {
                                 item.price = Number(Math.max(0, safeNumber(newPrice)).toFixed(2));
                             }
@@ -373,9 +326,7 @@ export const useCartStore = create<CartState>()(
                 setCustomer: (customerUuid) => {
                     set(
                         produce((state: CartState) => {
-                            const cart = state.carts.find(
-                                c => c.id === state.activeCartId,
-                            );
+                            const cart = state.carts.find(c => c.id === state.activeCartId);
                             if (cart) cart.customerUuid = customerUuid;
                         }),
                     );
@@ -384,14 +335,8 @@ export const useCartStore = create<CartState>()(
                 setDiscount: (type, value) => {
                     set(
                         produce((state: CartState) => {
-                            const cart = state.carts.find(
-                                c => c.id === state.activeCartId,
-                            );
-                            if (cart)
-                                cart.discount = {
-                                    type,
-                                    value: Math.max(0, value),
-                                };
+                            const cart = state.carts.find(c => c.id === state.activeCartId);
+                            if (cart) cart.discount = { type, value: Math.max(0, value) };
                         }),
                     );
                 },
@@ -399,9 +344,7 @@ export const useCartStore = create<CartState>()(
                 clearCart: () => {
                     set(
                         produce((state: CartState) => {
-                            const cart = state.carts.find(
-                                c => c.id === state.activeCartId,
-                            );
+                            const cart = state.carts.find(c => c.id === state.activeCartId);
                             if (cart) cart.items = [];
                         }),
                     );
@@ -410,16 +353,10 @@ export const useCartStore = create<CartState>()(
                 resetCart: () => {
                     set(
                         produce((state: CartState) => {
-                            const cart = state.carts.find(
-                                c => c.id === state.activeCartId,
-                            );
+                            const cart = state.carts.find(c => c.id === state.activeCartId);
                             if (cart) {
                                 const { id, name } = cart;
-                                Object.assign(cart, {
-                                    ...defaultCart,
-                                    id,
-                                    name,
-                                });
+                                Object.assign(cart, { ...defaultCart, id, name });
                             }
                         }),
                     );
@@ -427,10 +364,7 @@ export const useCartStore = create<CartState>()(
 
                 processSale: async (amountPaid, dueDate) => {
                     const activeCart = get().actions.getActiveCart();
-                    if (!activeCart || activeCart.items.length === 0) {
-                        toast.error('Le panier est vide.');
-                        return null;
-                    }
+                    if (!activeCart) return null;
 
                     const activeItems = activeCart.items.filter(i => i.cartQuantity > 0);
                     if (activeItems.length === 0) {
@@ -443,7 +377,7 @@ export const useCartStore = create<CartState>()(
                             items:         activeItems,
                             discountType:  activeCart.discount.type,
                             discountValue: activeCart.discount.value,
-                            amountPaid,
+                            amountPaid:    safeNumber(amountPaid),
                             customerUuid:  activeCart.customerUuid,
                             dueDate,
                         });
@@ -451,9 +385,7 @@ export const useCartStore = create<CartState>()(
                         get().actions.resetCart();
 
                         if (activeCart.customerUuid) {
-                            await customerService.recalculateCustomerStatus(
-                                activeCart.customerUuid,
-                            );
+                            await customerService.recalculateCustomerStatus(activeCart.customerUuid);
                         }
 
                         useAppStore.getState().actions.triggerSmartSync();
@@ -461,9 +393,7 @@ export const useCartStore = create<CartState>()(
 
                         return sale;
                     } catch (error: any) {
-                        toast.error('Échec de la transaction.', {
-                            description: error.message,
-                        });
+                        toast.error('Échec de la transaction.', { description: error.message });
                         return null;
                     }
                 },
