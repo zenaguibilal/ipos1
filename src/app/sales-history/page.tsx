@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
@@ -39,7 +40,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuCheckboxItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { toast } from 'sonner';
-import { cn, formatCurrency, safeToDate } from '@/lib/utils';
+import { cn, formatCurrency, safeToDate, safeNumber } from '@/lib/utils';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
 import { format } from 'date-fns';
@@ -48,6 +49,8 @@ import Papa from 'papaparse';
 import { useAppStore } from '@/stores/appStore';
 import { ConfirmAlertDialog } from '@/components/ui/ConfirmAlertDialog';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
+import { useLiveQuery } from '@/hooks/useLiveQuery';
+import { db } from '@/lib/db';
 
 type SalesStatus = 'all' | 'paid' | 'partial' | 'unpaid';
 
@@ -71,64 +74,69 @@ export default function SalesHistoryPage() {
     const [isPrintOpen, setIsPrintOpen] = useState(false);
     const [isBulkCancelConfirmOpen, setIsBulkCancelConfirmOpen] = useState(false);
 
-    const [sales, setSales] = useState<Sale[] | undefined>(undefined);
-    const [customerMap, setCustomerMap] = useState<Map<string, Customer>>(new Map());
-    const [isRefreshing, setIsRefreshing] = useState(false);
+    // Live monitoring of filtered sales for absolute precision and reactivity
+    const sales = useLiveQuery(
+        () => salesService.filterSales({
+            query: debouncedSearchQuery,
+            from: dateRange?.from,
+            to: dateRange?.to,
+            status: filterStatus
+        }),
+        [debouncedSearchQuery, dateRange, filterStatus]
+    );
+
+    // Live monitoring of all customers to build the map
+    const customers = useLiveQuery(() => db.customers.toArray());
     
+    const customerMap = useMemo(() => {
+        return new Map((customers || []).map(c => [c.uuid, c]));
+    }, [customers]);
+
+    const isRefreshing = sales === undefined;
     const isLoading = sales === undefined;
-
-    const fetchSalesAndCustomers = useCallback(async () => {
-        if (!isMounted || !dateRange) return;
-        setIsRefreshing(true);
-        try {
-            const [salesData, customersData] = await Promise.all([
-                salesService.filterSales({
-                    query: debouncedSearchQuery,
-                    from: dateRange.from,
-                    to: dateRange.to,
-                    status: filterStatus
-                }),
-                customerService.getCustomers()
-            ]);
-            setSales(salesData);
-            setCustomerMap(new Map(customersData.map(c => [c.uuid, c])));
-        } catch (error: any) {
-            toast.error("Impossible de charger l'historique des ventes.");
-            setSales([]);
-        } finally {
-            setIsRefreshing(false);
-        }
-    }, [isMounted, debouncedSearchQuery, dateRange, filterStatus]);
-
-    useEffect(() => {
-        fetchSalesAndCustomers();
-    }, [fetchSalesAndCustomers]);
 
     const stats = useMemo(() => {
         if (!sales) return { total: 0, received: 0, debt: 0, count: 0, discount: 0 };
-        return sales.reduce((acc, s) => ({
-            total: acc.total + s.total,
-            received: acc.received + s.amountPaid,
-            debt: acc.debt + Math.max(0, s.total - s.amountPaid),
-            count: acc.count + 1,
-            discount: acc.discount + (s.discountAmount || 0)
-        }), { total: 0, received: 0, debt: 0, count: 0, discount: 0 });
+        
+        let totalCents = 0;
+        let receivedCents = 0;
+        let debtCents = 0;
+        let discountCents = 0;
+
+        sales.forEach(s => {
+            totalCents += Math.round(safeNumber(s.total) * 100);
+            receivedCents += Math.round(safeNumber(s.amountPaid) * 100);
+            debtCents += Math.round(safeNumber(s.remainingBalance) * 100);
+            discountCents += Math.round(safeNumber(s.discountAmount) * 100);
+        });
+
+        return {
+            total: totalCents / 100,
+            received: receivedCents / 100,
+            debt: debtCents / 100,
+            count: sales.length,
+            discount: discountCents / 100
+        };
     }, [sales]);
 
     const chartData = useMemo(() => {
         if (!sales) return [];
-        const dataMap = new Map<string, { date: string, total: number, received: number }>();
+        const dataMap = new Map<string, { date: string, totalCents: number, receivedCents: number }>();
         const sortedSales = [...sales].sort((a,b) => safeToDate(a.createdAt!).getTime() - safeToDate(b.createdAt!).getTime());
         
         sortedSales.forEach(s => {
             const day = format(safeToDate(s.createdAt!), 'dd/MM');
-            const current = dataMap.get(day) || { date: day, total: 0, received: 0 };
-            current.total += s.total;
-            current.received += s.amountPaid;
+            const current = dataMap.get(day) || { date: day, totalCents: 0, receivedCents: 0 };
+            current.totalCents += Math.round(safeNumber(s.total) * 100);
+            current.receivedCents += Math.round(safeNumber(s.amountPaid) * 100);
             dataMap.set(day, current);
         });
 
-        return Array.from(dataMap.values());
+        return Array.from(dataMap.values()).map(d => ({
+            date: d.date,
+            total: d.totalCents / 100,
+            received: d.receivedCents / 100
+        }));
     }, [sales]);
 
     const handleToggleSelection = (uuid: string) => {
@@ -182,7 +190,6 @@ export default function SalesHistoryPage() {
         if (failCount > 0) toast.error(`${failCount} échec(s) d'annulation.`);
         
         setSelectedSales(new Set());
-        fetchSalesAndCustomers();
     };
 
     const handleExportCsv = () => {
@@ -346,7 +353,6 @@ export default function SalesHistoryPage() {
                         variant="outline" 
                         size="icon" 
                         className="h-12 w-12 rounded-2xl border-white/5 bg-card/40 hover:bg-primary/10 transition-all group"
-                        onClick={fetchSalesAndCustomers}
                         disabled={isRefreshing}
                     >
                         <RefreshCw className={cn("h-5 w-5 text-primary transition-all duration-1000", isRefreshing && "animate-spin")} />
@@ -523,8 +529,8 @@ export default function SalesHistoryPage() {
                                             itemStyle={{ fontSize: '12px', fontWeight: '900', textTransform: 'uppercase' }}
                                             formatter={(v: number, name: string) => [formatCurrency(v), name === 'total' ? 'Facturé' : 'Recueilli']}
                                         />
-                                        <Area type="monotone" dataKey="total" name="total" stroke="hsl(var(--chart-primary))" fillOpacity={1} fill="url(#colorTotal)" strokeWidth={5} />
-                                        <Area type="monotone" dataKey="received" name="received" stroke="hsl(var(--chart-quaternary))" fillOpacity={1} fill="url(#colorReceived)" strokeWidth={3} strokeDasharray="10 10" />
+                                        <Area type="monotone" dataKey="total" name="total" stroke="hsl(var(--chart-primary))" fillOpacity={1} fill="url(#colorTotal)" strokeWidth={5} isAnimationActive={false} />
+                                        <Area type="monotone" dataKey="received" name="received" stroke="hsl(var(--chart-quaternary))" fillOpacity={1} fill="url(#colorReceived)" strokeWidth={3} strokeDasharray="10 10" isAnimationActive={false} />
                                     </AreaChart>
                                 </ResponsiveContainer>
                             )}
@@ -536,7 +542,7 @@ export default function SalesHistoryPage() {
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                                 {[...Array(6)].map((_, i) => <Skeleton key={`skel-sales-${i}`} className="h-56 w-full rounded-lg bg-card/40 animate-pulse" />)}
                             </div>
-                        ) : sales.length > 0 ? (
+                        ) : sales && sales.length > 0 ? (
                             viewMode === 'list' ? (
                                 <div className="space-y-6">
                                     <div className="flex items-center gap-3 px-6 py-3 bg-primary/10 rounded-2xl border border-primary/20 w-fit backdrop-blur-md shadow-inner">
@@ -582,7 +588,7 @@ export default function SalesHistoryPage() {
                             <EmptyState
                                 icon={History}
                                 title="Le Grand Livre est vide"
-                                description={isFiltered ? "Ajustez vos filtres pour dénicher les transactions." : "Lancez votre première vente Premium dès maintenant."}
+                                description={isFiltered ? "Ajustez vos filtres pour déنicher les transactions." : "Lancez votre première vente Premium dès maintenant."}
                             >
                                 {isFiltered && <Button variant="outline" onClick={resetFilters} className="rounded-2xl h-12 font-bold px-8 border-primary/20 hover:bg-primary/5">Effacer les filtres</Button>}
                             </EmptyState>
@@ -628,7 +634,7 @@ export default function SalesHistoryPage() {
                 isOpen={isCancelOpen}
                 onOpenChange={setIsCancelOpen}
                 sale={selectedSale}
-                onSuccess={fetchSalesAndCustomers}
+                onSuccess={() => {}}
             />
 
             <PrintReceiptDialog 
@@ -648,7 +654,7 @@ export default function SalesHistoryPage() {
                         <ul className="list-disc list-inside text-xs space-y-1 opacity-70 ml-2">
                             <li>Réintégration totale des articles au stock</li>
                             <li>Annulation des écritures comptables</li>
-                            <li>Recalcul automatique des soldes clients (créances)</li>
+                            <li>Recالcul automatique des soldes clients (créances)</li>
                         </ul>
                     </div>
                 }
@@ -658,3 +664,4 @@ export default function SalesHistoryPage() {
         </div>
     );
 }
+
