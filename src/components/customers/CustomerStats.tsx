@@ -9,7 +9,7 @@ import { useLiveQuery } from '@/hooks/useLiveQuery';
 import { db } from '@/lib/db';
 
 /**
- * بطاقة إحصائية موحدة بتصميم Elite.
+ * Composant de carte statistique unifié avec un design Elite.
  */
 const StatCard = ({ title, value, icon: Icon, colorClass, subtitle }: { title: string, value: string, icon: any, colorClass: string, subtitle?: string }) => (
     <Card className="app-card h-full bg-card/40 backdrop-blur-sm border-white/5 rounded-lg group overflow-hidden">
@@ -26,22 +26,30 @@ const StatCard = ({ title, value, icon: Icon, colorClass, subtitle }: { title: s
     </Card>
 );
 
+/**
+ * Composant CustomerStats - Calcule et affiche les indicateurs clés de la base client.
+ * Utilise useLiveQuery pour une mise à jour instantanée après chaque transaction.
+ */
 export function CustomerStats() {
-  // مراقبة حية للعملاء لضمان تحديث الأرقام فوراً عند البيع أو الدفع
+  // Surveillance en temps réel de la table clients
   const customers = useLiveQuery(() => db.customers.toArray());
 
   const stats = useMemo(() => {
     if (!customers) return { total: 0, overdue: 0, overLimit: 0, totalOutstanding: 0 };
     
-    let totalDebtAccumulator = 0;
+    // Utilisation d'un accumulateur d'entiers (échelle de 100) pour éviter tout drift flottant JS
+    let totalDebtCents = 0;
     let overdueCount = 0;
     let overLimitCount = 0;
 
     customers.forEach(c => {
-        // استخدام safeNumber لضمان الدقة المحاسبية ومنع أخطاء الـ Floating point
         const balance = safeNumber(c.outstandingBalance);
-        if (balance > 0.01) {
-            totalDebtAccumulator += balance;
+        
+        // On ne compte que les soldes débiteurs effectifs (> 1 centime)
+        if (balance > 0.009) {
+            totalDebtCents += Math.round(balance * 100);
+            
+            // Les statuts sont recalculés par le service métier lors des ventes/paiements
             if (c.debtStatus === 'overdue') overdueCount++;
             if (c.isOverLimit) overLimitCount++;
         }
@@ -51,8 +59,7 @@ export function CustomerStats() {
         total: customers.length,
         overdue: overdueCount,
         overLimit: overLimitCount,
-        // تقريب نهائي للسنتيمات
-        totalOutstanding: Math.round(totalDebtAccumulator * 100) / 100
+        totalOutstanding: totalDebtCents / 100
     };
   }, [customers]);
 
@@ -67,32 +74,32 @@ export function CustomerStats() {
   return (
     <div className="grid gap-6 grid-cols-2 lg:grid-cols-4 animate-in fade-in duration-700">
       <StatCard 
-        title="Base Clients" 
+        title="Fichier Clients" 
         value={String(stats.total)} 
         icon={Users} 
         colorClass="bg-primary/10 text-primary" 
         subtitle="Partenaires enregistrés" 
       />
       <StatCard 
-        title="Créances Globales" 
+        title="Créances Totales" 
         value={formatCurrency(stats.totalOutstanding)} 
         icon={Landmark} 
         colorClass="bg-destructive/10 text-destructive shadow-destructive/5" 
-        subtitle="Montant total à collecter" 
+        subtitle="Dettes clients actives" 
       />
       <StatCard 
         title="Retards de Paiement" 
         value={String(stats.overdue)} 
         icon={AlertTriangle} 
         colorClass="bg-amber-500/10 text-amber-500" 
-        subtitle="Dossiers en retard" 
+        subtitle="Dossiers hors échéance" 
       />
       <StatCard 
-        title="Plafonds Dépassés" 
+        title="Crédits Dépassés" 
         value={String(stats.overLimit)} 
         icon={UserX} 
         colorClass="bg-red-500/10 text-red-500" 
-        subtitle="Dépassement de crédit" 
+        subtitle="Plafonds de sécurité" 
       />
     </div>
   );
