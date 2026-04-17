@@ -8,17 +8,20 @@ import { formatCurrency, cn, safeNumber } from '@/lib/utils';
 import { useLiveQuery } from '@/hooks/useLiveQuery';
 import { db } from '@/lib/db';
 
+/**
+ * بطاقة إحصائية موحدة بتصميم Elite.
+ */
 const StatCard = ({ title, value, icon: Icon, colorClass, subtitle }: { title: string, value: string, icon: any, colorClass: string, subtitle?: string }) => (
     <Card className="app-card h-full bg-card/40 backdrop-blur-sm border-white/5 rounded-lg group overflow-hidden">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3 p-6">
-            <CardTitle className="text-[10px] font-semibold uppercase text-muted-foreground group-hover:text-primary transition-all duration-500">{title}</CardTitle>
+            <CardTitle className="text-[10px] font-black uppercase text-muted-foreground group-hover:text-primary transition-all duration-500 tracking-widest">{title}</CardTitle>
             <div className={cn("p-3 rounded-2xl shadow-inner transition-all duration-500 group-hover:scale-110", colorClass)}>
                 <Icon className="h-5 w-5" />
             </div>
         </CardHeader>
         <CardContent className="px-6 pb-6">
-            <div className="text-xl font-semibold tracking-tighter text-foreground group-hover:scale-105 transition-transform duration-500 origin-left mb-1">{value}</div>
-            {subtitle && <p className="text-[9px] font-semibold uppercase tracking-wide text-muted-foreground/40">{subtitle}</p>}
+            <div className="text-2xl font-black tracking-tighter text-foreground group-hover:scale-105 transition-transform duration-500 origin-left mb-1 tabular-nums">{value}</div>
+            {subtitle && <p className="text-[9px] font-bold uppercase tracking-wide text-muted-foreground/40">{subtitle}</p>}
         </CardContent>
     </Card>
 );
@@ -35,6 +38,7 @@ export function CustomerStats() {
     let overLimitCount = 0;
 
     customers.forEach(c => {
+        // استخدام safeNumber لضمان الدقة المحاسبية ومنع أخطاء الـ Floating point
         const balance = safeNumber(c.outstandingBalance);
         if (balance > 0.01) {
             totalDebtAccumulator += balance;
@@ -47,6 +51,7 @@ export function CustomerStats() {
         total: customers.length,
         overdue: overdueCount,
         overLimit: overLimitCount,
+        // تقريب نهائي للسنتيمات
         totalOutstanding: Math.round(totalDebtAccumulator * 100) / 100
     };
   }, [customers]);
@@ -54,13 +59,13 @@ export function CustomerStats() {
   if (customers === undefined) {
     return (
       <div className="grid gap-6 grid-cols-2 lg:grid-cols-4">
-        {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-32 w-full rounded-lg bg-card/40" />)}
+        {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-32 w-full rounded-xl bg-card/40 animate-pulse" />)}
       </div>
     );
   }
 
   return (
-    <div className="grid gap-6 grid-cols-2 lg:grid-cols-4">
+    <div className="grid gap-6 grid-cols-2 lg:grid-cols-4 animate-in fade-in duration-700">
       <StatCard 
         title="Base Clients" 
         value={String(stats.total)} 
@@ -72,7 +77,7 @@ export function CustomerStats() {
         title="Créances Globales" 
         value={formatCurrency(stats.totalOutstanding)} 
         icon={Landmark} 
-        colorClass="bg-destructive/10 text-destructive" 
+        colorClass="bg-destructive/10 text-destructive shadow-destructive/5" 
         subtitle="Montant total à collecter" 
       />
       <StatCard 
