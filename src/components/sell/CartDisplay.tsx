@@ -41,7 +41,6 @@ const CartItemRow = React.memo(({ item, isSelected, onUpdate, onPriceUpdate, onR
         onPriceUpdate(item.uuid, Math.max(0, num));
     };
 
-    // Raccourcis clavier locaux pour la ligne sélectionnée
     useKeyboardShortcuts([
         {
             key: '+',
@@ -64,22 +63,19 @@ const CartItemRow = React.memo(({ item, isSelected, onUpdate, onPriceUpdate, onR
         {
             key: '*',
             action: () => priceInputRef.current?.focus(),
-            description: 'Modifier le prix',
+            description: 'Modifier le سعر',
             ignoreInputFocus: false
         },
         {
             key: 'Delete',
             action: () => onRemove(item.uuid),
-            description: 'Supprimer article',
+            description: 'Supprimer l\'article',
             ignoreInputFocus: true
         }
     ], `Article-${item.uuid}`, isSelected);
 
     const isCustom = item.uuid.startsWith('custom-');
-    const stepValue = "0.001"; 
     const isZero = item.cartQuantity <= 0;
-    
-    // Alerte de vente à perte : prix de vente < prix d'achat (si P.A renseigné)
     const isSellingAtLoss = item.price < item.purchasePrice && item.purchasePrice > 0;
 
     return (
@@ -87,29 +83,23 @@ const CartItemRow = React.memo(({ item, isSelected, onUpdate, onPriceUpdate, onR
             tabIndex={0}
             onFocus={onSelect}
             className={cn(
-                "grid grid-cols-[1fr_auto_auto_auto] gap-x-6 items-center p-4 rounded-lg border transition-all duration-500 group outline-none",
-                isSelected ? "bg-primary/10 border-primary/30 ring-1 ring-primary/20 shadow-sm" : "bg-muted/20 border-white/5 hover:bg-muted/40",
-                isZero && "opacity-50 bg-muted/30 border-dashed border-muted-foreground/30",
+                "grid grid-cols-[1fr_auto_auto_auto] gap-x-6 items-center p-4 rounded-2xl border transition-all duration-500 group outline-none",
+                isSelected ? "bg-primary/10 border-primary/30 ring-1 ring-primary/20 shadow-sm" : "bg-card/40 border-white/5 hover:bg-card/60",
+                isZero && "opacity-50 grayscale",
                 item.flash && 'animate-flash ring-2 ring-primary/30'
             )}
         >
             <div className="flex-grow min-w-0">
                 <div className="flex items-center gap-2 mb-1">
                     <p className={cn(
-                        "font-semibold text-sm tracking-tight truncate group-hover:text-primary transition-colors",
-                        isZero && "text-muted-foreground line-through decoration-1"
+                        "font-bold text-sm tracking-tight truncate group-hover:text-primary transition-colors",
+                        isZero && "text-muted-foreground line-through"
                     )}>
                         {item.name}
                     </p>
-                    {isCustom && <Tag className="h-3 w-3 text-amber-500 opacity-50" />}
-                    {isZero && (
-                        <span className="text-[10px] font-bold uppercase tracking-widest text-destructive/70 bg-destructive/5 px-2 py-0.5 rounded border border-destructive/10 animate-in fade-in zoom-in duration-300">
-                            Non facturé
-                        </span>
-                    )}
+                    {isCustom && <Tag className="h-3 w-3 text-amber-500/50" />}
                 </div>
                 
-                {/* Editable Price Field */}
                 <div className="flex items-center gap-2 mt-1">
                     <div className="relative group/price">
                         <Coins className="absolute left-2 top-1/2 -translate-y-1/2 h-2.5 w-2.5 text-muted-foreground/30 group-focus-within/price:text-primary transition-colors" />
@@ -119,15 +109,14 @@ const CartItemRow = React.memo(({ item, isSelected, onUpdate, onPriceUpdate, onR
                             value={item.price}
                             onChange={(e) => handlePriceChange(e.target.value)}
                             className={cn(
-                                "h-6 w-24 pl-6 pr-1 text-[10px] font-bold bg-black/10 border-none shadow-inner focus-visible:ring-primary/20",
+                                "h-6 w-24 pl-6 pr-1 text-[10px] font-black bg-black/20 border-none shadow-inner focus-visible:ring-primary/20 rounded-lg",
                                 isSellingAtLoss && "text-destructive"
                             )}
                             step="0.01"
                         />
                     </div>
-                    <span className="text-[10px] font-bold text-muted-foreground/30">/ {item.unite || 'pcs'}</span>
+                    <span className="text-[10px] font-bold text-muted-foreground/30 uppercase tracking-widest">/ {item.unite || 'pcs'}</span>
                     
-                    {/* Alerte Vente à perte */}
                     {isSellingAtLoss && (
                         <TooltipProvider>
                             <Tooltip>
@@ -136,9 +125,9 @@ const CartItemRow = React.memo(({ item, isSelected, onUpdate, onPriceUpdate, onR
                                         <AlertTriangle className="h-3.5 w-3.5 text-destructive" />
                                     </div>
                                 </TooltipTrigger>
-                                <TooltipContent className="bg-destructive text-destructive-foreground border-none">
-                                    <p className="text-[10px] font-bold uppercase tracking-wider">
-                                        Vente à perte ! Coût achat : {formatCurrency(item.purchasePrice)}
+                                <TooltipContent className="bg-destructive text-white border-none rounded-xl p-3 shadow-2xl">
+                                    <p className="text-[10px] font-black uppercase tracking-widest">
+                                        Attention : Vente à perte !<br/>Coût de revient : {formatCurrency(item.purchasePrice)}
                                     </p>
                                 </TooltipContent>
                             </Tooltip>
@@ -147,17 +136,17 @@ const CartItemRow = React.memo(({ item, isSelected, onUpdate, onPriceUpdate, onR
                 </div>
             </div>
             
-            <div className="flex flex-col items-center gap-1">
-                <div className="flex items-center bg-background/50 rounded-xl border border-white/5 overflow-hidden shadow-inner">
+            <div className="flex flex-col items-center">
+                <div className="flex items-center bg-black/20 rounded-xl border border-white/5 overflow-hidden shadow-inner">
                     <button 
                         onClick={(e) => { e.stopPropagation(); onUpdate(item.uuid, Math.max(0, Number((item.cartQuantity - 1).toFixed(3)))); }}
-                        className="px-3 h-10 hover:bg-primary/10 text-muted-foreground hover:text-primary transition-colors font-bold"
+                        className="px-3 h-10 hover:bg-primary/10 text-muted-foreground hover:text-primary transition-colors font-black"
                     >
                         −
                     </button>
                     <Input
                         type="number"
-                        step={stepValue}
+                        step="0.001"
                         value={item.cartQuantity}
                         onChange={(e) => handleQtyChange(e.target.value)}
                         className={cn(
@@ -168,17 +157,17 @@ const CartItemRow = React.memo(({ item, isSelected, onUpdate, onPriceUpdate, onR
                     />
                     <button 
                         onClick={(e) => { e.stopPropagation(); onUpdate(item.uuid, Number((item.cartQuantity + 1).toFixed(3))); }}
-                        className="px-3 h-10 hover:bg-primary/10 text-muted-foreground hover:text-primary transition-colors font-bold"
+                        className="px-3 h-10 hover:bg-primary/10 text-muted-foreground hover:text-primary transition-colors font-black"
                     >
                         +
                     </button>
                 </div>
             </div>
 
-            <div className="w-24 text-right">
+            <div className="w-28 text-right">
                 <p className={cn(
-                    "font-semibold text-base tracking-tighter",
-                    isZero ? "text-muted-foreground/30 line-through" : "text-foreground"
+                    "font-black text-base tracking-tighter tabular-nums",
+                    isZero ? "text-muted-foreground/20 line-through" : "text-foreground"
                 )}>
                     {formatCurrency(item.price * item.cartQuantity)}
                 </p>
@@ -194,7 +183,6 @@ const CartItemRow = React.memo(({ item, isSelected, onUpdate, onPriceUpdate, onR
                         : "text-muted-foreground/20 hover:text-destructive hover:bg-destructive/10 opacity-0 group-hover:opacity-100"
                 )}
                 onClick={(e) => { e.stopPropagation(); onRemove(item.uuid); }}
-                title="Retirer du panier"
             >
                 {isZero ? <X className="h-4 w-4" /> : <Trash2 className="h-4 w-4" />}
             </Button>
@@ -213,7 +201,6 @@ export function CartDisplay() {
         setIsMounted(true);
     }, []);
 
-    // Navigation clavier entre les lignes
     useKeyboardShortcuts([
         {
             key: 'ArrowDown',
@@ -235,19 +222,19 @@ export function CartDisplay() {
             description: 'Ligne précédente',
             ignoreInputFocus: true
         }
-    ], 'ListePanier', isMounted && cart !== null && cart.items.length > 0);
+    ], 'ListePanier', isMounted && !!cart?.items.length);
 
     if (!isMounted) return null;
     
     if (!cart || cart.items.length === 0) {
         return (
-            <div className="flex-grow flex flex-col items-center justify-center text-center p-4 space-y-6 animate-in fade-in duration-1000">
-                <div className="p-4 rounded-lg bg-muted/20 border border-white/5 shadow-inner">
-                    <ShoppingCart className="h-20 w-20 text-muted-foreground/20" />
+            <div className="flex-grow flex flex-col items-center justify-center text-center p-10 space-y-6 animate-in fade-in duration-1000">
+                <div className="p-8 rounded-3xl bg-muted/20 border border-white/5 shadow-inner">
+                    <ShoppingCart className="h-24 w-24 text-muted-foreground/10" />
                 </div>
                 <div className="space-y-2">
-                    <p className="text-lg font-semibold tracking-tighter text-muted-foreground/40">Manifeste Vierge</p>
-                    <p className="text-[10px] font-semibold uppercase text-muted-foreground/20">En attente de flux commercial...</p>
+                    <p className="text-xl font-black tracking-tighter text-muted-foreground/20 uppercase">Saisie Commerciale</p>
+                    <p className="text-[10px] font-bold uppercase text-muted-foreground/10 tracking-[0.3em]">En attente de flux catalogue...</p>
                 </div>
             </div>
         )
@@ -256,10 +243,10 @@ export function CartDisplay() {
     return (
         <ScrollArea className="flex-grow">
             <div className="p-6">
-                <div className="grid grid-cols-[1fr_auto_auto_auto] gap-x-6 items-center text-[10px] font-semibold uppercase text-muted-foreground/40 px-4 mb-6">
+                <div className="grid grid-cols-[1fr_auto_auto_auto] gap-x-6 items-center text-[9px] font-black uppercase text-muted-foreground/40 px-6 mb-6 tracking-widest">
                     <div className="text-left">Désignation Produit</div>
                     <div className="text-center">Quantité Flux</div>
-                    <div className="text-right">Total Net</div>
+                    <div className="text-right">Total HT</div>
                     <div></div>
                 </div>
 

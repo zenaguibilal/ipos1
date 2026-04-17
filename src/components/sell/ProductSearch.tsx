@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useDeferredValue, forwardRef, useImperativeHandle, useRef } from 'react';
@@ -18,7 +17,7 @@ const SearchResultItem = React.memo(({ product, onSelect }: { product: Product, 
     return (
         <div
             onClick={() => onSelect(product)}
-            className="group relative flex flex-col justify-between p-5 cursor-pointer bg-card/40 backdrop-blur-md border border-white/5 rounded-lg transition-all duration-500 hover:bg-primary/10 hover:border-primary/30 hover:shadow-sm active:scale-95 overflow-hidden"
+            className="group relative flex flex-col justify-between p-5 cursor-pointer bg-card/40 backdrop-blur-md border border-white/5 rounded-2xl transition-all duration-500 hover:bg-primary/10 hover:border-primary/30 hover:shadow-xl active:scale-95 overflow-hidden"
         >
             <div className="absolute -right-4 -top-4 opacity-[0.03] group-hover:opacity-10 transition-opacity duration-700">
                 <ShoppingBag className="h-24 w-24 rotate-12" />
@@ -26,24 +25,24 @@ const SearchResultItem = React.memo(({ product, onSelect }: { product: Product, 
             
             <div className="relative z-10">
                 <div className="flex items-center gap-2 mb-2">
-                    <span className="px-2 py-0.5 rounded-lg bg-primary/10 text-primary text-[8px] font-semibold uppercase border border-primary/20">
-                        {product.category || 'Elite Catalog'}
+                    <span className="px-2 py-0.5 rounded-lg bg-primary/10 text-primary text-[8px] font-black uppercase border border-primary/20 tracking-tighter">
+                        {product.category || 'Catalog Elite'}
                     </span>
                     {product.quantity <= product.minStockLevel && (
-                        <span className="px-2 py-0.5 rounded-lg bg-destructive/10 text-destructive text-[8px] font-semibold uppercase border border-destructive/20 animate-pulse">
-                            Critical Stock
+                        <span className="px-2 py-0.5 rounded-lg bg-destructive/10 text-destructive text-[8px] font-black uppercase border border-destructive/20 animate-pulse tracking-tighter">
+                            Alerte Stock
                         </span>
                     )}
                 </div>
-                <p className="text-base font-semibold leading-tight tracking-tight group-hover:text-primary transition-colors line-clamp-1">
+                <p className="text-base font-black leading-tight tracking-tight group-hover:text-primary transition-colors line-clamp-1">
                     {product.name}
                 </p>
             </div>
 
             <div className="relative z-10 mt-6 flex items-center justify-between">
                 <div className="flex flex-col">
-                    <span className="text-[9px] font-semibold uppercase tracking-wide text-muted-foreground opacity-50">Stock: {product.quantity} {product.unite}</span>
-                    <span className="text-xl font-semibold text-primary tracking-tighter">{formatCurrency(product.price)}</span>
+                    <span className="text-[9px] font-bold uppercase tracking-wide text-muted-foreground opacity-50">Stock: {product.quantity} {product.unite}</span>
+                    <span className="text-xl font-black text-primary tracking-tighter tabular-nums">{formatCurrency(product.price)}</span>
                 </div>
             </div>
         </div>
@@ -60,7 +59,7 @@ export const ProductSelector = forwardRef<{ focusInput: () => void }, ProductSel
     const { isCustomItemOpen, onCustomItemOpenChange } = props;
     const { addItemToCart } = useCartActions();
     const [searchQuery, setSearchQuery] = useState('');
-    const debouncedSearchQuery = useDebounce(searchQuery, 150);
+    const debouncedSearchQuery = useDebounce(searchQuery, 100);
     const deferredResults = useDeferredValue(debouncedSearchQuery);
 
     const [searchResults, setSearchResults] = useState<Product[]>([]);
@@ -109,7 +108,8 @@ export const ProductSelector = forwardRef<{ focusInput: () => void }, ProductSel
         addItemToCart(product);
         setSearchQuery('');
         setSearchResults([]);
-        setTimeout(() => inputRef.current?.focus(), 0);
+        // Re-focus immediately for fast scanning
+        setTimeout(() => inputRef.current?.focus(), 10);
     };
     
     const isActiveSearch = searchQuery.trim().length > 0;
@@ -125,7 +125,7 @@ export const ProductSelector = forwardRef<{ focusInput: () => void }, ProductSel
                     <Input
                         ref={inputRef}
                         placeholder="Scanner ou rechercher [F3]..."
-                        className="pl-14 text-lg h-9 rounded-3xl bg-background/50 border-none shadow-inner focus-visible:ring-primary/20 font-semibold tracking-tight"
+                        className="pl-14 text-lg h-9 rounded-3xl bg-background/50 border-none shadow-inner focus-visible:ring-primary/20 font-black tracking-tight"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         autoComplete="off"
@@ -145,37 +145,43 @@ export const ProductSelector = forwardRef<{ focusInput: () => void }, ProductSel
                     <Button 
                         variant="outline" 
                         onClick={() => onCustomItemOpenChange(true)}
-                        className="h-9 w-auto px-4 flex-shrink-0 rounded-3xl border-none bg-primary/5 hover:bg-primary/20 hover:text-primary transition-all shadow-xl group gap-2" 
+                        className="h-9 w-auto px-6 flex-shrink-0 rounded-3xl border-none bg-primary/5 hover:bg-primary/20 hover:text-primary transition-all shadow-xl group gap-3" 
                     >
                         <ShoppingBag className="h-4 w-4 transition-transform group-hover:scale-110 group-hover:-rotate-12"/>
-                        <span className="text-[10px] font-bold uppercase">Manuel [F4]</span>
+                        <span className="text-[10px] font-black uppercase tracking-widest">Manuel [F4]</span>
                     </Button>
                 </CustomItemDialog>
             </div>
 
             <ScrollArea className="flex-grow p-4">
                 {searchError ? (
-                    <div className="py-20 text-center space-y-4 bg-destructive/5 rounded-lg border border-dashed border-destructive/20 animate-in zoom-in-95">
-                        <AlertCircle className="h-10 w-10 text-destructive mx-auto opacity-40" />
-                        <p className="text-xs font-semibold uppercase text-destructive/70 tracking-wide">{searchError}</p>
+                    <div className="py-20 text-center space-y-4 bg-destructive/5 rounded-2xl border border-dashed border-destructive/20 animate-in zoom-in-95">
+                        <AlertCircle className="h-12 w-12 text-destructive mx-auto opacity-40" />
+                        <p className="text-xs font-bold uppercase text-destructive/70 tracking-widest">{searchError}</p>
                     </div>
                 ) : !isActiveSearch ? (
-                    <div className="h-full flex flex-col items-center justify-center py-24 text-center space-y-6">
-                        <div className="relative p-4 rounded-lg bg-card/40 border border-white/5 shadow-inner">
-                            <Search className="h-14 w-14 text-primary/20" />
+                    <div className="h-full flex flex-col items-center justify-center py-24 text-center space-y-8">
+                        <div className="relative p-6 rounded-3xl bg-card/40 border border-white/5 shadow-inner">
+                            <Search className="h-16 w-16 text-primary/10" />
+                            <div className="absolute -inset-2 bg-primary/5 blur-3xl rounded-full animate-pulse"></div>
                         </div>
-                        <p className="text-sm font-semibold uppercase text-muted-foreground/20 max-w-[250px] mx-auto leading-relaxed">
-                            Prêt pour le scan [F3]. Saisissez une référence ou utilisez le lecteur.
-                        </p>
+                        <div className="space-y-2">
+                            <p className="text-sm font-black uppercase text-muted-foreground/30 tracking-[0.2em]">
+                                Prêt pour l'indexation [F3]
+                            </p>
+                            <p className="text-[10px] font-bold text-muted-foreground/10 uppercase tracking-widest">
+                                Utilisez le lecteur ou saisissez une référence
+                            </p>
+                        </div>
                     </div>
                 ) : (
                     <div className="space-y-4 animate-in fade-in duration-500">
-                        <div className="flex items-center justify-between px-2">
-                            <h3 className="text-[10px] font-semibold uppercase text-primary flex items-center gap-3">
-                                <Sparkles className="h-3 w-3 text-primary" />
+                        <div className="flex items-center justify-between px-3">
+                            <h3 className="text-[10px] font-black uppercase text-primary flex items-center gap-3 tracking-widest">
+                                <Sparkles className="h-3.5 w-3.5 text-primary" />
                                 Résultats Indexés
                             </h3>
-                            <span className="text-[9px] font-semibold text-muted-foreground/30 uppercase">{searchResults.length} Trouvés</span>
+                            <span className="text-[9px] font-black text-muted-foreground/20 uppercase tracking-tighter">{searchResults.length} Trouvés</span>
                         </div>
 
                         {searchResults.length > 0 ? (
@@ -185,9 +191,9 @@ export const ProductSelector = forwardRef<{ focusInput: () => void }, ProductSel
                                 ))}
                             </div>
                         ) : !isSearching && (
-                            <div className="py-20 text-center space-y-4 opacity-20 flex flex-col items-center">
-                                <ShoppingBag className="h-12 w-12 mb-2" />
-                                <p className="text-[10px] font-semibold uppercase ">Néant. Produit non répertorié.</p>
+                            <div className="py-24 text-center space-y-4 opacity-20 flex flex-col items-center">
+                                <ShoppingBag className="h-16 w-16 mb-4" />
+                                <p className="text-[10px] font-black uppercase tracking-[0.3em]">Silence Radio. Produit non répertorié.</p>
                             </div>
                         )}
                     </div>

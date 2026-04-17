@@ -56,9 +56,6 @@ const initialState: Omit<CartState, 'actions'> = {
     activeCartId: INITIAL_CART_ID,
 };
 
-/**
- * Fonction utilitaire d'impression thermique 80mm
- */
 async function triggerAutoPrint(sale: Sale): Promise<void> {
     if (typeof window === 'undefined') return;
     if (localStorage.getItem('ipos-autoprint-enabled') !== 'true') return;
@@ -156,7 +153,7 @@ async function triggerAutoPrint(sale: Sale): Promise<void> {
             win.close();
         }, 350);
     } catch (_e) {
-        // Erreur d'impression non critique pour la vente
+        // Erreur d'impression non critique
     }
 }
 
@@ -284,7 +281,7 @@ export const useCartStore = create<CartState>()(
                             } else {
                                 targetCart.items.unshift({
                                     ...product,
-                                    cartQuantity: finalQtyToAdd,
+                                    cartQuantity: Number(finalQtyToAdd.toFixed(3)),
                                     flash: true,
                                 } as CartItem);
                             }
@@ -352,10 +349,6 @@ export const useCartStore = create<CartState>()(
                                 item.cartQuantity = Number(finalNewQty.toFixed(3));
                             } else {
                                 item.cartQuantity = 0;
-                                toast.info(`"${item.name}" mis à zéro`, {
-                                    description: "Cliquez sur × pour retirer définitivement.",
-                                    duration: 2000
-                                });
                             }
                         }),
                     );
@@ -371,7 +364,7 @@ export const useCartStore = create<CartState>()(
                                 i => i.uuid === productUuid,
                             );
                             if (item) {
-                                item.price = Math.max(0, safeNumber(newPrice));
+                                item.price = Number(Math.max(0, safeNumber(newPrice)).toFixed(2));
                             }
                         }),
                     );
@@ -441,9 +434,7 @@ export const useCartStore = create<CartState>()(
 
                     const activeItems = activeCart.items.filter(i => i.cartQuantity > 0);
                     if (activeItems.length === 0) {
-                        toast.error('Aucun article actif dans le panier.', {
-                            description: 'Augmentez les quantités ou retirez les articles à zéro.'
-                        });
+                        toast.error('Aucun article actif dans le panier.');
                         return null;
                     }
 
@@ -466,8 +457,6 @@ export const useCartStore = create<CartState>()(
                         }
 
                         useAppStore.getState().actions.triggerSmartSync();
-
-                        // AutoPrint thermique 80mm
                         triggerAutoPrint(sale);
 
                         return sale;

@@ -19,7 +19,7 @@ import {
 } from '@/lib/utils';
 import {
     Loader2, CheckCircle2, AlertCircle,
-    Wallet, ShieldAlert, Calendar,
+    Wallet, ShieldAlert, Calendar, UserX, UserCheck
 } from 'lucide-react';
 import { PrintReceiptDialog } from '../sales/PrintReceiptDialog';
 import type { Sale, Customer } from '@/lib/types';
@@ -47,7 +47,6 @@ function PaymentDialogContent({
     const [customer,        setCustomer]        = useState<Customer | null>(null);
     const [approveOverLimit, setApproveOverLimit] = useState(false);
 
-    // Filter only active items for consistent totals
     const activeItems = useMemo(() => cart?.items.filter(i => i.cartQuantity > 0) || [], [cart?.items]);
 
     const { total } = useMemo(
@@ -58,7 +57,6 @@ function PaymentDialogContent({
     const amountPaid   = parseFloat(amountPaidStr) || 0;
     const change       = Math.max(0, amountPaid - total);
     
-    // Check if the sale is fully paid, allowing a very small rounding margin (less than 1 centime)
     const isFullPay    = amountPaid >= total - 0.009;
     const isCreditSale = !!(cart?.customerUuid && amountPaid < total - 0.009);
 
@@ -67,11 +65,9 @@ function PaymentDialogContent({
     useEffect(() => {
         if (!isOpen || !isMounted || !cart) return;
         
-        // Ensure we calculate using active items only
         const activeItemsOnly = cart.items.filter(i => i.cartQuantity > 0);
         const totals = calculateCartTotals({ ...cart, items: activeItemsOnly });
         
-        // Initialize amount with rounded total
         setAmountPaidStr(totals.total.toFixed(2));
         setIsLoading(false);
         setLastSale(null);
@@ -109,7 +105,6 @@ function PaymentDialogContent({
         return projectedBalance > customer.creditLimit + FINANCIAL_EPSILON;
     }, [customer, projectedBalance]);
 
-    // Validation logic fixed: walk-in customers must pay full total. Registered customers can use credit.
     const canFinalize =
         !isLoading &&
         amountPaid >= 0 &&
@@ -159,120 +154,132 @@ function PaymentDialogContent({
     return (
         <>
             <Dialog open={isOpen} onOpenChange={onOpenChange}>
-                <DialogContent className="sm:max-w-md">
-                    <DialogHeader>
-                        <DialogTitle className="flex items-center gap-2 text-base">
-                            <Wallet className="h-4 w-4 text-primary" />
-                            Finaliser la vente — {cart.name}
-                        </DialogTitle>
-                        <DialogDescription className="text-xs">
-                            Saisissez le montant reçu du client.
-                        </DialogDescription>
+                <DialogContent className="sm:max-w-md p-0 overflow-hidden border-none shadow-2xl rounded-3xl">
+                    <DialogHeader className="p-6 bg-primary/5 border-b border-primary/10">
+                        <div className="flex items-center gap-4">
+                            <div className="p-3 rounded-2xl bg-primary text-primary-foreground shadow-lg">
+                                <Wallet className="h-6 w-6" />
+                            </div>
+                            <div>
+                                <DialogTitle className="text-xl font-black tracking-tight">Finaliser la Vente</DialogTitle>
+                                <DialogDescription className="text-xs font-bold uppercase text-primary/50">{cart.name}</DialogDescription>
+                            </div>
+                        </div>
                     </DialogHeader>
 
-                    <div className="text-center py-3 bg-muted/50 rounded-lg">
-                        <p className="text-xs text-muted-foreground mb-0.5">
-                            Total net à payer
-                        </p>
-                        <p className="text-3xl font-bold text-primary tabular-nums">
-                            {formatCurrency(total)}
-                        </p>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-3">
-                        <div className="space-y-1.5">
-                            <Label htmlFor="amount-paid" className="text-xs font-medium">
-                                Montant reçu (DA)
-                            </Label>
-                            <Input
-                                id="amount-paid"
-                                type="text"
-                                inputMode="decimal"
-                                className="text-lg font-bold text-center h-10"
-                                value={amountPaidStr}
-                                onChange={handleAmountChange}
-                                autoFocus
-                                onFocus={e => e.target.select()}
-                            />
+                    <div className="p-6 space-y-6">
+                        <div className="p-6 bg-black/20 rounded-2xl border border-white/5 text-center space-y-1 shadow-inner">
+                            <p className="text-[10px] font-black uppercase text-muted-foreground/40 tracking-widest">Total Net à Payer</p>
+                            <p className="text-4xl font-black text-primary tabular-nums tracking-tighter">
+                                {formatCurrency(total)}
+                            </p>
                         </div>
-                        <div className="space-y-1.5">
-                            <Label className="text-xs font-medium">
-                                Monnaie rendue
-                            </Label>
-                            <div
-                                className={cn(
-                                    'h-10 flex items-center justify-center rounded-md border text-lg font-bold tabular-nums',
+
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="amount-paid" className="text-[10px] font-black uppercase text-muted-foreground/60 ml-1">Montant Reçu (DA)</Label>
+                                <Input
+                                    id="amount-paid"
+                                    type="text"
+                                    inputMode="decimal"
+                                    className="h-14 rounded-2xl bg-muted/20 border-none shadow-inner text-2xl font-black text-center focus-visible:ring-primary/20"
+                                    value={amountPaidStr}
+                                    onChange={handleAmountChange}
+                                    autoFocus
+                                    onFocus={e => e.target.select()}
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label className="text-[10px] font-black uppercase text-muted-foreground/60 ml-1">Monnaie Rendue</Label>
+                                <div className={cn(
+                                    'h-14 flex items-center justify-center rounded-2xl border-2 border-dashed text-2xl font-black tabular-nums transition-all duration-500',
                                     change >= 0.01
-                                        ? 'bg-emerald-50 border-emerald-200 text-emerald-700 dark:bg-emerald-950 dark:border-emerald-800 dark:text-emerald-400'
-                                        : 'bg-muted border-border text-muted-foreground',
-                                )}
-                            >
-                                {change >= 0.01 ? formatCurrency(change) : '—'}
+                                        ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.1)]'
+                                        : 'bg-muted/10 border-white/5 text-muted-foreground/20',
+                                )}>
+                                    {change >= 0.01 ? formatCurrency(change) : '0.00'}
+                                </div>
                             </div>
                         </div>
-                    </div>
 
-                    {isCreditSale && (
-                        <div className="space-y-3 p-3 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded-lg">
-                            <div className="flex items-start gap-2">
-                                <AlertCircle className="h-4 w-4 text-amber-600 mt-0.5 shrink-0" />
-                                <p className="text-amber-700 dark:text-amber-400 text-xs">
-                                    {formatCurrency(total - amountPaid)} seront enregistrés
-                                    comme dette sur le compte client.
+                        {/* Customer Identification Status */}
+                        <div className={cn(
+                            "p-4 rounded-2xl border flex items-center gap-4 transition-all duration-500",
+                            customer ? "bg-primary/5 border-primary/20" : "bg-amber-500/5 border-amber-500/20"
+                        )}>
+                            <div className={cn(
+                                "p-2.5 rounded-xl shadow-inner",
+                                customer ? "bg-primary/10 text-primary" : "bg-amber-500/10 text-amber-500"
+                            )}>
+                                {customer ? <UserCheck className="h-5 w-5" /> : <UserX className="h-5 w-5" />}
+                            </div>
+                            <div className="flex-grow">
+                                <p className="text-[9px] font-black uppercase tracking-widest opacity-40">Statut Client</p>
+                                <p className="text-sm font-bold tracking-tight">
+                                    {customer ? `${customer.firstName} ${customer.lastName}` : "Client de passage"}
                                 </p>
                             </div>
-
-                            {isOverLimit && (
-                                <div className="p-2.5 bg-destructive/10 border border-destructive/20 rounded-md space-y-2">
-                                    <div className="flex items-center gap-1.5 text-destructive text-xs font-medium">
-                                        <ShieldAlert className="h-3.5 w-3.5" />
-                                        Plafond de crédit dépassé
-                                        {customer?.creditLimit
-                                            ? ` (${formatCurrency(customer.creditLimit)})`
-                                            : ''}
-                                    </div>
-                                    <div className="flex items-center justify-between">
-                                        <span className="text-xs text-muted-foreground">
-                                            Autoriser l&apos;exception
-                                        </span>
-                                        <Switch
-                                            checked={approveOverLimit}
-                                            onCheckedChange={setApproveOverLimit}
-                                        />
-                                    </div>
-                                </div>
+                            {!customer && !isFullPay && (
+                                <Badge variant="destructive" className="h-6 px-3 rounded-lg animate-pulse uppercase text-[8px]">Paiement requis</Badge>
                             )}
-
-                            <div className="space-y-1">
-                                <Label className="text-xs flex items-center gap-1.5">
-                                    <Calendar className="h-3 w-3" />
-                                    Date d&apos;échéance {customer?.settlementDay ? `(Jour ${customer.settlementDay})` : ''}
-                                </Label>
-                                <DatePicker date={dueDate} setDate={setDueDate} />
-                            </div>
                         </div>
-                    )}
 
-                    <div className="flex gap-2 pt-1">
+                        {isCreditSale && customer && (
+                            <div className="space-y-4 p-5 bg-amber-500/5 border border-amber-500/20 rounded-2xl animate-in zoom-in-95 duration-500">
+                                <div className="flex items-start gap-3">
+                                    <AlertCircle className="h-5 w-5 text-amber-600 shrink-0" />
+                                    <p className="text-amber-700 dark:text-amber-500 text-xs font-medium leading-relaxed">
+                                        Une dette de <span className="font-black underline">{formatCurrency(total - amountPaid)}</span> sera imputée au compte de {customer.firstName}.
+                                    </p>
+                                </div>
+
+                                {isOverLimit && (
+                                    <div className="p-3.5 bg-destructive/10 border border-destructive/20 rounded-xl space-y-3 shadow-inner">
+                                        <div className="flex items-center gap-2 text-destructive text-[10px] font-black uppercase tracking-wide">
+                                            <ShieldAlert className="h-4 w-4" />
+                                            Plafond Crédit Dépassé ({formatCurrency(customer.creditLimit || 0)})
+                                        </div>
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-[10px] font-bold text-muted-foreground/60 uppercase">Autoriser l'exception Elite</span>
+                                            <Switch
+                                                checked={approveOverLimit}
+                                                onCheckedChange={setApproveOverLimit}
+                                                className="data-[state=checked]:bg-destructive"
+                                            />
+                                        </div>
+                                    </div>
+                                )}
+
+                                <div className="space-y-2">
+                                    <Label className="text-[9px] font-black uppercase text-amber-600/60 flex items-center gap-1.5">
+                                        <Calendar className="h-3.5 w-3.5" /> Échéance du règlement
+                                    </Label>
+                                    <DatePicker date={dueDate} setDate={setDueDate} />
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
+                    <div className="p-4 bg-muted/10 border-t border-white/5 flex gap-3">
                         <Button
-                            variant="outline"
-                            className="flex-1"
+                            variant="ghost"
+                            className="flex-1 h-12 rounded-2xl font-bold text-[10px] uppercase tracking-widest hover:bg-white/5"
                             onClick={() => onOpenChange(false)}
                             disabled={isLoading}
                         >
-                            Annuler
+                            Réviser Vente
                         </Button>
                         <Button
-                            className="flex-1"
+                            className="flex-[2] h-12 rounded-2xl font-black text-xs uppercase tracking-[0.2em] shadow-xl transition-all active:scale-95 gap-3"
                             onClick={handleProcessSale}
                             disabled={!canFinalize}
                         >
                             {isLoading ? (
-                                <Loader2 className="h-4 w-4 animate-spin mr-1" />
+                                <Loader2 className="h-5 w-5 animate-spin" />
                             ) : (
-                                <CheckCircle2 className="h-4 w-4 mr-1" />
+                                <CheckCircle2 className="h-5 w-5" />
                             )}
-                            Confirmer [Enter]
+                            Valider Encaissement [Enter]
                         </Button>
                     </div>
                 </DialogContent>
