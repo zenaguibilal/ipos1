@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useMemo } from 'react';
@@ -6,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Package, AlertTriangle, PackageX, CalendarClock, TrendingUp } from 'lucide-react';
 import { differenceInDays } from 'date-fns';
-import { formatCurrency, cn, safeNumber, preciseMultiply } from '@/lib/utils';
+import { formatCurrency, cn, safeNumber } from '@/lib/utils';
 import { useLiveQuery } from '@/hooks/useLiveQuery';
 import { db } from '@/lib/db';
 
@@ -26,32 +25,52 @@ const StatCard = ({ title, value, icon: Icon, colorClass, subtitle }: { title: s
 );
 
 export const InventoryStats = ({ isLoading: externalLoading }: { isLoading?: boolean }) => {
-    // مراقبة حية لجدول المنتجات لتحديث الإحصائيات فوراً
+    // Live reactive monitoring of the products table for 100% accurate stats
     const products = useLiveQuery(() => db.products.toArray());
 
     const stats = useMemo(() => {
         if (!products) return { total: 0, low: 0, out: 0, expiring: 0, totalValue: 0 };
         const now = new Date();
         
+        let totalValAccumulator = 0;
+        let lowCount = 0;
+        let outCount = 0;
+        let expiringCount = 0;
+
+        products.forEach(p => {
+            const qty = safeNumber(p.quantity);
+            const cost = safeNumber(p.purchasePrice);
+            const minStock = safeNumber(p.minStockLevel);
+
+            // 1. Calculate Value (Purchase Price * Qty)
+            if (qty > 0) {
+                totalValAccumulator += (qty * cost);
+            }
+
+            // 2. Identify Status
+            if (qty <= 0) {
+                outCount++;
+            } else if (qty <= minStock) {
+                lowCount++;
+            }
+
+            // 3. Expiration Check
+            if (p.dateExpiration) {
+                const expDate = new Date(p.dateExpiration);
+                const diff = differenceInDays(expDate, now);
+                if (diff <= 30 && diff >= 0) {
+                    expingCount++;
+                }
+            }
+        });
+
         return {
             total: products.length,
-            low: products.filter(p => {
-                const qty = safeNumber(p.quantity);
-                return qty > 0 && qty <= safeNumber(p.minStockLevel);
-            }).length,
-            out: products.filter(p => safeNumber(p.quantity) <= 0).length,
-            expiring: products.filter(p => {
-                if (!p.dateExpiration) return false;
-                const d = new Date(p.dateExpiration);
-                const diff = differenceInDays(d, now);
-                return diff <= 30 && diff >= 0;
-            }).length,
-            // حساب القيمة الإجمالية بدقة محاسبية عالية
-            totalValue: products.reduce((acc, p) => {
-                const qty = safeNumber(p.quantity);
-                const cost = safeNumber(p.purchasePrice);
-                return acc + (qty > 0 ? preciseMultiply(qty, cost) : 0);
-            }, 0),
+            low: lowCount,
+            out: outCount,
+            expiring: expiringCount,
+            // Final rounding to avoid IEEE 754 drift
+            totalValue: Math.round(totalValAccumulator * 100) / 100
         };
     }, [products]);
 

@@ -1,4 +1,3 @@
-
 'use client';
 
 import { v4 as uuidv4 } from 'uuid';
@@ -238,15 +237,24 @@ class CustomerService {
         totalOutstanding: number;
     }> {
         const allCustomers = await db.customers.toArray();
+        let totalDebt = 0;
+        let overdue = 0;
+        let overLimit = 0;
+
+        allCustomers.forEach(c => {
+            const balance = safeNumber(c.outstandingBalance);
+            if (balance > 0.01) {
+                totalDebt += balance;
+                if (c.debtStatus === 'overdue') overdue++;
+                if (c.isOverLimit) overLimit++;
+            }
+        });
+
         return {
             total: allCustomers.length,
-            overdue: allCustomers.filter(c => c.debtStatus === 'overdue').length,
-            overLimit: allCustomers.filter(c => c.isOverLimit === true).length,
-            // ضمان جمع المبالغ بدقة محاسبية
-            totalOutstanding: allCustomers.reduce(
-                (sum, c) => sum + safeNumber(c.outstandingBalance),
-                0,
-            ),
+            overdue,
+            overLimit,
+            totalOutstanding: Math.round(totalDebt * 100) / 100,
         };
     }
 
@@ -361,8 +369,8 @@ class CustomerService {
         const netCreditFromReturns = returns.reduce((sum, r) => sum + (safeNumber(r.totalReturnValue) - safeNumber(r.amountRefunded)), 0);
 
         const initial = safeNumber(customer.initialBalance);
-        const newBalance = initial + currentSalesDebt - totalPaymentsFromLogs - netCreditFromReturns;
-        const totalSpent = totalSalesInvoiced + initial;
+        const newBalance = Math.round((initial + currentSalesDebt - totalPaymentsFromLogs - netCreditFromReturns) * 100) / 100;
+        const totalSpent = Math.round((totalSalesInvoiced + initial) * 100) / 100;
 
         const creditLimit = safeNumber(customer.creditLimit);
         const isOverLimit = creditLimit > 0 ? newBalance > (creditLimit + 0.01) : false;

@@ -1,12 +1,12 @@
-
 'use client';
 
+import { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Users, AlertTriangle, UserX, Landmark } from 'lucide-react';
-import { customerService } from '@/services/customer.service';
-import { formatCurrency, cn } from '@/lib/utils';
+import { formatCurrency, cn, safeNumber } from '@/lib/utils';
 import { useLiveQuery } from '@/hooks/useLiveQuery';
+import { db } from '@/lib/db';
 
 const StatCard = ({ title, value, icon: Icon, colorClass, subtitle }: { title: string, value: string, icon: any, colorClass: string, subtitle?: string }) => (
     <Card className="app-card h-full bg-card/40 backdrop-blur-sm border-white/5 rounded-lg group overflow-hidden">
@@ -24,9 +24,34 @@ const StatCard = ({ title, value, icon: Icon, colorClass, subtitle }: { title: s
 );
 
 export function CustomerStats() {
-  const stats = useLiveQuery(() => customerService.getStats());
+  // Use direct reactive query for the most accurate and responsive numbers
+  const customers = useLiveQuery(() => db.customers.toArray());
 
-  if (stats === undefined) {
+  const stats = useMemo(() => {
+    if (!customers) return { total: 0, overdue: 0, overLimit: 0, totalOutstanding: 0 };
+    
+    let totalDebt = 0;
+    let overdueCount = 0;
+    let overLimitCount = 0;
+
+    customers.forEach(c => {
+        const balance = safeNumber(c.outstandingBalance);
+        if (balance > 0.01) {
+            totalDebt += balance;
+            if (c.debtStatus === 'overdue') overdueCount++;
+            if (c.isOverLimit) overLimitCount++;
+        }
+    });
+
+    return {
+        total: customers.length,
+        overdue: overdueCount,
+        overLimit: overLimitCount,
+        totalOutstanding: Math.round(totalDebt * 100) / 100
+    };
+  }, [customers]);
+
+  if (customers === undefined) {
     return (
       <div className="grid gap-6 grid-cols-2 lg:grid-cols-4">
         {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-32 w-full rounded-lg bg-card/40" />)}
@@ -55,7 +80,7 @@ export function CustomerStats() {
         value={String(stats.overdue)} 
         icon={AlertTriangle} 
         colorClass="bg-amber-500/10 text-amber-500" 
-        subtitle="Dossiers en souffrance" 
+        subtitle="Dossiers في حالة تأخر" 
       />
       <StatCard 
         title="Plafonds Dépassés" 
