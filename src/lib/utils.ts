@@ -25,7 +25,7 @@ export function safeToDate(date: Date | string): Date {
 /**
  * Convertit n'importe quelle valeur en nombre sain.
  * Gère les formats internationaux (1.250,50 ou 1,250.50).
- * Élimine كافة الرموز غير الرقمية باستثناء النقطة والفاصلة.
+ * Supporte les espaces comme séparateurs de milliers (format DZ/FR).
  */
 export function safeNumber(val: any): number {
     if (typeof val === 'number') return isNaN(val) ? 0 : val;

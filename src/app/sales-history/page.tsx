@@ -1,11 +1,9 @@
-
 'use client';
 
-import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import { salesService } from '@/services/sales.service';
-import { customerService } from '@/services/customer.service';
 import { useDebounce } from '@/hooks/useDebounce';
-import type { Sale, Customer } from '@/lib/types';
+import type { Sale } from '@/lib/types';
 import { Input } from '@/components/ui/input';
 import { 
     Search, 
@@ -74,7 +72,7 @@ export default function SalesHistoryPage() {
     const [isPrintOpen, setIsPrintOpen] = useState(false);
     const [isBulkCancelConfirmOpen, setIsBulkCancelConfirmOpen] = useState(false);
 
-    // Live monitoring of filtered sales for absolute precision and reactivity
+    // Surveillance en temps réel des ventes filtrées pour une précision absolue
     const sales = useLiveQuery(
         () => salesService.filterSales({
             query: debouncedSearchQuery,
@@ -85,16 +83,15 @@ export default function SalesHistoryPage() {
         [debouncedSearchQuery, dateRange, filterStatus]
     );
 
-    // Live monitoring of all customers to build the map
+    // Map des clients pour l'affichage rapide des noms
     const customers = useLiveQuery(() => db.customers.toArray());
-    
     const customerMap = useMemo(() => {
         return new Map((customers || []).map(c => [c.uuid, c]));
     }, [customers]);
 
-    const isRefreshing = sales === undefined;
-    const isLoading = sales === undefined;
+    const isLoading = sales === undefined || !isMounted;
 
+    // Calculateur de statistiques durci avec arithmétique entière
     const stats = useMemo(() => {
         if (!sales) return { total: 0, received: 0, debt: 0, count: 0, discount: 0 };
         
@@ -122,6 +119,7 @@ export default function SalesHistoryPage() {
     const chartData = useMemo(() => {
         if (!sales) return [];
         const dataMap = new Map<string, { date: string, totalCents: number, receivedCents: number }>();
+        
         const sortedSales = [...sales].sort((a,b) => safeToDate(a.createdAt!).getTime() - safeToDate(b.createdAt!).getTime());
         
         sortedSales.forEach(s => {
@@ -324,7 +322,6 @@ export default function SalesHistoryPage() {
         setFilterStatus('all');
     };
 
-    // Raccourcis clavier pour le journal des ventes
     useKeyboardShortcuts([
         {
             key: 'F3',
@@ -353,9 +350,9 @@ export default function SalesHistoryPage() {
                         variant="outline" 
                         size="icon" 
                         className="h-12 w-12 rounded-2xl border-white/5 bg-card/40 hover:bg-primary/10 transition-all group"
-                        disabled={isRefreshing}
+                        onClick={() => {}} // useLiveQuery handles refresh
                     >
-                        <RefreshCw className={cn("h-5 w-5 text-primary transition-all duration-1000", isRefreshing && "animate-spin")} />
+                        <RefreshCw className={cn("h-5 w-5 text-primary transition-all duration-1000", isLoading && "animate-spin")} />
                     </Button>
                 </div>
             </PageHeader>
@@ -370,7 +367,7 @@ export default function SalesHistoryPage() {
                         </CardHeader>
                         <CardContent className="p-4 space-y-4">
                             <div className="space-y-1">
-                                <p className="text-[10px] font-semibold text-muted-foreground/40 uppercase tracking-wide">Revenue Global</p>
+                                <p className="text-[10px] font-semibold text-muted-foreground/40 uppercase tracking-wide">Revenue Facturé</p>
                                 <p className="text-xl font-semibold tracking-tighter text-primary">{formatCurrency(stats.total)}</p>
                                 <p className="text-[10px] font-bold text-muted-foreground/60">{stats.count} transactions validées</p>
                             </div>
@@ -588,7 +585,7 @@ export default function SalesHistoryPage() {
                             <EmptyState
                                 icon={History}
                                 title="Le Grand Livre est vide"
-                                description={isFiltered ? "Ajustez vos filtres pour déنicher les transactions." : "Lancez votre première vente Premium dès maintenant."}
+                                description={isFiltered ? "Ajustez vos filtres pour déنيcher les transactions." : "Lancez votre première vente Premium dès maintenant."}
                             >
                                 {isFiltered && <Button variant="outline" onClick={resetFilters} className="rounded-2xl h-12 font-bold px-8 border-primary/20 hover:bg-primary/5">Effacer les filtres</Button>}
                             </EmptyState>
@@ -664,4 +661,3 @@ export default function SalesHistoryPage() {
         </div>
     );
 }
-

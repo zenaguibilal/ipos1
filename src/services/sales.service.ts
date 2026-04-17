@@ -1,4 +1,3 @@
-
 'use client';
 
 import { v4 as uuidv4 } from 'uuid';
@@ -7,6 +6,8 @@ import { db } from '@/lib/db';
 import { inventoryService } from './inventory.service';
 import { customerService } from './customer.service';
 import { useAppStore } from '@/stores/appStore';
+import { safeToDate } from '@/lib/utils';
+import { startOfDay, endOfDay } from 'date-fns';
 
 class SalesService {
 
@@ -28,14 +29,14 @@ class SalesService {
     }): Promise<Sale[]> {
         let collection = db.sales.toCollection();
 
-        if (filters.from)
-            collection = collection.filter(
-                s => new Date(s.createdAt!) >= filters.from!,
-            );
-        if (filters.to)
-            collection = collection.filter(
-                s => new Date(s.createdAt!) <= filters.to!,
-            );
+        if (filters.from) {
+            const start = startOfDay(filters.from);
+            collection = collection.filter(s => safeToDate(s.createdAt!) >= start);
+        }
+        if (filters.to) {
+            const end = endOfDay(filters.to);
+            collection = collection.filter(s => safeToDate(s.createdAt!) <= end);
+        }
         if (filters.status && filters.status !== 'all')
             collection = collection.filter(
                 s => s.paymentStatus === filters.status,
