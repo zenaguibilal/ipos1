@@ -114,7 +114,7 @@ export const ProductSelector = forwardRef<{ focusInput: () => void }, ProductSel
                 }
             } catch (e: any) {
                 if (!controller.signal.aborted) {
-                    setSearchError("Moteur de recherche indisponible.");
+                    setSearchError("Moteur de recherche Roland-indisponible.");
                 }
             } finally {
                 if (!controller.signal.aborted) setIsSearching(false);
