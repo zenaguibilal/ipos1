@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Package, AlertTriangle, PackageX, CalendarClock, TrendingUp } from 'lucide-react';
 import { differenceInDays } from 'date-fns';
-import { formatCurrency, cn, safeNumber } from '@/lib/utils';
+import { formatCurrency, cn, safeNumber, preciseMultiply } from '@/lib/utils';
 import { useLiveQuery } from '@/hooks/useLiveQuery';
 import { db } from '@/lib/db';
 
@@ -25,7 +25,7 @@ const StatCard = ({ title, value, icon: Icon, colorClass, subtitle }: { title: s
 );
 
 export const InventoryStats = ({ isLoading: externalLoading }: { isLoading?: boolean }) => {
-    // Live reactive monitoring of the products table for 100% accurate stats
+    // مراقبة حية للمنتجات لضمان تحديث الإحصائيات فور حدوث أي تغيير في المخزون
     const products = useLiveQuery(() => db.products.toArray());
 
     const stats = useMemo(() => {
@@ -42,24 +42,25 @@ export const InventoryStats = ({ isLoading: externalLoading }: { isLoading?: boo
             const cost = safeNumber(p.purchasePrice);
             const minStock = safeNumber(p.minStockLevel);
 
-            // 1. Calculate Value (Purchase Price * Qty)
+            // 1. حساب قيمة المخزون بدقة
             if (qty > 0) {
-                totalValAccumulator += (qty * cost);
+                totalValAccumulator += preciseMultiply(qty, cost);
             }
 
-            // 2. Identify Status
+            // 2. تصنيف حالة المخزون
             if (qty <= 0) {
                 outCount++;
             } else if (qty <= minStock) {
                 lowCount++;
             }
 
-            // 3. Expiration Check
+            // 3. فحص تواريخ الصلاحية
             if (p.dateExpiration) {
                 const expDate = new Date(p.dateExpiration);
                 const diff = differenceInDays(expDate, now);
+                // المنتجات التي ستنتهي صلاحيتها خلال 30 يوم
                 if (diff <= 30 && diff >= 0) {
-                    expingCount++;
+                    expiringCount++;
                 }
             }
         });
@@ -69,7 +70,6 @@ export const InventoryStats = ({ isLoading: externalLoading }: { isLoading?: boo
             low: lowCount,
             out: outCount,
             expiring: expiringCount,
-            // Final rounding to avoid IEEE 754 drift
             totalValue: Math.round(totalValAccumulator * 100) / 100
         };
     }, [products]);
@@ -86,11 +86,41 @@ export const InventoryStats = ({ isLoading: externalLoading }: { isLoading?: boo
 
     return (
         <div className="grid gap-6 grid-cols-2 lg:grid-cols-5">
-            <StatCard title="Catalogue" value={String(stats.total)} icon={Package} colorClass="bg-primary/10 text-primary" subtitle="Produits référencés" />
-            <StatCard title="Valeur Stock" value={formatCurrency(stats.totalValue)} icon={TrendingUp} colorClass="bg-emerald-500/10 text-emerald-500" subtitle="Investissement total" />
-            <StatCard title="Stock Faible" value={String(stats.low)} icon={AlertTriangle} colorClass="bg-amber-500/10 text-amber-500" subtitle="Réapprovisionnement" />
-            <StatCard title="Ruptures" value={String(stats.out)} icon={PackageX} colorClass="bg-destructive/10 text-destructive" subtitle="Ventes perdues" />
-            <StatCard title="Péremptions" value={String(stats.expiring)} icon={CalendarClock} colorClass="bg-purple-500/10 text-purple-500" subtitle="Moins de 30 jours" />
+            <StatCard 
+                title="Catalogue" 
+                value={String(stats.total)} 
+                icon={Package} 
+                colorClass="bg-primary/10 text-primary" 
+                subtitle="Produits référencés" 
+            />
+            <StatCard 
+                title="Valeur Stock" 
+                value={formatCurrency(stats.totalValue)} 
+                icon={TrendingUp} 
+                colorClass="bg-emerald-500/10 text-emerald-500" 
+                subtitle="Investissement total" 
+            />
+            <StatCard 
+                title="Stock Faible" 
+                value={String(stats.low)} 
+                icon={AlertTriangle} 
+                colorClass="bg-amber-500/10 text-amber-500" 
+                subtitle="Réapprovisionnement" 
+            />
+            <StatCard 
+                title="Ruptures" 
+                value={String(stats.out)} 
+                icon={PackageX} 
+                colorClass="bg-destructive/10 text-destructive" 
+                subtitle="Ventes perdues" 
+            />
+            <StatCard 
+                title="Péremptions" 
+                value={String(stats.expiring)} 
+                icon={CalendarClock} 
+                colorClass="bg-purple-500/10 text-purple-500" 
+                subtitle="Moins de 30 jours" 
+            />
         </div>
     );
 };
