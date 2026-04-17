@@ -1,7 +1,6 @@
 'use client';
 
-import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
-import { useDebounce } from '@/hooks/useDebounce';
+import { useState, useMemo, useRef } from 'react';
 import type { StockIntake, Supplier, InventoryLog } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -17,9 +16,7 @@ import { PageHeader } from '@/components/layout/PageHeader';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
-import { stockService } from '@/services/stock.service';
 import { supplierService } from '@/services/supplier.service';
-import { inventoryService } from '@/services/inventory.service';
 import { useAppStore } from '@/stores/appStore';
 import { CancelIntakeDialog } from '@/components/stock/CancelIntakeDialog';
 import { StockIntakeStats } from '@/components/stock/StockIntakeStats';
@@ -32,6 +29,9 @@ import { ConfirmAlertDialog } from '@/components/ui/ConfirmAlertDialog';
 import { cn, formatCurrency } from '@/lib/utils';
 import Papa from 'papaparse';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
+import { useLiveQuery } from '@/hooks/useLiveQuery';
+import { db } from '@/lib/db';
+import { startOfDay, endOfDay } from 'date-fns';
 
 type StockTab = 'intakes' | 'logs' | 'suppliers';
 
@@ -45,7 +45,6 @@ export default function StockPage() {
 
     const [activeTab, setActiveTab] = useState<StockTab>('intakes');
     const [searchQuery, setSearchQuery] = useState('');
-    const debouncedSearchQuery = useDebounce(searchQuery, 300);
     const { dateRange, setDate, isMounted } = useDateRange(29);
     
     const [selectedIntake, setSelectedIntake] = useState<StockIntake | null>(null);
@@ -59,75 +58,70 @@ export default function StockPage() {
     const [isSupplierDialogOpen, setIsSupplierDialogOpen] = useState(false);
     const [isDeleteSupplierOpen, setIsDeleteSupplierOpen] = useState(false);
     const [isBulkDeleteSupplierOpen, setIsBulkDeleteSupplierOpen] = useState(false);
-    const [isRefreshing, setIsRefreshing] = useState(false);
 
-    const [stockIntakes, setStockIntakes] = useState<StockIntake[] | undefined>(undefined);
-    const [inventoryLogs, setInventoryLogs] = useState<(InventoryLog & { productName: string })[] | undefined>(undefined);
-    const [suppliers, setSuppliers] = useState<Supplier[] | undefined>(undefined);
-    const [supplierMap, setSupplierMap] = useState<Map<string, Supplier>>(new Map());
+    // ─── LIVE QUERIES ──────────────────────────────────────────
+
+    const suppliers = useLiveQuery(() => db.suppliers.orderBy('name').toArray());
     
-    const isLoading = activeTab === 'intakes' ? stockIntakes === undefined : activeTab === 'logs' ? inventoryLogs === undefined : suppliers === undefined;
-
-    const fetchData = useCallback(async () => {
-        if (!isMounted || !dateRange?.from) return;
+    const stockIntakes = useLiveQuery(async () => {
+        if (!isMounted || !dateRange?.from) return [];
+        const start = startOfDay(dateRange.from);
+        const end = endOfDay(dateRange.to || new Date());
         
-        setIsRefreshing(true);
-        try {
-            if (activeTab === 'intakes') {
-                const [intakesData, suppliersData] = await Promise.all([
-                    stockService.getStockIntakes({
-                        query: debouncedSearchQuery,
-                        from: dateRange.from,
-                        to: dateRange.to
-                    }),
-                    supplierService.getSuppliers()
-                ]);
-                setStockIntakes(intakesData);
-                setSupplierMap(new Map(suppliersData.map(s => [s.uuid, s])));
-            } else if (activeTab === 'logs') {
-                const logsData = await inventoryService.getLogs({
-                    query: debouncedSearchQuery,
-                    from: dateRange.from,
-                    to: dateRange.to
-                });
-                setInventoryLogs(logsData);
-            } else {
-                const suppliersData = await supplierService.getSuppliers();
-                if (debouncedSearchQuery) {
-                    const q = debouncedSearchQuery.toLowerCase();
-                    setSuppliers(suppliersData.filter(s => s.name.toLowerCase().includes(q)));
-                } else {
-                    setSuppliers(suppliersData);
-                }
-            }
-        } catch (error: any) {
-            toast.error("Erreur lors du chargement des données.");
-            if (activeTab === 'intakes') setStockIntakes([]);
-            else if (activeTab === 'logs') setInventoryLogs([]);
-            else setSuppliers([]);
-        } finally {
-            setIsRefreshing(false);
-        }
-    }, [isMounted, debouncedSearchQuery, dateRange, activeTab]);
+        let collection = db.stock_intakes.where('createdAt').between(start, end, true, true);
+        const results = await collection.toArray();
+        
+        if (!searchQuery.trim()) return results.sort((a,b) => b.createdAt!.getTime() - a.createdAt!.getTime());
+        
+        const q = searchQuery.toLowerCase();
+        const sups = (suppliers || []).filter(s => s.name.toLowerCase().includes(q)).map(s => s.uuid);
+        
+        return results.filter(i => 
+            (i.invoiceNumber && i.invoiceNumber.toLowerCase().includes(q)) ||
+            (i.supplierUuid && sups.includes(i.supplierUuid))
+        ).sort((a,b) => b.createdAt!.getTime() - a.createdAt!.getTime());
+    }, [isMounted, dateRange, searchQuery, suppliers]);
 
-    useEffect(() => {
-        fetchData();
-    }, [fetchData]);
+    const inventoryLogs = useLiveQuery(async () => {
+        if (!isMounted || !dateRange?.from) return [];
+        const start = startOfDay(dateRange.from);
+        const end = endOfDay(dateRange.to || new Date());
+        
+        const logs = await db.inventory_logs.where('createdAt').between(start, end, true, true).toArray();
+        const productUuids = [...new Set(logs.map(l => l.productUuid))];
+        const products = await db.products.where('uuid').anyOf(productUuids).toArray();
+        const productMap = new Map(products.map(p => [p.uuid, p.name]));
 
-    useEffect(() => {
-        setSelectedSuppliers(new Set());
-    }, [activeTab, debouncedSearchQuery]);
+        const result = logs.map(l => ({
+            ...l,
+            productName: productMap.get(l.productUuid) || 'Produit inconnu'
+        }));
 
+        if (!searchQuery.trim()) return result.sort((a,b) => b.createdAt.getTime() - a.createdAt.getTime());
+        const q = searchQuery.toLowerCase();
+        return result.filter(l => l.productName.toLowerCase().includes(q)).sort((a,b) => b.createdAt.getTime() - a.createdAt.getTime());
+    }, [isMounted, dateRange, searchQuery]);
 
-    const handleViewDetails = useCallback((intake: StockIntake) => {
+    const filteredSuppliers = useMemo(() => {
+        if (!suppliers) return [];
+        if (!searchQuery.trim()) return suppliers;
+        const q = searchQuery.toLowerCase();
+        return suppliers.filter(s => s.name.toLowerCase().includes(q));
+    }, [suppliers, searchQuery]);
+
+    const supplierMap = useMemo(() => new Map((suppliers || []).map(s => [s.uuid, s])), [suppliers]);
+
+    const isLoading = suppliers === undefined || (activeTab === 'intakes' && stockIntakes === undefined);
+
+    const handleViewDetails = (intake: StockIntake) => {
         setSelectedIntake(intake);
         setIsDetailsOpen(true);
-    }, []);
+    };
 
-    const handleCancelIntake = useCallback((intake: StockIntake) => {
+    const handleCancelIntake = (intake: StockIntake) => {
         setSelectedIntake(intake);
         setIsCancelOpen(true);
-    }, []);
+    };
 
     const handlePaySupplier = (supplier: Supplier) => {
         setSelectedSupplier(supplier);
@@ -151,9 +145,12 @@ export default function StockPage() {
 
     const performDeleteSupplier = async () => {
         if (selectedSupplier) {
-            await supplierService.deleteSupplier(selectedSupplier.uuid);
-            toast.success(`Fournisseur "${selectedSupplier.name}" supprimé.`);
-            fetchData();
+            try {
+                await supplierService.deleteSupplier(selectedSupplier.uuid);
+                toast.success(`Fournisseur "${selectedSupplier.name}" supprimé.`);
+            } catch (e: any) {
+                toast.error(e.message);
+            }
         }
     };
 
@@ -181,9 +178,8 @@ export default function StockPage() {
             await supplierService.bulkDelete(uuids);
             toast.success(`${uuids.length} fournisseur(s) supprimé(s).`);
             setSelectedSuppliers(new Set());
-            fetchData();
         } catch (e: any) {
-            toast.error("Échec de la suppression groupée.", { description: e.message });
+            toast.error("Échec de la suppression groupée.");
         }
     };
 
@@ -216,7 +212,6 @@ export default function StockPage() {
         return suppliers.reduce((sum, s) => sum + s.balance, 0);
     }, [suppliers]);
 
-    // Raccourcis pour la page logistique
     useKeyboardShortcuts([
         {
             key: 'F3',
@@ -265,7 +260,7 @@ export default function StockPage() {
                 {activeTab === 'suppliers' ? (
                     <div className="grid gap-6 md:grid-cols-3">
                         {isLoading ? (
-                            [...Array(3)].map((_, i) => <Skeleton className="h-32 w-full rounded-lg bg-card/40" />)
+                            [...Array(3)].map((_, i) => <Skeleton key={i} className="h-32 w-full rounded-lg bg-card/40" />)
                         ) : (
                             <>
                                 <div className="app-card p-4 rounded-lg bg-card/40 backdrop-blur-sm border-white/5 flex items-center justify-between">
@@ -346,15 +341,6 @@ export default function StockPage() {
                         />
                     </div>
                     <DateRangePicker date={dateRange} setDate={setDate} />
-                    <Button 
-                        variant="outline" 
-                        size="icon" 
-                        className="h-12 w-12 rounded-2xl border-white/5 bg-card/40 hover:bg-primary/10 transition-all group"
-                        onClick={fetchData}
-                        disabled={isRefreshing}
-                    >
-                        <RefreshCw className={cn("h-5 w-5 text-primary transition-all duration-1000", isRefreshing && "animate-spin")} />
-                    </Button>
                 </div>
             </div>
 
@@ -392,7 +378,7 @@ export default function StockPage() {
                         {activeTab === 'intakes' && (
                             <div className="space-y-4">
                                 <div className="flex justify-end px-4">
-                                    <div className="flex items-center gap-1 p-1 bg-black/20 rounded-2xl border border-white/5 shadow-inner">
+                                    <div className="flex items-center gap-1.5 p-1.5 bg-black/20 rounded-lg border border-white/5 shadow-inner">
                                         <Button variant={viewMode === 'grid' ? 'secondary': 'ghost'} size="icon" className="rounded-xl h-9 w-9" onClick={() => setViewMode('grid')}><LayoutGrid className="h-4 w-4"/></Button>
                                         <Button variant={viewMode === 'list' ? 'secondary': 'ghost'} size="icon" className="rounded-xl h-9 w-9" onClick={() => setViewMode('list')}><List className="h-4 w-4"/></Button>
                                     </div>
@@ -400,7 +386,7 @@ export default function StockPage() {
                                 {stockIntakes?.length === 0 ? (
                                     <EmptyState icon={Archive} title="Silence Radio" description="Aucune réception enregistrée pour cette période." />
                                 ) : viewMode === 'list' ? (
-                                    <StockIntakeTable intakes={stockIntakes!} supplierMap={supplierMap} onViewDetails={handleViewDetails} onCancelIntake={handleCancelIntake} />
+                                    <StockIntakeTable intakes={stockIntakes!} supplierMap={supplierMap as any} onViewDetails={handleViewDetails} onCancelIntake={handleCancelIntake} />
                                 ) : (
                                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                                         {stockIntakes!.map(s => (
@@ -413,14 +399,14 @@ export default function StockPage() {
                         {activeTab === 'logs' && (
                             inventoryLogs?.length === 0 ? (
                                 <EmptyState icon={History} title="Historique Vierge" description="Aucun mouvement de stock détecté sur cette période." />
-                            ) : <InventoryLogTable logs={inventoryLogs!} />
+                            ) : <InventoryLogTable logs={inventoryLogs! as any} />
                         )}
                         {activeTab === 'suppliers' && (
-                            suppliers?.length === 0 ? (
-                                <EmptyState icon={Building} title="Aucun Partenaire" description="Commencez par ajouter votre premier fournisseur." />
+                            filteredSuppliers?.length === 0 ? (
+                                <EmptyState icon={Building} title="Aucun Partenaire" description="Commenceز par ajouter votre premier fournisseur." />
                             ) : (
                                 <SupplierTable 
-                                    suppliers={suppliers!} 
+                                    suppliers={filteredSuppliers!} 
                                     onPay={handlePaySupplier} 
                                     onEdit={handleEditSupplier} 
                                     onDelete={handleDeleteSupplier} 
@@ -435,10 +421,10 @@ export default function StockPage() {
             </div>
 
             <StockIntakeDetailsDialog isOpen={isDetailsOpen} onOpenChange={setIsDetailsOpen} intake={selectedIntake} supplierName={selectedIntake?.supplierUuid ? supplierMap.get(selectedIntake.supplierUuid)?.name : 'Partenaire Inconnu'} />
-            <CancelIntakeDialog isOpen={isCancelOpen} onOpenChange={setIsCancelOpen} intake={selectedIntake} onSuccess={fetchData} />
-            <StockAdjustmentDialog isOpen={isAdjustmentOpen} onOpenChange={setIsAdjustmentOpen} onSuccess={fetchData} />
-            <SupplierPaymentDialog isOpen={isSupplierPayOpen} onOpenChange={setIsSupplierPayOpen} supplier={selectedSupplier} onSuccess={fetchData} />
-            <SupplierDialog isOpen={isSupplierDialogOpen} onOpenChange={setIsSupplierDialogOpen} supplier={selectedSupplier} onSuccess={fetchData} />
+            <CancelIntakeDialog isOpen={isCancelOpen} onOpenChange={setIsCancelOpen} intake={selectedIntake} onSuccess={() => {}} />
+            <StockAdjustmentDialog isOpen={isAdjustmentOpen} onOpenChange={setIsAdjustmentOpen} onSuccess={() => {}} />
+            <SupplierPaymentDialog isOpen={isSupplierPayOpen} onOpenChange={setIsSupplierPayOpen} supplier={selectedSupplier} onSuccess={() => {}} />
+            <SupplierDialog isOpen={isSupplierDialogOpen} onOpenChange={setIsSupplierDialogOpen} supplier={selectedSupplier} onSuccess={() => {}} />
             
             <ConfirmAlertDialog 
                 isOpen={isDeleteSupplierOpen} 
