@@ -6,7 +6,7 @@ import { db } from '@/lib/db';
 import { inventoryService } from './inventory.service';
 import { customerService } from './customer.service';
 import { useAppStore } from '@/stores/appStore';
-import { safeToDate, safeNumber } from '@/lib/utils';
+import { safeToDate, safeNumber, roundFinancial, preciseMultiply } from '@/lib/utils';
 import { startOfDay, endOfDay } from 'date-fns';
 
 class SalesService {
@@ -106,21 +106,28 @@ class SalesService {
         dueDate?: Date;
     }): Promise<Sale> {
         const now = new Date();
-        const subtotal = saleData.items.reduce(
-            (acc, item) => acc + safeNumber(item.price) * safeNumber(item.cartQuantity),
+        
+        // المحرك الحسابي المتطور بالسنتيمات
+        const subtotalCents = saleData.items.reduce(
+            (acc, item) => acc + Math.round(preciseMultiply(item.price, item.cartQuantity) * 100),
             0,
         );
-        const discountAmount =
-            saleData.discountType === 'percentage'
-                ? (subtotal * safeNumber(saleData.discountValue)) / 100
-                : safeNumber(saleData.discountValue);
-        const total = Math.max(0, subtotal - discountAmount);
+        
+        let discountCents = 0;
+        if (saleData.discountType === 'percentage') {
+            discountCents = Math.round((subtotalCents * safeNumber(saleData.discountValue)) / 100);
+        } else {
+            discountCents = Math.round(safeNumber(saleData.discountValue) * 100);
+        }
+        
+        const totalCents = Math.max(0, subtotalCents - discountCents);
+        const amountPaidCents = Math.round(safeNumber(saleData.amountPaid) * 100);
+        const remainingCents = Math.max(0, totalCents - amountPaidCents);
 
-        const remainingBalance = total - safeNumber(saleData.amountPaid);
         const paymentStatus =
-            remainingBalance <= 0.01
+            remainingCents <= 0.9
                 ? 'paid'
-                : saleData.amountPaid > 0
+                : amountPaidCents > 0
                   ? 'partial'
                   : 'unpaid';
 
@@ -141,12 +148,12 @@ class SalesService {
             uuid: uuidv4(),
             invoiceNumber,
             items: saleItems,
-            subtotal: Number(subtotal.toFixed(2)),
+            subtotal: subtotalCents / 100,
             discountType: saleData.discountType,
-            discountAmount: Number(discountAmount.toFixed(2)),
-            total: Number(total.toFixed(2)),
-            amountPaid: Number(safeNumber(saleData.amountPaid).toFixed(2)),
-            remainingBalance: Number(remainingBalance.toFixed(2)),
+            discountAmount: discountCents / 100,
+            total: totalCents / 100,
+            amountPaid: amountPaidCents / 100,
+            remainingBalance: remainingCents / 100,
             paymentStatus,
             customerUuid: saleData.customerUuid || undefined,
             createdAt: now,
