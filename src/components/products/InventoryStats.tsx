@@ -4,7 +4,7 @@ import { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Package, AlertTriangle, PackageX, CalendarClock, TrendingUp } from 'lucide-react';
-import { differenceInDays } from 'date-fns';
+import { differenceInDays, isBefore, startOfDay } from 'date-fns';
 import { formatCurrency, cn, safeNumber, preciseMultiply } from '@/lib/utils';
 import { useLiveQuery } from '@/hooks/useLiveQuery';
 import { db } from '@/lib/db';
@@ -30,7 +30,7 @@ export const InventoryStats = ({ isLoading: externalLoading }: { isLoading?: boo
 
     const stats = useMemo(() => {
         if (!products) return { total: 0, low: 0, out: 0, expiring: 0, totalValue: 0 };
-        const now = new Date();
+        const now = startOfDay(new Date());
         
         let totalValAccumulator = 0;
         let lowCount = 0;
@@ -42,7 +42,7 @@ export const InventoryStats = ({ isLoading: externalLoading }: { isLoading?: boo
             const cost = safeNumber(p.purchasePrice);
             const minStock = safeNumber(p.minStockLevel);
 
-            // 1. حساب قيمة المخزون بدقة
+            // 1. حساب قيمة المخزون بدقة (الكمية الموجبة فقط)
             if (qty > 0) {
                 totalValAccumulator += preciseMultiply(qty, cost);
             }
@@ -54,12 +54,11 @@ export const InventoryStats = ({ isLoading: externalLoading }: { isLoading?: boo
                 lowCount++;
             }
 
-            // 3. فحص تواريخ الصلاحية
+            // 3. فحص تواريخ الصلاحية (المنتهية أو التي ستنتهي خلال 30 يوم)
             if (p.dateExpiration) {
-                const expDate = new Date(p.dateExpiration);
+                const expDate = startOfDay(new Date(p.dateExpiration));
                 const diff = differenceInDays(expDate, now);
-                // المنتجات التي ستنتهي صلاحيتها خلال 30 يوم
-                if (diff <= 30 && diff >= 0) {
+                if (diff <= 30) {
                     expiringCount++;
                 }
             }

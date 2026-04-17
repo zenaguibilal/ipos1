@@ -24,20 +24,20 @@ const StatCard = ({ title, value, icon: Icon, colorClass, subtitle }: { title: s
 );
 
 export function CustomerStats() {
-  // Use direct reactive query for the most accurate and responsive numbers
+  // مراقبة حية للعملاء لضمان تحديث الأرقام فوراً عند البيع أو الدفع
   const customers = useLiveQuery(() => db.customers.toArray());
 
   const stats = useMemo(() => {
     if (!customers) return { total: 0, overdue: 0, overLimit: 0, totalOutstanding: 0 };
     
-    let totalDebt = 0;
+    let totalDebtAccumulator = 0;
     let overdueCount = 0;
     let overLimitCount = 0;
 
     customers.forEach(c => {
         const balance = safeNumber(c.outstandingBalance);
         if (balance > 0.01) {
-            totalDebt += balance;
+            totalDebtAccumulator += balance;
             if (c.debtStatus === 'overdue') overdueCount++;
             if (c.isOverLimit) overLimitCount++;
         }
@@ -47,7 +47,7 @@ export function CustomerStats() {
         total: customers.length,
         overdue: overdueCount,
         overLimit: overLimitCount,
-        totalOutstanding: Math.round(totalDebt * 100) / 100
+        totalOutstanding: Math.round(totalDebtAccumulator * 100) / 100
     };
   }, [customers]);
 
@@ -80,14 +80,14 @@ export function CustomerStats() {
         value={String(stats.overdue)} 
         icon={AlertTriangle} 
         colorClass="bg-amber-500/10 text-amber-500" 
-        subtitle="Dossiers في حالة تأخر" 
+        subtitle="Dossiers en retard" 
       />
       <StatCard 
         title="Plafonds Dépassés" 
         value={String(stats.overLimit)} 
         icon={UserX} 
         colorClass="bg-red-500/10 text-red-500" 
-        subtitle="Bloqués pour crédit" 
+        subtitle="Dépassement de crédit" 
       />
     </div>
   );
