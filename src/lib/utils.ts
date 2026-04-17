@@ -63,8 +63,8 @@ export function safeNumber(val: any): number {
 export function preciseMultiply(a: number, b: number): number {
     const valA = safeNumber(a);
     const valB = safeNumber(b);
-    // On يستخدم الأعداد الصحيحة داخلياً لضمان الدقة
-    return (Math.round(valA * 1000) * Math.round(valB * 1000)) / 1000000;
+    // استخدام الأعداد الصحيحة (ضرب في 1000) لضمان الدقة
+    return Math.round(valA * 1000 * (valB * 1000)) / 1000000;
 }
 
 export function formatDateToYYYYMMDD(date: Date): string {
@@ -85,8 +85,9 @@ interface CalculableCart {
  * محرك الحسابات المتقدم للفاتورة - دقة السنتيم المحاسبية.
  */
 export function calculateCartTotals(cart: CalculableCart) {
+    // العمل بنظام السنتيم (Cents) لمنع تزيح الفاصلة العائمة
     const subtotalCents = cart.items.reduce((acc, item) => {
-        return acc + Math.round(preciseMultiply(item.price, item.cartQuantity) * 100);
+        return acc + Math.round(safeNumber(item.price) * safeNumber(item.cartQuantity) * 100);
     }, 0);
 
     const subtotal = subtotalCents / 100;

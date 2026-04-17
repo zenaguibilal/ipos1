@@ -227,10 +227,10 @@ class CustomerService {
         });
 
         returns.forEach(r => {
-            // L'avoir est (ValeurRetour - CashRendu)
+            // Avoir = (ValeurRetour - CashRendu)
             const netReturnCents = Math.round(safeNumber(r.totalReturnValue) * 100) - Math.round(safeNumber(r.amountRefunded) * 100);
             totalDebtCents -= netReturnCents;
-            // On déduit la valeur brute du total dépensé historique
+            // Déduction de la valeur brute du total dépensé
             totalSpentCents -= Math.round(safeNumber(r.totalReturnValue) * 100);
         });
 
