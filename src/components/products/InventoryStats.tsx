@@ -4,7 +4,7 @@ import { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Package, AlertTriangle, PackageX, CalendarClock, TrendingUp } from 'lucide-react';
-import { differenceInDays, isBefore, startOfDay } from 'date-fns';
+import { differenceInDays, startOfDay } from 'date-fns';
 import { formatCurrency, cn, safeNumber, preciseMultiply } from '@/lib/utils';
 import { useLiveQuery } from '@/hooks/useLiveQuery';
 import { db } from '@/lib/db';

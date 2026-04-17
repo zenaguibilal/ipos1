@@ -8,7 +8,7 @@ import { Search, ShoppingBag, Loader2, Sparkles, AlertCircle } from 'lucide-reac
 import { formatCurrency } from '@/lib/utils';
 import { useDebounce } from '@/hooks/useDebounce';
 import { productService } from '@/services/product.service';
-import { useCartActions } from '@/stores/cartStore';
+import { useCartActions, useCartStore } from '@/stores/cartStore';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { CustomItemDialog } from './CustomItemDialog';
 import { cn } from '@/lib/utils';
@@ -78,6 +78,18 @@ export const ProductSelector = forwardRef<{ focusInput: () => void }, ProductSel
     useImperativeHandle(ref, () => ({
         focusInput: refocusInput
     }));
+
+    // المراقبة: إعادة التركيز فور إضافة عنصر للسلة
+    useEffect(() => {
+        const unsubscribe = useCartStore.subscribe(
+            (state) => state.carts.find(c => c.id === state.activeCartId)?.items.length,
+            () => {
+                // عند تغير عدد العناصر، قد يكون هناك إضافة جديدة
+                setTimeout(refocusInput, 50);
+            }
+        );
+        return () => unsubscribe();
+    }, []);
 
     useEffect(() => {
         if (!deferredResults.trim()) {

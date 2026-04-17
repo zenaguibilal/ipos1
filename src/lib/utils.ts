@@ -21,7 +21,7 @@ export function roundFinancial(val: number): number {
 /**
  * Convertit un Date ou une ISO string en objet Date fiable.
  */
-export function safeToDate(date: Date | string): Date {
+export function safeToDate(date: Date | string | undefined | null): Date {
     if (!date) return new Date();
     if (date instanceof Date) return date;
     const d = new Date(date);
@@ -30,12 +30,14 @@ export function safeToDate(date: Date | string): Date {
 
 /**
  * محرك الأرقام الفولاذي: يقرأ المبالغ المالية بأمان تام ويدعم كافة التنسيقات.
+ * يدعم المسافات كفواصل آلاف (الجزائر/فرنسا) والفواصل العشرية المتنوعة.
  */
 export function safeNumber(val: any): number {
     if (typeof val === 'number') return isNaN(val) ? 0 : val;
     if (val === null || val === undefined || val === '') return 0;
     
-    let str = String(val).trim().replace(/\s/g, '');
+    // تنظيف السلسلة من المسافات وعلامات العملات
+    let str = String(val).trim().replace(/\s/g, '').replace(/[A-Z]/gi, '');
     
     if (str.includes(',') && str.includes('.')) {
         const lastDot = str.lastIndexOf('.');

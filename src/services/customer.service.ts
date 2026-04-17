@@ -111,7 +111,7 @@ class CustomerService {
             settlementDay: customerData.settlementDay,
             creditLimit: roundFinancial(safeNumber(customerData.creditLimit)),
             initialBalance: initialBal,
-            totalSpent: initialBal, 
+            totalSpent: 0, 
             outstandingBalance: initialBal,
             isBreadClient: false,
             createdAt: now,
@@ -221,7 +221,7 @@ class CustomerService {
 
         const initial = safeNumber(customer.initialBalance);
         const newBalance = roundFinancial(initial + currentSalesDebt - totalPaymentsFromLogs - netCreditFromReturns);
-        const totalSpent = roundFinancial(totalSalesInvoiced + initial);
+        const totalSpent = roundFinancial(totalSalesInvoiced);
 
         const creditLimit = safeNumber(customer.creditLimit);
         const isOverLimit = creditLimit > 0 ? newBalance > (creditLimit + 0.01) : false;
@@ -343,7 +343,7 @@ class CustomerService {
                 ...c,
                 uuid: uuidv4(),
                 searchName: `${c.firstName} ${c.lastName}`.toLowerCase().trim(),
-                totalSpent: initialBal,
+                totalSpent: 0,
                 initialBalance: initialBal,
                 outstandingBalance: initialBal,
                 isBreadClient: false,
