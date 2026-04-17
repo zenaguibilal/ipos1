@@ -213,15 +213,28 @@ class CustomerService {
                 .toArray(),
         ]);
 
-        // الحساب بالـ Cents لتجنب أخطاء الفاصلة العائمة
-        const currentSalesDebt = sales.reduce((sum, s) => sum + safeNumber(s.remainingBalance), 0);
-        const totalSalesInvoiced = sales.reduce((sum, s) => sum + safeNumber(s.total), 0);
-        const totalPaymentsFromLogs = payments.reduce((sum, p) => sum + safeNumber(p.amount), 0);
-        const netCreditFromReturns = returns.reduce((sum, r) => sum + (safeNumber(r.totalReturnValue) - safeNumber(r.amountRefunded)), 0);
+        // الحساب بالسنتيمات لتجنب أخطاء الفاصلة العائمة
+        let totalDebtCents = Math.round(safeNumber(customer.initialBalance) * 100);
+        let totalSpentCents = 0;
+        
+        sales.forEach(s => {
+            totalDebtCents += Math.round(safeNumber(s.remainingBalance) * 100);
+            totalSpentCents += Math.round(safeNumber(s.total) * 100);
+        });
 
-        const initial = safeNumber(customer.initialBalance);
-        const newBalance = roundFinancial(initial + currentSalesDebt - totalPaymentsFromLogs - netCreditFromReturns);
-        const totalSpent = roundFinancial(totalSalesInvoiced);
+        payments.forEach(p => {
+            totalDebtCents -= Math.round(safeNumber(p.amount) * 100);
+        });
+
+        returns.forEach(r => {
+            // L'avoir généré est (ValeurRetour - RembourséCash)
+            const netCreditCents = Math.round(safeNumber(r.totalReturnValue) * 100) - Math.round(safeNumber(r.amountRefunded) * 100);
+            totalDebtCents -= netCreditCents;
+            totalSpentCents -= Math.round(safeNumber(r.totalReturnValue) * 100);
+        });
+
+        const newBalance = roundFinancial(totalDebtCents / 100);
+        const totalSpent = roundFinancial(totalSpentCents / 100);
 
         const creditLimit = safeNumber(customer.creditLimit);
         const isOverLimit = creditLimit > 0 ? newBalance > (creditLimit + 0.01) : false;

@@ -37,7 +37,7 @@ export function safeNumber(val: any): number {
     if (val === null || val === undefined || val === '') return 0;
     
     // تنظيف السلسلة من المسافات وعلامات العملات
-    let str = String(val).trim().replace(/\s/g, '').replace(/[A-Z]/gi, '');
+    let str = String(val).trim().replace(/\s/g, '').replace(/[^\d.,-]/g, '');
     
     if (str.includes(',') && str.includes('.')) {
         const lastDot = str.lastIndexOf('.');
@@ -61,7 +61,8 @@ export function safeNumber(val: any): number {
 export function preciseMultiply(a: number, b: number): number {
     const valA = safeNumber(a);
     const valB = safeNumber(b);
-    return Math.round((valA * valB) * 1000) / 1000;
+    // On utilise l'arrondi à 4 décimales pour les calculs intermédiaires
+    return Math.round((valA * valB) * 10000) / 10000;
 }
 
 export function formatDateToYYYYMMDD(date: Date): string {

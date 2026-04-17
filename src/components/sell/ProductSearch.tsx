@@ -30,7 +30,7 @@ const SearchResultItem = React.memo(({ product, onSelect }: { product: Product, 
                     </span>
                     {product.quantity <= product.minStockLevel && (
                         <span className="px-2 py-0.5 rounded-lg bg-destructive/10 text-destructive text-[8px] font-black uppercase border border-destructive/20 animate-pulse tracking-tighter">
-                            Aلة المخزون
+                            Alerte Stock
                         </span>
                     )}
                 </div>
@@ -211,7 +211,7 @@ export const ProductSelector = forwardRef<{ focusInput: () => void }, ProductSel
                         ) : !isSearching && (
                             <div className="py-24 text-center space-y-4 opacity-20 flex flex-col items-center">
                                 <ShoppingBag className="h-16 w-16 mb-4" />
-                                <p className="text-[10px] font-black uppercase tracking-[0.3em]">Silence Radio. Produit non répertوريé.</p>
+                                <p className="text-[10px] font-black uppercase tracking-[0.3em]">Silence Radio. Produit non répertorié.</p>
                             </div>
                         )}
                     </div>

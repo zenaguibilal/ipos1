@@ -81,10 +81,17 @@ class ReturnService {
     }
 
     async processReturnCancellation(uuid: string): Promise<void> {
-        // FIX: Expanded scope to include sales and payments tables accessed by recalculateCustomerStatus
+        // Correct scope: recalculateCustomerStatus requires sales and payments
         await db.transaction(
             'rw',
-            [db.product_returns, db.products, db.customers, db.inventory_logs, db.sales, db.payments],
+            [
+                db.product_returns, 
+                db.products, 
+                db.customers, 
+                db.inventory_logs,
+                db.sales,
+                db.payments
+            ],
             async () => {
                 const productReturn = await this.getReturnByUuid(uuid);
                 if (!productReturn || !productReturn.id)
