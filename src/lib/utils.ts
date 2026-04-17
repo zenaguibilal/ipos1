@@ -39,7 +39,11 @@ export function safeNumber(val: any): number {
     // تنظيف السلسلة من المسافات وعلامات العملات
     let str = String(val).trim().replace(/\s/g, '').replace(/[^\d.,-]/g, '');
     
-    if (str.includes(',') && str.includes('.')) {
+    // التعامل مع الفاصلة كعلامة عشرية إذا لم تكن النقطة موجودة
+    if (str.includes(',') && !str.includes('.')) {
+        str = str.replace(',', '.');
+    } else if (str.includes(',') && str.includes('.')) {
+        // إذا كانا موجودين، فالأخير هو الفاصل العشري
         const lastDot = str.lastIndexOf('.');
         const lastComma = str.lastIndexOf(',');
         if (lastDot > lastComma) {
@@ -47,8 +51,6 @@ export function safeNumber(val: any): number {
         } else {
             str = str.replace(/\./g, '').replace(',', '.');
         }
-    } else if (str.includes(',')) {
-        str = str.replace(',', '.');
     }
     
     const parsed = parseFloat(str);
@@ -89,19 +91,19 @@ export function calculateCartTotals(cart: CalculableCart) {
 
     const subtotal = subtotalCents / 100;
 
-    let discountAmount = 0;
+    let discountAmountCents = 0;
     if (cart.discount.type === 'percentage') {
-        discountAmount = roundFinancial((subtotal * safeNumber(cart.discount.value)) / 100);
+        discountAmountCents = Math.round((subtotalCents * safeNumber(cart.discount.value)) / 100);
     } else {
-        discountAmount = roundFinancial(safeNumber(cart.discount.value));
+        discountAmountCents = Math.round(safeNumber(cart.discount.value) * 100);
     }
 
-    const total = Math.max(0, subtotal - discountAmount);
+    const totalCents = Math.max(0, subtotalCents - discountAmountCents);
 
     return {
-        subtotal: roundFinancial(subtotal),
-        discountAmount: roundFinancial(discountAmount),
-        total: roundFinancial(total),
+        subtotal: subtotal,
+        discountAmount: discountAmountCents / 100,
+        total: totalCents / 100,
     };
 }
 

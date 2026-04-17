@@ -8,6 +8,7 @@ import { preciseMultiply, safeNumber } from '@/lib/utils';
 /**
  * @fileOverview Service de pilotage analytique iPOS Zen.
  * Effectue des calculs financiers complexes avec déduction des retours et amortissement des coûts.
+ * محرك الحسابات يستخدم السنتيمترات (Scaled Integers) لضمان الدقة المطلقة.
  */
 class DashboardService {
     async getDashboardData(from: Date, to: Date): Promise<DashboardData> {
@@ -34,103 +35,107 @@ class DashboardService {
             const productPurchaseMap = new Map(allProducts.map(p => [p.uuid, safeNumber(p.purchasePrice)]));
             const customerMap = new Map(allCustomers.map(c => [c.uuid, `${c.firstName} ${c.lastName}`]));
 
-            // Initialisation des accumulateurs
-            let currRev = 0; let currCogs = 0; let currExp = 0; let currRetVal = 0; let currRetCogs = 0; let currCount = 0;
-            let prevRev = 0; let prevCogs = 0; let prevExp = 0; let prevRetVal = 0; let prevRetCogs = 0; let prevCount = 0;
+            // الحساب بالسنتيمات لتجنب أخطاء الفاصلة العائمة
+            let currRevCents = 0; let currCogsCents = 0; let currExpCents = 0; let currRetValCents = 0; let currRetCogsCents = 0; let currCount = 0;
+            let prevRevCents = 0; let prevCogsCents = 0; let prevExpCents = 0; let prevRetValCents = 0; let prevRetCogsCents = 0; let prevCount = 0;
 
-            const productStatsMap = new Map<string, { quantity: number; revenue: number }>();
-            const customerSpendingMap = new Map<string, number>();
-            const dailyMap = new Map<string, { total: number; profit: number }>();
+            const productStatsMap = new Map<string, { quantity: number; revenueCents: number }>();
+            const customerSpendingMapCents = new Map<string, number>();
+            const dailyMapCents = new Map<string, { totalCents: number; profitCents: number }>();
 
             // Préparation du graphe
             eachDayOfInterval({ start: startDate, end: endDate }).forEach(day => {
-                dailyMap.set(format(day, 'yyyy-MM-dd'), { total: 0, profit: 0 });
+                dailyMapCents.set(format(day, 'yyyy-MM-dd'), { totalCents: 0, profitCents: 0 });
             });
 
             // 1. Analyse des Ventes
             allSales.forEach(sale => {
                 const saleDate = new Date(sale.createdAt!);
                 const isCurrent = saleDate >= startDate;
-                let saleCOGS = 0;
+                let saleCOGSCents = 0;
 
                 sale.items.forEach(item => {
                     const qty = safeNumber(item.quantity);
                     const cost = safeNumber(item.purchasePrice) || productPurchaseMap.get(item.productUuid || '') || 0;
-                    const lineCOGS = preciseMultiply(cost, qty);
-                    saleCOGS += lineCOGS;
+                    const lineCOGS = Math.round(preciseMultiply(cost, qty) * 100);
+                    saleCOGSCents += lineCOGS;
 
                     if (isCurrent && item.productUuid) {
-                        const ps = productStatsMap.get(item.productUuid) || { quantity: 0, revenue: 0 };
+                        const ps = productStatsMap.get(item.productUuid) || { quantity: 0, revenueCents: 0 };
                         ps.quantity += qty;
-                        ps.revenue += preciseMultiply(safeNumber(item.price), qty);
+                        ps.revenueCents += Math.round(preciseMultiply(safeNumber(item.price), qty) * 100);
                         productStatsMap.set(item.productUuid, ps);
                     }
                 });
 
+                const totalSaleCents = Math.round(safeNumber(sale.total) * 100);
+
                 if (isCurrent) {
-                    currRev += safeNumber(sale.total);
-                    currCogs += saleCOGS;
+                    currRevCents += totalSaleCents;
+                    currCogsCents += saleCOGSCents;
                     currCount++;
                     const dayKey = format(saleDate, 'yyyy-MM-dd');
-                    const d = dailyMap.get(dayKey);
+                    const d = dailyMapCents.get(dayKey);
                     if (d) {
-                        d.total += safeNumber(sale.total);
-                        d.profit += (safeNumber(sale.total) - saleCOGS);
+                        d.totalCents += totalSaleCents;
+                        d.profitCents += (totalSaleCents - saleCOGSCents);
                     }
                     if (sale.customerUuid) {
-                        customerSpendingMap.set(sale.customerUuid, (customerSpendingMap.get(sale.customerUuid) || 0) + safeNumber(sale.total));
+                        customerSpendingMapCents.set(sale.customerUuid, (customerSpendingMapCents.get(sale.customerUuid) || 0) + totalSaleCents);
                     }
                 } else {
-                    prevRev += safeNumber(sale.total);
-                    prevCogs += saleCOGS;
+                    prevRevCents += totalSaleCents;
+                    prevCogsCents += saleCOGSCents;
                     prevCount++;
                 }
             });
 
-            // 2. Analyse des Retours (Déduction du Chiffre d'Affaires et Ajustement COGS)
+            // 2. Analyse des Retours
             allReturns.forEach(ret => {
                 const retDate = new Date(ret.createdAt!);
                 const isCurrent = retDate >= startDate;
-                let retCOGS = 0;
+                let retCOGSCents = 0;
 
                 ret.items.forEach(item => {
                     if (item.wasRestocked) {
                         const cost = safeNumber(item.purchasePrice) || productPurchaseMap.get(item.productUuid || '') || 0;
-                        retCOGS += preciseMultiply(cost, item.quantity);
+                        retCOGSCents += Math.round(preciseMultiply(cost, item.quantity) * 100);
                     }
                 });
 
+                const totalRetCents = Math.round(safeNumber(ret.totalReturnValue) * 100);
+
                 if (isCurrent) {
-                    currRetVal += safeNumber(ret.totalReturnValue);
-                    currRetCogs += retCOGS;
+                    currRetValCents += totalRetCents;
+                    currRetCogsCents += retCOGSCents;
                     const dayKey = format(retDate, 'yyyy-MM-dd');
-                    const d = dailyMap.get(dayKey);
+                    const d = dailyMapCents.get(dayKey);
                     if (d) {
-                        d.total -= safeNumber(ret.totalReturnValue);
-                        d.profit -= (safeNumber(ret.totalReturnValue) - retCOGS);
+                        d.totalCents -= totalRetCents;
+                        d.profitCents -= (totalRetCents - retCOGSCents);
                     }
                     if (ret.customerUuid) {
-                        customerSpendingMap.set(ret.customerUuid, (customerSpendingMap.get(ret.customerUuid) || 0) - safeNumber(ret.totalReturnValue));
+                        customerSpendingMapCents.set(ret.customerUuid, (customerSpendingMapCents.get(ret.customerUuid) || 0) - totalRetCents);
                     }
                 } else {
-                    prevRetVal += safeNumber(ret.totalReturnValue);
-                    prevRetCogs += retCOGS;
+                    prevRetValCents += totalRetCents;
+                    prevRetCogsCents += retCOGSCents;
                 }
             });
 
             // 3. Analyse des Charges
             allExpenses.forEach(exp => {
-                const val = safeNumber(exp.amount);
-                if (new Date(exp.expenseDate) >= startDate) currExp += val;
-                else prevExp += val;
+                const valCents = Math.round(safeNumber(exp.amount) * 100);
+                if (new Date(exp.expenseDate) >= startDate) currExpCents += valCents;
+                else prevExpCents += valCents;
             });
 
             // 4. Calculs Finaux (Net)
-            const netRevenue = currRev - currRetVal;
-            const prevNetRevenue = prevRev - prevRetVal;
+            const netRevenue = (currRevCents - currRetValCents) / 100;
+            const prevNetRevenue = (prevRevCents - prevRetValCents) / 100;
             
-            const netProfit = netRevenue - (currCogs - currRetCogs) - currExp;
-            const prevNetProfit = prevNetRevenue - (prevCogs - prevRetCogs) - prevExp;
+            const netProfit = (currRevCents - currRetValCents - (currCogsCents - currRetCogsCents) - currExpCents) / 100;
+            const prevNetProfit = (prevRevCents - prevRetValCents - (prevCogsCents - prevRetCogsCents) - prevExpCents) / 100;
 
             const calcChange = (curr: number, prev: number) => {
                 if (Math.abs(prev) < 0.1) return curr > 0.1 ? 100 : 0;
@@ -140,7 +145,7 @@ class DashboardService {
             return {
                 stats: {
                     totalRevenue: netRevenue,
-                    totalExpenses: currExp,
+                    totalExpenses: currExpCents / 100,
                     netProfit: netProfit,
                     saleCount: currCount,
                     totalOutstandingDebt: allCustomers.reduce((sum, c) => sum + safeNumber(c.outstandingBalance), 0),
@@ -149,10 +154,10 @@ class DashboardService {
                     profitMargin: netRevenue > 0.1 ? (netProfit / netRevenue) * 100 : 0,
                     totalRevenueChange: calcChange(netRevenue, prevNetRevenue),
                     netProfitChange: calcChange(netProfit, prevNetProfit),
-                    totalExpensesChange: calcChange(currExp, prevExp),
+                    totalExpensesChange: calcChange(currExpCents / 100, prevExpCents / 100),
                     saleCountChange: calcChange(currCount, prevCount),
                 },
-                salesByDay: Array.from(dailyMap.entries()).map(([date, v]) => ({ date, ...v })),
+                salesByDay: Array.from(dailyMapCents.entries()).map(([date, v]) => ({ date, total: v.totalCents / 100, profit: v.profitCents / 100 })),
                 recentSales: allSales
                     .filter(s => new Date(s.createdAt!) >= startDate)
                     .sort((a, b) => new Date(b.createdAt!).getTime() - new Date(a.createdAt!).getTime())
@@ -176,7 +181,7 @@ class DashboardService {
                         customerName: r.customerUuid ? (customerMap.get(r.customerUuid) || 'Client Elite') : 'Client de passage',
                     })),
                 topProducts: Array.from(productStatsMap.entries())
-                    .sort((a, b) => b[1].revenue - a[1].revenue)
+                    .sort((a, b) => b[1].revenueCents - a[1].revenueCents)
                     .slice(0, 5)
                     .map(([uuid, stats]) => {
                         const p = allProducts.find(prod => prod.uuid === uuid);
@@ -184,17 +189,17 @@ class DashboardService {
                             productUuid: uuid,
                             name: p?.name || 'Produit Archivé',
                             quantitySold: stats.quantity,
-                            revenueGenerated: stats.revenue,
+                            revenueGenerated: stats.revenueCents / 100,
                             category: p?.category,
                         };
                     }),
-                topCustomers: Array.from(customerSpendingMap.entries())
+                topCustomers: Array.from(customerSpendingMapCents.entries())
                     .sort((a, b) => b[1] - a[1])
                     .slice(0, 5)
-                    .map(([uuid, spent]) => ({
+                    .map(([uuid, spentCents]) => ({
                         customerUuid: uuid,
                         name: customerMap.get(uuid) || 'Client de passage',
-                        totalSpent: spent,
+                        totalSpent: spentCents / 100,
                     })),
                 lowStockProducts: allProducts
                     .filter(p => safeNumber(p.quantity) <= safeNumber(p.minStockLevel))
