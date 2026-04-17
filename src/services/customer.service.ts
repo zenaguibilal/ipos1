@@ -4,7 +4,7 @@ import { v4 as uuidv4 } from 'uuid';
 import type { Customer, Sale, ImportAnalysis, Payment, ProductReturn } from '@/lib/types';
 import { db } from '@/lib/db';
 import Papa from 'papaparse';
-import { startOfMonth, subMonths, format } from 'date-fns';
+import { startOfMonth, subMonths, format, startOfDay } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { safeNumber, roundFinancial } from '@/lib/utils';
 
@@ -182,7 +182,7 @@ class CustomerService {
 
         if (Math.abs(safeNumber(customer.outstandingBalance)) > 0.009) {
             throw new Error(
-                "Suppression impossible: le solde n'est pas nul.",
+                "Suppression impossible: le solده n'est pas nul.",
             );
         }
 

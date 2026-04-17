@@ -83,8 +83,9 @@ export const ProductSelector = forwardRef<{ focusInput: () => void }, ProductSel
     useEffect(() => {
         const unsubscribe = useCartStore.subscribe(
             (state) => {
-                const activeCart = state.carts.find(c => c.id === state.activeCartId);
-                return activeCart?.items.length || 0;
+                const activeCartId = state.activeCartId;
+                const cart = state.carts.find(c => c.id === activeCartId);
+                return cart?.items.length || 0;
             },
             () => {
                 // عند تغير عدد العناصر، قد يكون هناك إضافة جديدة
