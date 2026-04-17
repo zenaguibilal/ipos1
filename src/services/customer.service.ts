@@ -35,7 +35,7 @@ class CustomerService {
 
         if (filters.status) {
             if (filters.status === 'has_debt')
-                collection = collection.filter(c => safeNumber(c.outstandingBalance) > 0.01);
+                collection = collection.filter(c => safeNumber(c.outstandingBalance) > 0.009);
             if (filters.status === 'overdue')
                 collection = collection.filter(c => c.debtStatus === 'overdue');
             if (filters.status === 'over_limit')
@@ -180,7 +180,7 @@ class CustomerService {
             );
         }
 
-        if (Math.abs(safeNumber(customer.outstandingBalance)) > 0.01) {
+        if (Math.abs(safeNumber(customer.outstandingBalance)) > 0.009) {
             throw new Error(
                 "Suppression impossible: le solde n'est pas nul.",
             );
@@ -193,7 +193,7 @@ class CustomerService {
     }
 
     /**
-     * محرك إعادة حساب الوضع المالي للعميل بدقة محاسبية.
+     * محرك إعادة حساب الوضع المالي للعميل بدقة محاسبية سنتيمترية.
      */
     async recalculateCustomerStatus(customerUuid: string): Promise<Customer> {
         const customer = await this.getCustomerByUuid(customerUuid);
@@ -213,7 +213,7 @@ class CustomerService {
                 .toArray(),
         ]);
 
-        // الحساب بالسنتيمات لتجنب أخطاء الفاصلة العائمة
+        // الحساب بالسنتيمات (Scaled Integers) لتجنب أخطاء الفاصلة العائمة
         let totalDebtCents = Math.round(safeNumber(customer.initialBalance) * 100);
         let totalSpentCents = 0;
         
@@ -227,24 +227,25 @@ class CustomerService {
         });
 
         returns.forEach(r => {
-            // L'avoir généré est (ValeurRetour - RembourséCash)
-            const netCreditCents = Math.round(safeNumber(r.totalReturnValue) * 100) - Math.round(safeNumber(r.amountRefunded) * 100);
-            totalDebtCents -= netCreditCents;
+            // L'avoir est (ValeurRetour - CashRendu)
+            const netReturnCents = Math.round(safeNumber(r.totalReturnValue) * 100) - Math.round(safeNumber(r.amountRefunded) * 100);
+            totalDebtCents -= netReturnCents;
+            // On déduit la valeur brute du total dépensé historique
             totalSpentCents -= Math.round(safeNumber(r.totalReturnValue) * 100);
         });
 
         const newBalance = roundFinancial(totalDebtCents / 100);
-        const totalSpent = roundFinancial(totalSpentCents / 100);
+        const totalSpent = roundFinancial(Math.max(0, totalSpentCents / 100));
 
         const creditLimit = safeNumber(customer.creditLimit);
-        const isOverLimit = creditLimit > 0 ? newBalance > (creditLimit + 0.01) : false;
+        const isOverLimit = creditLimit > 0 ? newBalance > (creditLimit + 0.009) : false;
 
         const hasPaymentThisMonth = payments.some(
             p => new Date(p.paymentDate) >= currentMonthStart,
         );
 
         let debtStatus: Customer['debtStatus'] = 'none';
-        if (newBalance > 0.01) {
+        if (newBalance > 0.009) {
             if (
                 customer.settlementDay &&
                 currentDayOfMonth > customer.settlementDay &&

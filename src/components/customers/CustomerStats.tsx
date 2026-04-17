@@ -28,7 +28,7 @@ const StatCard = ({ title, value, icon: Icon, colorClass, subtitle }: { title: s
 
 /**
  * Composant CustomerStats - Calcule et affiche les indicateurs clés de la base client.
- * Utilise useLiveQuery pour une mise à jour instantanée après chaque transaction.
+ * Utilise useLiveQuery pour une mise à jour instantanée بعد كل عملية دفع أو مبيع.
  */
 export function CustomerStats() {
   // Surveillance en temps réel de la table clients (Elite Reactivity)
@@ -37,7 +37,7 @@ export function CustomerStats() {
   const stats = useMemo(() => {
     if (!customers) return { total: 0, overdue: 0, overLimit: 0, totalOutstanding: 0 };
     
-    // Utilisation d'un accumulateur d'entiers (échelle de 100) pour une précision absolue
+    // محرك الجمع بالسنتيمات لضمان الدقة المطلقة
     let totalDebtCents = 0;
     let overdueCount = 0;
     let overLimitCount = 0;
@@ -45,11 +45,11 @@ export function CustomerStats() {
     customers.forEach(c => {
         const balance = safeNumber(c.outstandingBalance);
         
-        // On ne compte que les soldes débiteurs effectifs (> 0.009 DA)
+        // حساب الديون الفعلية فقط
         if (balance > 0.009) {
             totalDebtCents += Math.round(balance * 100);
             
-            // Recalcul des alertes basé sur les valeurs actuelles pour la sécurité UI
+            // تصنيف الحالات الحرجة
             if (c.debtStatus === 'overdue') overdueCount++;
             if (c.isOverLimit) overLimitCount++;
         }
@@ -92,14 +92,14 @@ export function CustomerStats() {
         value={String(stats.overdue)} 
         icon={AlertTriangle} 
         colorClass="bg-amber-500/10 text-amber-500" 
-        subtitle="Dossiers خارج الآجال" 
+        subtitle="Dossiers hors délais" 
       />
       <StatCard 
         title="Crédits Dépassés" 
         value={String(stats.overLimit)} 
         icon={UserX} 
         colorClass="bg-red-500/10 text-red-500" 
-        subtitle="تجاوز سقف الائتمان" 
+        subtitle="Sujets à blocage" 
       />
     </div>
   );

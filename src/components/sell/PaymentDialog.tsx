@@ -237,7 +237,7 @@ function PaymentDialogContent({
                                     <div className="p-3.5 bg-destructive/10 border border-destructive/20 rounded-xl space-y-3 shadow-inner">
                                         <div className="flex items-center gap-2 text-destructive text-[10px] font-black uppercase tracking-wide">
                                             <ShieldAlert className="h-4 w-4" />
-                                            Plafond Crédit Dépassé ({formatCurrency(customer.creditLimit || 0)})
+                                            Plafوند Crédit Dépassé ({formatCurrency(customer.creditLimit || 0)})
                                         </div>
                                         <div className="flex items-center justify-between">
                                             <span className="text-[10px] font-bold text-muted-foreground/60 uppercase">Autoriser l'exception Elite</span>

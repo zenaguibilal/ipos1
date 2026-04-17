@@ -61,8 +61,8 @@ export function safeNumber(val: any): number {
 export function preciseMultiply(a: number, b: number): number {
     const valA = safeNumber(a);
     const valB = safeNumber(b);
-    // On utilise l'arrondi à 4 décimales pour les calculs intermédiaires
-    return Math.round((valA * valB) * 10000) / 10000;
+    // On يستخدم الأعداد الصحيحة داخلياً لضمان الدقة
+    return (Math.round(valA * 1000) * Math.round(valB * 1000)) / 1000000;
 }
 
 export function formatDateToYYYYMMDD(date: Date): string {
@@ -83,15 +83,17 @@ interface CalculableCart {
  * محرك الحسابات المتقدم للفاتورة - دقة السنتيم المحاسبية.
  */
 export function calculateCartTotals(cart: CalculableCart) {
-    const subtotal = cart.items.reduce((acc, item) => {
-        return acc + preciseMultiply(item.price, item.cartQuantity);
+    const subtotalCents = cart.items.reduce((acc, item) => {
+        return acc + Math.round(preciseMultiply(item.price, item.cartQuantity) * 100);
     }, 0);
+
+    const subtotal = subtotalCents / 100;
 
     let discountAmount = 0;
     if (cart.discount.type === 'percentage') {
-        discountAmount = (subtotal * safeNumber(cart.discount.value)) / 100;
+        discountAmount = roundFinancial((subtotal * safeNumber(cart.discount.value)) / 100);
     } else {
-        discountAmount = safeNumber(cart.discount.value);
+        discountAmount = roundFinancial(safeNumber(cart.discount.value));
     }
 
     const total = Math.max(0, subtotal - discountAmount);

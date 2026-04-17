@@ -32,7 +32,7 @@ export const InventoryStats = ({ isLoading: externalLoading }: { isLoading?: boo
         if (!products) return { total: 0, low: 0, out: 0, expiring: 0, totalValue: 0 };
         const now = startOfDay(new Date());
         
-        let totalValAccumulator = 0;
+        let totalValAccumulatorCents = 0;
         let lowCount = 0;
         let outCount = 0;
         let expiringCount = 0;
@@ -42,9 +42,9 @@ export const InventoryStats = ({ isLoading: externalLoading }: { isLoading?: boo
             const cost = safeNumber(p.purchasePrice);
             const minStock = safeNumber(p.minStockLevel);
 
-            // 1. حساب قيمة المخزون بدقة (الكمية الموجبة فقط)
+            // 1. حساب قيمة المخزون بدقة سنتيمترية (الكمية الموجبة فقط)
             if (qty > 0) {
-                totalValAccumulator += preciseMultiply(qty, cost);
+                totalValAccumulatorCents += Math.round(preciseMultiply(qty, cost) * 100);
             }
 
             // 2. تصنيف حالة المخزون
@@ -69,7 +69,7 @@ export const InventoryStats = ({ isLoading: externalLoading }: { isLoading?: boo
             low: lowCount,
             out: outCount,
             expiring: expiringCount,
-            totalValue: Math.round(totalValAccumulator * 100) / 100
+            totalValue: totalValAccumulatorCents / 100
         };
     }, [products]);
 

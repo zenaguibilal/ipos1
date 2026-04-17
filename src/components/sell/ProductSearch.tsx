@@ -82,7 +82,10 @@ export const ProductSelector = forwardRef<{ focusInput: () => void }, ProductSel
     // المراقبة: إعادة التركيز فور إضافة عنصر للسلة
     useEffect(() => {
         const unsubscribe = useCartStore.subscribe(
-            (state) => state.carts.find(c => c.id === state.activeCartId)?.items.length,
+            (state) => {
+                const activeCart = state.carts.find(c => c.id === state.activeCartId);
+                return activeCart?.items.length || 0;
+            },
             () => {
                 // عند تغير عدد العناصر، قد يكون هناك إضافة جديدة
                 setTimeout(refocusInput, 50);
@@ -211,7 +214,7 @@ export const ProductSelector = forwardRef<{ focusInput: () => void }, ProductSel
                         ) : !isSearching && (
                             <div className="py-24 text-center space-y-4 opacity-20 flex flex-col items-center">
                                 <ShoppingBag className="h-16 w-16 mb-4" />
-                                <p className="text-[10px] font-black uppercase tracking-[0.3em]">Silence Radio. Produit non répertorié.</p>
+                                <p className="text-[10px] font-black uppercase tracking-[0.3em]">Silence Radio. Produit non répertوريé.</p>
                             </div>
                         )}
                     </div>
