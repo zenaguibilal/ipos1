@@ -9,7 +9,7 @@ import { useLiveQuery } from '@/hooks/useLiveQuery';
 import { db } from '@/lib/db';
 
 /**
- * Composant de carte statistique unifié avec un design Elite.
+ * Composant de carte statistique unifié مع تصميم Elite.
  */
 const StatCard = ({ title, value, icon: Icon, colorClass, subtitle }: { title: string, value: string, icon: any, colorClass: string, subtitle?: string }) => (
     <Card className="app-card h-full bg-card/40 backdrop-blur-sm border-white/5 rounded-lg group overflow-hidden">
@@ -28,10 +28,10 @@ const StatCard = ({ title, value, icon: Icon, colorClass, subtitle }: { title: s
 
 /**
  * Composant CustomerStats - Calcule et affiche les indicateurs clés de la base client.
- * Utilise useLiveQuery pour une mise à jour instantanée بعد كل عملية دفع أو مبيع.
+ * Utilise useLiveQuery لضمان التحديث اللحظي الشامل.
  */
 export function CustomerStats() {
-  // Surveillance en temps réel de la table clients (Elite Reactivity)
+  // مراقبة حية لجدول العملاء بالكامل
   const customers = useLiveQuery(() => db.customers.toArray());
 
   const stats = useMemo(() => {
@@ -45,11 +45,8 @@ export function CustomerStats() {
     customers.forEach(c => {
         const balance = safeNumber(c.outstandingBalance);
         
-        // حساب الديون الفعلية فقط
         if (balance > 0.009) {
             totalDebtCents += Math.round(balance * 100);
-            
-            // تصنيف الحالات الحرجة
             if (c.debtStatus === 'overdue') overdueCount++;
             if (c.isOverLimit) overLimitCount++;
         }
@@ -92,14 +89,14 @@ export function CustomerStats() {
         value={String(stats.overdue)} 
         icon={AlertTriangle} 
         colorClass="bg-amber-500/10 text-amber-500" 
-        subtitle="Dossiers hors délais" 
+        subtitle="Dossiers مهددين بالتعطل" 
       />
       <StatCard 
         title="Crédits Dépassés" 
         value={String(stats.overLimit)} 
         icon={UserX} 
         colorClass="bg-red-500/10 text-red-500" 
-        subtitle="Sujets à blocage" 
+        subtitle="تجاوز سقف الائتمان" 
       />
     </div>
   );

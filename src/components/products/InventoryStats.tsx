@@ -25,7 +25,7 @@ const StatCard = ({ title, value, icon: Icon, colorClass, subtitle }: { title: s
 );
 
 export const InventoryStats = ({ isLoading: externalLoading }: { isLoading?: boolean }) => {
-    // مراقبة حية للمنتجات لضمان تحديث الإحصائيات فور حدوث أي تغيير في المخزون
+    // مراقبة حية لجدول المنتجات بالكامل
     const products = useLiveQuery(() => db.products.toArray());
 
     const stats = useMemo(() => {
@@ -42,19 +42,16 @@ export const InventoryStats = ({ isLoading: externalLoading }: { isLoading?: boo
             const cost = safeNumber(p.purchasePrice);
             const minStock = safeNumber(p.minStockLevel);
 
-            // 1. حساب قيمة المخزون بدقة سنتيمترية (الكمية الموجبة فقط)
             if (qty > 0) {
                 totalValAccumulatorCents += Math.round(preciseMultiply(qty, cost) * 100);
             }
 
-            // 2. تصنيف حالة المخزون
             if (qty <= 0) {
                 outCount++;
             } else if (qty <= minStock) {
                 lowCount++;
             }
 
-            // 3. فحص تواريخ الصلاحية (المنتهية أو التي ستنتهي خلال 30 يوم)
             if (p.dateExpiration) {
                 const expDate = startOfDay(new Date(p.dateExpiration));
                 const diff = differenceInDays(expDate, now);

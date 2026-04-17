@@ -202,7 +202,7 @@ class CustomerService {
 
         const now = new Date();
         const currentDayOfMonth = now.getDate();
-        const currentMonthStart = startOfMonth(now);
+        const currentMonthStart = startOfDay(now);
 
         const [sales, payments, returns] = await Promise.all([
             db.sales.where('customerUuid').equals(customerUuid).toArray(),
