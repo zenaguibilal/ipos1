@@ -27,6 +27,7 @@ class SalesService {
 
     /**
      * تصفية المبيعات مع دعم استرجاع البيانات القديمة عند غياب التاريخ.
+     * تم تحسين المحرك لاستخدام الفهارس (Indexed Querying) لأقصى أداء.
      */
     async filterSales(filters: {
         query?: string;
@@ -36,7 +37,7 @@ class SalesService {
     }): Promise<Sale[]> {
         let collection;
 
-        // ELITE OPTIMIZATION: استخدام الفهرس الزمني مباشرة لضمان السرعة الفائقة
+        // ELITE OPTIMIZATION: تحديد نطاق الاستعلام الأساسي باستخدام الفهرس الزمني
         if (filters.from && filters.to) {
             const start = startOfDay(filters.from);
             const end = endOfDay(filters.to);
@@ -48,20 +49,22 @@ class SalesService {
             const end = endOfDay(filters.to);
             collection = db.sales.where('createdAt').belowOrEqual(end);
         } else {
-            // استرجاع كل شيء (بما في ذلك الفواتير القديمة) عند مسح الفلتر الزمني
+            // FIX: استرجاع الأرشيف الكامل (بما في ذلك الفواتير القديمة) عند مسح الفلتر الزمني
             collection = db.sales.toCollection();
         }
 
+        // تطبيق فلتر الحالة إذا وجد
         if (filters.status && filters.status !== 'all') {
             collection = collection.filter(s => s.paymentStatus === filters.status);
         }
 
         let sales = await collection.toArray();
 
+        // تطبيق محرك البحث النصي المتقدم
         if (filters.query) {
             const lowerQuery = filters.query.toLowerCase().trim();
             
-            // بحث متقدم يدمج أرقام الفواتير وأسماء العملاء
+            // جلب أسماء العملاء للمطابقة
             const customers = await db.customers.toArray();
             const customerUuids = new Set(
                 customers
@@ -76,7 +79,7 @@ class SalesService {
             );
         }
 
-        // ترتيب تنازلي لضمان تدفق "Elite Flow" من الأحدث للأقدم
+        // الترتيب التنازلي (الأحدث أولاً) لضمان تدفق بصري منطقي
         return sales.sort(
             (a, b) =>
                 safeToDate(b.createdAt!).getTime() -
@@ -132,7 +135,7 @@ class SalesService {
         const remainingCents = Math.max(0, totalCents - amountPaidCents);
 
         const paymentStatus =
-            remainingCents <= 0.9 // تسامح مالي 0.01
+            remainingCents <= 0.9 
                 ? 'paid'
                 : amountPaidCents > 0
                   ? 'partial'
@@ -204,9 +207,6 @@ class SalesService {
         return newSale;
     }
 
-    /**
-     * إلغاء عملية بيع بشكل آمن ومعالجة كافة التبعات المالية والمخزنية
-     */
     async processSaleCancellation(uuid: string): Promise<void> {
         await db.transaction(
             'rw',
@@ -222,10 +222,8 @@ class SalesService {
                 const sale = await this.getSaleByUuid(uuid);
                 if (!sale || !sale.id) throw new Error('Vente non trouvée.');
 
-                // 1. حذف المبيعة
                 await db.sales.delete(sale.id);
 
-                // 2. إعادة السلع للمخزن (Audit Trail)
                 for (const item of sale.items) {
                     if (item.productUuid) {
                         await inventoryService.adjustStock(
@@ -237,7 +235,6 @@ class SalesService {
                     }
                 }
 
-                // 3. تحديث ميزانية العميل فوراً
                 if (sale.customerUuid) {
                     await customerService.recalculateCustomerStatus(
                         sale.customerUuid,

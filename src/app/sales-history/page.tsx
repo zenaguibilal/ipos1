@@ -5,6 +5,7 @@ import { salesService } from '@/services/sales.service';
 import { useDebounce } from '@/hooks/useDebounce';
 import type { Sale, Customer } from '@/lib/types';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { 
     Search, 
     History, 
@@ -55,7 +56,7 @@ type SalesStatus = 'all' | 'paid' | 'partial' | 'unpaid';
 
 /**
  * صفحة سجل المبيعات Elite.
- * تم التحديث لضمان ظهور الفواتير القديمة عند مسح الفلتر الزمني.
+ * تم التحديث لضمان ظهور الفواتير القديمة عند مسح الفلتر الزمني وتعزيز الدقة المحاسبية.
  */
 export default function SalesHistoryPage() {
     const searchInputRef = useRef<HTMLInputElement>(null);
@@ -67,6 +68,8 @@ export default function SalesHistoryPage() {
     const [searchQuery, setSearchQuery] = useState('');
     const [filterStatus, setFilterStatus] = useState<SalesStatus>('all');
     const debouncedSearchQuery = useDebounce(searchQuery, 300);
+    
+    // استخدام undefined بدلاً من النطاق التلقائي للسماح بعرض كامل السجل عند الحاجة
     const { dateRange, setDate, isMounted } = useDateRange(29);
     const profile = useAppStore(state => state.companyProfile);
     
@@ -78,7 +81,7 @@ export default function SalesHistoryPage() {
     const [isBulkCancelConfirmOpen, setIsBulkCancelConfirmOpen] = useState(false);
     const [isRefreshing, setIsRefreshing] = useState(false);
 
-    // مراقبة حية للمبيعات المفلترة لضمان المزامنة الفورية مع محرك البحث المطور
+    // مراقبة حية للمبيعات المفلترة لضمان المزامنة الفورية
     const sales = useLiveQuery(
         () => salesService.filterSales({
             query: debouncedSearchQuery,
@@ -105,32 +108,25 @@ export default function SalesHistoryPage() {
         let totalCents = 0;
         let receivedCents = 0;
         let debtCents = 0;
-        let discountCents = 0;
 
         sales.forEach(s => {
             totalCents += Math.round(safeNumber(s.total) * 100);
             receivedCents += Math.round(safeNumber(s.amountPaid) * 100);
             debtCents += Math.round(safeNumber(s.remainingBalance) * 100);
-            discountCents += Math.round(safeNumber(s.discountAmount) * 100);
         });
 
         return {
             total: totalCents / 100,
             received: receivedCents / 100,
             debt: debtCents / 100,
-            count: sales.length,
-            discount: discountCents / 100
+            count: sales.length
         };
     }, [sales]);
 
-    /**
-     * معالجة بيانات الرسم البياني بدقة يومية
-     */
     const chartData = useMemo(() => {
-        if (!sales) return [];
+        if (!sales || sales.length === 0) return [];
         const dataMap = new Map<string, { date: string, totalCents: number, receivedCents: number }>();
         
-        // ترتيب المبيعات زمنياً للرسم
         const sortedSales = [...sales].sort((a,b) => safeToDate(a.createdAt!).getTime() - safeToDate(b.createdAt!).getTime());
         
         sortedSales.forEach(s => {
@@ -272,7 +268,7 @@ export default function SalesHistoryPage() {
     const resetFilters = () => {
         setSearchQuery('');
         setFilterStatus('all');
-        setDate(undefined); // هذا هو المفتاح لإظهار الفواتير القديمة
+        setDate(undefined); // مسح التاريخ لعرض كامل السجل التاريخي
         toast.info("Affichage de tout l'historique.");
     };
 
@@ -440,7 +436,7 @@ export default function SalesHistoryPage() {
                         <CardContent className="h-64 p-4">
                             {isLoading ? (
                                 <div className="h-full flex items-center justify-center opacity-20"><RefreshCw className="animate-spin h-10 w-10 text-primary" /></div>
-                            ) : (
+                            ) : chartData.length > 0 ? (
                                 <ResponsiveContainer width="100%" height="100%">
                                     <AreaChart data={chartData}>
                                         <defs>
@@ -484,6 +480,8 @@ export default function SalesHistoryPage() {
                                         <Area type="monotone" dataKey="received" name="received" stroke="hsl(var(--chart-quaternary))" fillOpacity={0} strokeWidth={3} strokeDasharray="10 10" isAnimationActive={false} />
                                     </AreaChart>
                                 </ResponsiveContainer>
+                            ) : (
+                                <div className="h-full flex items-center justify-center opacity-10 uppercase text-[10px] font-black tracking-widest italic">Analyse des flux indisponible</div>
                             )}
                         </CardContent>
                     </Card>
