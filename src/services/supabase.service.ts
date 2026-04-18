@@ -35,9 +35,6 @@ class SupabaseSyncService {
         return str.replace(/(_\w)/g, m => m[1].toUpperCase());
     }
 
-    /**
-     * Mappeur intelligent SnakeCase <-> CamelCase.
-     */
     private sanitizeForCloud(data: any): any {
         if (data === null || data === undefined) return data;
         if (data instanceof Date) return data.toISOString();
@@ -55,10 +52,6 @@ class SupabaseSyncService {
         return data;
     }
 
-    /**
-     * Reconvertit les types JSON (Strings) en types Local (Dates, etc.)
-     * CRITICAL: Les dates doivent redevenir des objets Date pour que les index Dexie .between() fonctionnent.
-     */
     private mapToLocal(record: any): any {
         if (!record) return record;
         const clean: any = {};
@@ -67,17 +60,16 @@ class SupabaseSyncService {
             const camelKey = this.snakeToCamel(key);
             let value = record[key];
 
-            // Detection intelligente des dates
-            if (typeof value === 'string' && (
-                key.endsWith('_at') || 
-                key.endsWith('_date') || 
-                key === 'date' || 
-                key === 'date_expiration' || 
-                key === 'date_maj_prix'
-            )) {
+            // Detection RADICALE des dates pour IndexedDB
+            const dateFields = [
+                'created_at', 'updated_at', 'expense_date', 'invoice_date', 
+                'payment_date', 'due_date', 'date_expiration', 'date_maj_prix', 'last_sync_at'
+            ];
+
+            if (typeof value === 'string' && (dateFields.includes(key) || key.endsWith('_at') || key.endsWith('_date'))) {
                 const d = new Date(value);
                 if (!isNaN(d.getTime())) {
-                    value = d;
+                    value = d; // Convertir impérativement en objet Date pour les index Dexie
                 }
             }
 
@@ -133,22 +125,12 @@ class SupabaseSyncService {
             for (const item of this.tableSyncOrder) {
                 const records = await item.table.toArray();
                 if (records.length === 0) continue;
-
                 const dataToSync = this.sanitizeForCloud(records);
-
                 await this.withRetry(async () => {
-                    const { error } = await supabase
-                        .from(item.name)
-                        .upsert(dataToSync, { onConflict: 'uuid' });
-
-                    if (error) {
-                        throw new Error(`Push [${item.name}] échoué: ${error.message}`);
-                    }
+                    const { error } = await supabase.from(item.name).upsert(dataToSync, { onConflict: 'uuid' });
+                    if (error) throw new Error(`Push [${item.name}] échoué: ${error.message}`);
                 });
             }
-        } catch (err: any) {
-            console.error('Push Error:', err);
-            throw err;
         } finally {
             this.isSyncing = false;
         }
@@ -157,47 +139,33 @@ class SupabaseSyncService {
     async pullAllData(url: string, key: string): Promise<void> {
         if (this.isSyncing) return;
         this.isSyncing = true;
-
         const supabase = getSupabaseClient(url, key);
         if (!supabase) {
             this.isSyncing = false;
             throw new Error('Supabase non configuré.');
         }
-
         try {
             for (const item of this.tableSyncOrder) {
-                const { data, error } = await this.withRetry(() =>
-                    supabase.from(item.name).select('*'),
-                );
-
+                const { data, error } = await this.withRetry(() => supabase.from(item.name).select('*'));
                 if (error) continue;
-
                 if (data && data.length > 0) {
                     await db.transaction('rw', item.table, async () => {
                         for (const remoteRecord of data) {
-                            const sanitizedRemoteRecord = this.mapToLocal(remoteRecord);
-                            const localRecord = await item.table
-                                .where('uuid')
-                                .equals(sanitizedRemoteRecord.uuid)
-                                .first();
-
+                            const sanitizedLocal = this.mapToLocal(remoteRecord);
+                            const localRecord = await item.table.where('uuid').equals(sanitizedLocal.uuid).first();
                             if (localRecord) {
                                 const localUpdate = localRecord.updatedAt ? new Date(localRecord.updatedAt).getTime() : 0;
                                 const remoteUpdate = remoteRecord.updated_at ? new Date(remoteRecord.updated_at).getTime() : 0;
-
                                 if (remoteUpdate > localUpdate) {
-                                    await item.table.update(localRecord.id, sanitizedRemoteRecord);
+                                    await item.table.update(localRecord.id, sanitizedLocal);
                                 }
                             } else {
-                                await item.table.add(sanitizedRemoteRecord);
+                                await item.table.add(sanitizedLocal);
                             }
                         }
                     });
                 }
             }
-        } catch (err: any) {
-            console.error('Pull Error:', err);
-            throw err;
         } finally {
             this.isSyncing = false;
         }

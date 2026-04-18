@@ -27,7 +27,7 @@ class SalesService {
 
     /**
      * تصفية المبيعات مع دعم "Période d'Analyse" الذكي.
-     * تم تحسين المحرك لاستخدام الفهارس (Indexed Querying) لضمان الدقة في النطاقات الزمنية.
+     * تم تحسين المحرك ليكون مرناً تجاه أنواع البيانات (Date vs String) في قاعدة البيانات.
      */
     async filterSales(filters: {
         query?: string;
@@ -37,33 +37,42 @@ class SalesService {
     }): Promise<Sale[]> {
         let collection;
 
-        // ELITE NORMALIZATION: تحديد نطاق الاستعلام الأساسي باستخدام الفهارس
-        // التواريخ يجب أن تكون كائنات Date حقيقية لضمان عمل الفهرس
         const start = filters.from ? startOfDay(filters.from) : null;
         const end = filters.to ? endOfDay(filters.to) : null;
 
+        // استرجاع أولي سريع
         if (start && end) {
+            // نحاول استخدام الفهرس أولاً (يعمل فقط إذا كانت البيانات Date Objects)
             collection = db.sales.where('createdAt').between(start, end, true, true);
         } else if (start) {
             collection = db.sales.where('createdAt').aboveOrEqual(start);
         } else if (end) {
             collection = db.sales.where('createdAt').belowOrEqual(end);
         } else {
-            // استرجاع الأرشيف الكامل عند مسح الفلتر
             collection = db.sales.toCollection();
-        }
-
-        // تطبيق فلتر الحالة
-        if (filters.status && filters.status !== 'all') {
-            collection = collection.filter(s => s.paymentStatus === filters.status);
         }
 
         let sales = await collection.toArray();
 
+        // FALLBACK: إذا كانت التواريخ مخزنة كنصوص (Strings)، الفهرس أعلاه قد يفشل.
+        // نقوم بفلترة إضافية مرنة لضمان عدم ضياع أي فاتورة.
+        if (start || end) {
+            sales = sales.filter(s => {
+                const saleDate = safeToDate(s.createdAt);
+                if (start && saleDate < start) return false;
+                if (end && saleDate > end) return false;
+                return true;
+            });
+        }
+
+        // تطبيق فلتر الحالة
+        if (filters.status && filters.status !== 'all') {
+            sales = sales.filter(s => s.paymentStatus === filters.status);
+        }
+
         // محرك البحث النصي
         if (filters.query) {
             const lowerQuery = filters.query.toLowerCase().trim();
-            // البحث عن العملاء المطابقين أولاً لتحسين الأداء
             const customers = await db.customers.toArray();
             const customerUuids = new Set(
                 customers
@@ -78,11 +87,9 @@ class SalesService {
             );
         }
 
-        // الترتيب التنازلي (الأحدث أولاً)
+        // الترتيب التنازلي (الأحدث أولاً) لضمان رؤية الفواتير الجديدة في الأعلى
         return sales.sort(
-            (a, b) =>
-                safeToDate(b.createdAt!).getTime() -
-                safeToDate(a.createdAt!).getTime(),
+            (a, b) => safeToDate(b.createdAt!).getTime() - safeToDate(a.createdAt!).getTime()
         );
     }
 
@@ -153,7 +160,7 @@ class SalesService {
             remainingBalance: remainingCents / 100,
             paymentStatus,
             customerUuid: saleData.customerUuid || undefined,
-            createdAt: now,
+            createdAt: now, // Toujours un objet Date pour IndexedDB local
             updatedAt: now,
             dueDate: saleData.dueDate,
         };
@@ -168,7 +175,10 @@ class SalesService {
             }
         });
 
-        useAppStore.getState().actions.triggerSmartSync();
+        if (typeof window !== 'undefined') {
+            import('@/stores/appStore').then(mod => mod.useAppStore.getState().actions.triggerSmartSync());
+        }
+        
         return newSale;
     }
 
@@ -186,7 +196,9 @@ class SalesService {
                 await customerService.recalculateCustomerStatus(sale.customerUuid);
             }
         });
-        useAppStore.getState().actions.triggerSmartSync();
+        if (typeof window !== 'undefined') {
+            import('@/stores/appStore').then(mod => mod.useAppStore.getState().actions.triggerSmartSync());
+        }
     }
 }
 
