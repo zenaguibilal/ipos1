@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -29,14 +28,22 @@ export function NewIntakeForm() {
     const [items, setItems] = useState<StockIntakeItem[]>([]);
     const [isSubmitting, setIsSaving] = useState(false);
 
-    // محرك حساب دقيق باستخدام السنتيمترات لتجنب أخطاء التقريب المحاسبي
+    /**
+     * محرك حساب القيمة الإجمالية للمواد بالسنتيمترات لضمان الدقة المطلقة 
+     * ومنع ضياع أي سنتيم عند توزيع مصاريف الشحن لاحقاً.
+     */
     const itemsTotalValue = useMemo(() => {
         const totalCents = items.reduce((sum, item) => {
-            return sum + Math.round(preciseMultiply(safeNumber(item.quantity), safeNumber(item.purchasePrice)) * 100);
+            const qty = safeNumber(item.quantity);
+            const cost = safeNumber(item.purchasePrice);
+            return sum + Math.round(preciseMultiply(qty, cost) * 100);
         }, 0);
         return totalCents / 100;
     }, [items]);
 
+    /**
+     * معامل الشحن (Factor): نسبة التكاليف الإضافية التي ستُحمل على كل دينار من سعر الشراء.
+     */
     const shippingFactor = useMemo(() => {
         return itemsTotalValue > 0 ? shippingCost / itemsTotalValue : 0;
     }, [itemsTotalValue, shippingCost]);
@@ -84,7 +91,13 @@ export function NewIntakeForm() {
     };
 
     const updateItem = (id: string, field: keyof StockIntakeItem, value: any) => {
-        setItems(prev => prev.map(item => item.id === id ? { ...item, [field]: value } : item));
+        setItems(prev => prev.map(item => {
+            if (item.id === id) {
+                const updated = { ...item, [field]: value };
+                return updated;
+            }
+            return item;
+        }));
     };
 
     const removeItem = (id: string) => {
@@ -101,9 +114,9 @@ export function NewIntakeForm() {
             return;
         }
         
-        const invalidItems = items.filter(i => safeNumber(i.quantity) <= 0 || safeNumber(i.purchasePrice) < 0);
+        const invalidItems = items.filter(i => safeNumber(i.quantity) <= 0);
         if (invalidItems.length > 0) {
-            toast.error(`Données invalides : ${invalidItems.length} article(s) ont des erreurs.`);
+            toast.error(`Données invalides : ${invalidItems.length} article(s) ont des quantités nulles.`);
             return;
         }
 
@@ -119,7 +132,7 @@ export function NewIntakeForm() {
             });
 
             if (success) {
-                toast.success("Manifeste validé. Stock et comptes mis à jour.");
+                toast.success("Manifestه validé. Stock et comptes mis à jour.");
                 router.push('/stock');
             }
         } catch (error: any) {
@@ -180,7 +193,7 @@ export function NewIntakeForm() {
                                                     <div className="p-8 rounded-3xl bg-muted/20 border-2 border-dashed border-white/10">
                                                         <PackagePlus className="h-16 w-16" />
                                                     </div>
-                                                    <p className="text-[10px] font-black uppercase tracking-[0.3em]">Scanner ou rechercher des produits</p>
+                                                    <p className="text-[10px] font-black uppercase tracking-[0.3em]">Scanner ou rechercher des produits pour remplir le manifeste</p>
                                                 </div>
                                             </TableCell>
                                         </TableRow>
@@ -188,6 +201,7 @@ export function NewIntakeForm() {
                                         items.map((item) => {
                                             const qty = safeNumber(item.quantity);
                                             const cost = safeNumber(item.purchasePrice);
+                                            // حساب تكلفة الربط الفعلي لكل صنف بدمج مصاريف النقل
                                             const landingCost = cost * (1 + shippingFactor);
                                             const rowTotal = preciseMultiply(qty, cost);
                                             const isSellingAtLoss = item.price < landingCost && item.price > 0;

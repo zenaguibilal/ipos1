@@ -1,4 +1,3 @@
-
 import { create } from 'zustand';
 import type { CompanyProfile, ReturnItem, StockIntakeItem } from '@/lib/types';
 import { toast } from 'sonner';
@@ -283,7 +282,7 @@ export const useAppStore = create<AppState>()(
                                     let productUuid  = item.productUuid;
                                     const costCents = Math.round(safeNumber(item.purchasePrice) * 100);
                                     
-                                    // حساب تكلفة الربط (Landing Cost) بدقة عالية (Cents)
+                                    // حساب تكلفة الربط (Landing Cost) بدقة عالية (Cents) عبر دمج مصاريف النقل
                                     const landingCostCents = Math.round(costCents * (1 + shippingFactor));
                                     const landingCost = landingCostCents / 100;
 
