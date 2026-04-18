@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useRef } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import { salesService } from '@/services/sales.service';
 import { useDebounce } from '@/hooks/useDebounce';
 import type { Sale, Customer } from '@/lib/types';
@@ -20,13 +20,10 @@ import {
     TrendingUp,
     ChevronRight,
     Sparkles,
-    Landmark,
     X,
     Trash2,
-    CalendarDays
+    Receipt
 } from 'lucide-react';
-import { DateRangePicker } from '@/components/ui/date-range-picker';
-import { useDateRange } from '@/hooks/useDateRange';
 import { SalesHistoryCard } from '@/components/sales/SalesHistoryCard';
 import { SalesHistoryTable } from '@/components/sales/SalesHistoryTable';
 import { SaleDetailsDialog } from '@/components/sales/SaleDetailsDialog';
@@ -37,7 +34,7 @@ import { PageHeader } from '@/components/layout/PageHeader';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuCheckboxItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuCheckboxItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { toast } from 'sonner';
 import { cn, formatCurrency, safeToDate, safeNumber } from '@/lib/utils';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -55,6 +52,12 @@ type SalesStatus = 'all' | 'paid' | 'partial' | 'unpaid';
 
 export default function SalesHistoryPage() {
     const searchInputRef = useRef<HTMLInputElement>(null);
+    const [isMounted, setIsMounted] = useState(false);
+    
+    useEffect(() => {
+        setIsMounted(true);
+    }, []);
+
     const { viewMode, setViewMode } = useAppStore(state => ({
         viewMode: state.salesViewMode,
         setViewMode: state.actions.setSalesViewMode,
@@ -64,9 +67,6 @@ export default function SalesHistoryPage() {
     const [filterStatus, setFilterStatus] = useState<SalesStatus>('all');
     const debouncedSearchQuery = useDebounce(searchQuery, 300);
     
-    // محرك النطاق الزمني Elite مع تحسين الاستجابة
-    const { dateRange, setDate, isMounted } = useDateRange(29);
-    
     const [selectedSale, setSelectedSale] = useState<Sale | null>(null);
     const [selectedSales, setSelectedSales] = useState<Set<string>>(new Set());
     const [isDetailsOpen, setIsDetailsOpen] = useState(false);
@@ -74,15 +74,13 @@ export default function SalesHistoryPage() {
     const [isPrintOpen, setIsPrintOpen] = useState(false);
     const [isBulkCancelConfirmOpen, setIsBulkCancelConfirmOpen] = useState(false);
 
-    // استعلام حي للمبيعات يراقب التغييرات في التاريخ فوراً
+    // استعلام حي للمبيعات - يعرض الأرشيف الكامل تلقائياً
     const sales = useLiveQuery(
         () => salesService.filterSales({
             query: debouncedSearchQuery,
-            from: dateRange?.from,
-            to: dateRange?.to,
             status: filterStatus
         }),
-        [debouncedSearchQuery, dateRange, filterStatus]
+        [debouncedSearchQuery, filterStatus]
     );
 
     const customers = useLiveQuery(() => db.customers.toArray());
@@ -113,9 +111,12 @@ export default function SalesHistoryPage() {
             current.receivedCents += Math.round(safeNumber(s.amountPaid) * 100);
             dataMap.set(dayKey, current);
         });
-        // Limit points if range is too large
-        const results = Array.from(dataMap.values()).map(d => ({ date: d.date, total: d.totalCents / 100, received: d.receivedCents / 100 }));
-        return results.slice(-30); 
+        // عرض آخر 30 يوماً من النشاط في الرسم البياني للوضوح
+        return Array.from(dataMap.values()).map(d => ({ 
+            date: d.date, 
+            total: d.totalCents / 100, 
+            received: d.receivedCents / 100 
+        })).slice(-30); 
     }, [sales]);
 
     const handleToggleSelection = (uuid: string) => {
@@ -139,7 +140,7 @@ export default function SalesHistoryPage() {
         for (const uuid of uuids) {
             try { await salesService.processSaleCancellation(uuid); successCount++; } catch (e) {}
         }
-        if (successCount > 0) toast.success(`${successCount} flux annulés.`);
+        if (successCount > 0) toast.success(`${successCount} مبيعات تم إلغاؤها.`);
         setSelectedSales(new Set());
     };
 
@@ -160,27 +161,26 @@ export default function SalesHistoryPage() {
         const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
         const link = document.createElement('a');
         link.href = URL.createObjectURL(blob);
-        link.download = `ventes-elite-${new Date().toISOString().split('T')[0]}.csv`;
+        link.download = `ventes-elite-complet-${new Date().toISOString().split('T')[0]}.csv`;
         link.click();
     };
 
     const resetFilters = () => {
         setSearchQuery('');
         setFilterStatus('all');
-        setDate(undefined); // تحرير الأرشيف الكامل
-        toast.info("Période réinitialisée : Affichage de tout l'historique.");
+        toast.info("Filtres réinitialisés.");
     };
 
     useKeyboardShortcuts([{ key: 'F3', action: () => searchInputRef.current?.focus(), description: 'Rechercher', ignoreInputFocus: true }], 'Historique');
 
-    const isFiltered = searchQuery !== '' || filterStatus !== 'all' || dateRange !== undefined;
+    const isFiltered = searchQuery !== '' || filterStatus !== 'all';
     
     return (
         <div className="p-6 sm:p-4 space-y-4 max-w-[1800px] mx-auto animate-in fade-in duration-1000 pb-20">
-            <PageHeader title="Registre des Ventes Elite" description="Maîtrise souveraine de l'historique et des flux de trésorerie">
+            <PageHeader title="Registre des Ventes Elite" description="Archives complètes et maîtrise souveraine des flux de trésorerie">
                 <div className="flex gap-3 w-full sm:w-auto">
                     <Button variant="outline" onClick={handleExportCsv} className="flex-1 sm:flex-none h-12 rounded-2xl font-semibold text-xs uppercase border-primary/20 hover:bg-primary/5 transition-all">
-                        <FileUp className="mr-2 h-4 w-4 text-primary" /> Exporter
+                        <FileUp className="mr-2 h-4 w-4 text-primary" /> Exporter (.csv)
                     </Button>
                     <Button variant="outline" size="icon" className="h-12 w-12 rounded-2xl border-white/5 bg-card/40 hover:bg-primary/10 transition-all" onClick={() => window.location.reload()}>
                         <RefreshCw className="h-5 w-5 text-primary" />
@@ -193,22 +193,22 @@ export default function SalesHistoryPage() {
                     <Card className="app-card rounded-lg bg-card/40 backdrop-blur-sm border-white/5 overflow-hidden shadow-sm">
                         <CardHeader className="bg-primary/5 border-b border-white/5 p-6">
                             <CardTitle className="text-[10px] font-black uppercase text-primary flex items-center gap-2 tracking-widest">
-                                <Sparkles className="h-3.5 w-3.5" /> Analyse de Période
+                                <Sparkles className="h-3.5 w-3.5" /> Bilan Global Historique
                             </CardTitle>
                         </CardHeader>
                         <CardContent className="p-6 space-y-6">
                             <div className="space-y-1">
-                                <p className="text-[10px] font-semibold text-muted-foreground/40 uppercase">CA du Flux</p>
+                                <p className="text-[10px] font-semibold text-muted-foreground/40 uppercase">Chiffre d'Affaires Total</p>
                                 <p className="text-3xl font-black tracking-tighter text-primary tabular-nums">{formatCurrency(stats.total)}</p>
-                                <p className="text-[10px] font-bold text-muted-foreground/60">{stats.count} opérations</p>
+                                <p className="text-[10px] font-bold text-muted-foreground/60">{stats.count} factures émises</p>
                             </div>
                             <div className="grid grid-cols-1 gap-3 pt-2">
                                 <div className="p-4 rounded-2xl bg-emerald-500/5 border border-emerald-500/10 shadow-inner">
-                                    <p className="text-[9px] font-semibold uppercase text-emerald-600 mb-1">Encaissements Réels</p>
+                                    <p className="text-[9px] font-semibold uppercase text-emerald-600 mb-1">Total Encaissé</p>
                                     <p className="font-bold text-xl text-emerald-600 tracking-tight tabular-nums">{formatCurrency(stats.received)}</p>
                                 </div>
                                 <div className="p-4 rounded-2xl bg-destructive/5 border border-destructive/10 shadow-inner">
-                                    <p className="text-[9px] font-semibold uppercase text-destructive mb-1">Dettes de la Période</p>
+                                    <p className="text-[9px] font-semibold uppercase text-destructive mb-1">Encours Client (Dettes)</p>
                                     <p className="font-bold text-xl text-destructive tracking-tight tabular-nums">{formatCurrency(stats.debt)}</p>
                                 </div>
                             </div>
@@ -218,21 +218,10 @@ export default function SalesHistoryPage() {
                     <Card className="app-card rounded-lg bg-card/40 backdrop-blur-sm border-white/5 p-6 space-y-6 shadow-sm">
                         <div className="relative group">
                             <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary" />
-                            <Input ref={searchInputRef} placeholder="N° Facture, Client..." className="pl-11 h-12 rounded-xl bg-black/20 border-none shadow-inner font-bold" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
+                            <Input ref={searchInputRef} placeholder="N° Facture, Client... [F3]" className="pl-11 h-12 rounded-xl bg-black/20 border-none shadow-inner font-bold" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
                         </div>
                         <div className="space-y-4">
-                            <div className="space-y-2">
-                                <Label className="text-[10px] font-black uppercase text-muted-foreground/40 ml-1">Période d'Analyse</Label>
-                                <div className="p-1 bg-black/20 rounded-2xl border border-white/5 shadow-inner">
-                                    <DateRangePicker date={dateRange} setDate={setDate} />
-                                </div>
-                                {!dateRange && (
-                                    <div className="flex items-center gap-2 px-3 py-2 bg-primary/10 rounded-xl border border-primary/20 animate-in zoom-in duration-300">
-                                        <CalendarDays className="h-4 w-4 text-primary" />
-                                        <span className="text-[9px] font-black uppercase text-primary">Mode : الأرشيف الكامل</span>
-                                    </div>
-                                )}
-                            </div>
+                            <Label className="text-[10px] font-black uppercase text-muted-foreground/40 ml-1">Filtrer par Règlement</Label>
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
                                     <Button variant="outline" className="w-full justify-between rounded-xl h-12 bg-black/20 border-white/5 text-xs font-semibold uppercase">
@@ -261,7 +250,7 @@ export default function SalesHistoryPage() {
                         <CardHeader className="flex flex-row items-center justify-between p-4 border-b border-white/5 bg-muted/20">
                             <div className="flex items-center gap-4">
                                 <div className="p-3 rounded-2xl bg-primary text-primary-foreground shadow-sm"><TrendingUp className="h-6 w-6" /></div>
-                                <div><CardTitle className="text-xl font-bold tracking-tighter uppercase">Courbe de Trésorerie</CardTitle><p className="text-[10px] font-semibold uppercase text-primary/50 tracking-widest">Flux chronologiques de la période</p></div>
+                                <div><CardTitle className="text-xl font-bold tracking-tighter uppercase">Dynamique de Trésorerie</CardTitle><p className="text-[10px] font-semibold uppercase text-primary/50 tracking-widest">Activité des 30 derniers jours de flux</p></div>
                             </div>
                             <div className="flex items-center gap-1.5 p-1.5 bg-black/20 rounded-lg border border-white/5 shadow-inner">
                                 <Button variant={viewMode === 'grid' ? 'secondary': 'ghost'} size="icon" className="rounded-xl h-9 w-9" onClick={() => setViewMode('grid')}><LayoutGrid className="h-4 w-4"/></Button>
@@ -283,7 +272,7 @@ export default function SalesHistoryPage() {
                                         <Area type="monotone" dataKey="received" name="received" stroke="hsl(var(--chart-quaternary))" fillOpacity={0} strokeWidth={3} strokeDasharray="10 10" isAnimationActive={false} />
                                     </AreaChart>
                                 </ResponsiveContainer>
-                            ) : <div className="h-full flex items-center justify-center opacity-10 uppercase text-[10px] font-black italic">Aucune donnée pour cette période</div>}
+                            ) : <div className="h-full flex items-center justify-center opacity-10 uppercase text-[10px] font-black italic">Aucun flux détecté</div>}
                         </CardContent>
                     </Card>
 
@@ -306,7 +295,7 @@ export default function SalesHistoryPage() {
                                     {sales.map(s => <SalesHistoryCard key={s.uuid} sale={s} customerName={s.customerUuid ? `${customerMap.get(s.customerUuid)?.firstName} ${customerMap.get(s.customerUuid)?.lastName}` : 'Client de passage'} isSelected={selectedSales.has(s.uuid)} onToggleSelection={() => handleToggleSelection(s.uuid)} onViewDetails={(sale) => { setSelectedSale(sale); setIsDetailsOpen(true); }} onCancelSale={(sale) => { setSelectedSale(sale); setIsCancelOpen(true); }} />)}
                                 </div>
                             )
-                        ) : <EmptyState icon={History} title="Aucun flux détecté" description={isFiltered ? "Ajustez vos filtres ou la Période d'Analyse." : "Validez votre première transaction Elite."} />}
+                        ) : <EmptyState icon={History} title="Archives Vides" description={isFiltered ? "Ajustez vos filtres de recherche." : "Validez votre première transaction Elite."} />}
                     </div>
                 </div>
             </div>
