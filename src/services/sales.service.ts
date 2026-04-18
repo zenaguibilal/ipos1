@@ -10,7 +10,6 @@ import { safeToDate, safeNumber, roundFinancial, preciseMultiply } from '@/lib/u
 /**
  * خدمة إدارة المبيعات Elite.
  * هندسة مالية دقيقة تضمن توازن المخزن ودفاتر الحسابات.
- * تم تعديل الخدمة لتعمل بنظام الأرشيف الكامل بشكل دائم.
  */
 class SalesService {
 
@@ -25,14 +24,24 @@ class SalesService {
     }
 
     /**
-     * تصفية المبيعات - وضع الأرشيف الكامل.
-     * تم حذف الفلترة الزمنية لضمان سرعة الاستجابة وعرض كافة البيانات التاريخية.
+     * تصفية المبيعات مع دعم النطاق الزمني والفهرسة.
      */
     async filterSales(filters: {
         query?: string;
         status?: 'all' | 'paid' | 'partial' | 'unpaid';
+        from?: Date;
+        to?: Date;
     }): Promise<Sale[]> {
         let collection = db.sales.toCollection();
+
+        // تطبيق الفلترة الزمنية على مستوى الفهارس لسرعة البرق
+        if (filters.from && filters.to) {
+            collection = db.sales.where('createdAt').between(filters.from, filters.to, true, true);
+        } else if (filters.from) {
+            collection = db.sales.where('createdAt').aboveOrEqual(filters.from);
+        } else if (filters.to) {
+            collection = db.sales.where('createdAt').belowOrEqual(filters.to);
+        }
 
         let sales = await collection.toArray();
 
@@ -58,7 +67,7 @@ class SalesService {
             );
         }
 
-        // الترتيب التنازلي (الأحدث أولاً) لضمان رؤية الفواتير الجديدة في الأعلى
+        // الترتيب التنازلي (الأحدث أولاً)
         return sales.sort(
             (a, b) => safeToDate(b.createdAt!).getTime() - safeToDate(a.createdAt!).getTime()
         );

@@ -3,9 +3,11 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
 import { salesService } from '@/services/sales.service';
 import { useDebounce } from '@/hooks/useDebounce';
+import { useDateRange } from '@/hooks/useDateRange';
 import type { Sale, Customer } from '@/lib/types';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { DateRangePicker } from '@/components/ui/date-range-picker';
 import { 
     Search, 
     History, 
@@ -22,7 +24,7 @@ import {
     Sparkles,
     X,
     Trash2,
-    Receipt
+    CalendarDays
 } from 'lucide-react';
 import { SalesHistoryCard } from '@/components/sales/SalesHistoryCard';
 import { SalesHistoryTable } from '@/components/sales/SalesHistoryTable';
@@ -39,7 +41,7 @@ import { toast } from 'sonner';
 import { cn, formatCurrency, safeToDate, safeNumber } from '@/lib/utils';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
-import { format } from 'date-fns';
+import { format, subDays, startOfDay, endOfDay } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import Papa from 'papaparse';
 import { useAppStore } from '@/stores/appStore';
@@ -65,6 +67,7 @@ export default function SalesHistoryPage() {
 
     const [searchQuery, setSearchQuery] = useState('');
     const [filterStatus, setFilterStatus] = useState<SalesStatus>('all');
+    const { dateRange, setDate } = useDateRange(29);
     const debouncedSearchQuery = useDebounce(searchQuery, 300);
     
     const [selectedSale, setSelectedSale] = useState<Sale | null>(null);
@@ -74,13 +77,15 @@ export default function SalesHistoryPage() {
     const [isPrintOpen, setIsPrintOpen] = useState(false);
     const [isBulkCancelConfirmOpen, setIsBulkCancelConfirmOpen] = useState(false);
 
-    // استعلام حي للمبيعات - يعرض الأرشيف الكامل دائماً
+    // استعلام حي للمبيعات مع الفلترة الزمنية المزدوجة
     const sales = useLiveQuery(
         () => salesService.filterSales({
             query: debouncedSearchQuery,
-            status: filterStatus
+            status: filterStatus,
+            from: dateRange?.from,
+            to: dateRange?.to
         }),
-        [debouncedSearchQuery, filterStatus]
+        [debouncedSearchQuery, filterStatus, dateRange]
     );
 
     const customers = useLiveQuery(() => db.customers.toArray());
@@ -111,12 +116,7 @@ export default function SalesHistoryPage() {
             current.receivedCents += Math.round(safeNumber(s.amountPaid) * 100);
             dataMap.set(dayKey, current);
         });
-        // عرض آخر 30 يوماً من النشاط الفعلي في الرسم البياني للوضوح
-        return Array.from(dataMap.values()).map(d => ({ 
-            date: d.date, 
-            total: d.totalCents / 100, 
-            received: d.receivedCents / 100 
-        })).slice(-30); 
+        return Array.from(dataMap.values());
     }, [sales]);
 
     const handleToggleSelection = (uuid: string) => {
@@ -161,14 +161,18 @@ export default function SalesHistoryPage() {
         const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
         const link = document.createElement('a');
         link.href = URL.createObjectURL(blob);
-        link.download = `ventes-elite-complet-${new Date().toISOString().split('T')[0]}.csv`;
+        link.download = `ventes-elite-${new Date().toISOString().split('T')[0]}.csv`;
         link.click();
     };
 
     const resetFilters = () => {
         setSearchQuery('');
         setFilterStatus('all');
-        toast.info("Filtres réinitialisés. الأرشيف الكامل معروض.");
+        setDate({
+            from: startOfDay(subDays(new Date(), 29)),
+            to: endOfDay(new Date()),
+        });
+        toast.info("Filtres réinitialisés.");
     };
 
     useKeyboardShortcuts([{ key: 'F3', action: () => searchInputRef.current?.focus(), description: 'Rechercher', ignoreInputFocus: true }], 'Historique');
@@ -177,10 +181,11 @@ export default function SalesHistoryPage() {
     
     return (
         <div className="p-6 sm:p-4 space-y-4 max-w-[1800px] mx-auto animate-in fade-in duration-1000 pb-20">
-            <PageHeader title="Registre des Ventes Elite" description="Archives complètes و الأرشيف الكامل للعمليات">
+            <PageHeader title="Registre des Ventes Elite" description="Management souverain de l'historique et des flux financiers">
                 <div className="flex gap-3 w-full sm:w-auto">
+                    <DateRangePicker date={dateRange} setDate={setDate} />
                     <Button variant="outline" onClick={handleExportCsv} className="flex-1 sm:flex-none h-12 rounded-2xl font-semibold text-xs uppercase border-primary/20 hover:bg-primary/5 transition-all">
-                        <FileUp className="mr-2 h-4 w-4 text-primary" /> Exporter (.csv)
+                        <FileUp className="mr-2 h-4 w-4 text-primary" /> Exporter
                     </Button>
                     <Button variant="outline" size="icon" className="h-12 w-12 rounded-2xl border-white/5 bg-card/40 hover:bg-primary/10 transition-all" onClick={() => window.location.reload()}>
                         <RefreshCw className="h-5 w-5 text-primary" />
@@ -193,12 +198,12 @@ export default function SalesHistoryPage() {
                     <Card className="app-card rounded-lg bg-card/40 backdrop-blur-sm border-white/5 overflow-hidden shadow-sm">
                         <CardHeader className="bg-primary/5 border-b border-white/5 p-6">
                             <CardTitle className="text-[10px] font-black uppercase text-primary flex items-center gap-2 tracking-widest">
-                                <Sparkles className="h-3.5 w-3.5" /> Bilan Global Historique
+                                <Sparkles className="h-3.5 w-3.5" /> Bilan de Période
                             </CardTitle>
                         </CardHeader>
                         <CardContent className="p-6 space-y-6">
                             <div className="space-y-1">
-                                <p className="text-[10px] font-semibold text-muted-foreground/40 uppercase">Chiffre d'Affaires Total</p>
+                                <p className="text-[10px] font-semibold text-muted-foreground/40 uppercase">Chiffre d'Affaires Net</p>
                                 <p className="text-3xl font-black tracking-tighter text-primary tabular-nums">{formatCurrency(stats.total)}</p>
                                 <p className="text-[10px] font-bold text-muted-foreground/60">{stats.count} factures émises</p>
                             </div>
@@ -208,7 +213,7 @@ export default function SalesHistoryPage() {
                                     <p className="font-bold text-xl text-emerald-600 tracking-tight tabular-nums">{formatCurrency(stats.received)}</p>
                                 </div>
                                 <div className="p-4 rounded-2xl bg-destructive/5 border border-destructive/10 shadow-inner">
-                                    <p className="text-[9px] font-semibold uppercase text-destructive mb-1">Encours Client (Dettes)</p>
+                                    <p className="text-[9px] font-semibold uppercase text-destructive mb-1">Encours Client</p>
                                     <p className="font-bold text-xl text-destructive tracking-tight tabular-nums">{formatCurrency(stats.debt)}</p>
                                 </div>
                             </div>
@@ -239,7 +244,7 @@ export default function SalesHistoryPage() {
                         </div>
                         {isFiltered && (
                             <Button variant="ghost" onClick={resetFilters} className="w-full text-destructive hover:bg-destructive/10 text-[10px] font-bold uppercase rounded-xl h-12">
-                                Réinitialiser Filtres <FilterX className="ml-2 h-4 w-4" />
+                                Réinitialiser <FilterX className="ml-2 h-4 w-4" />
                             </Button>
                         )}
                     </Card>
@@ -250,7 +255,7 @@ export default function SalesHistoryPage() {
                         <CardHeader className="flex flex-row items-center justify-between p-4 border-b border-white/5 bg-muted/20">
                             <div className="flex items-center gap-4">
                                 <div className="p-3 rounded-2xl bg-primary text-primary-foreground shadow-sm"><TrendingUp className="h-6 w-6" /></div>
-                                <div><CardTitle className="text-xl font-bold tracking-tighter uppercase">Dynamique de Trésorerie</CardTitle><p className="text-[10px] font-semibold uppercase text-primary/50 tracking-widest">Analyse automatique des tendances récentes</p></div>
+                                <div><CardTitle className="text-xl font-bold tracking-tighter uppercase">Analyse des Flux</CardTitle><p className="text-[10px] font-semibold uppercase text-primary/50 tracking-widest">Variation journalière sur la période</p></div>
                             </div>
                             <div className="flex items-center gap-1.5 p-1.5 bg-black/20 rounded-lg border border-white/5 shadow-inner">
                                 <Button variant={viewMode === 'grid' ? 'secondary': 'ghost'} size="icon" className="rounded-xl h-9 w-9" onClick={() => setViewMode('grid')}><LayoutGrid className="h-4 w-4"/></Button>
