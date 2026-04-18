@@ -60,7 +60,7 @@ class SupabaseSyncService {
             const camelKey = this.snakeToCamel(key);
             let value = record[key];
 
-            // Detection RADICALE des dates pour IndexedDB
+            // Détection des champs de date pour IndexedDB (format local-first)
             const dateFields = [
                 'created_at', 'updated_at', 'expense_date', 'invoice_date', 
                 'payment_date', 'due_date', 'date_expiration', 'date_maj_prix', 'last_sync_at'
@@ -69,7 +69,7 @@ class SupabaseSyncService {
             if (typeof value === 'string' && (dateFields.includes(key) || key.endsWith('_at') || key.endsWith('_date'))) {
                 const d = new Date(value);
                 if (!isNaN(d.getTime())) {
-                    value = d; // Convertir impérativement en objet Date pour les index Dexie
+                    value = d; // Conversion impérative en objet Date pour les index Dexie
                 }
             }
 
@@ -128,7 +128,7 @@ class SupabaseSyncService {
                 const dataToSync = this.sanitizeForCloud(records);
                 await this.withRetry(async () => {
                     const { error } = await supabase.from(item.name).upsert(dataToSync, { onConflict: 'uuid' });
-                    if (error) throw new Error(`Push [${item.name}] échoué: ${error.message}`);
+                    if (error) throw new Error(`Échec de transfert [${item.name}]: ${error.message}`);
                 });
             }
         } finally {

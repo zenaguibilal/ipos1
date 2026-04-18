@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -15,10 +14,10 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { toast } from 'sonner';
 
 const SUPABASE_SQL_SCRIPT = `-- ══════════════════════════════════════════════════════════
--- iPOS Zen — Elite Cloud Schema (Verified v2.0.1)
+-- iPOS Zen — Schéma Cloud Elite (Vérifié v2.0.1)
 -- ══════════════════════════════════════════════════════════
 -- Ce script initialise votre coffre-fort Cloud avec une précision
--- absolue conforme à la réglementation algérienne.
+-- absolue conforme à la réglementation en vigueur.
 
 -- 0. PRÉREQUIS : Extension pour les UUID
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
@@ -35,9 +34,9 @@ CREATE TABLE IF NOT EXISTS company_profile (
     email                 TEXT,
     website               TEXT,
     logo_url              TEXT,
-    -- Champs fiscaux algériens
+    -- Champs fiscaux
     rc_number             TEXT,   -- Registre de Commerce
-    nif                   TEXT,   -- Numéro d'Identification Fiscale (15 chiffres)
+    nif                   TEXT,   -- Numéro d'Identification Fiscale
     ai_number             TEXT,   -- Article d'Imposition
     nis_number            TEXT,   -- Numéro Statistique
     legal_form            TEXT,   -- SARL, EURL, SNC, EI, etc.
@@ -86,7 +85,7 @@ CREATE TABLE IF NOT EXISTS customers (
     last_activity_date    TIMESTAMPTZ,
     debt_status           TEXT DEFAULT 'none' CHECK (debt_status IN ('none','due_soon','overdue')),
     is_over_limit         BOOLEAN DEFAULT false,
-    -- Module Pain Elite
+    -- Module Logistique Elite
     is_bread_client       BOOLEAN DEFAULT false,
     bread_type_recurrence TEXT CHECK (bread_type_recurrence IN ('quotidien','jours_specifiques','aucun')),
     bread_quantite_defaut NUMERIC(15,3) DEFAULT 0,
@@ -192,7 +191,7 @@ CREATE TABLE IF NOT EXISTS supplier_payments (
     updated_at    TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 11. LOGISTIQUE DU PAIN
+-- 11. LOGISTIQUE DE DISTRIBUTION
 CREATE TABLE IF NOT EXISTS bread_orders (
     uuid              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     customer_uuid     UUID REFERENCES customers(uuid) ON DELETE SET NULL,
@@ -221,7 +220,7 @@ CREATE TABLE IF NOT EXISTS inventory_logs (
 );
 
 -- ══════════════════════════════════════════════════════════
--- A. FONCTIONS & TRIGGERS POUR UPDATED_AT
+-- A. FONCTIONS & TRIGGERS POUR MISE À JOUR AUTOMATIQUE
 -- ══════════════════════════════════════════════════════════
 CREATE OR REPLACE FUNCTION update_updated_at_column()
 RETURNS TRIGGER AS $$
@@ -254,11 +253,10 @@ CREATE INDEX IF NOT EXISTS idx_customers_debt ON customers(outstanding_balance);
 CREATE INDEX IF NOT EXISTS idx_sales_invoice ON sales(invoice_number);
 CREATE INDEX IF NOT EXISTS idx_sales_customer ON sales(customer_uuid);
 CREATE INDEX IF NOT EXISTS idx_sales_date ON sales(created_at DESC);
-CREATE INDEX IF NOT EXISTS idx_bread_date ON bread_orders(date);
 CREATE INDEX IF NOT EXISTS idx_inventory_product ON inventory_logs(product_uuid);
 
 -- ══════════════════════════════════════════════════════════
--- C. SÉCURITÉ (DÉSACTIVATION RLS POUR BACKUP LOCAL)
+-- C. SÉCURITÉ (DÉSACTIVATION RLS POUR ACCÈS LOCAL)
 -- ══════════════════════════════════════════════════════════
 DO $$
 DECLARE
@@ -302,7 +300,7 @@ export function SupabaseSqlDialog() {
                 className="h-10 rounded-xl border-primary/20 bg-primary/5 text-primary hover:bg-primary hover:text-white transition-all gap-2 px-4"
             >
                 <Terminal className="h-4 w-4" />
-                Générer SQL Supabase
+                Générer SQL Cloud
             </Button>
 
             <Dialog open={isOpen} onOpenChange={setIsOpen}>
