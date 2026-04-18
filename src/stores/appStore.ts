@@ -263,7 +263,7 @@ export const useAppStore = create<AppState>()(
                                         intakeData.supplierUuid,
                                     );
 
-                                // محرك حساب القيمة الإجمالية بالسنتيمات لضمان الدقة
+                                // محرك حساب القيمة الإجمالية بالسنتيمات لضمان الدقة المطلقة
                                 const itemsTotalValueCents = intakeData.items.reduce(
                                     (sum, item) => sum + Math.round(preciseMultiply(item.quantity, item.purchasePrice) * 100),
                                     0,
@@ -282,7 +282,7 @@ export const useAppStore = create<AppState>()(
                                     let productUuid  = item.productUuid;
                                     const costCents = Math.round(safeNumber(item.purchasePrice) * 100);
                                     
-                                    // حساب تكلفة الربط (Landing Cost) بدقة عالية
+                                    // حساب تكلفة الربط (Landing Cost) بدقة عالية (Cents)
                                     const landingCostCents = Math.round(costCents * (1 + shippingFactor));
                                     const landingCost = landingCostCents / 100;
 

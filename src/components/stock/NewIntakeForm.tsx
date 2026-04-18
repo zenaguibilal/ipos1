@@ -28,7 +28,7 @@ export function NewIntakeForm() {
     const [items, setItems] = useState<StockIntakeItem[]>([]);
     const [isSubmitting, setIsSaving] = useState(false);
 
-    // محرك حساب دقيق باستخدام السنتيمترات لتجنب أخطاء التقريب
+    // محرك حساب دقيق باستخدام السنتيمترات لتجنب أخطاء التقريب المحاسبي
     const itemsTotalValue = useMemo(() => {
         const totalCents = items.reduce((sum, item) => {
             return sum + Math.round(preciseMultiply(safeNumber(item.quantity), safeNumber(item.purchasePrice)) * 100);
@@ -46,7 +46,7 @@ export function NewIntakeForm() {
         const existing = items.find(i => i.productUuid === product.uuid);
         if (existing) {
             toast.info(`"${product.name}" est déjà dans le manifeste.`, {
-                description: "Modifiez la quantité directement في الجدول."
+                description: "Modifiez la quantité directement dans le tableau."
             });
             return;
         }
@@ -118,7 +118,7 @@ export function NewIntakeForm() {
             });
 
             if (success) {
-                toast.success("Manifestه validé. Stock et comptes mis à jour.");
+                toast.success("Manifeste validé. Stock et comptes mis à jour.");
                 router.push('/stock');
             }
         } catch (error: any) {
@@ -206,8 +206,8 @@ export function NewIntakeForm() {
                                                             step="0.001"
                                                             value={item.quantity} 
                                                             onChange={e => updateItem(item.id, 'quantity', e.target.value)}
-                                                            className="w-20 h-9 text-center bg-black/20 border-none shadow-inner mx-auto font-black text-lg focus-visible:ring-primary/20"
                                                             onFocus={e => e.target.select()}
+                                                            className="w-20 h-9 text-center bg-black/20 border-none shadow-inner mx-auto font-black text-lg focus-visible:ring-primary/20"
                                                         />
                                                     </TableCell>
                                                     <TableCell className="p-4 text-right">
@@ -217,12 +217,12 @@ export function NewIntakeForm() {
                                                                 step="0.01"
                                                                 value={item.purchasePrice || ''} 
                                                                 onChange={e => updateItem(item.id, 'purchasePrice', e.target.value)}
+                                                                onFocus={e => e.target.select()}
                                                                 className={cn(
                                                                     "w-24 h-9 text-right bg-black/20 border-none shadow-inner font-mono font-black ml-auto focus-visible:ring-primary/20 pr-6",
                                                                     cost <= 0 && "text-destructive animate-pulse"
                                                                 )}
                                                                 placeholder="0.00"
-                                                                onFocus={e => e.target.select()}
                                                             />
                                                             <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[8px] font-bold opacity-20">DA</span>
                                                         </div>
@@ -242,12 +242,12 @@ export function NewIntakeForm() {
                                                                 step="0.01"
                                                                 value={item.price || ''} 
                                                                 onChange={e => updateItem(item.id, 'price', e.target.value)}
+                                                                onFocus={e => e.target.select()}
                                                                 className={cn(
                                                                     "w-24 h-9 text-right bg-black/20 border-none shadow-inner font-mono font-black ml-auto focus-visible:ring-primary/20 pr-6",
                                                                     isSellingAtLoss ? "text-destructive" : "text-emerald-500"
                                                                 )}
                                                                 placeholder="0.00"
-                                                                onFocus={e => e.target.select()}
                                                             />
                                                             <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[8px] font-bold opacity-20">DA</span>
                                                             {isSellingAtLoss && <AlertTriangle className="absolute -left-5 top-1/2 -translate-y-1/2 h-3 w-3 text-destructive animate-pulse" />}
@@ -329,9 +329,9 @@ export function NewIntakeForm() {
                                             step="0.01"
                                             value={shippingCost || ''} 
                                             onChange={e => setShippingCost(safeNumber(e.target.value))}
+                                            onFocus={e => e.target.select()}
                                             className="w-24 h-9 text-right rounded-lg bg-black/20 border-none shadow-inner font-mono font-black"
                                             placeholder="0.00"
-                                            onFocus={e => e.target.select()}
                                         />
                                         <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[8px] font-bold opacity-20">DA</span>
                                     </div>
@@ -355,7 +355,7 @@ export function NewIntakeForm() {
 
                         <div className="pt-8">
                             <div className="relative group">
-                                <div className="absolute -inset-1.5 bg-primary/20 rounded-2xl blur-lg opacity-0 group-hover:opacity-100 transition duration-700"></div>
+                                <div className="absolute -inset-1.5 bg-primary/20 rounded-2xl blur-lg opacity-0 group-hover:opacity-10 transition duration-700"></div>
                                 <Button 
                                     onClick={handleSave} 
                                     disabled={isSubmitting || items.length === 0}
