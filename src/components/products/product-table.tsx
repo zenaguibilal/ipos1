@@ -1,10 +1,11 @@
+
 'use client';
 
 import type { Product, Supplier } from '@/lib/types';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { MoreHorizontal, Edit, Trash2, CalendarClock, Info, Package, Copy, History, Building, Hash, Tag } from 'lucide-react';
+import { MoreHorizontal, Edit, Trash2, CalendarClock, Info, Package, Copy, History, Building, Hash } from 'lucide-react';
 import { cn, formatCurrency } from '@/lib/utils';
 import { Checkbox } from '../ui/checkbox';
 import { useMemo } from 'react';
@@ -41,8 +42,7 @@ export function ProductTable({ products, onEdit, onDuplicate, onHistory, onDelet
                             />
                         </TableHead>
                         <TableHead className="p-6 font-semibold text-[10px] uppercase text-muted-foreground/60">Produit / Partenaire</TableHead>
-                        <TableHead className="p-6 font-semibold text-[10px] uppercase text-muted-foreground/60">Catégorie</TableHead>
-                        <TableHead className="p-6 font-semibold text-[10px] uppercase text-muted-foreground/60">État Flux</TableHead>
+                        <TableHead className="p-6 font-semibold text-[10px] uppercase text-muted-foreground/60 text-center">État Flux</TableHead>
                         <TableHead className="p-6 font-semibold text-[10px] uppercase text-muted-foreground/60">Stock Elite</TableHead>
                         <TableHead className="p-6 text-right font-semibold text-[10px] uppercase text-muted-foreground/60">P.U Achat</TableHead>
                         <TableHead className="p-6 text-right font-semibold text-[10px] uppercase text-primary">P.U Vente</TableHead>
@@ -103,11 +103,6 @@ export function ProductTable({ products, onEdit, onDuplicate, onHistory, onDelet
                                             </div>
                                         </div>
                                     </div>
-                                </TableCell>
-                                <TableCell className="p-6">
-                                    <Badge variant="outline" className="gap-2 px-3 py-1.5 rounded-xl border-white/10 bg-muted/20 text-[9px] font-semibold uppercase tracking-wide text-muted-foreground/60">
-                                        <Tag className="h-3 w-3" /> {product.category || 'Général'}
-                                    </Badge>
                                 </TableCell>
                                 <TableCell className="p-6 text-center">
                                     {expirationStatus ? (

@@ -1,3 +1,4 @@
+
 import Dexie, { type EntityTable } from 'dexie';
 import type {
     Product, Customer, Sale, Expense, Supplier, SupplierPayment,
@@ -24,9 +25,9 @@ class iPOSDatabase extends Dexie {
 
     constructor() {
         super('iPOSDatabase');
-        // Version 2 : Mise à jour des stores pour supporter les nouveaux champs et index.
+        // Version 2 : Mise à jour des stores
         this.version(2).stores({
-            products:         '++id, &uuid, name, *barcodes, category, supplierUuid, stockStatus, dateExpiration',
+            products:         '++id, &uuid, name, *barcodes, supplierUuid, stockStatus, dateExpiration',
             customers:        '++id, &uuid, searchName, debtStatus, isOverLimit, isBreadClient, bread_type_recurrence, outstandingBalance',
             sales:            '++id, &uuid, invoiceNumber, customerUuid, createdAt, paymentStatus',
             expenses:         '++id, &uuid, category, expenseDate',

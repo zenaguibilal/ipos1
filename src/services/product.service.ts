@@ -1,3 +1,4 @@
+
 'use client';
 
 import { v4 as uuidv4 } from 'uuid';
@@ -41,7 +42,6 @@ class ProductService {
 
     async filterProducts(filters: {
         query?: string;
-        category?: string;
         supplierUuid?: string;
         stockStatus?: 'all' | 'in_stock' | 'low_stock' | 'out_of_stock' | 'expiring_soon' | 'expired';
         sortBy?: string;
@@ -57,8 +57,6 @@ class ProductService {
             products = await db.products.where('dateExpiration').between(now, thirtyDaysFromNow, true, true).toArray();
         } else if (filters.stockStatus && ['in_stock', 'low_stock', 'out_of_stock'].includes(filters.stockStatus)) {
             products = await db.products.where('stockStatus').equals(filters.stockStatus).toArray();
-        } else if (filters.category && filters.category !== 'all') {
-            products = await db.products.where('category').equals(filters.category).toArray();
         } else if (filters.supplierUuid && filters.supplierUuid !== 'all') {
             products = await db.products.where('supplierUuid').equals(filters.supplierUuid).toArray();
         } else {
@@ -100,12 +98,6 @@ class ProductService {
 
     async getProductByUuid(uuid: string): Promise<Product | undefined> {
         return db.products.where('uuid').equals(uuid).first();
-    }
-
-    async getCategories(): Promise<string[]> {
-        const products = await db.products.toArray();
-        const categories = new Set(products.map(p => p.category).filter(Boolean) as string[]);
-        return Array.from(categories).sort();
     }
 
     async addProduct(productData: Omit<Product, 'uuid'> & { supplierName?: string }): Promise<Product> {
@@ -285,7 +277,6 @@ class ProductService {
 
             const productData = {
                 name,
-                category: row.category || row.categorie || row.Catégorie || 'Non classé',
                 price: safeNumber(price),
                 purchasePrice: safeNumber(row.purchasePrice || row.purchase_price || row.Prix_Achat),
                 quantity: safeNumber(row.quantity || row.stock || row.Stock),

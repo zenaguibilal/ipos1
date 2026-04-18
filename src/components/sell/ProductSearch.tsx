@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useDeferredValue, forwardRef, useImperativeHandle, useRef } from 'react';
@@ -25,9 +26,6 @@ const SearchResultItem = React.memo(({ product, onSelect }: { product: Product, 
             
             <div className="relative z-10">
                 <div className="flex items-center gap-2 mb-2">
-                    <span className="px-2 py-0.5 rounded-lg bg-primary/10 text-primary text-[8px] font-black uppercase border border-primary/20 tracking-tighter">
-                        {product.category || 'Catalog Elite'}
-                    </span>
                     {product.quantity <= product.minStockLevel && (
                         <span className="px-2 py-0.5 rounded-lg bg-destructive/10 text-destructive text-[8px] font-black uppercase border border-destructive/20 animate-pulse tracking-tighter">
                             Alerte Stock

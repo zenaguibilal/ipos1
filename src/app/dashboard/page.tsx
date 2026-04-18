@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useMemo } from 'react';
@@ -33,9 +34,6 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Progress } from '@/components/ui/progress';
 import { useLiveQuery } from '@/hooks/useLiveQuery';
 
-/**
- * Composant StatCard durci avec gestion sémantique des variations.
- */
 const StatCard = React.memo(({ title, value, icon: Icon, change, isLoading, href, positiveIsGood = true, suffix }: { 
     title: string, 
     value: string, 
@@ -94,9 +92,6 @@ const StatCard = React.memo(({ title, value, icon: Icon, change, isLoading, href
 });
 StatCard.displayName = 'StatCard';
 
-/**
- * Graphe de flux optimisé.
- */
 const SalesChart = React.memo(({ data, isLoading }: { data: SalesByDay[], isLoading: boolean }) => (
     <Card className="app-card lg:col-span-2 bg-card/40 backdrop-blur-sm border-white/5 overflow-hidden rounded-lg shadow-sm">
         <CardHeader className="bg-muted/20 border-b border-white/5 p-4 flex flex-row items-center justify-between">
@@ -170,9 +165,6 @@ const SalesChart = React.memo(({ data, isLoading }: { data: SalesByDay[], isLoad
 ));
 SalesChart.displayName = 'SalesChart';
 
-/**
- * Journal de flux récent.
- */
 const RecentActivity = React.memo(({ sales, returns, isLoading }: { sales: RecentSale[], returns: RecentReturn[], isLoading: boolean }) => (
     <Card className="app-card bg-card/40 backdrop-blur-sm border-white/5 overflow-hidden rounded-lg shadow-sm">
         <CardHeader className="bg-muted/20 border-b border-white/5 p-4">
@@ -253,7 +245,6 @@ export default function DashboardPage() {
                 </div>
             </PageHeader>
 
-            {/* KPI Section */}
             <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-4 2xl:grid-cols-8">
                 <StatCard title="Recettes Nettes" value={formatCurrency(data?.stats.totalRevenue ?? 0)} icon={TrendingUp} isLoading={isLoading} change={data?.stats.totalRevenueChange} href="/sales-history" />
                 <StatCard title="Bénéfice Net" value={formatCurrency(data?.stats.netProfit ?? 0)} icon={Star} isLoading={isLoading} change={data?.stats.netProfitChange} />
@@ -265,13 +256,11 @@ export default function DashboardPage() {
                 <StatCard title="Ventes Brutes" value={String(data?.stats.saleCount ?? 0)} icon={Receipt} isLoading={isLoading} change={data?.stats.saleCountChange} />
             </div>
 
-            {/* Charts & Activity */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                 <SalesChart data={data?.salesByDay ?? []} isLoading={isLoading}/>
                 <RecentActivity sales={data?.recentSales ?? []} returns={data?.recentReturns ?? []} isLoading={isLoading}/>
             </div>
 
-            {/* Rankings Section */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                 <Card className="app-card bg-card/40 backdrop-blur-sm border-white/5 overflow-hidden rounded-lg shadow-sm">
                     <CardHeader className="bg-muted/20 border-b border-white/5 p-4">
@@ -289,7 +278,7 @@ export default function DashboardPage() {
                                     <span className="text-xl font-black text-muted-foreground/20 w-8 tabular-nums">{(i + 1).toString().padStart(2, '0')}</span>
                                     <div className="flex-grow">
                                         <p className="font-bold text-sm tracking-tight group-hover:text-primary transition-colors truncate">{p.name}</p>
-                                        <span className="text-[9px] font-black uppercase text-muted-foreground/40 tracking-widest">{p.quantitySold} unités • {p.category}</span>
+                                        <span className="text-[9px] font-black uppercase text-muted-foreground/40 tracking-widest">{p.quantitySold} unités</span>
                                     </div>
                                     <p className="font-black text-sm tracking-tighter tabular-nums">{formatCurrency(p.revenueGenerated)}</p>
                                 </div>
@@ -353,7 +342,6 @@ export default function DashboardPage() {
                 </Card>
             </div>
 
-            {/* AI Monitoring Footer */}
             <div className="p-4 bg-primary/5 rounded-2xl border border-primary/10 flex items-start gap-4 shadow-inner relative overflow-hidden group">
                 <Sparkles className="absolute -right-6 -top-6 h-32 w-32 text-primary/5 group-hover:opacity-20 transition-opacity duration-1000" />
                 <div className="p-4 rounded-2xl bg-black/40 text-primary shadow-lg border border-white/5 relative z-10">

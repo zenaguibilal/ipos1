@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -7,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import type { Product, Supplier } from '@/lib/types';
-import { Loader2, X, AlertTriangle, ChevronsUpDown, Plus, Package, Tag, Hash, Calendar, Box, Building, Coins, FileText, CheckCircle2 } from 'lucide-react';
+import { Loader2, X, AlertTriangle, ChevronsUpDown, Plus, Package, Hash, Box, Building, Coins, FileText, CheckCircle2 } from 'lucide-react';
 import { Badge } from '../ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { DatePicker } from '../ui/date-picker';
@@ -22,14 +23,12 @@ interface ProductDialogProps {
     isOpen: boolean;
     onOpenChange: (isOpen: boolean) => void;
     product: Product | null;
-    categories: string[];
     suppliers: Supplier[];
     onSuccess: () => void;
 }
 
 const initialFormState: Partial<Product> & { supplierName?: string } = {
     name: '',
-    category: '',
     price: 0,
     purchasePrice: 0,
     quantity: 0,
@@ -43,7 +42,7 @@ const initialFormState: Partial<Product> & { supplierName?: string } = {
 
 const units: NonNullable<Product['unite']>[] = ['Pièce', 'Kg', 'Litre', 'Boîte', 'Carton', 'Sachet', 'Bouteille'];
 
-export function ProductDialog({ isOpen, onOpenChange, product, categories, suppliers, onSuccess }: ProductDialogProps) {
+export function ProductDialog({ isOpen, onOpenChange, product, suppliers, onSuccess }: ProductDialogProps) {
     const [formState, setFormState] = useState(initialFormState);
     const [currentBarcode, setCurrentBarcode] = useState('');
     const [error, setError] = useState<string | null>(null);
@@ -179,23 +178,13 @@ export function ProductDialog({ isOpen, onOpenChange, product, categories, suppl
                         {error && <div className="p-4 bg-destructive/10 text-destructive rounded-2xl text-xs font-bold border border-destructive/20 text-center">{error}</div>}
                         
                         <div>
-                            <SectionTitle title="Identité & Catégorie" icon={FileText} />
+                            <SectionTitle title="Identité & Détails" icon={FileText} />
                             <div className="grid gap-6">
                                 <div className="space-y-2">
                                     <Label htmlFor="name" className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground ml-1">Désignation *</Label>
                                     <Input id="name" value={formState.name} onChange={handleInputChange} onFocus={onInputFocus} className="h-9 rounded-2xl bg-muted/20 border-none shadow-inner text-lg font-semibold tracking-tight focus-visible:ring-primary/20" placeholder="Ex: Grand Cru Espresso" required />
                                 </div>
-                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-                                    <div className="space-y-2">
-                                        <Label className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground ml-1">Catégorie</Label>
-                                        <Select value={formState.category} onValueChange={(value) => setFormState(s => ({ ...s, category: value }))}>
-                                            <SelectTrigger className="h-12 rounded-xl bg-muted/20 border-none shadow-inner font-bold"><SelectValue placeholder="Choisir..." /></SelectTrigger>
-                                            <SelectContent className="rounded-2xl shadow-sm border-white/5">
-                                                {categories.map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}
-                                                <SelectItem value="Autre">Autre...</SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                    </div>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                                     <div className="space-y-2">
                                         <Label className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground ml-1">Unité</Label>
                                         <Select value={formState.unite} onValueChange={(value) => setFormState(s => ({ ...s, unite: value as any }))}>
@@ -204,12 +193,12 @@ export function ProductDialog({ isOpen, onOpenChange, product, categories, suppl
                                         </Select>
                                     </div>
                                     <div className="space-y-2">
-                                        <Label className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground ml-1">Partenaire</Label>
+                                        <Label className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground ml-1">Partenaire Fournisseur</Label>
                                         <Popover open={supplierPopoverOpen} onOpenChange={setSupplierPopoverOpen}>
                                             <PopoverTrigger asChild>
                                                 <Button variant="outline" className="w-full justify-between h-12 rounded-xl bg-muted/20 border-none shadow-inner font-bold text-xs">
                                                     <Building className="mr-2 h-3.5 w-3.5 opacity-30" />
-                                                    {formState.supplierName || "Choisir..."}
+                                                    {formState.supplierName || "Choisir un fournisseur..."}
                                                     <ChevronsUpDown className="ml-auto h-4 w-4 opacity-30" />
                                                 </Button>
                                             </PopoverTrigger>

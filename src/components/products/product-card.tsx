@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useMemo, useState, useEffect } from 'react';
@@ -5,7 +6,7 @@ import type { Product } from '@/lib/types';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { MoreHorizontal, Edit, Trash2, CalendarClock, Package, Info, Tag, Copy, History, ShoppingBag, ChevronRight } from 'lucide-react';
+import { MoreHorizontal, Edit, Trash2, CalendarClock, Info, Package, Copy, History, ShoppingBag, ChevronRight } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { cn, formatCurrency, safeToDate } from '@/lib/utils';
 import { Checkbox } from '../ui/checkbox';
@@ -128,9 +129,6 @@ const ProductCardComponent = ({ product, onEdit, onDuplicate, onHistory, onDelet
                 </CardTitle>
 
                 <div className="flex items-center gap-3">
-                    <div className="px-3 py-1 rounded-xl bg-primary/5 text-primary text-[9px] font-semibold uppercase flex items-center gap-1.5 border border-primary/10">
-                        <Tag className="h-2.5 w-2.5 opacity-50" /> {product.category || 'Général'}
-                    </div>
                     {isPriceOld && (
                         <TooltipProvider>
                             <Tooltip>

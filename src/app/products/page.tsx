@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useCallback, Suspense, useRef } from 'react';
@@ -13,7 +14,6 @@ import {
     List, 
     Printer, 
     Trash2, 
-    Archive, 
     SortAsc, 
     Package, 
     Loader2, 
@@ -35,7 +35,6 @@ import { ProductHistoryDialog } from '@/components/products/ProductHistoryDialog
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuCheckboxItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
@@ -51,7 +50,6 @@ import { useAppStore } from '@/stores/appStore';
 import { cn } from '@/lib/utils';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useLiveQuery } from '@/hooks/useLiveQuery';
-import { db } from '@/lib/db';
 import Papa from 'papaparse';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 
@@ -74,7 +72,6 @@ function ProductsContent() {
     const setViewMode = useAppStore(state => state.actions.setProductViewMode);
 
     const [searchQuery, setSearchQuery] = useState('');
-    const [selectedCategory, setSelectedCategory] = useState<string>('all');
     const [selectedSupplier, setSelectedSupplier] = useState<string>('all');
     const [stockStatus, setStockStatus] = useState<StockStatus>('all');
     const [sortBy, setSortBy] = useState('createdAt_desc');
@@ -93,19 +90,17 @@ function ProductsContent() {
     const products = useLiveQuery(
         () => productService.filterProducts({ 
             query: debouncedSearchQuery, 
-            category: selectedCategory, 
             supplierUuid: selectedSupplier,
             stockStatus, 
             sortBy 
         }),
-        [debouncedSearchQuery, selectedCategory, selectedSupplier, stockStatus, sortBy]
+        [debouncedSearchQuery, selectedSupplier, stockStatus, sortBy]
     );
 
-    const [categories, setCategories] = useState<string[] | undefined>(undefined);
     const [suppliers, setSuppliers] = useState<Supplier[] | undefined>(undefined);
     const [isRefreshing, setIsRefreshing] = useState(false);
     
-    const isLoading = products === undefined || categories === undefined || suppliers === undefined;
+    const isLoading = products === undefined || suppliers === undefined;
     
     const [isImportPreviewOpen, setIsImportPreviewOpen] = useState(false);
     const [importAnalysis, setImportAnalysis] = useState<ProductImportAnalysis | null>(null);
@@ -121,14 +116,9 @@ function ProductsContent() {
 
     const fetchMeta = useCallback(async () => {
         try {
-            const [cats, sups] = await Promise.all([
-                productService.getCategories(),
-                supplierService.getSuppliers()
-            ]);
-            setCategories(cats);
+            const sups = await supplierService.getSuppliers();
             setSuppliers(sups);
         } catch(error: any) {
-            setCategories([]);
             setSuppliers([]);
         }
     }, []);
@@ -139,7 +129,7 @@ function ProductsContent() {
     
     useEffect(() => {
         setSelectedProducts(new Set());
-    }, [stockStatus, selectedCategory, selectedSupplier, debouncedSearchQuery]);
+    }, [stockStatus, selectedSupplier, debouncedSearchQuery]);
 
     const onDialogSuccess = () => {
         fetchMeta();
@@ -217,7 +207,6 @@ function ProductsContent() {
 
         const csv = Papa.unparse(dataToExport.map(p => ({
             Désignation: p.name,
-            Catégorie: p.category,
             Prix_Vente: p.price,
             Prix_Achat: p.purchasePrice,
             Stock: p.quantity,
@@ -234,7 +223,6 @@ function ProductsContent() {
 
     const resetFilters = () => {
         setSearchQuery('');
-        setSelectedCategory('all');
         setSelectedSupplier('all');
         setStockStatus('all');
         setSortBy('createdAt_desc');
@@ -255,13 +243,13 @@ function ProductsContent() {
         }
     ], 'Catalogue');
 
-    const isFiltered = searchQuery !== '' || selectedCategory !== 'all' || selectedSupplier !== 'all' || stockStatus !== 'all' || sortBy !== 'createdAt_desc';
+    const isFiltered = searchQuery !== '' || selectedSupplier !== 'all' || stockStatus !== 'all' || sortBy !== 'createdAt_desc';
     
     return (
         <div className="p-6 sm:p-4 space-y-4 max-w-[1800px] mx-auto animate-in fade-in duration-1000">
             <PageHeader
                 title="Catalogue Elite"
-                description="Maîtrise absolue du catalogue et des flux de marchandises"
+                description="Maîtrise absolue du catalogue و الأصول"
             >
                 <div className="flex gap-3 w-full sm:w-auto">
                     <Button variant="outline" onClick={handleExportCsv} className="flex-1 sm:flex-none h-12 rounded-2xl font-semibold text-xs uppercase tracking-wide border-primary/20 hover:bg-primary/5">
@@ -295,23 +283,6 @@ function ProductsContent() {
                 </div>
                 
                 <div className="flex wrap items-center gap-3 px-4">
-                    <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                            <Button variant="outline" className="h-12 rounded-xl border-white/5 bg-black/20 hover:bg-white/5 font-bold px-6">
-                                <Archive className="mr-2 h-4 w-4 opacity-50" />
-                                {selectedCategory === 'all' ? 'Toutes Catégories' : selectedCategory}
-                            </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent className="rounded-2xl border-white/5 shadow-sm min-w-[200px] max-h-80 overflow-y-auto">
-                            <DropdownMenuLabel className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Catégories</DropdownMenuLabel>
-                            <DropdownMenuSeparator className="opacity-10" />
-                            <DropdownMenuCheckboxItem checked={selectedCategory === 'all'} onCheckedChange={() => setSelectedCategory('all')}>Toutes les catégories</DropdownMenuCheckboxItem>
-                            {categories?.map(cat => (
-                                <DropdownMenuCheckboxItem key={cat} checked={selectedCategory === cat} onCheckedChange={() => setSelectedCategory(cat)}>{cat}</DropdownMenuCheckboxItem>
-                            ))}
-                        </DropdownMenuContent>
-                    </DropdownMenu>
-
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                             <Button variant="outline" className="h-12 rounded-xl border-white/5 bg-black/20 hover:bg-white/5 font-bold px-6">
@@ -378,7 +349,7 @@ function ProductsContent() {
                {isLoading ? (
                     viewMode === 'grid' ? <ProductGridSkeleton /> : <ProductTableSkeleton />
                ) : products.length === 0 ? (
-                    <EmptyState icon={Package} title="Catalogue Vide" description={isFiltered ? "Ajustez vos filtres pour trouver ce que vous cherchez." : "Commencez à bâtir votre catalogue de luxe."} />
+                    <EmptyState icon={Package} title="Catalogue Vide" description={isFiltered ? "Ajustez vos filtres pour trouver ce que vous cherchez." : "Commencez à bâtir votre catalogue."} />
                ) : (
                     viewMode === 'grid' ? (
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3">
@@ -402,7 +373,7 @@ function ProductsContent() {
                )}
             </div>
 
-            <ProductDialog isOpen={isProductDialogOpen} onOpenChange={setIsProductDialogOpen} product={selectedProduct} categories={categories || []} suppliers={suppliers || []} onSuccess={onDialogSuccess} />
+            <ProductDialog isOpen={isProductDialogOpen} onOpenChange={setIsProductDialogOpen} product={selectedProduct} suppliers={suppliers || []} onSuccess={onDialogSuccess} />
             <DeleteProductDialog isOpen={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen} product={selectedProduct} onSuccess={fetchMeta} />
             <PrintLabelsDialog isOpen={isPrintDialogOpen} onOpenChange={setIsPrintDialogOpen} productUuids={Array.from(selectedProducts)} />
             <DeleteMultipleProductsDialog isOpen={isBulkDeleteDialogOpen} onOpenChange={setIsBulkDeleteDialogOpen} productUuids={Array.from(selectedProducts)} onSuccess={() => { setSelectedProducts(new Set()); fetchMeta(); }} />
@@ -424,7 +395,7 @@ function ProductGridSkeleton() {
 
 export default function ProductsPage() {
     return (
-        <Suspense fallback={<div className="p-4 text-center text-[10px] font-semibold uppercase opacity-20 animate-pulse">Chargement du catalogue Elite...</div>}>
+        <Suspense fallback={<div className="p-4 text-center text-[10px] font-semibold uppercase opacity-20 animate-pulse">Chargement du catalogue...</div>}>
             <ProductsContent />
         </Suspense>
     );

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -14,7 +15,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { toast } from 'sonner';
 
 const SUPABASE_SQL_SCRIPT = `-- ══════════════════════════════════════════════════════════
--- iPOS Zen — Elite Cloud Schema (Verified v2.0.0)
+-- iPOS Zen — Elite Cloud Schema (Verified v2.0.1)
 -- ══════════════════════════════════════════════════════════
 -- Ce script initialise votre coffre-fort Cloud avec une précision
 -- absolue conforme à la réglementation algérienne.
@@ -98,7 +99,6 @@ CREATE TABLE IF NOT EXISTS customers (
 CREATE TABLE IF NOT EXISTS products (
     uuid              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name              TEXT NOT NULL,
-    category          TEXT,
     price             NUMERIC(15,2) NOT NULL,
     purchase_price    NUMERIC(15,2) NOT NULL DEFAULT 0,
     quantity          NUMERIC(15,3) DEFAULT 0,
@@ -249,7 +249,6 @@ $$;
 -- B. INDEX DE PERFORMANCE
 -- ══════════════════════════════════════════════════════════
 CREATE INDEX IF NOT EXISTS idx_products_name ON products(name);
-CREATE INDEX IF NOT EXISTS idx_products_category ON products(category);
 CREATE INDEX IF NOT EXISTS idx_customers_search ON customers(search_name);
 CREATE INDEX IF NOT EXISTS idx_customers_debt ON customers(outstanding_balance);
 CREATE INDEX IF NOT EXISTS idx_sales_invoice ON sales(invoice_number);
@@ -261,7 +260,6 @@ CREATE INDEX IF NOT EXISTS idx_inventory_product ON inventory_logs(product_uuid)
 -- ══════════════════════════════════════════════════════════
 -- C. SÉCURITÉ (DÉSACTIVATION RLS POUR BACKUP LOCAL)
 -- ══════════════════════════════════════════════════════════
--- Note: RLS est désactivé car l'application gère l'accès via la clé d'API.
 DO $$
 DECLARE
     t text;
@@ -279,15 +277,6 @@ GRANT ALL ON ALL TABLES IN SCHEMA public TO anon;
 GRANT ALL ON ALL TABLES IN SCHEMA public TO authenticated;
 GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO anon;
 GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO authenticated;
-
--- ══════════════════════════════════════════════════════════
--- D. VÉRIFICATION FINALE
--- ══════════════════════════════════════════════════════════
-SELECT table_name, 
-       pg_size_pretty(pg_total_relation_size(quote_ident(table_name)::regclass)) as size
-FROM information_schema.tables 
-WHERE table_schema = 'public' AND table_type = 'BASE TABLE'
-ORDER BY table_name;
 `;
 
 export function SupabaseSqlDialog() {
@@ -326,7 +315,7 @@ export function SupabaseSqlDialog() {
                                 </div>
                                 <div>
                                     <DialogTitle className="text-lg font-semibold tracking-tight">Initialisation Saphir Elite</DialogTitle>
-                                    <DialogDescription className="font-medium text-[10px] uppercase text-primary/50">Schéma souverain certifié compatible v2.0.0</DialogDescription>
+                                    <DialogDescription className="font-medium text-[10px] uppercase text-primary/50">Schéma souverain certifié compatible v2.0.1</DialogDescription>
                                 </div>
                             </div>
                             <Button onClick={handleCopy} className="rounded-2xl h-12 px-6 font-semibold text-xs uppercase tracking-wide shadow-xl shadow-sm gap-2 transition-all active:scale-95">

@@ -3,7 +3,6 @@ export interface Product {
     id?: number;
     uuid: string;
     name: string;
-    category?: string;
     price: number;
     purchasePrice: number;
     quantity: number;
@@ -137,7 +136,6 @@ export interface StockIntakeItem {
     productUuid?: string;
     barcodes: string[];
     name: string;
-    category?: string;
     quantity: number;
     quantityDamaged: number;
     purchasePrice: number;
@@ -315,7 +313,6 @@ export interface TopProduct {
     name: string;
     quantitySold: number;
     revenueGenerated: number;
-    category?: string;
 }
 
 export interface TopCustomer {
@@ -327,7 +324,7 @@ export interface TopCustomer {
 export interface LowStockProduct
     extends Pick<
         Product,
-        'uuid' | 'name' | 'quantity' | 'minStockLevel' | 'category' | 'unite'
+        'uuid' | 'name' | 'quantity' | 'minStockLevel' | 'unite'
     > {}
 
 export interface DashboardData {
