@@ -6,6 +6,7 @@ import { db } from '@/lib/db';
 import { inventoryService } from './inventory.service';
 import { customerService } from './customer.service';
 import { safeToDate, safeNumber, roundFinancial, preciseMultiply } from '@/lib/utils';
+import { startOfDay, endOfDay } from 'date-fns';
 
 /**
  * خدمة إدارة المبيعات Elite.
@@ -24,7 +25,7 @@ class SalesService {
     }
 
     /**
-     * تصفية المبيعات مع دعم النطاق الزمني والفهرسة.
+     * محرك تصفية المبيعات المطور - يدعم الأرشيف الكامل والفلترة الزمنية الدقيقة.
      */
     async filterSales(filters: {
         query?: string;
@@ -35,17 +36,20 @@ class SalesService {
         let collection = db.sales.toCollection();
 
         // تطبيق الفلترة الزمنية على مستوى الفهارس لسرعة البرق
+        // نستخدم الفهارس إذا توفر تاريخ واحد على الأقل
         if (filters.from && filters.to) {
-            collection = db.sales.where('createdAt').between(filters.from, filters.to, true, true);
+            const start = startOfDay(filters.from);
+            const end = endOfDay(filters.to);
+            collection = db.sales.where('createdAt').between(start, end, true, true);
         } else if (filters.from) {
-            collection = db.sales.where('createdAt').aboveOrEqual(filters.from);
+            collection = db.sales.where('createdAt').aboveOrEqual(startOfDay(filters.from));
         } else if (filters.to) {
-            collection = db.sales.where('createdAt').belowOrEqual(filters.to);
+            collection = db.sales.where('createdAt').belowOrEqual(endOfDay(filters.to));
         }
 
         let sales = await collection.toArray();
 
-        // تطبيق فلتر الحالة
+        // تطبيق فلتر الحالة (المدفوعة، الديون، إلخ)
         if (filters.status && filters.status !== 'all') {
             sales = sales.filter(s => s.paymentStatus === filters.status);
         }
@@ -67,7 +71,7 @@ class SalesService {
             );
         }
 
-        // الترتيب التنازلي (الأحدث أولاً)
+        // الترتيب التنازلي (الأحدث أولاً) لضمان رؤية آخر النشاطات
         return sales.sort(
             (a, b) => safeToDate(b.createdAt!).getTime() - safeToDate(a.createdAt!).getTime()
         );
