@@ -26,13 +26,12 @@ interface CustomItemDialogProps {
 }
 
 /**
- * نافذة إضافة منتج مخصص (يدوي).
- * تدعم التحكم الداخلي أو الخارجي (عبر الاختصارات).
+ * Fenêtre d'ajout d'article personnalisé (manuel).
+ * Supporte le contrôle interne ou externe.
  */
 export function CustomItemDialog({ children, isOpen: controlledOpen, onOpenChange: setControlledOpen }: CustomItemDialogProps) {
     const [internalOpen, setInternalOpen] = useState(false);
     
-    // إدارة الحالة المختلطة (Controlled vs Uncontrolled)
     const isOpen = controlledOpen !== undefined ? controlledOpen : internalOpen;
     const setIsOpen = (val: boolean) => {
         if (setControlledOpen) setControlledOpen(val);
@@ -44,7 +43,7 @@ export function CustomItemDialog({ children, isOpen: controlledOpen, onOpenChang
     const [isLoading, setIsLoading] = useState(false);
     const { addItemToCart } = useCartActions();
 
-    // تفريغ الحقول عند الفتح لضمان جاهزية الإدخال
+    // Réinitialisation des champs à l'ouverture
     useEffect(() => {
         if (isOpen) {
             setName('');
@@ -76,7 +75,7 @@ export function CustomItemDialog({ children, isOpen: controlledOpen, onOpenChang
         
         toast.success(`"${name.trim()}" ajouté au panier.`);
         setIsLoading(false);
-        setIsOpen(false); // Fermeture après succès
+        setIsOpen(false); 
     };
 
     const handleOpenChange = (open: boolean) => {

@@ -9,7 +9,7 @@ import { useLiveQuery } from '@/hooks/useLiveQuery';
 import { db } from '@/lib/db';
 
 /**
- * Composant de carte statistique unifié مع تصميم Elite.
+ * Composant de carte statistique unifié avec design Elite.
  */
 const StatCard = ({ title, value, icon: Icon, colorClass, subtitle }: { title: string, value: string, icon: any, colorClass: string, subtitle?: string }) => (
     <Card className="app-card h-full bg-card/40 backdrop-blur-sm border-white/5 rounded-lg group overflow-hidden">
@@ -28,16 +28,16 @@ const StatCard = ({ title, value, icon: Icon, colorClass, subtitle }: { title: s
 
 /**
  * Composant CustomerStats - Calcule et affiche les indicateurs clés de la base client.
- * Utilise useLiveQuery لضمان التحديث اللحظي الشامل.
+ * Utilise useLiveQuery pour assurer la réactivité.
  */
 export function CustomerStats() {
-  // مراقبة حية لجدول العملاء بالكامل
+  // Surveillance en direct du fichier clients
   const customers = useLiveQuery(() => db.customers.toArray());
 
   const stats = useMemo(() => {
     if (!customers) return { total: 0, overdue: 0, overLimit: 0, totalOutstanding: 0 };
     
-    // محرك الجمع بالسنتيمات لضمان الدقة المطلقة
+    // Moteur de calcul en centimes pour une précision absolue
     let totalDebtCents = 0;
     let overdueCount = 0;
     let overLimitCount = 0;
@@ -89,14 +89,14 @@ export function CustomerStats() {
         value={String(stats.overdue)} 
         icon={AlertTriangle} 
         colorClass="bg-amber-500/10 text-amber-500" 
-        subtitle="Dossiers مهددين بالتعطل" 
+        subtitle="Dossiers à risque de retard" 
       />
       <StatCard 
         title="Crédits Dépassés" 
         value={String(stats.overLimit)} 
         icon={UserX} 
         colorClass="bg-red-500/10 text-red-500" 
-        subtitle="تجاوز سقف الائتمان" 
+        subtitle="Dépassement du crédit" 
       />
     </div>
   );

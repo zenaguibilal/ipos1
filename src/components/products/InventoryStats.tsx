@@ -25,7 +25,7 @@ const StatCard = ({ title, value, icon: Icon, colorClass, subtitle }: { title: s
 );
 
 export const InventoryStats = ({ isLoading: externalLoading }: { isLoading?: boolean }) => {
-    // مراقبة حية لجدول المنتجات بالكامل لضمان تحديث القيم عند المبيعات أو الإلغاء
+    // Surveillance en direct du catalogue pour garantir la mise à jour des valeurs.
     const products = useLiveQuery(() => db.products.toArray());
 
     const stats = useMemo(() => {

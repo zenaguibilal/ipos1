@@ -64,7 +64,7 @@ const CartItemRow = React.memo(({ item, isSelected, onUpdate, onPriceUpdate, onR
         {
             key: '*',
             action: () => priceInputRef.current?.focus(),
-            description: 'Modifier le سعر',
+            description: 'Modifier le prix',
             ignoreInputFocus: false
         },
         {

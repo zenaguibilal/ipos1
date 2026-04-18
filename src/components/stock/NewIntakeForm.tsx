@@ -29,8 +29,8 @@ export function NewIntakeForm() {
     const [isSubmitting, setIsSaving] = useState(false);
 
     /**
-     * محرك حساب القيمة الإجمالية للمواد بالسنتيمترات لضمان الدقة المطلقة 
-     * ومنع ضياع أي سنتيم عند توزيع مصاريف الشحن لاحقاً.
+     * Moteur de calcul de la valeur totale en centimes pour une précision absolue
+     * et éviter toute perte lors de la répartition des frais de transport.
      */
     const itemsTotalValue = useMemo(() => {
         const totalCents = items.reduce((sum, item) => {
@@ -42,7 +42,7 @@ export function NewIntakeForm() {
     }, [items]);
 
     /**
-     * معامل الشحن (Factor): نسبة التكاليف الإضافية التي ستُحمل على كل دينار من سعر الشراء.
+     * Facteur de transport : pourcentage des frais additionnels à imputer sur chaque unité monétaire d'achat.
      */
     const shippingFactor = useMemo(() => {
         return itemsTotalValue > 0 ? shippingCost / itemsTotalValue : 0;
@@ -54,7 +54,7 @@ export function NewIntakeForm() {
         const existing = items.find(i => i.productUuid === product.uuid);
         if (existing) {
             toast.info(`"${product.name}" est déjà dans le manifeste.`, {
-                description: "Modifiez la quantité directement dans le جدول."
+                description: "Modifiez la quantité directement dans le tableau."
             });
             return;
         }
@@ -132,7 +132,7 @@ export function NewIntakeForm() {
             });
 
             if (success) {
-                toast.success("Manifestه validé. Stock et comptes mis à jour.");
+                toast.success("Manifeste validé. Stock et comptes mis à jour.");
                 router.push('/stock');
             }
         } catch (error: any) {
@@ -201,7 +201,6 @@ export function NewIntakeForm() {
                                         items.map((item) => {
                                             const qty = safeNumber(item.quantity);
                                             const cost = safeNumber(item.purchasePrice);
-                                            // حساب تكلفة الربط الفعلي لكل صنف بدمج مصاريف النقل
                                             const landingCost = cost * (1 + shippingFactor);
                                             const rowTotal = preciseMultiply(qty, cost);
                                             const isSellingAtLoss = item.price < landingCost && item.price > 0;
@@ -311,7 +310,7 @@ export function NewIntakeForm() {
                     <CardContent className="p-6 space-y-6">
                         <div className="space-y-6">
                             <div className="space-y-2">
-                                <Label className="text-[10px] font-black uppercase text-muted-foreground/60 ml-1 tracking-widest">Étabลissement Fournisseur *</Label>
+                                <Label className="text-[10px] font-black uppercase text-muted-foreground/60 ml-1 tracking-widest">Établissement Fournisseur *</Label>
                                 <div className="relative group">
                                     <Building className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 opacity-20 group-focus-within:text-primary transition-all duration-500" />
                                     <Input 

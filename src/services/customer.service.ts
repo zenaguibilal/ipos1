@@ -150,7 +150,6 @@ class CustomerService {
 
         await db.customers.update(existing.id, dataToUpdate);
         
-        // Recalcul immédiat pour assurer la cohérence après mise à jour
         const updated = await this.recalculateCustomerStatus(uuid);
 
         triggerSync();
@@ -181,7 +180,6 @@ class CustomerService {
             );
         }
 
-        // Sécurité solde
         if (Math.abs(safeNumber(customer.outstandingBalance)) > 0.009) {
             throw new Error(
                 "Révocation impossible : le solde débiteur n'est pas nul.",
@@ -213,37 +211,31 @@ class CustomerService {
             db.product_returns.where('customerUuid').equals(customerUuid).toArray(),
         ]);
 
-        // HAUTE PRÉCISION : Travail en centimes
+        // Moteur de calcul en centimes pour une précision absolue
         let totalDebtCents = Math.round(safeNumber(customer.initialBalance) * 100);
         let totalSpentCents = 0;
         
         sales.forEach(s => {
-            // Dette cumulée = Reste à payer sur chaque facture
             totalDebtCents += Math.round(safeNumber(s.remainingBalance) * 100);
             totalSpentCents += Math.round(safeNumber(s.total) * 100);
         });
 
         payments.forEach(p => {
-            // Les paiements réduisent la dette globale (Rapprochement)
             totalDebtCents -= Math.round(safeNumber(p.amount) * 100);
         });
 
         returns.forEach(r => {
-            // L'avoir client = Valeur du retour - Cash remboursé
             const netReturnCreditCents = Math.round(safeNumber(r.totalReturnValue) * 100) - Math.round(safeNumber(r.amountRefunded) * 100);
             totalDebtCents -= netReturnCreditCents;
-            // Réduction du volume d'achat total
             totalSpentCents -= Math.round(safeNumber(r.totalReturnValue) * 100);
         });
 
         const newBalance = roundFinancial(totalDebtCents / 100);
         const totalSpent = roundFinancial(Math.max(0, totalSpentCents / 100));
 
-        // Détection dépassement plafond
         const limit = safeNumber(customer.creditLimit);
         const isOverLimit = limit > 0 ? newBalance > (limit + 0.009) : false;
 
-        // Analyse comportementale du paiement
         const hasPaymentThisMonth = payments.some(
             p => new Date(p.paymentDate) >= currentMonthStart,
         );
@@ -378,7 +370,6 @@ class CustomerService {
             if (toUpdate.length > 0) await db.customers.bulkPut(toUpdate);
         });
 
-        // Recalcul forcé de tous les imports pour garantir la précision
         for (const c of toUpdate) await this.recalculateCustomerStatus(c.uuid);
         for (const c of toAdd) await this.recalculateCustomerStatus(c.uuid);
 

@@ -263,7 +263,7 @@ export const useAppStore = create<AppState>()(
                                         intakeData.supplierUuid,
                                     );
 
-                                // محرك حساب القيمة الإجمالية بالسنتيمات لضمان الدقة المطلقة
+                                // Moteur de calcul de la valeur totale en centimes.
                                 const itemsTotalValueCents = intakeData.items.reduce(
                                     (sum, item) => sum + Math.round(preciseMultiply(item.quantity, item.purchasePrice) * 100),
                                     0,
@@ -282,7 +282,7 @@ export const useAppStore = create<AppState>()(
                                     let productUuid  = item.productUuid;
                                     const costCents = Math.round(safeNumber(item.purchasePrice) * 100);
                                     
-                                    // حساب تكلفة الربط (Landing Cost) بدقة عالية (Cents) عبر دمج مصاريف النقل
+                                    // Calcul du coût de revient (Landing Cost) avec précision (cents) en intégrant les frais de transport.
                                     const landingCostCents = Math.round(costCents * (1 + shippingFactor));
                                     const landingCost = landingCostCents / 100;
 
@@ -307,7 +307,7 @@ export const useAppStore = create<AppState>()(
                                                 p.uuid,
                                                 {
                                                     purchasePrice: landingCost,
-                                                    price:         safeNumber(item.price), // Mise à jour du prix de vente suggéré
+                                                    price:         safeNumber(item.price), 
                                                     dateMajPrix:   new Date(),
                                                 },
                                             );

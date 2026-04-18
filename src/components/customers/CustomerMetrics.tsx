@@ -17,7 +17,7 @@ export function CustomerMetrics({ customer }: CustomerMetricsProps) {
 
     return (
         <div className="space-y-6">
-            {/* Main Debt Card - High Impact */}
+            {/* Carte de dette principale - Haut impact */}
             <Card className={cn(
                 "rounded-lg border-none shadow-sm overflow-hidden relative group transition-all duration-700",
                 balance > 0.01 ? "bg-destructive/10 border-destructive/20" : "bg-emerald-500/10 border-emerald-500/20"
@@ -56,7 +56,7 @@ export function CustomerMetrics({ customer }: CustomerMetricsProps) {
                         </div>
                     </div>
 
-                    {/* تفصيل الرصيد الابتدائي للشفافية المطلقة */}
+                    {/* Détail du solde initial pour une transparence totale */}
                     {Math.abs(initialBalance) > 0.01 && (
                         <div className="mt-4 pt-4 border-t border-white/5 flex justify-between items-center bg-black/10 -mx-4 px-4 py-3">
                             <span className="text-[9px] font-semibold uppercase text-muted-foreground/60 flex items-center gap-1.5">
@@ -83,7 +83,7 @@ export function CustomerMetrics({ customer }: CustomerMetricsProps) {
                 </CardContent>
             </Card>
 
-            {/* Secondary Metrics Grid */}
+            {/* Grille de métriques secondaires */}
             <div className="grid grid-cols-2 gap-6">
                 <Card className="rounded-lg border-none shadow-xl bg-card/40 backdrop-blur-md overflow-hidden group">
                     <CardContent className="p-6">

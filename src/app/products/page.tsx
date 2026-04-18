@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useCallback, Suspense, useRef } from 'react';
@@ -249,7 +248,7 @@ function ProductsContent() {
         <div className="p-6 sm:p-4 space-y-4 max-w-[1800px] mx-auto animate-in fade-in duration-1000">
             <PageHeader
                 title="Catalogue Elite"
-                description="Maîtrise absolue du catalogue و الأصول"
+                description="Maîtrise absolue du catalogue et des actifs"
             >
                 <div className="flex gap-3 w-full sm:w-auto">
                     <Button variant="outline" onClick={handleExportCsv} className="flex-1 sm:flex-none h-12 rounded-2xl font-semibold text-xs uppercase tracking-wide border-primary/20 hover:bg-primary/5">
