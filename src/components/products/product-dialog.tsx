@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -131,6 +131,8 @@ export function ProductDialog({ isOpen, onOpenChange, product, categories, suppl
         else await proceedWithSubmit();
     };
 
+    const onInputFocus = (e: React.FocusEvent<HTMLInputElement>) => e.target.select();
+
     useKeyboardShortcuts([
         {
             key: 'Enter',
@@ -155,8 +157,6 @@ export function ProductDialog({ isOpen, onOpenChange, product, categories, suppl
             <h4 className="text-[10px] font-semibold uppercase text-muted-foreground opacity-60 tracking-widest">{title}</h4>
         </div>
     );
-
-    const onInputFocus = (e: React.FocusEvent<HTMLInputElement>) => e.target.select();
 
     return (
         <>
@@ -274,7 +274,7 @@ export function ProductDialog({ isOpen, onOpenChange, product, categories, suppl
                                     <Hash className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/30" />
                                     <Input value={currentBarcode} onChange={(e) => setCurrentBarcode(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddBarcode(); } }} className="pl-11 h-12 rounded-xl bg-background border-none shadow-sm" placeholder="Scanner ou taper..." />
                                 </div>
-                                <Button type="button" variant="outline" onClick={handleAddBarcode} className="h-12 w-12 rounded-xl border-white/5 bg-primary/10 text-primary hover:bg-primary hover:text-white transition-all"><Plus className="h-5 w-5" /></Button>
+                                <button type="button" onClick={handleAddBarcode} className="h-12 w-12 rounded-xl border border-primary/20 bg-primary/10 text-primary flex items-center justify-center hover:bg-primary hover:text-white transition-all"><Plus className="h-5 w-5" /></button>
                             </div>
                             <div className="flex flex-wrap gap-2">
                                 {formState.barcodes?.map(b => (
@@ -289,7 +289,7 @@ export function ProductDialog({ isOpen, onOpenChange, product, categories, suppl
                     <DialogFooter className="p-4 bg-card border-t border-white/5 flex gap-4">
                         <Button type="button" variant="ghost" onClick={() => onOpenChange(false)} className="h-9 rounded-2xl font-semibold text-xs uppercase tracking-wide px-8" disabled={isLoading}>Annuler</Button>
                         <Button type="submit" disabled={isLoading} className="flex-1 h-9 rounded-2xl font-semibold text-xs uppercase tracking-wide shadow-xl shadow-sm transition-all active:scale-95 gap-3">
-                             {isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Package className="h-5 w-5" />}
+                             {isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <CheckCircle2 className="h-5 w-5" />}
                             {product ? 'Sauvegarder [Ctrl+Enter]' : 'Confirmer [Ctrl+Enter]'}
                         </Button>
                     </DialogFooter>
@@ -305,7 +305,7 @@ export function ProductDialog({ isOpen, onOpenChange, product, categories, suppl
                         <AlertDialogTitle className="text-lg font-semibold tracking-tighter uppercase">Vente à perte détectée</AlertDialogTitle>
                     </div>
                     <AlertDialogDescription className="text-base font-medium leading-relaxed">
-                        Le prix de vente (<b>{formatCurrency(formState.price || 0)}</b>) est inférieur au coût d'achat (<b>{formatCurrency(formState.purchasePrice || 0)}</b>). Souhaitez-vous vraiment confirmer cette tarification ?
+                        Le prix de vente (<b>{formatCurrency(formState.price || 0)}</b>) est inférieur au coût d'achat (<b>{formatCurrency(formState.purchasePrice || 0)}</b>). Souها إليك السعر المعدل؟
                     </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter className="gap-3 mt-6">
