@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useMemo, useState, useEffect } from 'react';
@@ -60,7 +59,6 @@ const ProductCardComponent = ({ product, onEdit, onDuplicate, onHistory, onDelet
         }
     };
 
-    // Hydration-safe last activity text
     const lastActivityText = useMemo(() => {
         if (!isMounted || !product.createdAt) return 'Chargement...';
         return formatDistanceToNow(safeToDate(product.createdAt), { addSuffix: true, locale: fr });

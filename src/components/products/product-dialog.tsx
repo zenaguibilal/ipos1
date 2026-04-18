@@ -1,7 +1,6 @@
-
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -84,12 +83,6 @@ export function ProductDialog({ isOpen, onOpenChange, product, suppliers, onSucc
     const handleRemoveBarcode = (barcodeToRemove: string) => {
         setFormState(prev => ({...prev, barcodes: prev.barcodes?.filter(b => b !== barcodeToRemove)}));
     };
-
-    const supplierOptions = useMemo(() => {
-        if (!suppliers) return [];
-        if (!supplierSearch) return suppliers;
-        return suppliers.filter(s => s.name.toLowerCase().includes(supplierSearch.toLowerCase()));
-    }, [suppliers, supplierSearch]);
 
     const handleSupplierSelect = (uuid: string) => {
         const selected = suppliers.find(s => s.uuid === uuid);
@@ -207,7 +200,7 @@ export function ProductDialog({ isOpen, onOpenChange, product, suppliers, onSucc
                                                     <CommandInput placeholder="Chercher..." onValueChange={setSupplierSearch} />
                                                     <CommandList>
                                                         <CommandEmpty><Button variant="link" className="text-xs" onClick={() => { setFormState(p => ({...p, supplierName: supplierSearch, supplierUuid: undefined})); setSupplierPopoverOpen(false); }}>Créer "{supplierSearch}"</Button></CommandEmpty>
-                                                        <CommandGroup>{supplierOptions.map(s => <CommandItem key={s.uuid} value={s.name} onSelect={() => handleSupplierSelect(s.uuid)} className="font-bold">{s.name}</CommandItem>)}</CommandGroup>
+                                                        <CommandGroup>{suppliers.filter(s => s.name.toLowerCase().includes(supplierSearch.toLowerCase())).map(s => <CommandItem key={s.uuid} value={s.name} onSelect={() => handleSupplierSelect(s.uuid)} className="font-bold">{s.name}</CommandItem>)}</CommandGroup>
                                                     </CommandList>
                                                 </Command>
                                             </PopoverContent>

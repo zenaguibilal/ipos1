@@ -1,6 +1,6 @@
-
 'use client';
 
+import React, { useState, useEffect } from 'react';
 import type { Product, Supplier } from '@/lib/types';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
@@ -27,6 +27,12 @@ interface ProductTableProps {
 }
 
 export function ProductTable({ products, onEdit, onDuplicate, onHistory, onDelete, selectedProducts, onToggleProductSelection, onToggleSelectAll, suppliers }: ProductTableProps) {
+    const [isMounted, setIsMounted] = useState(false);
+    
+    useEffect(() => {
+        setIsMounted(true);
+    }, []);
+
     const supplierMap = useMemo(() => new Map(suppliers.map(s => [s.uuid, s.name])), [suppliers]);
 
     return (
@@ -55,7 +61,7 @@ export function ProductTable({ products, onEdit, onDuplicate, onHistory, onDelet
                         const isSelected = selectedProducts.has(productUuid);
 
                         const expirationStatus = (() => {
-                            if (!product.dateExpiration) return null;
+                            if (!isMounted || !product.dateExpiration) return null;
                             const today = new Date();
                             const expirationDate = new Date(product.dateExpiration);
                             const daysUntilExpiration = differenceInDays(expirationDate, today);
@@ -64,7 +70,7 @@ export function ProductTable({ products, onEdit, onDuplicate, onHistory, onDelet
                             return { color: 'text-muted-foreground/40', text: format(expirationDate, 'dd/MM/yy'), bg: 'bg-muted/50' };
                         })();
                         
-                        const isPriceOld = product.dateMajPrix && differenceInDays(new Date(), new Date(product.dateMajPrix)) > 30;
+                        const isPriceOld = isMounted && product.dateMajPrix && differenceInDays(new Date(), new Date(product.dateMajPrix)) > 30;
 
                         return (
                             <TableRow 
