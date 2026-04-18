@@ -23,8 +23,8 @@ import {
     RefreshCw,
     HandCoins,
     UserX,
-    ShieldExclamation,
-    AlertTriangle
+    AlertTriangle,
+    Coins
 } from 'lucide-react';
 import type { Customer } from '@/lib/types';
 import { formatCurrency, cn, FINANCIAL_EPSILON, safeNumber } from '@/lib/utils';
@@ -250,7 +250,7 @@ export default function DebtAlertsPage() {
                             <div className="absolute inset-0 bg-emerald-500/5 blur-3xl rounded-full"></div>
                         </div>
                         <div className="space-y-2">
-                            <h3 className="text-2xl font-black tracking-tighter text-emerald-500 uppercase">Trésorerie Sécurisée</h3>
+                            <h3 className="text-2xl font-black tracking-tighter text-emerald-500 uppercase">Trésorerية Sécurisée</h3>
                             <p className="text-[10px] font-bold text-muted-foreground/40 uppercase tracking-[0.3em]">Aucun dossier en souffrance détecté</p>
                         </div>
                     </div>
@@ -370,14 +370,14 @@ export default function DebtAlertsPage() {
             <div className="p-6 bg-primary/5 rounded-2xl border border-primary/10 flex flex-col md:flex-row items-start md:items-center gap-6 shadow-sm relative overflow-hidden group">
                 <Sparkles className="absolute -right-6 -top-6 h-40 w-40 text-primary/5 group-hover:opacity-20 transition-opacity duration-1000" />
                 <div className="p-5 rounded-3xl bg-black/40 text-primary shadow-xl relative z-10 border border-white/5 transition-transform group-hover:rotate-6">
-                    <ShieldExclamation className="h-10 w-10" />
+                    <ShieldAlert className="h-10 w-10" />
                 </div>
                 <div className="space-y-3 relative z-10 flex-grow">
                     <p className="text-xs font-black uppercase text-primary flex items-center gap-2 tracking-[0.2em]">
                         <Info className="h-4 w-4" /> Analyse du Moteur "Elite Risk"
                     </p>
                     <p className="text-[11px] text-muted-foreground/70 font-medium leading-relaxed max-w-6xl italic border-l-3 border-primary/30 pl-8 uppercase tracking-widest">
-                        L'algorithme de surveillance évalue le risque en combinant l'exposition financière (consommation du plafond) et l'inertie de paiement (retard par rapport au jour de règlement). Un marquage "Critique" est automatiquement appliqué pour tout dépassement de 110% du plafond ou un retard effectif franchissant le seuil des 20 jours.
+                        L'algorithme de surveillance évalue le risque en combinant l'exposition financière (consommation du plafond) et l'inertية de paiement (retard par rapport au jour de règlement). Un marquage "Critique" est automatiquement appliqué pour tout dépassement de 110% du plafond ou un retard effectif franchissant le seuil des 20 jours.
                     </p>
                 </div>
             </div>
