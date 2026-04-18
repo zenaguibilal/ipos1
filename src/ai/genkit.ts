@@ -1,13 +1,5 @@
 
-import { genkit } from 'genkit';
-import { googleAI } from '@genkit-ai/google-genai';
-
 /**
- * @fileOverview إعداد محرك Genkit الأساسي.
- * يتم استخدام هذا الكائن في كافة تدفقات الذكاء الاصطناعي (Flows).
+ * @fileOverview محرك Genkit تم تعطيله بناءً على طلب المستخدم.
  */
-export const ai = genkit({
-  plugins: [
-    googleAI(),
-  ],
-});
+export const ai = null as any;

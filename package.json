@@ -50,9 +50,7 @@
     "uuid": "9.0.1",
     "zustand": "4.5.2",
     "jspdf": "^2.5.1",
-    "html2canvas": "^1.4.1",
-    "genkit": "^1.0.4",
-    "@genkit-ai/google-genai": "^1.0.4"
+    "html2canvas": "^1.4.1"
   },
   "devDependencies": {
     "typescript": "5.4.5",

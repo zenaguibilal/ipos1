@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -7,9 +8,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Plus, Trash2, Save, ShoppingBag, Truck, FileText, Building, Hash, Loader2, PackagePlus, Calculator, Coins, Sparkles, AlertTriangle, BadgePercent } from 'lucide-react';
+import { Plus, Trash2, Save, ShoppingBag, Truck, Building, Hash, Loader2, PackagePlus, Calculator, Coins, Sparkles, BadgePercent } from 'lucide-react';
 import { ProductIntakeCombobox } from './ProductIntakeCombobox';
-import { OcrInvoiceScanner, type OcrLineItem } from './OcrInvoiceScanner';
 import type { Product, StockIntakeItem } from '@/lib/types';
 import { formatCurrency, cn, safeNumber } from '@/lib/utils';
 import { useAppActions } from '@/stores/appStore';
@@ -33,10 +33,6 @@ export function NewIntakeForm() {
         return items.reduce((sum, item) => sum + (safeNumber(item.quantity) * safeNumber(item.purchasePrice)), 0);
     }, [items]);
 
-    /**
-     * محرك حساب تكلفة الربط (Landing Cost) المتقدم.
-     * يوزع مصاريف النقل بناءً على قيمة الصنف في الفاتورة.
-     */
     const shippingFactor = useMemo(() => {
         return itemsTotalValue > 0 ? shippingCost / itemsTotalValue : 0;
     }, [itemsTotalValue, shippingCost]);
@@ -81,25 +77,6 @@ export function NewIntakeForm() {
             category: 'Général'
         };
         setItems(prev => [newItem, ...prev]);
-    };
-
-    const handleOcrExtracted = (ocrItems: OcrLineItem[], metadata?: { supplierName?: string, invoiceNumber?: string }) => {
-        if (metadata?.supplierName && !supplierName) setSupplierName(metadata.supplierName);
-        if (metadata?.invoiceNumber && !invoiceNumber) setInvoiceNumber(metadata.invoiceNumber);
-
-        const newItems: StockIntakeItem[] = ocrItems.map(ocr => ({
-            id: uuidv4(),
-            name: ocr.name,
-            barcodes: [],
-            quantity: ocr.quantity,
-            quantityDamaged: 0,
-            purchasePrice: ocr.purchasePrice,
-            price: Number((ocr.purchasePrice * 1.3).toFixed(2)), 
-            unite: 'Pièce',
-            isNew: true,
-            category: 'Général'
-        }));
-        setItems(prev => [...newItems, ...prev]);
     };
 
     const updateItem = (id: string, field: keyof StockIntakeItem, value: any) => {
@@ -198,7 +175,7 @@ export function NewIntakeForm() {
                                                     <div className="p-8 rounded-3xl bg-muted/20 border-2 border-dashed border-white/10">
                                                         <PackagePlus className="h-16 w-16" />
                                                     </div>
-                                                    <p className="text-[10px] font-black uppercase tracking-[0.3em]">Scannez أو ابحث عن السلع لبدء الاستلام</p>
+                                                    <p className="text-[10px] font-black uppercase tracking-[0.3em]">Scanner ou rechercher des produits</p>
                                                 </div>
                                             </TableCell>
                                         </TableRow>
@@ -215,7 +192,7 @@ export function NewIntakeForm() {
                                                         <div className="flex flex-col gap-1 min-w-[200px]">
                                                             <span className="font-black text-sm tracking-tight truncate">{item.name}</span>
                                                             {item.isNew && (
-                                                                <span className="text-[8px] font-black text-primary uppercase bg-primary/10 px-2 py-0.5 rounded-lg w-fit border border-primary/20 tracking-tighter">Injection Catalogue</span>
+                                                                <span className="text-[8px] font-black text-primary uppercase bg-primary/10 px-2 py-0.5 rounded-lg w-fit border border-primary/20 tracking-tighter">Nouveau Produit</span>
                                                             )}
                                                         </div>
                                                     </TableCell>
@@ -288,17 +265,6 @@ export function NewIntakeForm() {
                             </Table>
                         </div>
                     </CardContent>
-                    {items.length > 0 && (
-                        <div className="p-4 bg-muted/10 border-t border-white/5 flex justify-between items-center">
-                            <span className="text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground/40">{items.length} flux détectés dans ce manifeste</span>
-                            <div className="flex items-center gap-6">
-                                <div className="text-right">
-                                    <p className="text-[8px] font-black uppercase text-muted-foreground/30 mb-0.5">Valeur Brute</p>
-                                    <p className="font-bold text-sm tracking-tight">{formatCurrency(itemsTotalValue)}</p>
-                                </div>
-                            </div>
-                        </div>
-                    )}
                 </Card>
             </div>
 
@@ -362,9 +328,6 @@ export function NewIntakeForm() {
                                         <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[8px] font-bold opacity-20">DA</span>
                                     </div>
                                 </div>
-                                <p className="text-[8px] text-muted-foreground/40 leading-relaxed italic border-l-2 border-primary/20 pl-3 uppercase tracking-tighter">
-                                    Le montant sera amorti sur le coût de revient unitaire.
-                                </p>
                             </div>
                         </div>
 
@@ -382,9 +345,7 @@ export function NewIntakeForm() {
                             </div>
                         </div>
 
-                        <div className="pt-8 space-y-4">
-                            <OcrInvoiceScanner onItemsExtracted={handleOcrExtracted} />
-                            
+                        <div className="pt-8">
                             <div className="relative group">
                                 <div className="absolute -inset-1.5 bg-primary/20 rounded-2xl blur-lg opacity-0 group-hover:opacity-100 transition duration-700"></div>
                                 <Button 
