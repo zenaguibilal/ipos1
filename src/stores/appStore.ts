@@ -12,6 +12,7 @@ import { supplierService }       from '@/services/supplier.service';
 import { productService }        from '@/services/product.service';
 import { customerService }       from '@/services/customer.service';
 import { supabaseSyncService }   from '@/services/supabase.service';
+import { preciseMultiply, safeNumber } from '@/lib/utils';
 
 interface AppState {
     companyProfile:          CompanyProfile | null;
@@ -253,6 +254,7 @@ export const useAppStore = create<AppState>()(
                                 db.products,
                                 db.suppliers,
                                 db.inventory_logs,
+                                db.company_profile
                             ],
                             async () => {
                                 const supplier =
@@ -261,31 +263,34 @@ export const useAppStore = create<AppState>()(
                                         intakeData.supplierUuid,
                                     );
 
-                                const itemsTotalValue = intakeData.items.reduce(
-                                    (sum, item) =>
-                                        sum + item.quantity * item.purchasePrice,
+                                // محرك حساب القيمة الإجمالية بالسنتيمات لضمان الدقة
+                                const itemsTotalValueCents = intakeData.items.reduce(
+                                    (sum, item) => sum + Math.round(preciseMultiply(item.quantity, item.purchasePrice) * 100),
                                     0,
                                 );
-                                const shippingFactor =
-                                    itemsTotalValue > 0
-                                        ? intakeData.shippingCost /
-                                          itemsTotalValue
-                                        : 0;
+                                
+                                const shippingCostCents = Math.round(safeNumber(intakeData.shippingCost) * 100);
+                                
+                                const shippingFactor = itemsTotalValueCents > 0
+                                    ? shippingCostCents / itemsTotalValueCents
+                                    : 0;
 
                                 const intakeUuid  = uuidv4();
                                 const finalItems: any[] = [];
 
                                 for (const item of intakeData.items) {
                                     let productUuid  = item.productUuid;
-                                    const landingCost =
-                                        item.purchasePrice * (1 + shippingFactor);
+                                    const costCents = Math.round(safeNumber(item.purchasePrice) * 100);
+                                    
+                                    // حساب تكلفة الربط (Landing Cost) بدقة عالية
+                                    const landingCost = (costCents * (1 + shippingFactor)) / 100;
 
                                     if (item.isNew) {
                                         const newProduct =
                                             await productService.addProduct({
                                                 name:          item.name,
                                                 category:      item.category,
-                                                price:         item.price,
+                                                price:         safeNumber(item.price),
                                                 purchasePrice: landingCost,
                                                 quantity:      0,
                                                 minStockLevel: 10,
@@ -295,10 +300,7 @@ export const useAppStore = create<AppState>()(
                                             });
                                         productUuid = newProduct.uuid;
                                     } else {
-                                        const p =
-                                            await inventoryService.getProductInfo(
-                                                productUuid!,
-                                            );
+                                        const p = await inventoryService.getProductInfo(productUuid!);
                                         if (p) {
                                             await productService.updateProduct(
                                                 p.uuid,
@@ -311,8 +313,7 @@ export const useAppStore = create<AppState>()(
                                     }
 
                                     if (productUuid) {
-                                        const qtyReceived =
-                                            item.quantity - item.quantityDamaged;
+                                        const qtyReceived = Number((safeNumber(item.quantity) - safeNumber(item.quantityDamaged)).toFixed(3));
                                         if (qtyReceived > 0) {
                                             await inventoryService.adjustStock(
                                                 productUuid,
@@ -324,13 +325,15 @@ export const useAppStore = create<AppState>()(
                                         finalItems.push({
                                             productUuid,
                                             productName:       item.name,
-                                            quantityReceived:  item.quantity,
-                                            quantityDamaged:   item.quantityDamaged,
-                                            purchasePrice:     item.purchasePrice,
+                                            quantityReceived:  safeNumber(item.quantity),
+                                            quantityDamaged:   safeNumber(item.quantityDamaged),
+                                            purchasePrice:     safeNumber(item.purchasePrice),
                                             landingCost,
                                         });
                                     }
                                 }
+
+                                const finalTotalValue = (itemsTotalValueCents + shippingCostCents) / 100;
 
                                 await db.stock_intakes.add({
                                     uuid:          intakeUuid,
@@ -339,15 +342,14 @@ export const useAppStore = create<AppState>()(
                                     invoiceDate:   intakeData.invoiceDate,
                                     shippingCost:  intakeData.shippingCost,
                                     items:         finalItems,
-                                    totalValue:
-                                        itemsTotalValue + intakeData.shippingCost,
-                                    createdAt: new Date(),
-                                    updatedAt: new Date(),
+                                    totalValue:    finalTotalValue,
+                                    createdAt:     new Date(),
+                                    updatedAt:     new Date(),
                                 });
 
                                 await supplierService.updateSupplierBalance(
                                     supplier.uuid,
-                                    itemsTotalValue + intakeData.shippingCost,
+                                    finalTotalValue,
                                 );
                             },
                         );
@@ -355,7 +357,8 @@ export const useAppStore = create<AppState>()(
                         toast.success('Réception de stock enregistrée.');
                         get().actions.triggerSmartSync();
                         return true;
-                    } catch {
+                    } catch (err: any) {
+                        console.error("Intake Error:", err);
                         toast.error('Échec de la réception de stock.');
                         return false;
                     }

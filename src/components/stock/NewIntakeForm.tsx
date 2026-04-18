@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Plus, Trash2, Save, ShoppingBag, Truck, FileText, Building, Hash, Loader2, PackagePlus, Calculator, Coins, Sparkles, AlertTriangle } from 'lucide-react';
+import { Plus, Trash2, Save, ShoppingBag, Truck, FileText, Building, Hash, Loader2, PackagePlus, Calculator, Coins, Sparkles, AlertTriangle, BadgePercent } from 'lucide-react';
 import { ProductIntakeCombobox } from './ProductIntakeCombobox';
 import { OcrInvoiceScanner, type OcrLineItem } from './OcrInvoiceScanner';
 import type { Product, StockIntakeItem } from '@/lib/types';
@@ -33,6 +33,10 @@ export function NewIntakeForm() {
         return items.reduce((sum, item) => sum + (safeNumber(item.quantity) * safeNumber(item.purchasePrice)), 0);
     }, [items]);
 
+    /**
+     * محرك حساب تكلفة الربط (Landing Cost) المتقدم.
+     * يوزع مصاريف النقل بناءً على قيمة الصنف في الفاتورة.
+     */
     const shippingFactor = useMemo(() => {
         return itemsTotalValue > 0 ? shippingCost / itemsTotalValue : 0;
     }, [itemsTotalValue, shippingCost]);
@@ -42,7 +46,9 @@ export function NewIntakeForm() {
     const handleAddProduct = (product: Product) => {
         const existing = items.find(i => i.productUuid === product.uuid);
         if (existing) {
-            toast.info(`"${product.name}" est déjà dans le manifeste.`);
+            toast.info(`"${product.name}" est déjà dans le manifeste.`, {
+                description: "Modifiez la quantité directement dans le tableau."
+            });
             return;
         }
 
@@ -77,7 +83,10 @@ export function NewIntakeForm() {
         setItems(prev => [newItem, ...prev]);
     };
 
-    const handleOcrExtracted = (ocrItems: OcrLineItem[]) => {
+    const handleOcrExtracted = (ocrItems: OcrLineItem[], metadata?: { supplierName?: string, invoiceNumber?: string }) => {
+        if (metadata?.supplierName && !supplierName) setSupplierName(metadata.supplierName);
+        if (metadata?.invoiceNumber && !invoiceNumber) setInvoiceNumber(metadata.invoiceNumber);
+
         const newItems: StockIntakeItem[] = ocrItems.map(ocr => ({
             id: uuidv4(),
             name: ocr.name,
@@ -103,15 +112,17 @@ export function NewIntakeForm() {
 
     const handleSave = async () => {
         if (!supplierName.trim()) {
-            toast.error("Veuillez identifier le fournisseur.");
+            toast.error("Veuillez identifier le partenaire fournisseur.");
             return;
         }
         if (items.length === 0) {
-            toast.error("Le manifeste est vide.");
+            toast.error("Le manifeste de flux est vide.");
             return;
         }
-        if (items.some(i => safeNumber(i.quantity) <= 0 || safeNumber(i.purchasePrice) < 0)) {
-            toast.error("Données invalides dans le tableau.");
+        
+        const invalidItems = items.filter(i => safeNumber(i.quantity) <= 0 || safeNumber(i.purchasePrice) < 0);
+        if (invalidItems.length > 0) {
+            toast.error(`Données invalides : ${invalidItems.length} article(s) ont des erreurs.`);
             return;
         }
 
@@ -119,7 +130,7 @@ export function NewIntakeForm() {
         try {
             const success = await processStockIntake({
                 supplierName: supplierName.trim(),
-                invoiceNumber: invoiceNumber.trim() || `INT-${Date.now().toString().slice(-6)}`,
+                invoiceNumber: invoiceNumber.trim() || `ELITE-${Date.now().toString().slice(-6)}`,
                 invoiceDate: invoiceDate || new Date(),
                 shippingCost,
                 items,
@@ -127,11 +138,11 @@ export function NewIntakeForm() {
             });
 
             if (success) {
-                toast.success("Manifeste validé avec succès.");
+                toast.success("Manifeste validé. Stock et comptes mis à jour.");
                 router.push('/stock');
             }
         } catch (error: any) {
-            toast.error("Erreur de validation.");
+            toast.error("Échec critique de validation.");
         } finally {
             setIsSaving(false);
         }
@@ -156,7 +167,7 @@ export function NewIntakeForm() {
                             <div className="p-2.5 rounded-xl bg-primary text-primary-foreground shadow-sm">
                                 <ShoppingBag className="h-5 w-5" />
                             </div>
-                            <CardTitle className="text-lg font-black tracking-tighter">Manifeste de Flux Entrants</CardTitle>
+                            <CardTitle className="text-lg font-black tracking-tighter uppercase">Manifeste de Flux Entrants</CardTitle>
                         </div>
                         <div className="max-w-md flex-grow">
                             <ProductIntakeCombobox 
@@ -170,11 +181,11 @@ export function NewIntakeForm() {
                             <Table>
                                 <TableHeader className="bg-black/20 border-none">
                                     <TableRow className="border-white/5">
-                                        <TableHead className="font-black text-[10px] uppercase text-muted-foreground/60 p-4">Désignation</TableHead>
+                                        <TableHead className="font-black text-[10px] uppercase text-muted-foreground/60 p-4">Désignation Produit</TableHead>
                                         <TableHead className="font-black text-[10px] uppercase text-muted-foreground/60 text-center">Qté Flux</TableHead>
                                         <TableHead className="font-black text-[10px] uppercase text-muted-foreground/60 text-right">P. Achat HT</TableHead>
                                         <TableHead className="font-black text-[10px] uppercase text-primary/60 text-right">C. Revient</TableHead>
-                                        <TableHead className="font-black text-[10px] uppercase text-muted-foreground/60 text-right">P. Vente Elite</TableHead>
+                                        <TableHead className="font-black text-[10px] uppercase text-emerald-500/60 text-right">Prix Public</TableHead>
                                         <TableHead className="font-black text-[10px] uppercase text-muted-foreground/60 text-right">Total HT</TableHead>
                                         <TableHead className="w-[50px]"></TableHead>
                                     </TableRow>
@@ -182,12 +193,12 @@ export function NewIntakeForm() {
                                 <TableBody>
                                     {items.length === 0 ? (
                                         <TableRow>
-                                            <TableCell colSpan={7} className="h-80 text-center p-6 opacity-20">
+                                            <TableCell colSpan={7} className="h-96 text-center p-6 opacity-20">
                                                 <div className="flex flex-col items-center justify-center gap-6">
-                                                    <div className="p-6 rounded-3xl bg-muted/20 border-2 border-dashed border-white/10">
+                                                    <div className="p-8 rounded-3xl bg-muted/20 border-2 border-dashed border-white/10">
                                                         <PackagePlus className="h-16 w-16" />
                                                     </div>
-                                                    <p className="text-[10px] font-black uppercase tracking-[0.3em]">Scannez ou sélectionnez des flux pour alimenter le manifeste</p>
+                                                    <p className="text-[10px] font-black uppercase tracking-[0.3em]">Scannez أو ابحث عن السلع لبدء الاستلام</p>
                                                 </div>
                                             </TableCell>
                                         </TableRow>
@@ -238,7 +249,9 @@ export function NewIntakeForm() {
                                                     <TableCell className="p-4 text-right">
                                                         <div className="flex flex-col items-end">
                                                             <span className="font-mono text-xs font-black text-primary tracking-tighter">{landingCost.toFixed(2)}</span>
-                                                            <span className="text-[7px] text-muted-foreground/30 font-black uppercase tracking-tighter">PRÉVISIONNEL</span>
+                                                            <div className="flex items-center gap-1 text-[7px] text-muted-foreground/30 font-black uppercase tracking-tighter">
+                                                                <BadgePercent className="h-2 w-2" /> AMORTI
+                                                            </div>
                                                         </div>
                                                     </TableCell>
                                                     <TableCell className="p-4 text-right">
@@ -255,11 +268,15 @@ export function NewIntakeForm() {
                                                             <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[8px] font-bold text-emerald-500/40">DA</span>
                                                         </div>
                                                     </TableCell>
-                                                    <TableCell className="p-4 text-right font-mono font-black text-sm tracking-tighter">
+                                                    <TableCell className="p-4 text-right font-mono font-black text-sm tracking-tighter tabular-nums">
                                                         {formatCurrency(rowTotal)}
                                                     </TableCell>
-                                                    <TableCell className="p-4">
-                                                        <button onClick={() => removeItem(item.id)} className="text-destructive/20 hover:text-destructive transition-all hover:scale-110">
+                                                    <TableCell className="p-4 text-center">
+                                                        <button 
+                                                            onClick={() => removeItem(item.id)} 
+                                                            className="text-destructive/20 hover:text-destructive transition-all hover:scale-125 active:scale-90"
+                                                            title="Révoquer ligne"
+                                                        >
                                                             <Trash2 className="h-4 w-4" />
                                                         </button>
                                                     </TableCell>
@@ -271,6 +288,17 @@ export function NewIntakeForm() {
                             </Table>
                         </div>
                     </CardContent>
+                    {items.length > 0 && (
+                        <div className="p-4 bg-muted/10 border-t border-white/5 flex justify-between items-center">
+                            <span className="text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground/40">{items.length} flux détectés dans ce manifeste</span>
+                            <div className="flex items-center gap-6">
+                                <div className="text-right">
+                                    <p className="text-[8px] font-black uppercase text-muted-foreground/30 mb-0.5">Valeur Brute</p>
+                                    <p className="font-bold text-sm tracking-tight">{formatCurrency(itemsTotalValue)}</p>
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </Card>
             </div>
 
@@ -278,17 +306,17 @@ export function NewIntakeForm() {
                 <Card className="app-card rounded-lg border-white/5 bg-card/40 backdrop-blur-sm overflow-hidden sticky top-24 shadow-xl">
                     <CardHeader className="bg-primary/5 border-b border-white/5 p-4">
                         <CardTitle className="text-xs font-black uppercase tracking-[0.2em] text-primary/60 flex items-center gap-2">
-                            <Sparkles className="h-3.5 w-3.5" /> Synthèse Élite
+                            <Sparkles className="h-3.5 w-3.5" /> Synthèse Logistique
                         </CardTitle>
                     </CardHeader>
                     <CardContent className="p-6 space-y-6">
                         <div className="space-y-6">
                             <div className="space-y-2">
-                                <Label className="text-[10px] font-black uppercase text-muted-foreground/60 ml-1 tracking-widest">Partenaire Fournisseur *</Label>
+                                <Label className="text-[10px] font-black uppercase text-muted-foreground/60 ml-1 tracking-widest">Établissement Fournisseur *</Label>
                                 <div className="relative group">
                                     <Building className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 opacity-20 group-focus-within:text-primary transition-all duration-500" />
                                     <Input 
-                                        placeholder="Établissement source..." 
+                                        placeholder="Identification source..." 
                                         className="pl-11 h-12 rounded-xl bg-black/20 border-none shadow-inner font-black focus-visible:ring-primary/20"
                                         value={supplierName}
                                         onChange={e => setSupplierName(e.target.value)}
@@ -298,7 +326,7 @@ export function NewIntakeForm() {
 
                             <div className="space-y-4 p-4 bg-muted/20 rounded-2xl border border-white/5 shadow-inner">
                                 <div className="space-y-2">
-                                    <Label className="text-[9px] font-black uppercase text-muted-foreground/40 ml-1 tracking-widest">Référence Facture</Label>
+                                    <Label className="text-[9px] font-black uppercase text-muted-foreground/40 ml-1 tracking-widest">Réf. Facture / BL</Label>
                                     <div className="relative">
                                         <Hash className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 opacity-20" />
                                         <Input 
@@ -310,7 +338,7 @@ export function NewIntakeForm() {
                                     </div>
                                 </div>
                                 <div className="space-y-2">
-                                    <Label className="text-[9px] font-black uppercase text-muted-foreground/40 ml-1 tracking-widest">Date Émission</Label>
+                                    <Label className="text-[9px] font-black uppercase text-muted-foreground/40 ml-1 tracking-widest">Date de Flux</Label>
                                     <DatePicker date={invoiceDate} setDate={setInvoiceDate} />
                                 </div>
                             </div>
@@ -319,7 +347,7 @@ export function NewIntakeForm() {
                                 <Truck className="absolute -right-4 -top-4 h-20 w-20 opacity-[0.03] group-hover/shipping:opacity-10 transition-opacity" />
                                 <div className="flex items-center justify-between relative z-10">
                                     <Label className="text-[10px] font-black uppercase text-primary/60 flex items-center gap-2">
-                                        <Truck className="h-3.5 w-3.5" /> Logistique / Transport
+                                        <Truck className="h-3.5 w-3.5" /> Transport & Logistique
                                     </Label>
                                     <div className="relative">
                                         <Input 
@@ -335,20 +363,20 @@ export function NewIntakeForm() {
                                     </div>
                                 </div>
                                 <p className="text-[8px] text-muted-foreground/40 leading-relaxed italic border-l-2 border-primary/20 pl-3 uppercase tracking-tighter">
-                                    Amortissement automatique sur le coût de revient.
+                                    Le montant sera amorti sur le coût de revient unitaire.
                                 </p>
                             </div>
                         </div>
 
                         <div className="pt-8 border-t border-white/5 space-y-4">
                             <div className="flex justify-between items-center text-xs font-black uppercase text-muted-foreground/40 tracking-widest">
-                                <span>Valorisation HT</span>
+                                <span>Valorisation Marchande</span>
                                 <span className="font-mono text-foreground font-black tabular-nums">{formatCurrency(itemsTotalValue)}</span>
                             </div>
                             <div className="flex justify-between items-end pt-6 bg-black/40 p-5 rounded-2xl border border-white/5 shadow-inner">
                                 <div className="flex flex-col">
-                                    <span className="text-[10px] font-black uppercase tracking-widest text-primary">Dette Fournisseur</span>
-                                    <span className="text-[8px] font-bold text-muted-foreground/30">Facture Net à Payer</span>
+                                    <span className="text-[10px] font-black uppercase tracking-widest text-primary">Solde Dû Partenaire</span>
+                                    <span className="text-[8px] font-bold text-muted-foreground/30">Total Net à Payer</span>
                                 </div>
                                 <span className="text-3xl font-black text-primary tracking-tighter tabular-nums">{formatCurrency(totalValue)}</span>
                             </div>
@@ -356,16 +384,25 @@ export function NewIntakeForm() {
 
                         <div className="pt-8 space-y-4">
                             <OcrInvoiceScanner onItemsExtracted={handleOcrExtracted} />
-                            <Button 
-                                onClick={handleSave} 
-                                disabled={isSubmitting || items.length === 0}
-                                className="w-full h-16 rounded-2xl font-black text-xl uppercase tracking-widest shadow-2xl shadow-primary/20 transition-all active:scale-[0.98] gap-3"
-                            >
-                                {isSubmitting ? <Loader2 className="h-6 w-6 animate-spin" /> : <Save className="h-6 w-6" />}
-                                Valider Flux [Enter]
-                            </Button>
+                            
+                            <div className="relative group">
+                                <div className="absolute -inset-1.5 bg-primary/20 rounded-2xl blur-lg opacity-0 group-hover:opacity-100 transition duration-700"></div>
+                                <Button 
+                                    onClick={handleSave} 
+                                    disabled={isSubmitting || items.length === 0}
+                                    className="relative w-full h-16 rounded-2xl font-black text-xl uppercase tracking-widest shadow-2xl transition-all active:scale-[0.98] gap-3"
+                                >
+                                    {isSubmitting ? <Loader2 className="h-6 w-6 animate-spin" /> : <Save className="h-6 w-6" />}
+                                    Valider Manifeste [Enter]
+                                </Button>
+                            </div>
                         </div>
                     </CardContent>
+                    <div className="p-4 bg-muted/5 text-center">
+                        <p className="text-[8px] font-black uppercase text-muted-foreground/30 flex items-center justify-center gap-2">
+                             <Calculator className="h-2.5 w-2.5" /> Précision Élite v2.4 Actif
+                        </p>
+                    </div>
                 </Card>
             </div>
         </div>
