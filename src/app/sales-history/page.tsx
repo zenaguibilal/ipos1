@@ -41,11 +41,9 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuCheckboxItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { toast } from 'sonner';
 import { cn, formatCurrency, safeToDate, safeNumber } from '@/lib/utils';
-import { Checkbox } from '@/components/ui/checkbox';
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
 import { format, parseISO, startOfDay, endOfDay } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import Papa from 'papaparse';
 import { useAppStore } from '@/stores/appStore';
 import { ConfirmAlertDialog } from '@/components/ui/ConfirmAlertDialog';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
@@ -55,7 +53,7 @@ import { Badge } from '@/components/ui/badge';
 
 type SalesStatus = 'all' | 'paid' | 'partial' | 'unpaid';
 
-// النوع الموحد للسجل
+// Type unifié pour le registre (Ventes et Paiements)
 export type HistoryItem = 
     | { type: 'sale'; data: Sale; date: Date }
     | { type: 'payment'; data: Payment; date: Date };
@@ -85,7 +83,7 @@ export default function SalesHistoryPage() {
     const [isPrintOpen, setIsPrintOpen] = useState(false);
     const [isBulkCancelConfirmOpen, setIsBulkCancelConfirmOpen] = useState(false);
 
-    // المورد الموحد للبيانات (مبيعات + تسديدات)
+    // Source de données unifiée (Ventes + Règlements de dettes)
     const historyData = useLiveQuery(async () => {
         if (!isMounted) return undefined;
 
@@ -96,17 +94,17 @@ export default function SalesHistoryPage() {
             to: dateRange?.to
         };
 
-        // 1. جلب المبيعات
+        // 1. Récupération des ventes
         const sales = await salesService.filterSales(filters);
 
-        // 2. جلب التسديدات (Paiements)
+        // 2. Récupération des paiements autonomes (Encaissements de dettes)
         let paymentsQuery = db.payments.toCollection();
         if (dateRange?.from) {
             paymentsQuery = db.payments.where('paymentDate').between(startOfDay(dateRange.from), endOfDay(dateRange.to || new Date()), true, true);
         }
         const rawPayments = await paymentsQuery.toArray();
 
-        // 3. فلترة التسديدات حسب البحث (اسم الزبون)
+        // 3. Filtrage des paiements par recherche (nom client)
         let filteredPayments = rawPayments;
         if (debouncedSearchQuery) {
             const q = debouncedSearchQuery.toLowerCase().trim();
@@ -119,12 +117,12 @@ export default function SalesHistoryPage() {
             filteredPayments = rawPayments.filter(p => matchingCustomerUuids.has(p.customerUuid));
         }
 
-        // إذا كان هناك فلتر للحالة (دائن/مدين)، قد نرغب في إخفاء التسديدات لأنها دائماً "مدفوعة"
+        // Si filtre par statut, les paiements ne sont affichés que pour 'all' ou 'paid'
         if (filterStatus !== 'all' && filterStatus !== 'paid') {
             filteredPayments = [];
         }
 
-        // دمج البيانات
+        // Fusion et tri chronologique
         const combined: HistoryItem[] = [
             ...sales.map(s => ({ type: 'sale' as const, data: s, date: safeToDate(s.createdAt!) })),
             ...filteredPayments.map(p => ({ type: 'payment' as const, data: p, date: safeToDate(p.paymentDate) }))
@@ -138,7 +136,7 @@ export default function SalesHistoryPage() {
 
     const isLoading = historyData === undefined || !isMounted;
 
-    // الإحصائيات الذكية
+    // Statistiques intelligentes (Bilan des Flux)
     const stats = useMemo(() => {
         if (!historyData) return { totalRevenue: 0, totalReceived: 0, totalDebt: 0, count: 0 };
         
@@ -152,7 +150,7 @@ export default function SalesHistoryPage() {
                 receivedCents += Math.round(safeNumber(item.data.amountPaid) * 100);
                 saleCount++;
             } else {
-                // التسديدات تزيد فقط من المقبوضات ولا تزيد من رقم الأعمال (لأنها سداد لدين قديم)
+                // Les règlements augmentent uniquement les encaissements sans impacter le chiffre d'affaires
                 receivedCents += Math.round(safeNumber(item.data.amount) * 100);
             }
         });
@@ -205,7 +203,7 @@ export default function SalesHistoryPage() {
     const handleSelectAll = () => {
         if (!historyData) return;
         if (selectedItems.size === historyData.length) setSelectedItems(new Set());
-        else setSelectedItems(new Set(historyData.map(item => item.type === 'sale' ? item.data.uuid : item.data.uuid)));
+        else setSelectedItems(new Set(historyData.map(item => item.data.uuid)));
     };
 
     const handleBulkCancel = async () => {
@@ -213,12 +211,12 @@ export default function SalesHistoryPage() {
         let successCount = 0;
         for (const uuid of uuids) {
             try { 
-                // نلغي المبيعات فقط حالياً في هذا الإجراء الجماعي
+                // Seules les ventes peuvent être annulées via cette action groupée
                 await salesService.processSaleCancellation(uuid); 
                 successCount++; 
             } catch (e) {}
         }
-        if (successCount > 0) toast.success(`${successCount} عمليات تم إلغاؤها.`);
+        if (successCount > 0) toast.success(`${successCount} opération(s) annulée(s).`);
         setSelectedItems(new Set());
     };
 
@@ -229,7 +227,7 @@ export default function SalesHistoryPage() {
     };
 
     useKeyboardShortcuts([
-        { key: 'F3', action: () => searchInputRef.current?.focus(), description: 'Rechercher', ignoreInputFocus: true }
+        { key: 'F3', action: () => searchInputRef.current?.focus(), description: 'Rechercher un flux', ignoreInputFocus: true }
     ], 'Historique');
 
     const isFiltered = searchQuery !== '' || filterStatus !== 'all' || !!dateRange?.from;
@@ -257,17 +255,17 @@ export default function SalesHistoryPage() {
                     <Card className="app-card rounded-lg bg-card/40 backdrop-blur-sm border-white/5 overflow-hidden shadow-sm">
                         <CardHeader className="bg-primary/5 border-b border-white/5 p-6">
                             <CardTitle className="text-[10px] font-black uppercase text-primary flex items-center gap-2 tracking-widest">
-                                <Sparkles className="h-3.5 w-3.5" /> Bilan des Flux
+                                <Sparkles className="h-3.5 w-3.5" /> Bilan de Période
                             </CardTitle>
                         </CardHeader>
                         <CardContent className="p-6 space-y-6">
                             <div className="space-y-1">
-                                <p className="text-[10px] font-semibold text-muted-foreground/40 uppercase">Ventes de la Période</p>
+                                <p className="text-[10px] font-semibold text-muted-foreground/40 uppercase">Chiffre d'Affaires</p>
                                 <p className="text-3xl font-black tracking-tighter text-primary tabular-nums">{formatCurrency(stats.totalRevenue)}</p>
                             </div>
                             <div className="grid grid-cols-1 gap-3 pt-2">
                                 <div className="p-4 rounded-2xl bg-emerald-500/5 border border-emerald-500/10 shadow-inner group hover:bg-emerald-500/10 transition-all">
-                                    <p className="text-[9px] font-semibold uppercase text-emerald-600 mb-1">Total Encaissé (Ventes + Dettes)</p>
+                                    <p className="text-[9px] font-semibold uppercase text-emerald-600 mb-1">Total Encaissé (Revenu + Dettes)</p>
                                     <p className="font-bold text-xl text-emerald-600 tracking-tight tabular-nums">{formatCurrency(stats.totalReceived)}</p>
                                 </div>
                                 <div className="p-4 rounded-2xl bg-destructive/5 border border-destructive/10 shadow-inner group hover:bg-destructive/10 transition-all">
@@ -284,16 +282,16 @@ export default function SalesHistoryPage() {
                             <Input ref={searchInputRef} placeholder="Chercher un flux... [F3]" className="pl-11 h-12 rounded-xl bg-black/20 border-none shadow-inner font-bold text-lg" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
                         </div>
                         <div className="space-y-4">
-                            <Label className="text-[10px] font-black uppercase text-muted-foreground/40 ml-1">Filtrer les Ventes</Label>
+                            <Label className="text-[10px] font-black uppercase text-muted-foreground/40 ml-1">Statut des Ventes</Label>
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
                                     <Button variant="outline" className="w-full justify-between rounded-xl h-12 bg-black/20 border-white/5 text-xs font-semibold uppercase">
-                                        <div className="flex items-center gap-3"><Banknote className="h-4 w-4 text-primary" />{filterStatus === 'all' ? 'Toutes les ventes' : filterStatus === 'paid' ? 'Payées' : filterStatus === 'partial' ? 'Partielles' : 'Dettes'}</div>
+                                        <div className="flex items-center gap-3"><Banknote className="h-4 w-4 text-primary" />{filterStatus === 'all' ? 'Tous les flux' : filterStatus === 'paid' ? 'Soldés' : filterStatus === 'partial' ? 'Partiels' : 'À crédit'}</div>
                                         <ChevronRight className="h-3 w-3 opacity-30" />
                                     </Button>
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent className="w-[240px] rounded-2xl border-white/10 bg-card/95 backdrop-blur-md shadow-2xl">
-                                    <DropdownMenuCheckboxItem className="p-3 font-bold" checked={filterStatus === 'all'} onCheckedChange={() => setFilterStatus('all')}>Toutes les factures</DropdownMenuCheckboxItem>
+                                    <DropdownMenuCheckboxItem className="p-3 font-bold" checked={filterStatus === 'all'} onCheckedChange={() => setFilterStatus('all')}>Tous les flux</DropdownMenuCheckboxItem>
                                     <DropdownMenuCheckboxItem className="p-3 font-bold" checked={filterStatus === 'paid'} onCheckedChange={() => setFilterStatus('paid')}>Règlements complets</DropdownMenuCheckboxItem>
                                     <DropdownMenuCheckboxItem className="p-3 font-bold" checked={filterStatus === 'partial'} onCheckedChange={() => setFilterStatus('partial')}>Paiements partiels</DropdownMenuCheckboxItem>
                                     <DropdownMenuCheckboxItem className="p-3 font-bold" checked={filterStatus === 'unpaid'} onCheckedChange={() => setFilterStatus('unpaid')}>Dettes totales</DropdownMenuCheckboxItem>
@@ -314,8 +312,8 @@ export default function SalesHistoryPage() {
                             <div className="flex items-center gap-4">
                                 <div className="p-3 rounded-2xl bg-primary text-primary-foreground shadow-sm"><TrendingUp className="h-6 w-6" /></div>
                                 <div>
-                                    <CardTitle className="text-xl font-bold tracking-tighter uppercase"> نبض السيولة (Liquidité)</CardTitle>
-                                    <p className="text-[10px] font-semibold uppercase text-primary/50 tracking-widest">Variation des revenus et des remboursements</p>
+                                    <CardTitle className="text-xl font-bold tracking-tighter uppercase">Flux de Liquidité</CardTitle>
+                                    <p className="text-[10px] font-semibold uppercase text-primary/50 tracking-widest">Variation des revenus et des remboursements de dettes</p>
                                 </div>
                             </div>
                             <div className="flex items-center gap-1.5 p-1.5 bg-black/20 rounded-lg border border-white/5 shadow-inner">
@@ -422,7 +420,7 @@ export default function SalesHistoryPage() {
                 <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 animate-in slide-in-from-bottom-10 duration-500">
                     <div className="bg-card/80 backdrop-blur-sm border-2 border-primary/20 shadow-2xl rounded-full px-8 py-4 flex items-center gap-4">
                         <div className="flex items-center gap-4 pr-8 border-r border-white/10"><div className="h-10 w-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-black">{selectedItems.size}</div><span className="text-[10px] font-black uppercase text-muted-foreground">Sélections</span></div>
-                        <Button variant="ghost" onClick={() => setIsBulkCancelConfirmOpen(true)} className="rounded-full h-12 px-6 font-black text-[10px] uppercase text-destructive hover:bg-destructive/10 transition-all"><Trash2 className="mr-2 h-4 w-4" /> Annuler Ventes</Button>
+                        <Button variant="ghost" onClick={() => setIsBulkCancelConfirmOpen(true)} className="rounded-full h-12 px-6 font-black text-[10px] uppercase text-destructive hover:bg-destructive/10 transition-all"><Trash2 className="mr-2 h-4 w-4" /> Annuler Flux</Button>
                         <Button variant="ghost" size="icon" onClick={() => setSelectedItems(new Set())} className="rounded-full h-12 w-12 hover:bg-white/5"><X className="h-4 w-4" /></Button>
                     </div>
                 </div>
@@ -431,7 +429,7 @@ export default function SalesHistoryPage() {
             <SaleDetailsDialog isOpen={isDetailsOpen} onOpenChange={setIsDetailsOpen} sale={selectedSale} />
             <CancelSaleDialog isOpen={isCancelOpen} onOpenChange={setIsCancelOpen} sale={selectedSale} onSuccess={() => setSelectedItems(new Set())} />
             <PrintReceiptDialog isOpen={isPrintOpen} onOpenChange={setIsPrintOpen} sale={selectedSale} customerName={selectedSale?.customerUuid ? (customerMap.get(selectedSale.customerUuid) ? `${customerMap.get(selectedSale.customerUuid)?.firstName} ${customerMap.get(selectedSale.customerUuid)?.lastName}` : undefined) : 'Client de passage'} />
-            <ConfirmAlertDialog isOpen={isBulkCancelConfirmOpen} onOpenChange={setIsBulkCancelConfirmOpen} title={`Annuler ${selectedItems.size} transactions ?`} description="Opération définitive : réintégration du stock et ajustement des soldes clients." onConfirm={handleBulkCancel} confirmText="Confirmer Annulation" />
+            <ConfirmAlertDialog isOpen={isBulkCancelConfirmOpen} onOpenChange={setIsBulkCancelConfirmOpen} title={`Annuler ${selectedItems.size} opérations ?`} description="Action définitive : réintégration du stock et ajustement des soldes clients." onConfirm={handleBulkCancel} confirmText="Confirmer Annulation" />
         </div>
     );
 }

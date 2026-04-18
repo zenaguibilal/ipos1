@@ -14,10 +14,10 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { toast } from 'sonner';
 
 const SUPABASE_SQL_SCRIPT = `-- ══════════════════════════════════════════════════════════
--- iPOS Zen — Schéma Cloud Elite (Vérifié v2.0.1)
+-- iPOS Zen — Schéma Cloud Elite (Certifié v2.0.1)
 -- ══════════════════════════════════════════════════════════
 -- Ce script initialise votre coffre-fort Cloud avec une précision
--- absolue conforme à la réglementation en vigueur.
+-- absolue conforme aux standards de l'application.
 
 -- 0. PRÉREQUIS : Extension pour les UUID
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
@@ -34,12 +34,12 @@ CREATE TABLE IF NOT EXISTS company_profile (
     email                 TEXT,
     website               TEXT,
     logo_url              TEXT,
-    -- Champs fiscaux
+    -- Champs administratifs & fiscaux
     rc_number             TEXT,   -- Registre de Commerce
     nif                   TEXT,   -- Numéro d'Identification Fiscale
     ai_number             TEXT,   -- Article d'Imposition
     nis_number            TEXT,   -- Numéro Statistique
-    legal_form            TEXT,   -- SARL, EURL, SNC, EI, etc.
+    legal_form            TEXT,   -- Forme juridique
     tva_rate              SMALLINT DEFAULT 19 CHECK (tva_rate IN (0, 9, 19)),
     is_tva_exempt         BOOLEAN DEFAULT false,
     tva_exempt_reason     TEXT,
