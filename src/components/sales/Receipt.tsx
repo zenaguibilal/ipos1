@@ -32,6 +32,9 @@ interface DeliveryNoteData {
   amountInWords: string;
 }
 
+/**
+ * Convertit un nombre en lettres françaises (Optimisé pour iPOS Elite).
+ */
 function numberToWordsFR(n: number): string {
   const intPart = Math.floor(Math.abs(n));
   const decPart = Math.round((Math.abs(n) - intPart) * 100);
@@ -146,7 +149,7 @@ export const Receipt = React.forwardRef<HTMLDivElement, ReceiptProps>(
           <table className="w-full text-left text-[8pt] mb-4 border-collapse">
             <thead className="table-header-group">
               <tr className="border-b border-black">
-                <th className="text-left py-1">Designation</th>
+                <th className="text-left py-1">Désignation</th>
                 <th className="text-center py-1">Qté</th>
                 <th className="text-right py-1">Total</th>
               </tr>
@@ -164,13 +167,13 @@ export const Receipt = React.forwardRef<HTMLDivElement, ReceiptProps>(
           <div className="border-t border-black my-2" />
           <div className="space-y-1 font-bold">
             <div className="flex justify-between"><span>TOTAL FACTURE:</span><span>{formatNum(docData.grandTotal)} DA</span></div>
-            {docData.oldBalance > 0.01 && <div className="flex justify-between font-normal text-[8pt]"><span>ANCIEN SOLDE:</span><span>{formatNum(docData.oldBalance)} DA</span></div>}
+            {Math.abs(docData.oldBalance) > 0.01 && <div className="flex justify-between font-normal text-[8pt]"><span>ANCIEN SOLDE:</span><span>{formatNum(docData.oldBalance)} DA</span></div>}
             <div className="flex justify-between text-emerald-700"><span>VERSEMENT:</span><span>-{formatNum(docData.payment)} DA</span></div>
-            <div className="flex justify-between border-t border-black pt-2 text-[10pt]"><span>NET A PAYER:</span><span>{formatNum(docData.newBalance)} DA</span></div>
+            <div className="flex justify-between border-t border-black pt-2 text-[10pt]"><span>NET À PAYER:</span><span>{formatNum(docData.newBalance)} DA</span></div>
           </div>
           <footer className="text-center mt-8 pt-4 border-t border-dashed border-gray-400">
-            <p className="font-bold uppercase">Merci de votre confiance !</p>
-            <p className="text-[7pt] opacity-50 mt-1">iPOS Zen Elite</p>
+            <p className="font-bold uppercase">Merci de votre visite !</p>
+            <p className="text-[7pt] opacity-50 mt-1">iPOS Zen Elite System</p>
           </footer>
         </div>
       );
@@ -190,7 +193,7 @@ export const Receipt = React.forwardRef<HTMLDivElement, ReceiptProps>(
               <h2 className="text-3xl font-black text-blue-600 uppercase tracking-tighter">Bon de Livraison</h2>
               <div className="mt-4 text-right">
                 <p className="font-mono font-bold text-lg">N° : {docData.docNumber}</p>
-                <p className="text-sm font-bold text-gray-500 uppercase">Date : {docData.date.split(' ')[0]}</p>
+                <p className="text-sm font-bold text-gray-500 uppercase">Émis le : {docData.date.split(' ')[0]}</p>
               </div>
             </div>
           </div>
@@ -205,7 +208,7 @@ export const Receipt = React.forwardRef<HTMLDivElement, ReceiptProps>(
             <div className="col-span-5 grid grid-cols-2 gap-3">
               {[
                 { label: 'Mode paiement', val: docData.paymentMode },
-                { label: 'Date livraison', val: docData.date.split(' ')[0] },
+                { label: 'Agent', val: docData.seller },
               ].map((box, i) => (
                 <div key={i} className="border border-gray-200 p-4 rounded-2xl bg-gray-50/50">
                   <span className="text-[8px] font-black uppercase text-gray-400 tracking-wider block mb-1">{box.label}</span>
@@ -215,7 +218,7 @@ export const Receipt = React.forwardRef<HTMLDivElement, ReceiptProps>(
             </div>
           </div>
 
-          {/* Table - Optimized for Multi-page */}
+          {/* Table */}
           <div className="mb-10">
             <table className="w-full border-collapse">
               <thead className="table-header-group">
@@ -246,40 +249,45 @@ export const Receipt = React.forwardRef<HTMLDivElement, ReceiptProps>(
             <div className="grid grid-cols-2 gap-12 items-start">
                 <div className="space-y-10">
                 <div className="bg-gray-50 p-6 rounded-2xl border border-gray-100">
-                    <p className="text-[10px] font-black uppercase text-gray-400 mb-2 tracking-widest">Arrêté à la somme de :</p>
+                    <p className="text-[10px] font-black uppercase text-gray-400 mb-2 tracking-widest">Arrêté la présente facture à la somme de :</p>
                     <p className="text-sm font-black italic text-gray-800 leading-relaxed uppercase">
                     {docData.amountInWords}
                     </p>
                 </div>
-                <p className="text-[10px] font-black uppercase text-gray-300 tracking-[0.2em] border-t border-dashed pt-4">Visa & Signature Client</p>
+                <div className="flex justify-between items-start pt-4 border-t border-dashed border-gray-200">
+                  <p className="text-[9px] font-black uppercase text-gray-400 tracking-widest">Visa Établissement</p>
+                  <p className="text-[9px] font-black uppercase text-gray-400 tracking-widest">Signature Client</p>
+                </div>
                 </div>
 
                 <div className="space-y-2">
                 <div className="flex justify-between px-4 py-2 text-sm font-bold text-gray-500">
-                    <span>Quantité Totale</span>
+                    <span>Articles (Qté Totale)</span>
                     <span className="font-mono text-[#111827]">{docData.totalQty}</span>
                 </div>
                 <div className="flex justify-between px-4 py-2 text-sm font-bold text-[#111827] border-b border-gray-100">
                     <span>Montant Facture</span>
                     <span className="font-mono">{formatNum(docData.grandTotal)} DA</span>
                 </div>
-                <div className="flex justify-between px-4 py-2 text-sm font-bold text-gray-500">
-                    <span>Ancien solde</span>
-                    <span className="font-mono text-[#111827]">{formatNum(docData.oldBalance)} DA</span>
-                </div>
+                {Math.abs(docData.oldBalance) > 0.01 && (
+                  <div className="flex justify-between px-4 py-2 text-sm font-bold text-gray-500">
+                      <span>Ancien Solde Client</span>
+                      <span className="font-mono text-[#111827]">{formatNum(docData.oldBalance)} DA</span>
+                  </div>
+                )}
                 <div className="flex justify-between px-4 py-2 text-sm font-bold text-emerald-600">
-                    <span>Versement Effectué</span>
+                    <span>Versement / Paiement</span>
                     <span className="font-mono">-{formatNum(docData.payment)} DA</span>
                 </div>
-                <div className="bg-[#111827] text-white p-6 rounded-2xl flex justify-between items-center mt-6">
-                    <span className="text-xs font-black uppercase tracking-widest opacity-60">TOTAL NET DU (DA)</span>
+                <div className="bg-[#111827] text-white p-6 rounded-2xl flex justify-between items-center mt-6 shadow-xl">
+                    <span className="text-xs font-black uppercase tracking-widest opacity-60">NET À PAYER (DA)</span>
                     <span className="text-3xl font-black font-mono tracking-tighter">{formatNum(docData.newBalance)}</span>
                 </div>
                 </div>
             </div>
 
             <footer className="mt-12 pt-8 border-t border-gray-100 flex justify-between items-center text-[8px] font-bold text-gray-300 uppercase tracking-[0.3em]">
-                <span>{docData.companyName} — ELITE POS SYSTEM</span>
+                <span>{docData.companyName} — IPOS ELITE SYSTEM</span>
                 <span>Généré par iPOS ZEN — {format(new Date(), 'dd/MM/yyyy HH:mm', { locale: fr })}</span>
             </footer>
           </div>

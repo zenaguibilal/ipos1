@@ -4,7 +4,7 @@ import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Receipt } from './Receipt';
-import { Printer, X, FileText, Smartphone, MessageCircle, Loader2, Download } from 'lucide-react';
+import { Printer, X, FileText, Smartphone, MessageCircle, Loader2, Download, ShieldCheck } from 'lucide-react';
 import type { Sale, Customer } from '@/lib/types';
 import { useAppStore } from '@/stores/appStore';
 import { Switch } from '@/components/ui/switch';
@@ -31,8 +31,10 @@ export function PrintReceiptDialog({
     const [isGenerating, setIsGenerating] = useState(false);
     const [customer, setCustomer] = useState<Customer | null>(null);
     
+    // Moteur de calcul du solde antérieur pour le document
     const oldBalance = useMemo(() => {
         if (!customer || !sale) return 0;
+        // Le solde actuel en DB inclut déjà cette vente (si elle a été traitée)
         const currentDebtOfThisSale = Math.max(0, sale.total - sale.amountPaid);
         const balanceBeforeThisSale = (customer.outstandingBalance || 0) - currentDebtOfThisSale;
         return Math.max(0, balanceBeforeThisSale);
@@ -44,7 +46,7 @@ export function PrintReceiptDialog({
                 .then(c => {
                     if (c) setCustomer(c);
                 })
-                .catch(err => console.error("Error fetching customer for receipt:", err));
+                .catch(err => console.error("Erreur récupération client pour facture:", err));
         } else {
             setCustomer(null);
         }
@@ -57,9 +59,8 @@ export function PrintReceiptDialog({
     }, [customer, customerName]);
 
     /**
-     * Isolated Printing Protocol:
-     * Clones only the receipt content into a clean, top-level container for true printing.
-     * This avoids capturing the UI (buttons, modals, etc).
+     * Protocole d'Impression Isolé :
+     * Clone uniquement le contenu du document dans un conteneur propre au sommet du DOM.
      */
     const handlePrint = useCallback(() => {
         if (!sale) return;
@@ -72,20 +73,16 @@ export function PrintReceiptDialog({
             return;
         }
 
-        // Deep clone the pure receipt
         const clone = sourceElement.cloneNode(true) as HTMLDivElement;
         
-        // Remove scale and relative transforms
         clone.style.transform = 'none';
         clone.style.margin = '0';
         clone.style.position = 'relative';
         clone.style.width = receiptType === 'a4' ? '210mm' : '80mm';
         
-        // Prepare the portal
         printablePortal.innerHTML = '';
         printablePortal.appendChild(clone);
 
-        // Allow browser to process layout then print
         setTimeout(() => {
             window.print();
         }, 300);
@@ -107,8 +104,8 @@ export function PrintReceiptDialog({
     ], 'Impression', isOpen);
 
     /**
-     * High-Fidelity PDF Generation Engine:
-     * Uses a hidden high-scale rendering area to ensure crisp text and dynamic heights.
+     * Moteur de Génération PDF Haute Fidélité :
+     * Utilise un rendu haute échelle (Ultra HD) pour garantir la netteté du texte.
      */
     const handleGeneratePDF = useCallback(async (isShare: boolean) => {
         if (!sale) return;
@@ -121,13 +118,11 @@ export function PrintReceiptDialog({
             const element = document.getElementById('receipt-render-target-inner');
             if (!element) throw new Error("Source de rendu manquante");
 
-            // Setup capture context (Ultra HD Scale)
             const canvas = await html2canvas(element, {
                 scale: 3, 
                 useCORS: true,
                 backgroundColor: "#ffffff",
                 logging: false,
-                windowWidth: receiptType === 'a4' ? 794 : 302, // Native 96DPI width
                 onclone: (clonedDoc) => {
                     const target = clonedDoc.getElementById('receipt-render-target-inner');
                     if (target) {
@@ -135,7 +130,6 @@ export function PrintReceiptDialog({
                         target.style.display = 'block';
                         target.style.position = 'relative';
                         target.style.width = receiptType === 'a4' ? '210mm' : '80mm';
-                        target.style.letterSpacing = 'normal';
                     }
                 }
             });
@@ -144,7 +138,6 @@ export function PrintReceiptDialog({
             const pdfWidth = receiptType === 'a4' ? 210 : 80;
             const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
 
-            // Generate Dynamic Page Height PDF
             const pdf = new jsPDF({
                 orientation: 'portrait',
                 unit: 'mm',
@@ -155,7 +148,6 @@ export function PrintReceiptDialog({
             
             const fileName = `${receiptType === 'a4' ? 'BL' : 'TKT'}-${sale.invoiceNumber}.pdf`;
 
-            // WhatsApp / Social Share Logic
             if (isShare && navigator.canShare && navigator.share) {
                 const pdfBlob = pdf.output('blob');
                 const file = new File([pdfBlob], fileName, { type: 'application/pdf' });
@@ -163,15 +155,14 @@ export function PrintReceiptDialog({
                 try {
                     await navigator.share({
                         files: [file],
-                        title: `iPOS Zen - ${sale.invoiceNumber}`,
+                        title: `iPOS Zen - Facture #${sale.invoiceNumber}`,
                     });
                 } catch (e) {
-                    // Fallback to download if shared cancelled or fails silently
                     pdf.save(fileName);
                 }
             } else {
                 pdf.save(fileName);
-                if (isShare) toast.info("Mise en attente du partage direct. Fichier téléchargé.");
+                if (isShare) toast.info("Partage direct indisponible. Fichier téléchargé.");
             }
         } catch (error: any) {
             toast.error("Échec de la génération HD.");
@@ -187,19 +178,19 @@ export function PrintReceiptDialog({
             <DialogContent className="sm:max-w-4xl h-auto max-h-[95vh] flex flex-col p-0 overflow-hidden border-none shadow-2xl rounded-2xl bg-card">
                 <DialogHeader className="p-4 bg-primary/5 border-b border-primary/10">
                     <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                            <div className="p-2 rounded-xl bg-primary text-primary-foreground shadow-lg">
+                        <div className="flex items-center gap-4">
+                            <div className="p-2.5 rounded-xl bg-primary text-primary-foreground shadow-lg">
                                 <FileText className="h-5 w-5" />
                             </div>
                             <div>
-                                <DialogTitle className="text-lg font-bold tracking-tight">Gestion Documentaire</DialogTitle>
-                                <DialogDescription className="text-[10px] uppercase font-semibold text-primary/50">Doc : #{sale.invoiceNumber}</DialogDescription>
+                                <DialogTitle className="text-lg font-bold tracking-tight">Gestion Documentaire Elite</DialogTitle>
+                                <DialogDescription className="text-[10px] uppercase font-semibold text-primary/50">Facture : #{sale.invoiceNumber}</DialogDescription>
                             </div>
                         </div>
                         <div className="flex items-center gap-4 bg-background/50 p-1.5 rounded-xl border border-primary/10">
                             <div className={cn("flex items-center gap-2 px-3 py-1.5 rounded-lg transition-all", receiptType === 'thermal' ? "bg-primary text-primary-foreground shadow-sm" : "opacity-40")}>
                                 <Smartphone className="h-3.5 w-3.5" />
-                                <span className="text-[10px] font-bold uppercase">80mm</span>
+                                <span className="text-[10px] font-bold uppercase">Ticket</span>
                             </div>
                             <Switch
                                 checked={receiptType === 'a4'}
@@ -214,7 +205,6 @@ export function PrintReceiptDialog({
                 </DialogHeader>
 
                 <div className="flex-grow overflow-y-auto bg-muted/30 p-6 custom-scrollbar flex justify-center">
-                    {/* Visual Preview Container */}
                     <div 
                         id="receipt-render-target"
                         className={cn(
@@ -222,7 +212,6 @@ export function PrintReceiptDialog({
                             receiptType === 'a4' ? "scale-[0.7] sm:scale-[0.85] lg:scale-100" : "scale-100"
                         )} 
                     >
-                        {/* Pure Content Target (Captured by engine and cloned by print) */}
                         <div id="receipt-render-target-inner" className="bg-white shadow-2xl">
                             <Receipt 
                                 sale={sale} 
@@ -236,7 +225,7 @@ export function PrintReceiptDialog({
                 </div>
 
                 <DialogFooter className="p-4 bg-card border-t flex flex-wrap gap-3">
-                    <Button variant="ghost" onClick={() => onOpenChange(false)} className="rounded-xl h-10 font-bold px-6">
+                    <Button variant="ghost" onClick={() => onOpenChange(false)} className="rounded-xl h-11 font-bold px-6">
                         <X className="mr-2 h-4 w-4" /> Fermer
                     </Button>
                     
@@ -244,24 +233,24 @@ export function PrintReceiptDialog({
                         variant="outline"
                         onClick={() => handleGeneratePDF(true)} 
                         disabled={isGenerating}
-                        className="rounded-xl h-10 font-bold border-emerald-500/20 bg-emerald-500/5 text-emerald-600 hover:bg-emerald-500 hover:text-white transition-all gap-2"
+                        className="rounded-xl h-11 font-bold border-emerald-500/20 bg-emerald-500/5 text-emerald-600 hover:bg-emerald-500 hover:text-white transition-all gap-2"
                     >
                         {isGenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : <MessageCircle className="h-4 w-4" />}
-                        Envoyer
+                        Partager
                     </Button>
 
                     <Button 
                         variant="outline"
                         onClick={() => handleGeneratePDF(false)} 
                         disabled={isGenerating}
-                        className="rounded-xl h-10 font-bold border-primary/20 hover:bg-primary/5 transition-all gap-2"
+                        className="rounded-xl h-11 font-bold border-primary/20 hover:bg-primary/5 transition-all gap-2"
                     >
                         {isGenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
                         PDF
                     </Button>
 
-                    <Button onClick={handlePrint} className="rounded-xl h-10 font-bold flex-1 shadow-lg shadow-sm transition-all active:scale-95 gap-2">
-                        <Printer className="h-4 w-4" /> 
+                    <Button onClick={handlePrint} className="rounded-xl h-11 font-black text-xs uppercase tracking-widest flex-1 shadow-xl transition-all active:scale-95 gap-3">
+                        <Printer className="h-5 w-5" /> 
                         Imprimer [P]
                     </Button>
                 </DialogFooter>
