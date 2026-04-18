@@ -74,7 +74,7 @@ export default function SalesHistoryPage() {
     const [isPrintOpen, setIsPrintOpen] = useState(false);
     const [isBulkCancelConfirmOpen, setIsBulkCancelConfirmOpen] = useState(false);
 
-    // استعلام حي للمبيعات - يعرض الأرشيف الكامل تلقائياً
+    // استعلام حي للمبيعات - يعرض الأرشيف الكامل تلقائياً بدون فلاتر زمنية
     const sales = useLiveQuery(
         () => salesService.filterSales({
             query: debouncedSearchQuery,
@@ -111,7 +111,7 @@ export default function SalesHistoryPage() {
             current.receivedCents += Math.round(safeNumber(s.amountPaid) * 100);
             dataMap.set(dayKey, current);
         });
-        // عرض آخر 30 يوماً من النشاط في الرسم البياني للوضوح
+        // عرض آخر 30 يوماً من النشاط في الرسم البياني للوضوح التلقائي
         return Array.from(dataMap.values()).map(d => ({ 
             date: d.date, 
             total: d.totalCents / 100, 
@@ -168,7 +168,7 @@ export default function SalesHistoryPage() {
     const resetFilters = () => {
         setSearchQuery('');
         setFilterStatus('all');
-        toast.info("Filtres réinitialisés.");
+        toast.info("Filtres réinitialisés. الأرشيف الكامل معروض.");
     };
 
     useKeyboardShortcuts([{ key: 'F3', action: () => searchInputRef.current?.focus(), description: 'Rechercher', ignoreInputFocus: true }], 'Historique');
@@ -177,7 +177,7 @@ export default function SalesHistoryPage() {
     
     return (
         <div className="p-6 sm:p-4 space-y-4 max-w-[1800px] mx-auto animate-in fade-in duration-1000 pb-20">
-            <PageHeader title="Registre des Ventes Elite" description="Archives complètes et maîtrise souveraine des flux de trésorerie">
+            <PageHeader title="Registre des Ventes Elite" description="Archives complètes و الأرشيف الكامل للعمليات">
                 <div className="flex gap-3 w-full sm:w-auto">
                     <Button variant="outline" onClick={handleExportCsv} className="flex-1 sm:flex-none h-12 rounded-2xl font-semibold text-xs uppercase border-primary/20 hover:bg-primary/5 transition-all">
                         <FileUp className="mr-2 h-4 w-4 text-primary" /> Exporter (.csv)
@@ -250,7 +250,7 @@ export default function SalesHistoryPage() {
                         <CardHeader className="flex flex-row items-center justify-between p-4 border-b border-white/5 bg-muted/20">
                             <div className="flex items-center gap-4">
                                 <div className="p-3 rounded-2xl bg-primary text-primary-foreground shadow-sm"><TrendingUp className="h-6 w-6" /></div>
-                                <div><CardTitle className="text-xl font-bold tracking-tighter uppercase">Dynamique de Trésorerie</CardTitle><p className="text-[10px] font-semibold uppercase text-primary/50 tracking-widest">Activité des 30 derniers jours de flux</p></div>
+                                <div><CardTitle className="text-xl font-bold tracking-tighter uppercase">Dynamique de Trésorerie</CardTitle><p className="text-[10px] font-semibold uppercase text-primary/50 tracking-widest">Analyse automatique des 30 derniers jours de flux</p></div>
                             </div>
                             <div className="flex items-center gap-1.5 p-1.5 bg-black/20 rounded-lg border border-white/5 shadow-inner">
                                 <Button variant={viewMode === 'grid' ? 'secondary': 'ghost'} size="icon" className="rounded-xl h-9 w-9" onClick={() => setViewMode('grid')}><LayoutGrid className="h-4 w-4"/></Button>
