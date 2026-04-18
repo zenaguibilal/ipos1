@@ -15,7 +15,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { productService } from '@/services/product.service';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
-import { cn, safeNumber } from '@/lib/utils';
+import { cn, safeNumber, formatCurrency } from '@/lib/utils';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 
 interface ProductDialogProps {
@@ -102,7 +102,6 @@ export function ProductDialog({ isOpen, onOpenChange, product, categories, suppl
         setError(null);
         setIsLoading(true);
         try {
-            // Enforcement: Strict numbers
             const finalData = {
                 ...formState,
                 price: safeNumber(formState.price),
@@ -157,7 +156,6 @@ export function ProductDialog({ isOpen, onOpenChange, product, categories, suppl
         </div>
     );
 
-    // Speed entry optimization: auto-select on focus
     const onInputFocus = (e: React.FocusEvent<HTMLInputElement>) => e.target.select();
 
     return (
@@ -189,7 +187,7 @@ export function ProductDialog({ isOpen, onOpenChange, product, categories, suppl
                                 </div>
                                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
                                     <div className="space-y-2">
-                                        <Label className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground ml-1">Rayon</Label>
+                                        <Label className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground ml-1">Rayون</Label>
                                         <Select value={formState.category} onValueChange={(value) => setFormState(s => ({ ...s, category: value }))}>
                                             <SelectTrigger className="h-12 rounded-xl bg-muted/20 border-none shadow-inner font-bold"><SelectValue placeholder="Choisir..." /></SelectTrigger>
                                             <SelectContent className="rounded-2xl shadow-sm border-white/5">
