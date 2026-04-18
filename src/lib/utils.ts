@@ -30,14 +30,14 @@ export function safeToDate(date: Date | string | undefined | null): Date {
 
 /**
  * Moteur d'interprétation numérique intelligent.
- * Gère les formats algériens (espaces pour les milliers, commas pour les décimales).
+ * Gère les formats internationaux (espaces pour les milliers, virgules pour les décimales).
  */
 export function safeNumber(val: any): number {
     if (typeof val === 'number') return isNaN(val) ? 0 : val;
     if (val === null || val === undefined || val === '') return 0;
     
-    // Nettoyage radical : garde uniquement chiffres, point, virgule و signe moins
-    // On ignore les espaces qui sont souvent utilisés comme séparateurs de milliers en Algérie
+    // Nettoyage radical : garde uniquement chiffres, point, virgule et signe moins
+    // On ignore les espaces qui sont souvent utilisés comme séparateurs de milliers
     let str = String(val).trim().replace(/\s/g, '').replace(/[^\d.,-]/g, '');
     
     // Normalisation de la virgule vers le point (Standard FR/DZ)

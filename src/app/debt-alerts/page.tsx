@@ -55,7 +55,7 @@ export default function DebtAlertsPage() {
     const deferredSearch = useDeferredValue(searchQuery);
     const [isMounted, setIsMounted] = useState(false);
     
-    // Quick Payment Management
+    // Gestion rapide des règlements
     const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
     const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
 
@@ -68,7 +68,7 @@ export default function DebtAlertsPage() {
             const now = new Date();
             const firstOfThisMonth = startOfMonth(now);
             
-            // Step 1: Fetch only debtors (Optimization)
+            // Étape 1: Récupération des débiteurs uniquement (Optimisation)
             const debtors = await db.customers
                 .where('outstandingBalance')
                 .above(FINANCIAL_EPSILON)
@@ -78,7 +78,7 @@ export default function DebtAlertsPage() {
 
             const debtorUuids = debtors.map(d => d.uuid);
 
-            // Step 2: Fetch oldest unpaid sales only for these debtors
+            // Étape 2: Récupération de l'ancienneté des dettes
             const unpaidSales = await db.sales
                 .where('customerUuid')
                 .anyOf(debtorUuids)
@@ -123,7 +123,7 @@ export default function DebtAlertsPage() {
 
                     const isLegacy = oldestDebtDate ? oldestDebtDate < firstOfThisMonth : (safeNumber(customer.initialBalance) > 0);
                     
-                    // Advanced Risk Scoring Engine
+                    // Moteur d'évaluation du risque (Elite Risk Scoring)
                     const exposureScore = (Math.min(200, creditUsagePercent) * 0.5);
                     const delayScore = (delaySeverity * 3.0);
                     const legacyMultiplier = isLegacy ? 1.2 : 1.0;
@@ -149,7 +149,7 @@ export default function DebtAlertsPage() {
                 .filter(a => a.daysPastSettlement > 0 || a.creditUsagePercent > 95)
                 .sort((a, b) => b.riskScore - a.riskScore);
         } catch (error) {
-            console.error("Critical Debt Query Error:", error);
+            console.error("Erreur critique radar dettes:", error);
             return [];
         }
     }, [isMounted]);
@@ -261,7 +261,7 @@ export default function DebtAlertsPage() {
                                 "app-card group bg-card/40 backdrop-blur-sm border-white/5 overflow-hidden rounded-lg relative transition-all duration-700",
                                 customer.severity === 'critical' ? "border-destructive/40 shadow-xl" : "hover:border-primary/30"
                             )}>
-                                {/* Visual Alert Indicators */}
+                                {/* Indicateurs visuels d'alerte */}
                                 <div className={cn(
                                     "absolute top-0 right-0 p-12 opacity-[0.03] group-hover:opacity-10 transition-opacity duration-1000 pointer-events-none",
                                     customer.severity === 'critical' ? "text-destructive" : "text-amber-500"
@@ -377,7 +377,7 @@ export default function DebtAlertsPage() {
                         <Info className="h-4 w-4" /> Analyse du Moteur "Elite Risk"
                     </p>
                     <p className="text-[11px] text-muted-foreground/70 font-medium leading-relaxed max-w-6xl italic border-l-3 border-primary/30 pl-8 uppercase tracking-widest">
-                        L'algorithme de surveillance évalue le risque en kombinant l'exposition financière (consommation du plafond) et l'inertie de paiement (retard par rapport au jour de règlement). Un marquage "Critique" est automatiquement appliqué pour tout dépassement de 110% du plafond ou un retard effectif franchissant le seuil des 20 jours.
+                        L'algorithme de surveillance évalue le risque en combinant l'exposition financière (consommation du plafond) et l'inertie de paiement (retard par rapport au jour de règlement). Un marquage "Critique" est automatiquement appliqué pour tout dépassement de 110% du plafond ou un retard effectif franchissant le seuil des 20 jours.
                     </p>
                 </div>
             </div>

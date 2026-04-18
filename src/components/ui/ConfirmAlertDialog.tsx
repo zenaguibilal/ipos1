@@ -39,7 +39,7 @@ export function ConfirmAlertDialog({
             onOpenChange(false);
         } catch (error: any) {
             toast.error(error.message || "L'opération a échoué.", {
-                description: "Veuillez réessayer أو contacter le support."
+                description: "Veuillez réessayer ou contacter le support technique."
             });
         } finally {
             setIsMutating(false);

@@ -33,7 +33,7 @@ const StatCard = ({ title, value, icon: Icon, colorClass, subtitle }: { title: s
 );
 
 export const StockIntakeStats = ({ intakes: externalIntakes, isLoading: externalLoading }: StockIntakeStatsProps) => {
-    // Live query for stock intakes to update stats instantly in real-time
+    // Surveillance en direct des réceptions pour mettre à jour les stats instantanément
     const liveIntakes = useLiveQuery(() => db.stock_intakes.toArray());
     
     const intakes = externalIntakes || liveIntakes;
@@ -41,7 +41,7 @@ export const StockIntakeStats = ({ intakes: externalIntakes, isLoading: external
     const stats = useMemo(() => {
         if (!intakes) return { totalValue: 0, intakeCount: 0, supplierCount: 0 };
         
-        // المحرك الحسابي بالسنتيمات لضمان الدقة المطلقة
+        // Moteur de calcul en centimes pour une précision absolue
         const totalValCents = intakes.reduce((sum, i) => sum + Math.round(safeNumber(i.totalValue) * 100), 0);
         const supplierUuids = new Set(intakes.map(i => i.supplierUuid).filter(Boolean));
         
