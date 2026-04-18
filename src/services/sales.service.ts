@@ -5,13 +5,12 @@ import type { Sale, CartItem, SaleItem } from '@/lib/types';
 import { db } from '@/lib/db';
 import { inventoryService } from './inventory.service';
 import { customerService } from './customer.service';
-import { useAppStore } from '@/stores/appStore';
 import { safeToDate, safeNumber, roundFinancial, preciseMultiply } from '@/lib/utils';
-import { startOfDay, endOfDay } from 'date-fns';
 
 /**
  * خدمة إدارة المبيعات Elite.
  * هندسة مالية دقيقة تضمن توازن المخزن ودفاتر الحسابات.
+ * تم تعديل الخدمة لتعمل بنظام الأرشيف الكامل بشكل دائم.
  */
 class SalesService {
 
@@ -26,51 +25,23 @@ class SalesService {
     }
 
     /**
-     * تصفية المبيعات مع دعم "Période d'Analyse" الذكي.
-     * تم تحسين المحرك ليكون مرناً تجاه أنواع البيانات (Date vs String) في قاعدة البيانات.
+     * تصفية المبيعات - وضع الأرشيف الكامل.
+     * تم حذف الفلترة الزمنية لضمان سرعة الاستجابة وعرض كافة البيانات التاريخية.
      */
     async filterSales(filters: {
         query?: string;
-        from?: Date;
-        to?: Date;
         status?: 'all' | 'paid' | 'partial' | 'unpaid';
     }): Promise<Sale[]> {
-        let collection;
-
-        const start = filters.from ? startOfDay(filters.from) : null;
-        const end = filters.to ? endOfDay(filters.to) : null;
-
-        // استرجاع أولي سريع
-        if (start && end) {
-            // نحاول استخدام الفهرس أولاً (يعمل فقط إذا كانت البيانات Date Objects)
-            collection = db.sales.where('createdAt').between(start, end, true, true);
-        } else if (start) {
-            collection = db.sales.where('createdAt').aboveOrEqual(start);
-        } else if (end) {
-            collection = db.sales.where('createdAt').belowOrEqual(end);
-        } else {
-            collection = db.sales.toCollection();
-        }
+        let collection = db.sales.toCollection();
 
         let sales = await collection.toArray();
-
-        // FALLBACK: إذا كانت التواريخ مخزنة كنصوص (Strings)، الفهرس أعلاه قد يفشل.
-        // نقوم بفلترة إضافية مرنة لضمان عدم ضياع أي فاتورة.
-        if (start || end) {
-            sales = sales.filter(s => {
-                const saleDate = safeToDate(s.createdAt);
-                if (start && saleDate < start) return false;
-                if (end && saleDate > end) return false;
-                return true;
-            });
-        }
 
         // تطبيق فلتر الحالة
         if (filters.status && filters.status !== 'all') {
             sales = sales.filter(s => s.paymentStatus === filters.status);
         }
 
-        // محرك البحث النصي
+        // محرك البحث النصي (رقم الفاتورة أو اسم العميل)
         if (filters.query) {
             const lowerQuery = filters.query.toLowerCase().trim();
             const customers = await db.customers.toArray();
@@ -160,7 +131,7 @@ class SalesService {
             remainingBalance: remainingCents / 100,
             paymentStatus,
             customerUuid: saleData.customerUuid || undefined,
-            createdAt: now, // Toujours un objet Date pour IndexedDB local
+            createdAt: now,
             updatedAt: now,
             dueDate: saleData.dueDate,
         };

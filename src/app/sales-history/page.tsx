@@ -34,7 +34,7 @@ import { PageHeader } from '@/components/layout/PageHeader';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuCheckboxItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuCheckboxItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { toast } from 'sonner';
 import { cn, formatCurrency, safeToDate, safeNumber } from '@/lib/utils';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -74,7 +74,7 @@ export default function SalesHistoryPage() {
     const [isPrintOpen, setIsPrintOpen] = useState(false);
     const [isBulkCancelConfirmOpen, setIsBulkCancelConfirmOpen] = useState(false);
 
-    // استعلام حي للمبيعات - يعرض الأرشيف الكامل تلقائياً بدون فلاتر زمنية
+    // استعلام حي للمبيعات - يعرض الأرشيف الكامل دائماً
     const sales = useLiveQuery(
         () => salesService.filterSales({
             query: debouncedSearchQuery,
@@ -111,7 +111,7 @@ export default function SalesHistoryPage() {
             current.receivedCents += Math.round(safeNumber(s.amountPaid) * 100);
             dataMap.set(dayKey, current);
         });
-        // عرض آخر 30 يوماً من النشاط في الرسم البياني للوضوح التلقائي
+        // عرض آخر 30 يوماً من النشاط الفعلي في الرسم البياني للوضوح
         return Array.from(dataMap.values()).map(d => ({ 
             date: d.date, 
             total: d.totalCents / 100, 
@@ -250,7 +250,7 @@ export default function SalesHistoryPage() {
                         <CardHeader className="flex flex-row items-center justify-between p-4 border-b border-white/5 bg-muted/20">
                             <div className="flex items-center gap-4">
                                 <div className="p-3 rounded-2xl bg-primary text-primary-foreground shadow-sm"><TrendingUp className="h-6 w-6" /></div>
-                                <div><CardTitle className="text-xl font-bold tracking-tighter uppercase">Dynamique de Trésorerie</CardTitle><p className="text-[10px] font-semibold uppercase text-primary/50 tracking-widest">Analyse automatique des 30 derniers jours de flux</p></div>
+                                <div><CardTitle className="text-xl font-bold tracking-tighter uppercase">Dynamique de Trésorerie</CardTitle><p className="text-[10px] font-semibold uppercase text-primary/50 tracking-widest">Analyse automatique des tendances récentes</p></div>
                             </div>
                             <div className="flex items-center gap-1.5 p-1.5 bg-black/20 rounded-lg border border-white/5 shadow-inner">
                                 <Button variant={viewMode === 'grid' ? 'secondary': 'ghost'} size="icon" className="rounded-xl h-9 w-9" onClick={() => setViewMode('grid')}><LayoutGrid className="h-4 w-4"/></Button>
