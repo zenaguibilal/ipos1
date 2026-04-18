@@ -34,7 +34,6 @@ interface DeliveryNoteData {
 
 /**
  * Convertit un nombre en lettres françaises (Optimisé pour iPOS Elite).
- * Gère les spécificités linguistiques (70, 80, 90) et les accords pluriels.
  */
 function numberToWordsFR(n: number): string {
   const intPart = Math.floor(Math.abs(n));
@@ -137,47 +136,71 @@ export const Receipt = React.forwardRef<HTMLDivElement, ReceiptProps>(
 
     if (isThermal) {
       return (
-        <div ref={ref} className="bg-white text-black font-mono text-[9pt] w-[80mm] p-4 thermal-receipt" style={{ lineHeight: '1.4', letterSpacing: 'normal' }}>
+        <div ref={ref} className="bg-white text-black font-mono text-[9pt] w-[80mm] p-4 thermal-receipt" style={{ lineHeight: '1.4', letterSpacing: '-0.2px' }}>
           <header className="text-center mb-4">
             <p className="font-bold uppercase text-base">{docData.companyName}</p>
             <p className="text-[7pt] mt-1">{docData.companyAddress}</p>
             {docData.companyPhone && <p className="text-[7pt]">Tél: {docData.companyPhone}</p>}
           </header>
+          
           <div className="border-b border-black border-dashed my-2" />
-          <div className="space-y-1 mb-4">
-            <p className="font-bold text-center underline mb-2">BON DE LIVRAISON</p>
-            <p><span className="font-bold">N°:</span> {docData.docNumber}</p>
-            <p><span className="font-bold">Date:</span> {docData.date}</p>
-            <p><span className="font-bold">Client:</span> {docData.clientName}</p>
+          
+          <div className="space-y-0.5 mb-4 text-[8pt]">
+            <p className="font-bold text-center underline mb-2 text-[9pt]">BON DE LIVRAISON</p>
+            <p><span className="font-bold">N° FACTURE:</span> {docData.docNumber}</p>
+            <p><span className="font-bold">DATE:</span> {docData.date}</p>
+            <p><span className="font-bold">CLIENT:</span> {docData.clientName}</p>
           </div>
+          
           <table className="w-full text-left text-[8pt] mb-4 border-collapse">
             <thead className="table-header-group">
               <tr className="border-b border-black">
-                <th className="text-left py-1">Désignation</th>
-                <th className="text-center py-1">Qté</th>
-                <th className="text-right py-1">Total</th>
+                <th className="text-left py-1">DÉSIGNATION</th>
+                <th className="text-center py-1">QTÉ</th>
+                <th className="text-right py-1">TOTAL</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200">
+            <tbody className="divide-y divide-gray-100">
               {docData.items.map((item) => (
                 <tr key={item.id} className="break-inside-avoid">
-                  <td className="py-2 pr-2 leading-tight">{item.designation}</td>
-                  <td className="text-center py-2">{item.qty}</td>
-                  <td className="text-right py-2">{formatNum(item.total)}</td>
+                  <td className="py-2 pr-2 leading-tight uppercase font-bold text-[7.5pt]">{item.designation}</td>
+                  <td className="text-center py-2 font-bold">{item.qty}</td>
+                  <td className="text-right py-2 font-bold">{formatNum(item.total)}</td>
                 </tr>
               ))}
             </tbody>
           </table>
-          <div className="border-t border-black my-2" />
-          <div className="space-y-1 font-bold">
-            <div className="flex justify-between"><span>TOTAL FACTURE:</span><span>{formatNum(docData.grandTotal)} DA</span></div>
-            {Math.abs(docData.oldBalance) > 0.01 && <div className="flex justify-between font-normal text-[8pt]"><span>ANCIEN SOLDE:</span><span>{formatNum(docData.oldBalance)} DA</span></div>}
-            <div className="flex justify-between text-emerald-700"><span>VERSEMENT:</span><span>-{formatNum(docData.payment)} DA</span></div>
-            <div className="flex justify-between border-t border-black pt-2 text-[10pt]"><span>NET À PAYER:</span><span>{formatNum(docData.newBalance)} DA</span></div>
+          
+          <div className="border-t border-black border-dashed my-2" />
+          
+          <div className="space-y-1">
+            <div className="flex justify-between text-[9pt]">
+                <span className="font-bold">TOTAL FACTURE:</span>
+                <span className="font-bold">{formatNum(docData.grandTotal)} DA</span>
+            </div>
+            
+            {Math.abs(docData.oldBalance) > 0.01 && (
+                <div className="flex justify-between text-[8pt] opacity-70">
+                    <span>ANCIEN SOLDE:</span>
+                    <span>{formatNum(docData.oldBalance)} DA</span>
+                </div>
+            )}
+            
+            <div className="flex justify-between text-[9pt] text-emerald-700 bg-emerald-50 px-1">
+                <span className="font-bold">VERSEMENT (REÇU):</span>
+                <span className="font-bold">-{formatNum(docData.payment)} DA</span>
+            </div>
+            
+            <div className="flex justify-between border-t border-black pt-2 text-[10pt] bg-gray-100 px-1">
+                <span className="font-black">NET À PAYER:</span>
+                <span className="font-black">{formatNum(docData.newBalance)} DA</span>
+            </div>
           </div>
+          
           <footer className="text-center mt-8 pt-4 border-t border-dashed border-gray-400">
-            <p className="font-bold uppercase">Merci de votre visite !</p>
-            <p className="text-[7pt] opacity-50 mt-1">iPOS Zen Elite System</p>
+            <p className="font-bold uppercase text-[8pt]">Merci de votre confiance !</p>
+            <p className="text-[6.5pt] opacity-40 mt-2">SYSTÈME iPOS ZEN ELITE</p>
+            <p className="text-[6.5pt] opacity-40">www.ipos-zen.dz</p>
           </footer>
         </div>
       );
@@ -280,7 +303,7 @@ export const Receipt = React.forwardRef<HTMLDivElement, ReceiptProps>(
                   </div>
                 )}
                 <div className="flex justify-between px-4 py-2 text-sm font-bold text-emerald-600">
-                  <span>Versement / Paiement</span>
+                  <span>Versement / Paiement (Reçu)</span>
                   <span className="font-mono">-{formatNum(docData.payment)} DA</span>
                 </div>
                 <div className="bg-[#111827] text-white p-6 rounded-2xl flex justify-between items-center mt-6 shadow-xl">
