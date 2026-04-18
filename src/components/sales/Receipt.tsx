@@ -34,13 +34,14 @@ interface DeliveryNoteData {
 
 /**
  * Convertit un nombre en lettres françaises (Optimisé pour iPOS Elite).
+ * Gère les spécificités linguistiques (70, 80, 90) et les accords pluriels.
  */
 function numberToWordsFR(n: number): string {
   const intPart = Math.floor(Math.abs(n));
   const decPart = Math.round((Math.abs(n) - intPart) * 100);
 
   const units = ["", "UN", "DEUX", "TROIS", "QUATRE", "CINQ", "SIX", "SEPT", "HUIT", "NEUF"];
-  const tens = ["", "DIX", "VINGT", "TRENTE", "QUARANTE", "CINQUANTE", "SOIXANTE", "SOIXANTE-DIX", "QUATRE-VINGTS", "QUATRE-VINGT-DIX"];
+  const tens = ["", "DIX", "VINGT", "TRENTE", "QUARANTE", "CINQUANTE", "SOIXANTE", "SOIXANTE-DIX", "QUATRE-VINGT", "QUATRE-VINGT-DIX"];
   const teens = ["DIX", "ONZE", "DOUZE", "TREIZE", "QUATORZE", "QUINZE", "SEIZE", "DIX-SEPT", "DIX-HUIT", "DIX-NEUF"];
 
   function convertGroup(num: number, isMille: boolean = false): string {
@@ -65,8 +66,11 @@ function numberToWordsFR(n: number): string {
         else if (u > 1) res += prefix + "-" + units[u];
         else res += prefix + (t === 8 && !isMille ? "S" : "");
       }
-    } else if (num >= 10) res += teens[num - 10];
-    else if (num > 0) if (!(num === 1 && isMille)) res += units[num];
+    } else if (num >= 10) {
+      res += teens[num - 10];
+    } else if (num > 0) {
+      if (!(num === 1 && isMille)) res += units[num];
+    }
     return res.trim();
   }
 
@@ -247,48 +251,48 @@ export const Receipt = React.forwardRef<HTMLDivElement, ReceiptProps>(
           {/* Totals & Signature */}
           <div className="mt-12 break-inside-avoid">
             <div className="grid grid-cols-2 gap-12 items-start">
-                <div className="space-y-10">
+              <div className="space-y-10">
                 <div className="bg-gray-50 p-6 rounded-2xl border border-gray-100">
-                    <p className="text-[10px] font-black uppercase text-gray-400 mb-2 tracking-widest">Arrêté la présente facture à la somme de :</p>
-                    <p className="text-sm font-black italic text-gray-800 leading-relaxed uppercase">
+                  <p className="text-[10px] font-black uppercase text-gray-400 mb-2 tracking-widest">Arrêté la présente facture à la somme de :</p>
+                  <p className="text-sm font-black italic text-gray-800 leading-relaxed uppercase">
                     {docData.amountInWords}
-                    </p>
+                  </p>
                 </div>
                 <div className="flex justify-between items-start pt-4 border-t border-dashed border-gray-200">
                   <p className="text-[9px] font-black uppercase text-gray-400 tracking-widest">Visa Établissement</p>
                   <p className="text-[9px] font-black uppercase text-gray-400 tracking-widest">Signature Client</p>
                 </div>
-                </div>
+              </div>
 
-                <div className="space-y-2">
+              <div className="space-y-2">
                 <div className="flex justify-between px-4 py-2 text-sm font-bold text-gray-500">
-                    <span>Articles (Qté Totale)</span>
-                    <span className="font-mono text-[#111827]">{docData.totalQty}</span>
+                  <span>Articles (Qté Totale)</span>
+                  <span className="font-mono text-[#111827]">{docData.totalQty}</span>
                 </div>
                 <div className="flex justify-between px-4 py-2 text-sm font-bold text-[#111827] border-b border-gray-100">
-                    <span>Montant Facture</span>
-                    <span className="font-mono">{formatNum(docData.grandTotal)} DA</span>
+                  <span>Montant Facture</span>
+                  <span className="font-mono">{formatNum(docData.grandTotal)} DA</span>
                 </div>
                 {Math.abs(docData.oldBalance) > 0.01 && (
                   <div className="flex justify-between px-4 py-2 text-sm font-bold text-gray-500">
-                      <span>Ancien Solde Client</span>
-                      <span className="font-mono text-[#111827]">{formatNum(docData.oldBalance)} DA</span>
+                    <span>Ancien Solde Client</span>
+                    <span className="font-mono text-[#111827]">{formatNum(docData.oldBalance)} DA</span>
                   </div>
                 )}
                 <div className="flex justify-between px-4 py-2 text-sm font-bold text-emerald-600">
-                    <span>Versement / Paiement</span>
-                    <span className="font-mono">-{formatNum(docData.payment)} DA</span>
+                  <span>Versement / Paiement</span>
+                  <span className="font-mono">-{formatNum(docData.payment)} DA</span>
                 </div>
                 <div className="bg-[#111827] text-white p-6 rounded-2xl flex justify-between items-center mt-6 shadow-xl">
-                    <span className="text-xs font-black uppercase tracking-widest opacity-60">NET À PAYER (DA)</span>
-                    <span className="text-3xl font-black font-mono tracking-tighter">{formatNum(docData.newBalance)}</span>
+                  <span className="text-xs font-black uppercase tracking-widest opacity-60">NET À PAYER (DA)</span>
+                  <span className="text-3xl font-black font-mono tracking-tighter">{formatNum(docData.newBalance)}</span>
                 </div>
-                </div>
+              </div>
             </div>
 
             <footer className="mt-12 pt-8 border-t border-gray-100 flex justify-between items-center text-[8px] font-bold text-gray-300 uppercase tracking-[0.3em]">
-                <span>{docData.companyName} — IPOS ELITE SYSTEM</span>
-                <span>Généré par iPOS ZEN — {format(new Date(), 'dd/MM/yyyy HH:mm', { locale: fr })}</span>
+              <span>{docData.companyName} — iPOS ELITE SYSTEM</span>
+              <span>Généré par iPOS ZEN — {format(new Date(), 'dd/MM/yyyy HH:mm', { locale: fr })}</span>
             </footer>
           </div>
         </div>
