@@ -37,6 +37,7 @@ export function safeNumber(val: any): number {
     if (val === null || val === undefined || val === '') return 0;
     
     // Nettoyage radical : garde uniquement chiffres, point, virgule و signe moins
+    // On ignore les espaces qui sont souvent utilisés comme séparateurs de milliers en Algérie
     let str = String(val).trim().replace(/\s/g, '').replace(/[^\d.,-]/g, '');
     
     // Normalisation de la virgule vers le point (Standard FR/DZ)
