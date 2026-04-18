@@ -311,7 +311,7 @@ export function NewIntakeForm() {
                     <CardContent className="p-6 space-y-6">
                         <div className="space-y-6">
                             <div className="space-y-2">
-                                <Label className="text-[10px] font-black uppercase text-muted-foreground/60 ml-1 tracking-widest">Établissement Fournisseur *</Label>
+                                <Label className="text-[10px] font-black uppercase text-muted-foreground/60 ml-1 tracking-widest">Étabลissement Fournisseur *</Label>
                                 <div className="relative group">
                                     <Building className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 opacity-20 group-focus-within:text-primary transition-all duration-500" />
                                     <Input 
