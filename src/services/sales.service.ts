@@ -29,7 +29,7 @@ class SalesService {
     }): Promise<Sale[]> {
         let collection;
 
-        // Optimization: Use index for date range if provided
+        // ELITE OPTIMIZATION: Use index for date range if provided
         if (filters.from && filters.to) {
             const start = startOfDay(filters.from);
             const end = endOfDay(filters.to);
@@ -52,11 +52,13 @@ class SalesService {
 
         if (filters.query) {
             const lowerQuery = filters.query.toLowerCase().trim();
-            // We search in invoice number and customer names
-            const customers = await db.customers
-                .filter(c => (c.firstName + ' ' + c.lastName).toLowerCase().includes(lowerQuery))
-                .toArray();
-            const customerUuids = new Set(customers.map(c => c.uuid));
+            // Search in invoice number and resolve customer names
+            const customers = await db.customers.toArray();
+            const customerUuids = new Set(
+                customers
+                    .filter(c => (c.firstName + ' ' + c.lastName).toLowerCase().includes(lowerQuery))
+                    .map(c => c.uuid)
+            );
             
             sales = sales.filter(
                 s =>
@@ -65,7 +67,7 @@ class SalesService {
             );
         }
 
-        // Sort descending by date
+        // Sort descending by date (Elite Flow)
         return sales.sort(
             (a, b) =>
                 new Date(b.createdAt!).getTime() -
@@ -73,10 +75,6 @@ class SalesService {
         );
     }
 
-    /**
-     * Génère un numéro de facture séquentiel conforme à la loi algérienne.
-     * Format : AAAA-NNNNNN (ex: 2025-000142)
-     */
     private async generateInvoiceNumber(): Promise<string> {
         const now = new Date();
         const year = now.getFullYear();
@@ -107,7 +105,7 @@ class SalesService {
     }): Promise<Sale> {
         const now = new Date();
         
-        // المحرك الحسابي المتطور بالسنتيمات
+        // ELITE MATH: Scaled Integer Arithmetic (Cents)
         const subtotalCents = saleData.items.reduce(
             (acc, item) => acc + Math.round(preciseMultiply(item.price, item.cartQuantity) * 100),
             0,
@@ -161,6 +159,7 @@ class SalesService {
             dueDate: saleData.dueDate,
         };
 
+        // ATOMIC TRANSACTION: Ensuring all records are updated or none
         await db.transaction(
             'rw',
             [
