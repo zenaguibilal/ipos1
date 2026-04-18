@@ -1,15 +1,16 @@
 'use client';
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import type { Product } from '@/lib/types';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { MoreHorizontal, Edit, Trash2, CalendarClock, Package, Info, Tag, Copy, History, ShoppingBag, ChevronRight } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { cn, formatCurrency } from '@/lib/utils';
+import { cn, formatCurrency, safeToDate } from '@/lib/utils';
 import { Checkbox } from '../ui/checkbox';
-import { differenceInDays } from 'date-fns';
+import { differenceInDays, formatDistanceToNow } from 'date-fns';
+import { fr } from 'date-fns/locale';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface ProductCardProps {
@@ -24,6 +25,11 @@ interface ProductCardProps {
 }
 
 const ProductCardComponent = ({ product, onEdit, onDuplicate, onHistory, onDelete, isSelected, onToggleSelection, isSelectionActive }: ProductCardProps) => {
+    const [isMounted, setIsMounted] = useState(false);
+
+    useEffect(() => {
+        setIsMounted(true);
+    }, []);
 
     const expirationStatus = useMemo(() => {
         if (!product.dateExpiration) return null;
@@ -53,6 +59,12 @@ const ProductCardComponent = ({ product, onEdit, onDuplicate, onHistory, onDelet
         }
     };
 
+    // Hydration-safe last activity text
+    const lastActivityText = useMemo(() => {
+        if (!isMounted || !product.createdAt) return 'Chargement...';
+        return formatDistanceToNow(safeToDate(product.createdAt), { addSuffix: true, locale: fr });
+    }, [isMounted, product.createdAt]);
+
     return (
         <Card
             onClick={handleCardClick}
@@ -65,7 +77,6 @@ const ProductCardComponent = ({ product, onEdit, onDuplicate, onHistory, onDelet
                 <ShoppingBag className="h-32 w-32 rotate-12" />
             </div>
 
-            {/* Actions isolated container */}
             <div 
                 className="absolute top-4 right-4 z-10 flex gap-2 items-center"
                 onClick={(e) => e.stopPropagation()}
@@ -129,7 +140,7 @@ const ProductCardComponent = ({ product, onEdit, onDuplicate, onHistory, onDelet
                                     </div>
                                 </TooltipTrigger>
                                 <TooltipContent className="rounded-xl border-white/5 shadow-sm bg-card">
-                                    <p className="text-[10px] font-semibold uppercase tracking-wide">Prix ancien (+30j)</p>
+                                    <p className="text-[10px] font-semibold uppercase tracking-wide">Tarif ancien (+30j)</p>
                                 </TooltipContent>
                             </Tooltip>
                         </TooltipProvider>
@@ -147,7 +158,7 @@ const ProductCardComponent = ({ product, onEdit, onDuplicate, onHistory, onDelet
                     </div>
                     <div className="flex flex-col">
                         <span className="text-[8px] font-semibold uppercase text-muted-foreground/40 tracking-wide">Stock Disponible</span>
-                        <span className={cn("text-base font-semibold tracking-tight", product.quantity <= product.minStockLevel ? "text-amber-500" : "text-foreground")}>
+                        <span className={cn("text-base font-semibold tracking-tight tabular-nums", product.quantity <= product.minStockLevel ? "text-amber-500" : "text-foreground")}>
                             {product.quantity} <span className="text-[10px] font-semibold text-muted-foreground/30 uppercase ml-1">{product.unite}</span>
                         </span>
                     </div>
@@ -157,11 +168,11 @@ const ProductCardComponent = ({ product, onEdit, onDuplicate, onHistory, onDelet
             <CardFooter className="p-6 pt-4 flex justify-between items-end border-t border-white/5 bg-muted/5 relative z-10">
                  <div className="space-y-1">
                     <p className="text-[9px] font-semibold text-muted-foreground/40 uppercase tracking-wide">Valeur Marchande</p>
-                    <p className="text-xl font-semibold text-primary tracking-tighter leading-none">{formatCurrency(product.price)}</p>
+                    <p className="text-xl font-semibold text-primary tracking-tighter leading-none tabular-nums">{formatCurrency(product.price)}</p>
                 </div>
                 <div className="text-right">
-                    <p className="text-[8px] font-semibold text-muted-foreground/30 uppercase tracking-wide mb-1">Coût Achat</p>
-                    <p className="text-xs font-mono font-bold text-muted-foreground/60">{formatCurrency(product.purchasePrice)}</p>
+                    <p className="text-[8px] font-semibold text-muted-foreground/30 uppercase tracking-wide mb-1 italic">{lastActivityText}</p>
+                    <p className="text-xs font-mono font-bold text-muted-foreground/60 tabular-nums">{formatCurrency(product.purchasePrice)} (PMP)</p>
                 </div>
             </CardFooter>
         </Card>

@@ -63,7 +63,7 @@ export function safeNumber(val: any): number {
 export function preciseMultiply(a: number, b: number): number {
     const valA = safeNumber(a);
     const valB = safeNumber(b);
-    // استخدام الأعداد الصحيحة لضمان الدقة
+    // استخدام الأعداد الصحيحة لضمان الدقة بالسنتيم
     return Math.round((valA * 1000) * (valB * 1000)) / 1000000;
 }
 

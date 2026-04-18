@@ -1,13 +1,13 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import type { Product, Supplier } from '@/lib/types';
-import { Loader2, X, AlertTriangle, ChevronsUpDown, Plus, Package, Tag, Hash, Calendar, Box, Building, Coins, FileText } from 'lucide-react';
+import { Loader2, X, AlertTriangle, ChevronsUpDown, Plus, Package, Tag, Hash, Calendar, Box, Building, Coins, FileText, CheckCircle2 } from 'lucide-react';
 import { Badge } from '../ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { DatePicker } from '../ui/date-picker';
@@ -15,7 +15,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { productService } from '@/services/product.service';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
-import { cn } from '@/lib/utils';
+import { cn, safeNumber } from '@/lib/utils';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 
 interface ProductDialogProps {
@@ -68,8 +68,11 @@ export function ProductDialog({ isOpen, onOpenChange, product, categories, suppl
     }, [product, isOpen, suppliers]);
     
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const { id, value } = e.target;
-        setFormState(prev => ({ ...prev, [id]: value }));
+        const { id, value, type } = e.target;
+        setFormState(prev => ({ 
+            ...prev, 
+            [id]: type === 'number' ? (value === '' ? undefined : value) : value 
+        }));
     };
 
     const handleAddBarcode = () => {
@@ -99,9 +102,19 @@ export function ProductDialog({ isOpen, onOpenChange, product, categories, suppl
         setError(null);
         setIsLoading(true);
         try {
-            if (product) await productService.updateProduct(product.uuid, formState as any);
-            else await productService.addProduct(formState as any);
-            toast.success(`Opération réussie.`);
+            // Enforcement: Strict numbers
+            const finalData = {
+                ...formState,
+                price: safeNumber(formState.price),
+                purchasePrice: safeNumber(formState.purchasePrice),
+                quantity: safeNumber(formState.quantity),
+                minStockLevel: safeNumber(formState.minStockLevel),
+            };
+
+            if (product) await productService.updateProduct(product.uuid, finalData as any);
+            else await productService.addProduct(finalData as any);
+            
+            toast.success(`Fiche produit synchronisée.`);
             onSuccess();
             onOpenChange(false);
         } catch (err: any) {
@@ -113,7 +126,9 @@ export function ProductDialog({ isOpen, onOpenChange, product, categories, suppl
 
     const handleSubmit = async (e?: React.FormEvent) => {
         e?.preventDefault();
-        if (Number(formState.price) < Number(formState.purchasePrice)) setShowPriceConfirm(true);
+        const p = safeNumber(formState.price);
+        const cost = safeNumber(formState.purchasePrice);
+        if (p < cost && p > 0) setShowPriceConfirm(true);
         else await proceedWithSubmit();
     };
 
@@ -138,9 +153,12 @@ export function ProductDialog({ isOpen, onOpenChange, product, categories, suppl
             <div className="p-1.5 rounded-lg bg-primary/10 text-primary shadow-inner">
                 <Icon className="h-3 w-3" />
             </div>
-            <h4 className="text-[10px] font-semibold uppercase text-muted-foreground opacity-60">{title}</h4>
+            <h4 className="text-[10px] font-semibold uppercase text-muted-foreground opacity-60 tracking-widest">{title}</h4>
         </div>
     );
+
+    // Speed entry optimization: auto-select on focus
+    const onInputFocus = (e: React.FocusEvent<HTMLInputElement>) => e.target.select();
 
     return (
         <>
@@ -154,7 +172,7 @@ export function ProductDialog({ isOpen, onOpenChange, product, categories, suppl
                             </div>
                             <div>
                                 <DialogTitle className="text-lg font-semibold tracking-tight">{product ? 'Édition Elite' : 'Nouveau Produit Elite'}</DialogTitle>
-                                <DialogDescription className="font-medium">Paramétrage technique de la fiche produit Premium.</DialogDescription>
+                                <DialogDescription className="font-medium">Paramétrage technique de la fiche محصول Premium.</DialogDescription>
                             </div>
                         </div>
                     </DialogHeader>
@@ -162,13 +180,12 @@ export function ProductDialog({ isOpen, onOpenChange, product, categories, suppl
                     <div className="p-4 space-y-4 max-h-[65vh] overflow-y-auto custom-scrollbar">
                         {error && <div className="p-4 bg-destructive/10 text-destructive rounded-2xl text-xs font-bold border border-destructive/20 text-center">{error}</div>}
                         
-                        {/* Section: Identité */}
                         <div>
                             <SectionTitle title="Identité & Rayon" icon={FileText} />
                             <div className="grid gap-6">
                                 <div className="space-y-2">
                                     <Label htmlFor="name" className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground ml-1">Désignation *</Label>
-                                    <Input id="name" value={formState.name} onChange={handleInputChange} className="h-9 rounded-2xl bg-muted/20 border-none shadow-inner text-lg font-semibold tracking-tight focus-visible:ring-primary/20" placeholder="Ex: Grand Cru Espresso" required />
+                                    <Input id="name" value={formState.name} onChange={handleInputChange} onFocus={onInputFocus} className="h-9 rounded-2xl bg-muted/20 border-none shadow-inner text-lg font-semibold tracking-tight focus-visible:ring-primary/20" placeholder="Ex: Grand Cru Espresso" required />
                                 </div>
                                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
                                     <div className="space-y-2">
@@ -203,7 +220,7 @@ export function ProductDialog({ isOpen, onOpenChange, product, categories, suppl
                                                     <CommandInput placeholder="Chercher..." onValueChange={setSupplierSearch} />
                                                     <CommandList>
                                                         <CommandEmpty><Button variant="link" className="text-xs" onClick={() => { setFormState(p => ({...p, supplierName: supplierSearch, supplierUuid: undefined})); setSupplierPopoverOpen(false); }}>Créer "{supplierSearch}"</Button></CommandEmpty>
-                                                        <CommandGroup>{supplierOptions.map(s => <CommandItem key={s.uuid} onSelect={() => handleSupplierSelect(s.uuid)} className="font-bold">{s.name}</CommandItem>)}</CommandGroup>
+                                                        <CommandGroup>{supplierOptions.map(s => <CommandItem key={s.uuid} value={s.name} onSelect={() => handleSupplierSelect(s.uuid)} className="font-bold">{s.name}</CommandItem>)}</CommandGroup>
                                                     </CommandList>
                                                 </Command>
                                             </PopoverContent>
@@ -213,14 +230,13 @@ export function ProductDialog({ isOpen, onOpenChange, product, categories, suppl
                             </div>
                         </div>
 
-                        {/* Section: Finance */}
                         <div>
                             <SectionTitle title="Tarification & Marges" icon={Coins} />
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-4 bg-primary/5 rounded-lg border border-primary/10">
                                 <div className="space-y-3">
                                     <Label htmlFor="purchasePrice" className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground opacity-60 ml-1">P.U Achat (TTC)</Label>
                                     <div className="relative">
-                                        <Input id="purchasePrice" type="number" step="0.1" value={formState.purchasePrice} onChange={handleInputChange} className="h-9 rounded-2xl bg-background border-none shadow-inner font-mono font-semibold text-lg px-8" required />
+                                        <Input id="purchasePrice" type="number" step="0.01" value={formState.purchasePrice ?? ''} onChange={handleInputChange} onFocus={onInputFocus} className="h-9 rounded-2xl bg-background border-none shadow-inner font-mono font-semibold text-lg px-8" required />
                                         <span className="absolute right-8 top-1/2 -translate-y-1/2 font-semibold text-[10px] opacity-20 uppercase tracking-wide">DA</span>
                                     </div>
                                 </div>
@@ -228,24 +244,23 @@ export function ProductDialog({ isOpen, onOpenChange, product, categories, suppl
                                     <Label htmlFor="price" className="text-[10px] font-semibold uppercase tracking-wide text-primary ml-1">P.U Vente (Public)</Label>
                                     <div className="relative">
                                         <div className="absolute -inset-1 bg-primary/20 blur-lg rounded-2xl opacity-20"></div>
-                                        <Input id="price" type="number" step="0.1" value={formState.price} onChange={handleInputChange} className="relative h-9 rounded-2xl bg-background border-none shadow-inner font-mono font-semibold text-xl text-primary px-8" required />
+                                        <Input id="price" type="number" step="0.01" value={formState.price ?? ''} onChange={handleInputChange} onFocus={onInputFocus} className="relative h-9 rounded-2xl bg-background border-none shadow-inner font-mono font-semibold text-xl text-primary px-8" required />
                                         <span className="absolute right-8 top-1/2 -translate-y-1/2 font-semibold text-[10px] text-primary opacity-40 uppercase tracking-wide">DA</span>
                                     </div>
                                 </div>
                             </div>
                         </div>
 
-                        {/* Section: Inventaire */}
                         <div>
                             <SectionTitle title="Gestion des Stocks" icon={Box} />
                             <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
                                 <div className="space-y-2">
                                     <Label htmlFor="quantity" className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground ml-1">Stock Actuel</Label>
-                                    <Input id="quantity" type="number" value={formState.quantity} onChange={handleInputChange} className="h-12 rounded-xl bg-muted/20 border-none shadow-inner font-semibold px-6" required />
+                                    <Input id="quantity" type="number" step="0.001" value={formState.quantity ?? ''} onChange={handleInputChange} onFocus={onInputFocus} className="h-12 rounded-xl bg-muted/20 border-none shadow-inner font-semibold px-6" required />
                                 </div>
                                 <div className="space-y-2">
                                     <Label htmlFor="minStockLevel" className="text-[10px] font-semibold uppercase tracking-wide text-amber-600/70 ml-1">Seuil d'Alerte</Label>
-                                    <Input id="minStockLevel" type="number" value={formState.minStockLevel} onChange={handleInputChange} className="h-12 rounded-xl bg-muted/20 border-none shadow-inner font-semibold text-amber-600 px-6" required />
+                                    <Input id="minStockLevel" type="number" value={formState.minStockLevel ?? ''} onChange={handleInputChange} onFocus={onInputFocus} className="h-12 rounded-xl bg-muted/20 border-none shadow-inner font-semibold text-amber-600 px-6" required />
                                 </div>
                                 <div className="space-y-2">
                                     <Label className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground ml-1">Expiration</Label>
@@ -254,9 +269,8 @@ export function ProductDialog({ isOpen, onOpenChange, product, categories, suppl
                             </div>
                         </div>
 
-                        {/* Section: Barcodes */}
                         <div className="p-6 bg-muted/10 rounded-lg border border-dashed border-white/5 space-y-4">
-                            <Label className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground/60 ml-1">Système de Traçabilité (Codes-barres)</Label>
+                            <Label className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground/60 ml-1">Traçabilité (Codes-barres)</Label>
                             <div className="flex gap-3">
                                 <div className="relative flex-grow">
                                     <Hash className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/30" />
@@ -290,15 +304,15 @@ export function ProductDialog({ isOpen, onOpenChange, product, categories, suppl
                 <AlertDialogHeader>
                     <div className="flex items-center gap-4 mb-4 text-destructive">
                         <div className="p-4 rounded-2xl bg-destructive/10"><AlertTriangle className="h-8 w-8" /></div>
-                        <AlertDialogTitle className="text-lg font-semibold tracking-tighter">Vente à perte détectée</AlertDialogTitle>
+                        <AlertDialogTitle className="text-lg font-semibold tracking-tighter uppercase">Vente à perte détectée</AlertDialogTitle>
                     </div>
                     <AlertDialogDescription className="text-base font-medium leading-relaxed">
-                        Le prix de vente est inférieur au coût d'achat. Voulez-vous vraiment confirmer cette tarification ?
+                        Le prix de vente (<b>{formatCurrency(formState.price || 0)}</b>) est inférieur au coût d'achat (<b>{formatCurrency(formState.purchasePrice || 0)}</b>). Souhaitez-vous vraiment confirmer cette tarification ?
                     </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter className="gap-3 mt-6">
                     <AlertDialogCancel className="h-9 rounded-2xl font-bold border-none bg-muted/20">Réviser</AlertDialogCancel>
-                    <AlertDialogAction onClick={proceedWithSubmit} className="h-9 rounded-2xl font-semibold bg-destructive hover:bg-destructive/90 shadow-lg shadow-sm">Confirmer la Vente à Perte</AlertDialogAction>
+                    <AlertDialogAction onClick={proceedWithSubmit} className="h-9 rounded-2xl font-semibold bg-destructive hover:bg-destructive/90 shadow-lg shadow-sm">Confirmer Vente à Perte</AlertDialogAction>
                 </AlertDialogFooter>
             </AlertDialogContent>
         </AlertDialog>

@@ -3,7 +3,7 @@
 import { v4 as uuidv4 } from 'uuid';
 import type { Product, ProductImportAnalysis, InventoryLog } from '@/lib/types';
 import { db } from '@/lib/db';
-import { calculateStockStatus, safeNumber } from '@/lib/utils';
+import { calculateStockStatus, safeNumber, roundFinancial } from '@/lib/utils';
 import { inventoryService } from './inventory.service';
 import Papa from 'papaparse';
 import { supplierService } from './supplier.service';
@@ -120,11 +120,15 @@ class ProductService {
 
         const now = new Date();
         const qty = Number(safeNumber(productData.quantity).toFixed(3));
+        const price = roundFinancial(safeNumber(productData.price));
+        const purchasePrice = roundFinancial(safeNumber(productData.purchasePrice));
         
         const newProduct: Product = {
             ...(dataForRepo as Omit<Product, 'uuid'>),
             uuid: uuidv4(),
             quantity: qty,
+            price: price,
+            purchasePrice: purchasePrice,
             supplierUuid: finalSupplierUuid,
             createdAt: now,
             updatedAt: now,
@@ -159,8 +163,12 @@ class ProductService {
         dataToUpdate.supplierUuid = finalSupplierUuid;
         dataToUpdate.updatedAt = new Date();
 
-        if (productData.purchasePrice !== undefined && productData.purchasePrice !== existingProduct.purchasePrice) {
-            dataToUpdate.dateMajPrix = new Date();
+        if (productData.price !== undefined) dataToUpdate.price = roundFinancial(safeNumber(productData.price));
+        if (productData.purchasePrice !== undefined) {
+            dataToUpdate.purchasePrice = roundFinancial(safeNumber(productData.purchasePrice));
+            if (dataToUpdate.purchasePrice !== existingProduct.purchasePrice) {
+                dataToUpdate.dateMajPrix = new Date();
+            }
         }
 
         const newQuantity = productData.quantity !== undefined 
@@ -172,7 +180,7 @@ class ProductService {
         dataToUpdate.stockStatus = calculateStockStatus(newQuantity, newMinStock);
         
         await db.transaction('rw', [db.products, db.inventory_logs], async () => {
-            if (productData.quantity !== undefined && newQuantity !== existingProduct.quantity) {
+            if (productData.quantity !== undefined && Math.abs(newQuantity - existingProduct.quantity) > 0.0001) {
                 const diff = Number((newQuantity - existingProduct.quantity).toFixed(3));
                 const logEntry: InventoryLog = {
                     uuid: uuidv4(),
@@ -278,18 +286,13 @@ class ProductService {
             const productData = {
                 name,
                 category: row.category || row.categorie || row.Catégorie || 'Non classé',
-                price: parseFloat(price),
-                purchasePrice: row.purchasePrice ? parseFloat(row.purchasePrice) : 0,
-                quantity: row.quantity ? parseFloat(row.quantity) : 0,
-                minStockLevel: row.minStockLevel ? parseFloat(row.minStockLevel) : 10,
+                price: safeNumber(price),
+                purchasePrice: safeNumber(row.purchasePrice || row.purchase_price || row.Prix_Achat),
+                quantity: safeNumber(row.quantity || row.stock || row.Stock),
+                minStockLevel: safeNumber(row.minStockLevel || row.stock_min || row.Stock_Min),
                 barcodes: row.barcodes ? String(row.barcodes).split(',').map((b:string) => b.trim()).filter(Boolean) : [],
                 unite: row.unite || row.unité || 'Pièce',
             };
-
-            if (isNaN(productData.price)) {
-                 analysis.errorRows.push({ ...row, error: "Prix invalide" });
-                continue;
-            }
 
             if (existingProduct) {
                 analysis.productsToUpdate.push({ ...productData, uuid: existingProduct.uuid });
@@ -308,6 +311,8 @@ class ProductService {
                 ...p,
                 uuid: uuidv4(),
                 quantity: qty,
+                price: roundFinancial(safeNumber(p.price)),
+                purchasePrice: roundFinancial(safeNumber(p.purchasePrice)),
                 createdAt: now,
                 updatedAt: now,
                 dateMajPrix: now,
@@ -319,6 +324,8 @@ class ProductService {
             return {
                 ...p,
                 quantity: qty,
+                price: roundFinancial(safeNumber(p.price)),
+                purchasePrice: roundFinancial(safeNumber(p.purchasePrice)),
                 updatedAt: now,
                 dateMajPrix: now,
                 stockStatus: calculateStockStatus(qty, p.minStockLevel),
