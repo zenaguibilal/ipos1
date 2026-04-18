@@ -6,9 +6,9 @@ import type {
 } from './types';
 
 /**
- * Configuration de la base de données locale IndexedDB via Dexie.js.
- * Structure "Elite" optimisée pour la synchronisation cloud et l'intégrité relationnelle.
- * Les index sont conçus pour supporter des jointures logiques rapides via UUID.
+ * @fileOverview معمارية قاعدة البيانات المركزية iPOS Zen.
+ * تم تصميم الفهارس لضمان "ربط علاقتي" فائق السرعة بين الجداول.
+ * تعتمد المعمارية على UUID كفتاح ربط أساسي لضمان سلامة البيانات عند المزامنة السحابية.
  */
 class iPOSDatabase extends Dexie {
     products!:          EntityTable<Product,        'id'>;
@@ -27,41 +27,47 @@ class iPOSDatabase extends Dexie {
     constructor() {
         super('iPOSDatabase');
         
-        // Version 2 : Définition des schémas de stockage avec indexation stratégique
+        /**
+         * تعريف المخطط (Schema) مع الفهارس الاستراتيجية:
+         * - الحقل المسبوق بـ '&' هو مفتاح فريد (Unique).
+         * - الحقل المسبوق بـ '++' هو مفتاح تلقائي الزيادة (Auto-increment).
+         * - باقي الحقول هي فهارس للبحث السريع (Indices).
+         */
         this.version(2).stores({
-            // Indexation sur UUID pour la synchro, barcodes pour la vente, supplierUuid pour le lien fournisseur
+            // المنتجات: مربوطة بالموردين وبحالة المخزون
             products:         '++id, &uuid, name, *barcodes, supplierUuid, stockStatus, dateExpiration',
             
-            // searchName pour la recherche rapide, outstandingBalance pour les alertes dettes
+            // العملاء: مربوطة بالأرصدة وحالة الديون ونظام الخبز
             customers:        '++id, &uuid, searchName, debtStatus, isOverLimit, isBreadClient, bread_type_recurrence, outstandingBalance',
             
-            // customerUuid pour lier les ventes aux clients, invoiceNumber pour l'unicité
+            // المبيعات: مربوطة بالعملاء وبالتاريخ (Index للتقارير)
             sales:            '++id, &uuid, invoiceNumber, customerUuid, createdAt, paymentStatus',
             
-            // category pour l'analyse des charges
+            // المصاريف: مفهرسة حسب النوع والتاريخ لتحليل السيولة
             expenses:         '++id, &uuid, category, expenseDate',
             
-            // name unique pour éviter les doublons de partenaires
+            // الموردون: مفتاح فريد على الاسم لمنع تكرار الشركاء
             suppliers:        '++id, &uuid, &name',
             
-            // supplierUuid pour le suivi des règlements
+            // مدفوعات الموردين: مربوطة بالمورد وبالتاريخ
             supplier_payments:'++id, &uuid, supplierUuid, paymentDate',
             
-            // supplierUuid pour lier les arrivages aux fournisseurs
+            // استلام المخزون: مربوط بالمورد وبالفاتورة الأصلية
             stock_intakes:    '++id, &uuid, supplierUuid, createdAt, invoiceNumber',
             
-            // Liens vers la vente d'origine et le client
+            // مرتجعات المنتجات: مربوطة بالفاتورة الأصلية وبالعميل
             product_returns:  '++id, &uuid, originalSaleUuid, customerUuid, createdAt',
             
-            // customerUuid pour le rapprochement bancaire client
+            // مقبوضات العملاء: مربوطة بالعميل وبالتاريخ للتسوية المالية
             payments:         '++id, &uuid, customerUuid, paymentDate',
             
-            // venteUuid pour savoir si une commande de pain a été facturée
+            // طلبات الخبز: مربوطة بالعميل وبالفاتورة الناتجة عنها
             bread_orders:     '++id, &uuid, date, customerUuid, venteUuid',
             
+            // ملف المؤسسة: سجل وحيد لإعدادات النظام
             company_profile:  '++id, &uuid',
             
-            // productUuid pour l'audit d'un article, relatedUuid pour lier au mouvement source (Vente/Réception)
+            // سجلات المخزن: الربط الجوهري بين المنتج ومصدر الحركة (فاتورة/وصل)
             inventory_logs:   '++id, &uuid, productUuid, relatedUuid, reason, createdAt',
         });
     }

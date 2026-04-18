@@ -1,3 +1,4 @@
+
 'use client';
 import { v4 as uuidv4 } from 'uuid';
 import type { InventoryLog, InventoryLogReason, Product } from '@/lib/types';
@@ -6,21 +7,19 @@ import { calculateStockStatus, safeNumber } from '@/lib/utils';
 import { useAppStore } from '@/stores/appStore';
 
 /**
- * @fileOverview Service de gestion fine des stocks et de l'audit trail.
- * Garantit la précision décimale et l'atomicité des mouvements.
+ * @fileOverview خدمة إدارة المخزون الفائقة.
+ * تضمن الربط الوثيق بين كل حركة مخزون ومصدرها (Vente, Intake, Return).
  */
 class InventoryService {
 
     /**
-     * Ajuste le stock d'un produit de manière atomique et consigne le mouvement.
-     * Applique un arrondi à 3 décimales pour garantir la précision (poids/volume).
+     * ضبط المخزون مع ضمان تسجيل "أثر" (Log) مربوط بالمصدر.
      */
     async adjustStock(productUuid: string | null | undefined, quantityChange: number, reason: InventoryLogReason, relatedUuid?: string): Promise<void> {
         if (!productUuid || productUuid === 'BREAD_PRODUCT' || productUuid.startsWith('custom-')) {
             return; 
         }
 
-        // Exécution dans une transaction pour garantir l'intégrité de l'audit trail
         await db.transaction('rw', [db.products, db.inventory_logs], async () => {
             const product = await db.products.where('uuid').equals(productUuid).first();
             if (!product || !product.id) return;
@@ -28,7 +27,6 @@ class InventoryService {
             const currentQty = safeNumber(product.quantity);
             const change = safeNumber(quantityChange);
             
-            // Calcul financier durci (3 décimales) pour éviter les erreurs IEEE 754
             const newQuantity = Number((currentQty + change).toFixed(3));
 
             await db.products.update(product.id, {
@@ -37,13 +35,14 @@ class InventoryService {
                 updatedAt: new Date()
             });
 
+            // تسجيل لوج مربوط بـ relatedUuid لضمان تتبع المصدر
             const logEntry: InventoryLog = {
                 uuid: uuidv4(),
                 productUuid: productUuid,
                 change: Number(change.toFixed(3)),
                 newQuantity: newQuantity,
                 reason: reason,
-                relatedUuid: relatedUuid,
+                relatedUuid: relatedUuid, // هذا الحقل يربط اللوج بالفاتورة أو وصل الاستلام
                 createdAt: new Date(),
                 updatedAt: new Date(),
             };
@@ -51,25 +50,9 @@ class InventoryService {
             await db.inventory_logs.add(logEntry);
         });
 
-        // Déclencher la synchronisation intelligente (debounced)
         useAppStore.getState().actions.triggerSmartSync();
     }
     
-    async logChange(productUuid: string, change: number, newQuantity: number, reason: InventoryLogReason, relatedUuid?: string): Promise<void> {
-        const logEntry: InventoryLog = {
-            uuid: uuidv4(),
-            productUuid: productUuid,
-            change: Number(safeNumber(change).toFixed(3)),
-            newQuantity: Number(safeNumber(newQuantity).toFixed(3)),
-            reason: reason,
-            relatedUuid: relatedUuid,
-            createdAt: new Date(),
-            updatedAt: new Date(),
-        };
-
-        await db.inventory_logs.add(logEntry);
-    }
-
     async getLogs(filters: { query?: string, from?: Date, to?: Date, productUuid?: string }): Promise<(InventoryLog & { productName: string, reference?: string })[]> {
         let collection = db.inventory_logs.toCollection();
 
@@ -89,6 +72,7 @@ class InventoryService {
         const products = await db.products.where('uuid').anyOf(productUuids).toArray();
         const productMap = new Map(products.map(p => [p.uuid, p.name]));
 
+        // استرجاع المراجع (رقم الفاتورة) عبر الربط بـ relatedUuid
         const intakeUuids = logs.filter(l => l.reason === 'stock_intake' || l.reason === 'cancellation').map(l => l.relatedUuid).filter(Boolean) as string[];
         const saleUuids = logs.filter(l => l.reason === 'sale' || l.reason === 'cancellation').map(l => l.relatedUuid).filter(Boolean) as string[];
         
