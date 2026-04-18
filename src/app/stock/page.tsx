@@ -4,7 +4,7 @@ import { useState, useMemo, useRef } from 'react';
 import type { StockIntake, Supplier, InventoryLog } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Search, Plus, Archive, LayoutGrid, List, History, ArrowUpDown, RefreshCw, Building, Wallet, UserPlus, Trash2, X, FileUp } from 'lucide-react';
+import { Search, Plus, Archive, LayoutGrid, List, History, ArrowUpDown, RefreshCw, Building, Wallet, UserPlus, Trash2, X, FileUp, FilterX } from 'lucide-react';
 import { DateRangePicker } from '@/components/ui/date-range-picker';
 import { useDateRange } from '@/hooks/useDateRange';
 import { StockIntakeCard } from '@/components/stock/stock-intake-card';
@@ -26,7 +26,7 @@ import { SupplierTable } from '@/components/stock/SupplierTable';
 import { SupplierPaymentDialog } from '@/components/stock/SupplierPaymentDialog';
 import { SupplierDialog } from '@/components/stock/SupplierDialog';
 import { ConfirmAlertDialog } from '@/components/ui/ConfirmAlertDialog';
-import { cn, formatCurrency } from '@/lib/utils';
+import { cn, formatCurrency, safeNumber } from '@/lib/utils';
 import Papa from 'papaparse';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { useLiveQuery } from '@/hooks/useLiveQuery';
@@ -59,7 +59,7 @@ export default function StockPage() {
     const [isDeleteSupplierOpen, setIsDeleteSupplierOpen] = useState(false);
     const [isBulkDeleteSupplierOpen, setIsBulkDeleteSupplierOpen] = useState(false);
 
-    // ─── LIVE QUERIES ──────────────────────────────────────────
+    // ─── LIVE QUERIES (Elite Reliability) ──────────────────────
 
     const suppliers = useLiveQuery(() => db.suppliers.orderBy('name').toArray());
     
@@ -68,18 +68,22 @@ export default function StockPage() {
         const start = startOfDay(dateRange.from);
         const end = endOfDay(dateRange.to || new Date());
         
-        let collection = db.stock_intakes.where('createdAt').between(start, end, true, true);
-        const results = await collection.toArray();
+        const results = await db.stock_intakes.where('createdAt').between(start, end, true, true).toArray();
         
-        if (!searchQuery.trim()) return results.sort((a,b) => b.createdAt!.getTime() - a.createdAt!.getTime());
-        
-        const q = searchQuery.toLowerCase();
-        const sups = (suppliers || []).filter(s => s.name.toLowerCase().includes(q)).map(s => s.uuid);
-        
-        return results.filter(i => 
-            (i.invoiceNumber && i.invoiceNumber.toLowerCase().includes(q)) ||
-            (i.supplierUuid && sups.includes(i.supplierUuid))
-        ).sort((a,b) => b.createdAt!.getTime() - a.createdAt!.getTime());
+        let filtered = results;
+        if (searchQuery.trim()) {
+            const q = searchQuery.toLowerCase();
+            const matchingSupplierUuids = (suppliers || [])
+                .filter(s => s.name.toLowerCase().includes(q))
+                .map(s => s.uuid);
+
+            filtered = results.filter(i => 
+                (i.invoiceNumber && i.invoiceNumber.toLowerCase().includes(q)) ||
+                (i.supplierUuid && matchingSupplierUuids.includes(i.supplierUuid))
+            );
+        }
+
+        return filtered.sort((a,b) => (b.createdAt?.getTime() || 0) - (a.createdAt?.getTime() || 0));
     }, [isMounted, dateRange, searchQuery, suppliers]);
 
     const inventoryLogs = useLiveQuery(async () => {
@@ -106,12 +110,19 @@ export default function StockPage() {
         if (!suppliers) return [];
         if (!searchQuery.trim()) return suppliers;
         const q = searchQuery.toLowerCase();
-        return suppliers.filter(s => s.name.toLowerCase().includes(q));
+        return suppliers.filter(s => s.name.toLowerCase().includes(q) || s.phone?.includes(q));
     }, [suppliers, searchQuery]);
 
     const supplierMap = useMemo(() => new Map((suppliers || []).map(s => [s.uuid, s])), [suppliers]);
 
     const isLoading = suppliers === undefined || (activeTab === 'intakes' && stockIntakes === undefined);
+
+    const totalSuppliersDebt = useMemo(() => {
+        if (!suppliers) return 0;
+        return suppliers.reduce((sum, s) => sum + Math.round(safeNumber(s.balance) * 100), 0) / 100;
+    }, [suppliers]);
+
+    // ─── ACTIONS ───────────────────────────────────────────────
 
     const handleViewDetails = (intake: StockIntake) => {
         setSelectedIntake(intake);
@@ -147,7 +158,7 @@ export default function StockPage() {
         if (selectedSupplier) {
             try {
                 await supplierService.deleteSupplier(selectedSupplier.uuid);
-                toast.success(`Fournisseur "${selectedSupplier.name}" supprimé.`);
+                toast.success(`Fournisseur "${selectedSupplier.name}" révoqué.`);
             } catch (e: any) {
                 toast.error(e.message);
             }
@@ -207,10 +218,7 @@ export default function StockPage() {
         toast.success("Exportation terminée.");
     };
 
-    const totalSuppliersDebt = useMemo(() => {
-        if (!suppliers) return 0;
-        return suppliers.reduce((sum, s) => sum + s.balance, 0);
-    }, [suppliers]);
+    const resetFilters = () => setSearchQuery('');
 
     useKeyboardShortcuts([
         {
@@ -231,24 +239,24 @@ export default function StockPage() {
     ], 'Logistique');
 
     return (
-        <div className="p-6 sm:p-4 space-y-4 max-w-[1600px] mx-auto animate-in fade-in duration-1000">
+        <div className="p-6 sm:p-4 space-y-4 max-w-[1800px] mx-auto animate-in fade-in duration-1000 pb-20">
             <PageHeader
-                title="Elite Inventory"
-                description="Contrôle absolu des flux de marchandises & Partenaires"
+                title="Elite Logistics Radar"
+                description="Contrôle absolu des flux entrants & Management des partenaires"
             >
                 <div className="flex gap-3 w-full sm:w-auto">
                     {activeTab === 'suppliers' ? (
-                        <Button onClick={handleAddSupplier} className="flex-1 sm:flex-none h-12 rounded-2xl font-semibold text-xs uppercase tracking-wide shadow-xl transition-all active:scale-95">
-                            <UserPlus className="mr-2 h-4 w-4" /> Nouveau Fournisseur [N]
+                        <Button onClick={handleAddSupplier} className="flex-1 sm:flex-none h-12 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl transition-all active:scale-95 gap-3">
+                            <UserPlus className="h-4 w-4" /> Nouveau Partenaire [N]
                         </Button>
                     ) : (
                         <>
-                            <Button variant="outline" onClick={() => setIsAdjustmentOpen(true)} className="flex-1 sm:flex-none h-12 rounded-2xl font-semibold text-xs uppercase tracking-wide border-primary/20 hover:bg-primary/5 transition-all">
-                                <ArrowUpDown className="mr-2 h-4 w-4 text-primary" /> Correction
+                            <Button variant="outline" onClick={() => setIsAdjustmentOpen(true)} className="flex-1 sm:flex-none h-12 rounded-2xl font-black text-xs uppercase tracking-widest border-primary/20 hover:bg-primary/5 transition-all gap-3 px-6">
+                                <ArrowUpDown className="h-4 w-4 text-primary" /> Correction Stock
                             </Button>
-                            <Button asChild className="flex-1 sm:flex-none h-12 rounded-2xl font-semibold text-xs uppercase tracking-wide shadow-xl transition-all active:scale-95">
+                            <Button asChild className="flex-1 sm:flex-none h-12 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl transition-all active:scale-95 gap-3">
                                 <Link href="/stock/intake">
-                                    <Plus className="mr-2 h-4 w-4" /> Réception [N]
+                                    <Plus className="h-4 w-4" /> Réception [N]
                                 </Link>
                             </Button>
                         </>
@@ -263,23 +271,25 @@ export default function StockPage() {
                             [...Array(3)].map((_, i) => <Skeleton key={i} className="h-32 w-full rounded-lg bg-card/40" />)
                         ) : (
                             <>
-                                <div className="app-card p-4 rounded-lg bg-card/40 backdrop-blur-sm border-white/5 flex items-center justify-between">
-                                    <div>
-                                        <p className="text-[10px] font-semibold uppercase text-muted-foreground mb-2">Total Partenaires</p>
-                                        <p className="text-xl font-semibold tracking-tighter">{suppliers?.length}</p>
+                                <div className="app-card p-6 rounded-lg bg-card/40 backdrop-blur-sm border-white/5 flex items-center justify-between group overflow-hidden">
+                                    <div className="relative z-10">
+                                        <p className="text-[10px] font-black uppercase text-muted-foreground/40 tracking-widest mb-3">Réseau Partenaires</p>
+                                        <p className="text-3xl font-black tracking-tighter group-hover:scale-110 transition-transform origin-left">{suppliers?.length}</p>
                                     </div>
-                                    <div className="p-4 rounded-2xl bg-primary/10 text-primary">
+                                    <div className="p-4 rounded-2xl bg-primary/10 text-primary shadow-inner relative z-10 group-hover:rotate-12 transition-transform">
                                         <Building className="h-8 w-8" />
                                     </div>
+                                    <Building className="absolute -right-6 -bottom-6 h-32 w-32 opacity-[0.02] group-hover:opacity-10 transition-opacity" />
                                 </div>
-                                <div className="app-card p-4 rounded-lg bg-card/40 backdrop-blur-sm border-white/5 flex items-center justify-between col-span-2">
-                                    <div>
-                                        <p className="text-[10px] font-semibold uppercase text-destructive mb-2">Dette Globale Fournisseurs</p>
-                                        <p className="text-xl font-semibold tracking-tighter text-destructive">{formatCurrency(totalSuppliersDebt)}</p>
+                                <div className="app-card p-6 rounded-lg bg-card/40 backdrop-blur-sm border-white/5 flex items-center justify-between col-span-2 group overflow-hidden">
+                                    <div className="relative z-10">
+                                        <p className="text-[10px] font-black uppercase text-destructive/40 tracking-widest mb-3">Dette Globale Fournisseurs</p>
+                                        <p className="text-3xl font-black tracking-tighter text-destructive group-hover:scale-105 transition-transform origin-left">{formatCurrency(totalSuppliersDebt)}</p>
                                     </div>
-                                    <div className="p-4 rounded-2xl bg-destructive/10 text-destructive">
+                                    <div className="p-4 rounded-2xl bg-destructive/10 text-destructive shadow-inner relative z-10 group-hover:rotate-12 transition-transform">
                                         <Wallet className="h-8 w-8" />
                                     </div>
+                                    <Wallet className="absolute -right-6 -bottom-6 h-32 w-32 opacity-[0.02] group-hover:opacity-10 transition-opacity" />
                                 </div>
                             </>
                         )}
@@ -294,7 +304,7 @@ export default function StockPage() {
                     <button 
                         onClick={() => setActiveTab('intakes')}
                         className={cn(
-                            "flex items-center gap-3 px-8 py-3 rounded-lg text-[10px] font-semibold uppercase transition-all duration-500",
+                            "flex items-center gap-3 px-8 py-3 rounded-lg text-[10px] font-black uppercase transition-all duration-500",
                             activeTab === 'intakes' 
                                 ? "bg-primary text-primary-foreground shadow-sm scale-105" 
                                 : "text-muted-foreground/60 hover:text-foreground hover:bg-white/5"
@@ -306,7 +316,7 @@ export default function StockPage() {
                     <button 
                         onClick={() => setActiveTab('suppliers')}
                         className={cn(
-                            "flex items-center gap-3 px-8 py-3 rounded-lg text-[10px] font-semibold uppercase transition-all duration-500",
+                            "flex items-center gap-3 px-8 py-3 rounded-lg text-[10px] font-black uppercase transition-all duration-500",
                             activeTab === 'suppliers' 
                                 ? "bg-primary text-primary-foreground shadow-sm scale-105" 
                                 : "text-muted-foreground/60 hover:text-foreground hover:bg-white/5"
@@ -318,7 +328,7 @@ export default function StockPage() {
                     <button 
                         onClick={() => setActiveTab('logs')}
                         className={cn(
-                            "flex items-center gap-3 px-8 py-3 rounded-lg text-[10px] font-semibold uppercase transition-all duration-500",
+                            "flex items-center gap-3 px-8 py-3 rounded-lg text-[10px] font-black uppercase transition-all duration-500",
                             activeTab === 'logs' 
                                 ? "bg-primary text-primary-foreground shadow-sm scale-105" 
                                 : "text-muted-foreground/60 hover:text-foreground hover:bg-white/5"
@@ -331,14 +341,19 @@ export default function StockPage() {
 
                 <div className="flex items-center gap-4 px-4">
                     <div className="relative group flex-grow max-w-xs">
-                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
+                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors duration-500" />
                         <Input 
                             ref={searchInputRef}
                             placeholder="Rechercher [F3]..."
-                            className="pl-11 h-12 rounded-2xl bg-black/20 border-none shadow-inner focus-visible:ring-primary/20 font-bold"
+                            className="pl-11 h-12 rounded-xl bg-black/20 border-none shadow-inner focus-visible:ring-primary/20 font-black text-lg"
                             value={searchQuery}
                             onChange={e => setSearchQuery(e.target.value)}
                         />
+                        {searchQuery && (
+                            <button onClick={resetFilters} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground/40 hover:text-destructive transition-colors">
+                                <X className="h-4 w-4" />
+                            </button>
+                        )}
                     </div>
                     <DateRangePicker date={dateRange} setDate={setDate} />
                 </div>
@@ -348,16 +363,16 @@ export default function StockPage() {
                 <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 animate-in slide-in-from-bottom-10 duration-500">
                     <div className="bg-card/80 backdrop-blur-sm border-2 border-primary/20 shadow-sm rounded-full px-8 py-4 flex items-center gap-4">
                         <div className="flex items-center gap-4 pr-8 border-r border-white/10">
-                            <div className="h-10 w-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-semibold shadow-lg">
+                            <div className="h-10 w-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-black shadow-lg">
                                 {selectedSuppliers.size}
                             </div>
-                            <span className="text-[10px] font-semibold uppercase text-muted-foreground">Sélection Elite</span>
+                            <span className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Sélection Elite</span>
                         </div>
                         <div className="flex items-center gap-4">
-                            <Button variant="ghost" onClick={handleExportSuppliers} className="rounded-full h-12 px-6 font-semibold text-[10px] uppercase tracking-wide hover:bg-primary/10 hover:text-primary transition-all">
+                            <Button variant="ghost" onClick={handleExportSuppliers} className="rounded-full h-12 px-6 font-black text-[10px] uppercase tracking-widest hover:bg-primary/10 hover:text-primary transition-all">
                                 <FileUp className="mr-2 h-4 w-4" /> Exporter (.csv)
                             </Button>
-                            <Button variant="ghost" onClick={() => setIsBulkDeleteSupplierOpen(true)} className="rounded-full h-12 px-6 font-semibold text-[10px] uppercase tracking-wide text-destructive hover:bg-destructive/10 transition-all">
+                            <Button variant="ghost" onClick={() => setIsBulkDeleteSupplierOpen(true)} className="rounded-full h-12 px-6 font-black text-[10px] uppercase tracking-widest text-destructive hover:bg-destructive/10 transition-all">
                                 <Trash2 className="mr-2 h-4 w-4" /> Révoquer Comptes
                             </Button>
                             <Button variant="ghost" size="icon" onClick={() => setSelectedSuppliers(new Set())} className="rounded-full h-12 w-12 hover:bg-white/5 transition-all">
@@ -370,8 +385,8 @@ export default function StockPage() {
 
             <div className="min-h-[500px] animate-in fade-in slide-in-from-bottom-4 duration-1000">
                 {isLoading ? (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                        {[...Array(6)].map((_, i) => <Skeleton key={i} className="h-48 w-full rounded-lg bg-card/40" />)}
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {[...Array(6)].map((_, i) => <Skeleton key={i} className="h-56 w-full rounded-lg bg-card/40 border border-white/5" />)}
                     </div>
                 ) : (
                     <>
@@ -384,11 +399,11 @@ export default function StockPage() {
                                     </div>
                                 </div>
                                 {stockIntakes?.length === 0 ? (
-                                    <EmptyState icon={Archive} title="Silence Radio" description="Aucune réception enregistrée pour cette période." />
+                                    <EmptyState icon={Archive} title="Silence de Réception" description={searchQuery ? "Aucune facture correspondante." : "Aucune réception enregistrée pour cette période."} />
                                 ) : viewMode === 'list' ? (
                                     <StockIntakeTable intakes={stockIntakes!} supplierMap={supplierMap as any} onViewDetails={handleViewDetails} onCancelIntake={handleCancelIntake} />
                                 ) : (
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                                         {stockIntakes!.map(s => (
                                             <StockIntakeCard key={s.uuid} intake={s} supplierName={s.supplierUuid ? supplierMap.get(s.supplierUuid)?.name : undefined} onViewDetails={handleViewDetails} onCancelIntake={handleCancelIntake} />
                                         ))}
@@ -398,12 +413,12 @@ export default function StockPage() {
                         )}
                         {activeTab === 'logs' && (
                             inventoryLogs?.length === 0 ? (
-                                <EmptyState icon={History} title="Historique Vierge" description="Aucun mouvement de stock détecté sur cette période." />
+                                <EmptyState icon={History} title="Journal Vierge" description={searchQuery ? "Aucun mouvement trouvé." : "Aucun mouvement de stock détecté sur cette période."} />
                             ) : <InventoryLogTable logs={inventoryLogs! as any} />
                         )}
                         {activeTab === 'suppliers' && (
                             filteredSuppliers?.length === 0 ? (
-                                <EmptyState icon={Building} title="Aucun Partenaire" description="Commenceز par ajouter votre premier fournisseur." />
+                                <EmptyState icon={Building} title="Carnet d'Adresses Vide" description={searchQuery ? "Aucun partenaire identifié." : "Commencez par ajouter votre premier fournisseur."} />
                             ) : (
                                 <SupplierTable 
                                     suppliers={filteredSuppliers!} 
