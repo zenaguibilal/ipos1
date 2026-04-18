@@ -30,20 +30,20 @@ export function safeToDate(date: Date | string | undefined | null): Date {
 
 /**
  * Moteur d'interprétation numérique intelligent.
- * Gère les formats algériens (espaces pour les milliers, virgules pour les décimales).
+ * Gère les formats algériens (espaces pour les milliers, commas pour les décimales).
  */
 export function safeNumber(val: any): number {
     if (typeof val === 'number') return isNaN(val) ? 0 : val;
     if (val === null || val === undefined || val === '') return 0;
     
-    // Nettoyage radical des caractères non numériques sauf point, virgule و signe moins
+    // Nettoyage radical : garde uniquement chiffres, point, virgule و signe moins
     let str = String(val).trim().replace(/\s/g, '').replace(/[^\d.,-]/g, '');
     
-    // Si virgule présente sans point, c'est le séparateur décimal (Standard FR/DZ)
+    // Normalisation de la virgule vers le point (Standard FR/DZ)
     if (str.includes(',') && !str.includes('.')) {
         str = str.replace(',', '.');
     } else if (str.includes(',') && str.includes('.')) {
-        // En cas de mélange, le dernier signe est considéré comme le point décimal
+        // En cas de mélange, on considère le dernier signe comme le séparateur décimal
         const lastDot = str.lastIndexOf('.');
         const lastComma = str.lastIndexOf(',');
         if (lastDot > lastComma) {
@@ -63,7 +63,7 @@ export function safeNumber(val: any): number {
 export function preciseMultiply(a: number, b: number): number {
     const valA = safeNumber(a);
     const valB = safeNumber(b);
-    // On travaille en 1000x pour garder 3 décimales de précision intermédiaire
+    // On travaille en 1000x pour garder une précision intermédiaire suffisante
     return Math.round((valA * 1000) * (valB * 1000)) / 1000000;
 }
 
@@ -82,7 +82,7 @@ interface CalculableCart {
 }
 
 /**
- * Calculateur de panier haute fidélité.
+ * Calculateur de panier haute fidélité (Base 100 cents).
  */
 export function calculateCartTotals(cart: CalculableCart) {
     const subtotalCents = cart.items.reduce((acc, item) => {

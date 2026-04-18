@@ -150,7 +150,7 @@ class CustomerService {
 
         await db.customers.update(existing.id, dataToUpdate);
         
-        // Recalcul immédiat pour assurer la cohérence après mise à jour (notamment du solde initial)
+        // Recalcul immédiat pour assurer la cohérence après mise à jour
         const updated = await this.recalculateCustomerStatus(uuid);
 
         triggerSync();
