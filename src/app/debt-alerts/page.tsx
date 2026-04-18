@@ -250,7 +250,7 @@ export default function DebtAlertsPage() {
                             <div className="absolute inset-0 bg-emerald-500/5 blur-3xl rounded-full"></div>
                         </div>
                         <div className="space-y-2">
-                            <h3 className="text-2xl font-black tracking-tighter text-emerald-500 uppercase">Trésorerية Sécurisée</h3>
+                            <h3 className="text-2xl font-black tracking-tighter text-emerald-500 uppercase">Trésorerie Sécurisée</h3>
                             <p className="text-[10px] font-bold text-muted-foreground/40 uppercase tracking-[0.3em]">Aucun dossier en souffrance détecté</p>
                         </div>
                     </div>
@@ -377,7 +377,7 @@ export default function DebtAlertsPage() {
                         <Info className="h-4 w-4" /> Analyse du Moteur "Elite Risk"
                     </p>
                     <p className="text-[11px] text-muted-foreground/70 font-medium leading-relaxed max-w-6xl italic border-l-3 border-primary/30 pl-8 uppercase tracking-widest">
-                        L'algorithme de surveillance évalue le risque en combinant l'exposition financière (consommation du plafond) et l'inertية de paiement (retard par rapport au jour de règlement). Un marquage "Critique" est automatiquement appliqué pour tout dépassement de 110% du plafond ou un retard effectif franchissant le seuil des 20 jours.
+                        L'algorithme de surveillance évalue le risque en kombinant l'exposition financière (consommation du plafond) et l'inertie de paiement (retard par rapport au jour de règlement). Un marquage "Critique" est automatiquement appliqué pour tout dépassement de 110% du plafond ou un retard effectif franchissant le seuil des 20 jours.
                     </p>
                 </div>
             </div>
