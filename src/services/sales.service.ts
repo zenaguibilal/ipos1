@@ -26,8 +26,8 @@ class SalesService {
     }
 
     /**
-     * تصفية المبيعات مع دعم استرجاع البيانات القديمة عند غياب التاريخ.
-     * تم تحسين المحرك لاستخدام الفهارس (Indexed Querying) لأقصى أداء.
+     * تصفية المبيعات مع دعم "Période d'Analyse" الذكي.
+     * تم تحسين المحرك لاستخدام الفهارس (Indexed Querying) لأقصى أداء مع الأرشيف الكامل.
      */
     async filterSales(filters: {
         query?: string;
@@ -49,7 +49,7 @@ class SalesService {
             const end = endOfDay(filters.to);
             collection = db.sales.where('createdAt').belowOrEqual(end);
         } else {
-            // FIX: استرجاع الأرشيف الكامل (بما في ذلك الفواتير القديمة) عند مسح الفلتر الزمني
+            // FIX: استرجاع الأرشيف الكامل (بما في ذلك الفواتير القديمة) عند مسح الفلتر الزمني تماماً
             collection = db.sales.toCollection();
         }
 
@@ -117,7 +117,6 @@ class SalesService {
     }): Promise<Sale> {
         const now = new Date();
         
-        // ELITE MATH: العمل بالسنتيمات يمنع أخطاء التقريب القاتلة
         const subtotalCents = saleData.items.reduce(
             (acc, item) => acc + Math.round(preciseMultiply(item.price, item.cartQuantity) * 100),
             0,
@@ -171,7 +170,6 @@ class SalesService {
             dueDate: saleData.dueDate,
         };
 
-        // ATOMIC TRANSACTION: ضمان تحديث كافة السجلات أو لا شيء
         await db.transaction(
             'rw',
             [
@@ -248,3 +246,4 @@ class SalesService {
 }
 
 export const salesService = new SalesService();
+

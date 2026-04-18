@@ -56,7 +56,7 @@ type SalesStatus = 'all' | 'paid' | 'partial' | 'unpaid';
 
 /**
  * صفحة سجل المبيعات Elite.
- * تم التحديث لضمان ظهور الفواتير القديمة عند مسح الفلتر الزمني وتعزيز الدقة المحاسبية.
+ * تم تحديث محرك الـ Période d'Analyse لضمان الدقة المطلقة والتحكم الكامل في الأرشيف.
  */
 export default function SalesHistoryPage() {
     const searchInputRef = useRef<HTMLInputElement>(null);
@@ -69,7 +69,7 @@ export default function SalesHistoryPage() {
     const [filterStatus, setFilterStatus] = useState<SalesStatus>('all');
     const debouncedSearchQuery = useDebounce(searchQuery, 300);
     
-    // استخدام undefined بدلاً من النطاق التلقائي للسماح بعرض كامل السجل عند الحاجة
+    // استخدام ميزة النطاق الزمني الذكي
     const { dateRange, setDate, isMounted } = useDateRange(29);
     const profile = useAppStore(state => state.companyProfile);
     
@@ -81,7 +81,7 @@ export default function SalesHistoryPage() {
     const [isBulkCancelConfirmOpen, setIsBulkCancelConfirmOpen] = useState(false);
     const [isRefreshing, setIsRefreshing] = useState(false);
 
-    // مراقبة حية للمبيعات المفلترة لضمان المزامنة الفورية
+    // مراقبة حية للمبيعات بناءً على "Période d'Analyse" المحددة
     const sales = useLiveQuery(
         () => salesService.filterSales({
             query: debouncedSearchQuery,
@@ -100,10 +100,10 @@ export default function SalesHistoryPage() {
     const isLoading = sales === undefined || !isMounted;
 
     /**
-     * محرك حساب الإحصائيات الفائق - يستخدم السنتيمترات لضمان الدقة المطلقة.
+     * محرك حساب الإحصائيات (Stats) - يعمل حصرياً على البيانات المفلترة زمنياً.
      */
     const stats = useMemo(() => {
-        if (!sales) return { total: 0, received: 0, debt: 0, count: 0, discount: 0 };
+        if (!sales) return { total: 0, received: 0, debt: 0, count: 0 };
         
         let totalCents = 0;
         let receivedCents = 0;
@@ -123,18 +123,23 @@ export default function SalesHistoryPage() {
         };
     }, [sales]);
 
+    /**
+     * محرك الرسم البياني - يعرض تدفقات الفترة المحددة فقط.
+     */
     const chartData = useMemo(() => {
         if (!sales || sales.length === 0) return [];
         const dataMap = new Map<string, { date: string, totalCents: number, receivedCents: number }>();
         
+        // ترتيب تصاعدي للرسم البياني
         const sortedSales = [...sales].sort((a,b) => safeToDate(a.createdAt!).getTime() - safeToDate(b.createdAt!).getTime());
         
         sortedSales.forEach(s => {
-            const day = format(safeToDate(s.createdAt!), 'dd/MM');
-            const current = dataMap.get(day) || { date: day, totalCents: 0, receivedCents: 0 };
+            const dateObj = safeToDate(s.createdAt!);
+            const dayKey = format(dateObj, 'dd/MM');
+            const current = dataMap.get(dayKey) || { date: dayKey, totalCents: 0, receivedCents: 0 };
             current.totalCents += Math.round(safeNumber(s.total) * 100);
             current.receivedCents += Math.round(safeNumber(s.amountPaid) * 100);
-            dataMap.set(day, current);
+            dataMap.set(dayKey, current);
         });
 
         return Array.from(dataMap.values()).map(d => ({
@@ -172,7 +177,7 @@ export default function SalesHistoryPage() {
             } catch (e) {}
         }
         if (successCount > 0) {
-            toast.success(`${successCount} vente(s) annulée(s) avec succès.`);
+            toast.success(`${successCount} vente(s) annulée(s) مع تحديث المخزون.`);
         }
         setSelectedSales(new Set());
     };
@@ -205,78 +210,23 @@ export default function SalesHistoryPage() {
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
-        link.download = `ipos-ventes-${new Date().toISOString().split('T')[0]}.csv`;
+        link.download = `ventes-elite-${new Date().toISOString().split('T')[0]}.csv`;
         link.click();
-        toast.success("Exportation Elite terminée.");
-    };
-
-    const handlePrintSummary = () => {
-        if (!sales || sales.length === 0) return;
-        const printWindow = window.open('', '_blank');
-        if (!printWindow) return;
-
-        const html = `
-            <html>
-                <head>
-                    <title>Rapport de Ventes - iPOS Zen</title>
-                    <style>
-                        body { font-family: sans-serif; padding: 40px; color: #333; }
-                        header { border-bottom: 2px solid #000; padding-bottom: 20px; margin-bottom: 30px; display: flex; justify-content: space-between; align-items: flex-end; }
-                        h1 { margin: 0; font-size: 24px; text-transform: uppercase; letter-spacing: -0.05em; }
-                        table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 11px; }
-                        th, td { border-bottom: 1px solid #eee; padding: 12px 8px; text-align: left; }
-                        th { background-color: #f9f9f9; font-weight: 900; text-transform: uppercase; font-size: 10px; }
-                        .amount { text-align: right; font-family: monospace; font-size: 12px; font-weight: 700; }
-                        .total-row { background-color: #000; color: #fff; font-weight: 900; }
-                    </style>
-                </head>
-                <body>
-                    <header>
-                        <div><h1>${profile?.companyName || 'iPOS Zen'}</h1><p>${profile?.address || ''}</p></div>
-                        <div style="text-align: right"><p>RAPPORT DE VENTES ELITE</p><p>${new Date().toLocaleDateString('fr-FR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p></div>
-                    </header>
-                    <table>
-                        <thead>
-                            <tr><th>Date</th><th>N° Facture</th><th>Client</th><th>Statut</th><th style="text-align: right;">Total</th></tr>
-                        </thead>
-                        <tbody>
-                            ${sales.map(s => `
-                                <tr>
-                                    <td>${format(safeToDate(s.createdAt!), 'dd/MM/yy')}</td>
-                                    <td><b>${s.invoiceNumber}</b></td>
-                                    <td>${s.customerUuid ? (customerMap.get(s.customerUuid)?.firstName || 'Client') : 'Passage'}</td>
-                                    <td>${s.paymentStatus.toUpperCase()}</td>
-                                    <td class="amount">${s.total.toFixed(2)}</td>
-                                </tr>
-                            `).join('')}
-                        </tbody>
-                        <tfoot>
-                            <tr class="total-row">
-                                <td colSpan="4" style="text-align: right;">TOTAL GLOBAL PÉRIODE</td>
-                                <td class="amount">${stats.total.toFixed(2)} DA</td>
-                            </tr>
-                        </tfoot>
-                    </table>
-                </body>
-            </html>
-        `;
-        printWindow.document.write(html);
-        printWindow.document.close();
-        printWindow.print();
+        toast.success("Exportation terminée.");
     };
 
     const resetFilters = () => {
         setSearchQuery('');
         setFilterStatus('all');
-        setDate(undefined); // مسح التاريخ لعرض كامل السجل التاريخي
-        toast.info("Affichage de tout l'historique.");
+        setDate(undefined); // مسح التاريخ تماماً لعرض الأرشيف الكامل
+        toast.info("Affichage de tout l'historique historique.");
     };
 
     useKeyboardShortcuts([
         {
             key: 'F3',
             action: () => searchInputRef.current?.focus(),
-            description: 'Rechercher une facture',
+            description: 'Rechercher في السجل',
             ignoreInputFocus: true
         }
     ], 'Historique');
@@ -287,12 +237,9 @@ export default function SalesHistoryPage() {
         <div className="p-6 sm:p-4 space-y-4 max-w-[1800px] mx-auto animate-in fade-in duration-1000 pb-20">
             <PageHeader
                 title="Registre des Ventes Elite"
-                description="Suivi souverain des flux de trésorerie و المركز المالي"
+                description="Maîtrise souveraine de l'historique et des flux de trésorerie"
             >
                 <div className="flex gap-3 w-full sm:w-auto">
-                    <Button variant="outline" onClick={handlePrintSummary} className="flex-1 sm:flex-none h-12 rounded-2xl font-semibold text-xs uppercase tracking-wide border-primary/20 hover:bg-primary/5 transition-all">
-                        <Printer className="mr-2 h-4 w-4 text-primary" /> Rapport
-                    </Button>
                     <Button variant="outline" onClick={handleExportCsv} className="flex-1 sm:flex-none h-12 rounded-2xl font-semibold text-xs uppercase tracking-wide border-primary/20 hover:bg-primary/5 transition-all">
                         <FileUp className="mr-2 h-4 w-4 text-primary" /> Exporter
                     </Button>
@@ -308,34 +255,34 @@ export default function SalesHistoryPage() {
                 </div>
             </PageHeader>
 
-            <div className="grid grid-cols-1 lg:grid-cols-4 gap-3">
-                {/* Stats Sidebar */}
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+                {/* شريط الإحصائيات الجانبي - يتفاعل مع Période d'Analyse */}
                 <div className="lg:col-span-1 space-y-4">
                     <Card className="app-card rounded-lg bg-card/40 backdrop-blur-sm border-white/5 overflow-hidden shadow-sm">
                         <CardHeader className="bg-primary/5 border-b border-white/5 p-6">
-                            <CardTitle className="text-[10px] font-semibold uppercase text-primary flex items-center gap-2 tracking-widest">
-                                <Sparkles className="h-3 w-3" /> Bilan des Flux
+                            <CardTitle className="text-[10px] font-black uppercase text-primary flex items-center gap-2 tracking-widest">
+                                <Sparkles className="h-3.5 w-3.5" /> Analyse Périodique
                             </CardTitle>
                         </CardHeader>
-                        <CardContent className="p-4 space-y-4">
+                        <CardContent className="p-6 space-y-6">
                             <div className="space-y-1">
-                                <p className="text-[10px] font-semibold text-muted-foreground/40 uppercase tracking-wide">Volume d'Affaires</p>
-                                <p className="text-2xl font-black tracking-tighter text-primary tabular-nums">{formatCurrency(stats.total)}</p>
-                                <p className="text-[10px] font-bold text-muted-foreground/60">{stats.count} opérations validées</p>
+                                <p className="text-[10px] font-semibold text-muted-foreground/40 uppercase tracking-wide">CA de la Période</p>
+                                <p className="text-3xl font-black tracking-tighter text-primary tabular-nums">{formatCurrency(stats.total)}</p>
+                                <p className="text-[10px] font-bold text-muted-foreground/60">{stats.count} opérations sur ce flux</p>
                             </div>
                             
-                            <div className="grid grid-cols-1 gap-3">
+                            <div className="grid grid-cols-1 gap-3 pt-2">
                                 <div className="p-4 rounded-2xl bg-emerald-500/5 border border-emerald-500/10 group hover:bg-emerald-500/10 transition-all duration-500 shadow-inner">
                                     <p className="text-[9px] font-semibold uppercase text-emerald-600 mb-1 flex items-center gap-2 tracking-wide">
-                                        <CheckCircle2 className="h-3 w-3" /> Recettes Réelles
+                                        <CheckCircle2 className="h-3.5 w-3.5" /> Flux Réels Reçus
                                     </p>
-                                    <p className="font-bold text-lg text-emerald-600 tracking-tight tabular-nums">{formatCurrency(stats.received)}</p>
+                                    <p className="font-bold text-xl text-emerald-600 tracking-tight tabular-nums">{formatCurrency(stats.received)}</p>
                                 </div>
                                 <div className="p-4 rounded-2xl bg-destructive/5 border border-destructive/10 group hover:bg-destructive/10 transition-all duration-500 shadow-inner">
                                     <p className="text-[9px] font-semibold uppercase text-destructive mb-1 flex items-center gap-2 tracking-wide">
-                                        <Landmark className="h-3 w-3" /> Créances Clients
+                                        <Landmark className="h-3.5 w-3.5" /> Créances Périodiques
                                     </p>
-                                    <p className="font-bold text-lg text-destructive tracking-tight tabular-nums">{formatCurrency(stats.debt)}</p>
+                                    <p className="font-bold text-xl text-destructive tracking-tight tabular-nums">{formatCurrency(stats.debt)}</p>
                                 </div>
                             </div>
                         </CardContent>
@@ -343,14 +290,14 @@ export default function SalesHistoryPage() {
 
                     <Card className="app-card rounded-lg bg-card/40 backdrop-blur-sm border-white/5 overflow-hidden shadow-sm">
                         <CardHeader className="p-6 pb-2">
-                            <CardTitle className="text-[10px] font-semibold uppercase text-muted-foreground opacity-40 tracking-widest">Filtrage Précis</CardTitle>
+                            <CardTitle className="text-[10px] font-semibold uppercase text-muted-foreground opacity-40 tracking-widest">Configuration Filtres</CardTitle>
                         </CardHeader>
                         <CardContent className="p-6 space-y-6">
                             <div className="relative group">
                                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
                                 <Input 
                                     ref={searchInputRef}
-                                    placeholder="Facture, Client [F3]..."
+                                    placeholder="N° Facture, Client..."
                                     className="pl-11 h-12 rounded-xl bg-black/20 border-none shadow-inner font-bold focus-visible:ring-primary/20"
                                     value={searchQuery}
                                     onChange={e => setSearchQuery(e.target.value)}
@@ -358,50 +305,50 @@ export default function SalesHistoryPage() {
                             </div>
                             
                             <div className="space-y-4">
-                                <DropdownMenu>
-                                    <DropdownMenuTrigger asChild>
-                                        <Button variant="outline" className="w-full justify-between rounded-xl h-12 bg-black/20 border-white/5 text-xs font-semibold uppercase tracking-wide hover:bg-white/5">
-                                            <div className="flex items-center gap-3">
-                                                <Banknote className="h-4 w-4 text-primary" />
-                                                {filterStatus === 'all' ? 'Toutes factures' : filterStatus === 'paid' ? 'Payées' : filterStatus === 'partial' ? 'Partiels' : 'Dettes'}
-                                            </div>
-                                            <ChevronRight className="h-3 w-3 opacity-30" />
-                                        </Button>
-                                    </DropdownMenuTrigger>
-                                    <DropdownMenuContent className="w-[240px] rounded-2xl border-none shadow-sm bg-card">
-                                        <DropdownMenuLabel className="text-[10px] font-semibold uppercase text-muted-foreground p-4 tracking-widest">Statut de Règlement</DropdownMenuLabel>
-                                        <DropdownMenuSeparator className="opacity-10" />
-                                        <DropdownMenuCheckboxItem className="p-3 font-bold" checked={filterStatus === 'all'} onCheckedChange={() => setFilterStatus('all')}>Toutes les factures</DropdownMenuCheckboxItem>
-                                        <DropdownMenuCheckboxItem className="p-3 font-bold" checked={filterStatus === 'paid'} onCheckedChange={() => setFilterStatus('paid')}>Entièrement payées</DropdownMenuCheckboxItem>
-                                        <DropdownMenuCheckboxItem className="p-3 font-bold" checked={filterStatus === 'partial'} onCheckedChange={() => setFilterStatus('partial')}>Paiements partiels</DropdownMenuCheckboxItem>
-                                        <DropdownMenuCheckboxItem className="p-3 font-bold" checked={filterStatus === 'unpaid'} onCheckedChange={() => setFilterStatus('unpaid')}>Impayés (Dette)</DropdownMenuCheckboxItem>
-                                    </DropdownMenuContent>
-                                </DropdownMenu>
-
                                 <div className="space-y-2">
                                     <Label className="text-[10px] font-black uppercase text-muted-foreground/40 ml-1">Période d'Analyse</Label>
                                     <div className="p-1 bg-black/20 rounded-2xl border border-white/5 shadow-inner">
                                         <DateRangePicker date={dateRange} setDate={setDate} />
                                     </div>
                                     {!dateRange && (
-                                        <div className="flex items-center gap-2 px-3 py-1.5 bg-primary/5 rounded-lg border border-primary/10">
-                                            <CalendarDays className="h-3 w-3 text-primary" />
-                                            <span className="text-[9px] font-black uppercase text-primary">Tout l'historique affiché</span>
+                                        <div className="flex items-center gap-2 px-3 py-2 bg-primary/10 rounded-xl border border-primary/20 animate-in zoom-in-95 duration-500">
+                                            <CalendarDays className="h-4 w-4 text-primary" />
+                                            <span className="text-[9px] font-black uppercase text-primary tracking-widest">Mode : الأرشيف الكامل (All-Time)</span>
                                         </div>
                                     )}
                                 </div>
+
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                        <Button variant="outline" className="w-full justify-between rounded-xl h-12 bg-black/20 border-white/5 text-xs font-semibold uppercase tracking-wide">
+                                            <div className="flex items-center gap-3">
+                                                <Banknote className="h-4 w-4 text-primary" />
+                                                {filterStatus === 'all' ? 'Tous les règlements' : filterStatus === 'paid' ? 'Payés' : filterStatus === 'partial' ? 'Partiels' : 'Dettes'}
+                                            </div>
+                                            <ChevronRight className="h-3 w-3 opacity-30" />
+                                        </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent className="w-[240px] rounded-2xl border-none shadow-xl bg-card">
+                                        <DropdownMenuLabel className="text-[10px] font-black uppercase text-muted-foreground p-4 tracking-widest">État du Flux</DropdownMenuLabel>
+                                        <DropdownMenuSeparator className="opacity-10" />
+                                        <DropdownMenuCheckboxItem className="p-3 font-bold" checked={filterStatus === 'all'} onCheckedChange={() => setFilterStatus('all')}>Toutes les factures</DropdownMenuCheckboxItem>
+                                        <DropdownMenuCheckboxItem className="p-3 font-bold" checked={filterStatus === 'paid'} onCheckedChange={() => setFilterStatus('paid')}>Règlements complets</DropdownMenuCheckboxItem>
+                                        <DropdownMenuCheckboxItem className="p-3 font-bold" checked={filterStatus === 'partial'} onCheckedChange={() => setFilterStatus('partial')}>Paiements partiels</DropdownMenuCheckboxItem>
+                                        <DropdownMenuCheckboxItem className="p-3 font-bold" checked={filterStatus === 'unpaid'} onCheckedChange={() => setFilterStatus('unpaid')}>Dettes totales</DropdownMenuCheckboxItem>
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
                             </div>
 
                             {isFiltered && (
-                                <Button variant="ghost" onClick={resetFilters} className="w-full text-destructive hover:bg-destructive/10 text-[10px] font-semibold uppercase rounded-xl h-12 tracking-wide">
-                                    Effacer Filtres <FilterX className="ml-2 h-3.5 w-3.5" />
+                                <Button variant="ghost" onClick={resetFilters} className="w-full text-destructive hover:bg-destructive/10 text-[10px] font-bold uppercase rounded-xl h-12 tracking-[0.2em] transition-all">
+                                    Réinitialiser [Esc] <FilterX className="ml-2 h-4 w-4" />
                                 </Button>
                             )}
                         </CardContent>
                     </Card>
                 </div>
 
-                {/* Main Content */}
+                {/* المحتوى الرئيسي - الرسوم البيانية والجداول */}
                 <div className="lg:col-span-3 space-y-4">
                     <Card className="app-card rounded-lg bg-card/40 backdrop-blur-sm border-white/5 overflow-hidden shadow-sm">
                         <CardHeader className="flex flex-row items-center justify-between p-4 border-b border-white/5 bg-muted/20">
@@ -410,8 +357,8 @@ export default function SalesHistoryPage() {
                                     <TrendingUp className="h-6 w-6" />
                                 </div>
                                 <div>
-                                    <CardTitle className="text-xl font-bold tracking-tighter uppercase">Courbe de Trésorerية</CardTitle>
-                                    <p className="text-[10px] font-semibold uppercase text-primary/50 tracking-widest">Flux Chronologiques</p>
+                                    <CardTitle className="text-xl font-bold tracking-tighter uppercase">Courbe de Trésorerie</CardTitle>
+                                    <p className="text-[10px] font-semibold uppercase text-primary/50 tracking-widest">Flux chronologiques de la période</p>
                                 </div>
                             </div>
                             <div className="flex items-center gap-1.5 p-1.5 bg-black/20 rounded-lg border border-white/5 shadow-inner">
@@ -433,7 +380,7 @@ export default function SalesHistoryPage() {
                                 </Button>
                             </div>
                         </CardHeader>
-                        <CardContent className="h-64 p-4">
+                        <CardContent className="h-72 p-4">
                             {isLoading ? (
                                 <div className="h-full flex items-center justify-center opacity-20"><RefreshCw className="animate-spin h-10 w-10 text-primary" /></div>
                             ) : chartData.length > 0 ? (
@@ -481,7 +428,9 @@ export default function SalesHistoryPage() {
                                     </AreaChart>
                                 </ResponsiveContainer>
                             ) : (
-                                <div className="h-full flex items-center justify-center opacity-10 uppercase text-[10px] font-black tracking-widest italic">Analyse des flux indisponible</div>
+                                <div className="h-full flex items-center justify-center opacity-10 uppercase text-[10px] font-black tracking-widest italic text-center">
+                                    Saisie de données insuffisante pour cette Période d'Analyse
+                                </div>
                             )}
                         </CardContent>
                     </Card>
@@ -494,15 +443,15 @@ export default function SalesHistoryPage() {
                         ) : sales && sales.length > 0 ? (
                             viewMode === 'list' ? (
                                 <div className="space-y-4">
-                                    <div className="flex items-center gap-3 px-6 py-3 bg-primary/5 rounded-2xl border border-primary/10 w-fit shadow-inner">
+                                    <div className="flex items-center gap-4 px-6 py-3 bg-primary/5 rounded-2xl border border-primary/10 w-fit shadow-inner">
                                         <Checkbox 
                                             id="select-all-sales" 
                                             checked={selectedSales.size === sales.length && sales.length > 0} 
                                             onCheckedChange={handleSelectAll}
-                                            className="h-5 w-5 border-primary data-[state=checked]:bg-primary"
+                                            className="h-6 w-6 border-primary data-[state=checked]:bg-primary rounded-xl"
                                         />
                                         <label htmlFor="select-all-sales" className="text-[10px] font-black uppercase text-primary cursor-pointer select-none tracking-widest">
-                                            Tout sélectionner ({selectedSales.size} flux)
+                                            Tout sélectionner ({selectedSales.size} flux actifs)
                                         </label>
                                     </div>
                                     <SalesHistoryTable 
@@ -516,7 +465,7 @@ export default function SalesHistoryPage() {
                                     />
                                 </div>
                             ) : (
-                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                                     {sales.map(s => {
                                         const customer = s.customerUuid ? customerMap.get(s.customerUuid) : undefined;
                                         return (
@@ -536,10 +485,10 @@ export default function SalesHistoryPage() {
                         ) : (
                             <EmptyState
                                 icon={History}
-                                title="Aucune vente identifiée"
-                                description={isFiltered ? "Ajustez vos critères de recherche pour trouver le flux correspondant." : "Enregistrez votre première vente pour démarrer l'historique Elite."}
+                                title="Aucun flux détecté"
+                                description={isFiltered ? "Ajustez votre Période d'Analyse ou vos filtres." : "Commencez par valider votre première transaction Elite."}
                             >
-                                {isFiltered && <Button variant="outline" onClick={resetFilters} className="rounded-2xl h-12 font-bold px-8 border-primary/20 hover:bg-primary/5 transition-all">Tout l'historique</Button>}
+                                {isFiltered && <Button variant="outline" onClick={resetFilters} className="rounded-2xl h-12 font-bold px-8 border-primary/20 hover:bg-primary/5 transition-all">Afficher l'الأرشيف الكامل</Button>}
                             </EmptyState>
                         )}
                     </div>
@@ -593,7 +542,7 @@ export default function SalesHistoryPage() {
             <ConfirmAlertDialog
                 isOpen={isBulkCancelConfirmOpen}
                 onOpenChange={setIsBulkCancelConfirmOpen}
-                title={`Annuler ${selectedSales.size} transactions de vente ?`}
+                title={`Annuler ${selectedSales.size} transactions ?`}
                 description={
                     <div className="space-y-4">
                         <p className="font-medium text-foreground">Cette opération est <b>définitive</b>. Les conséquences sur le système Elite sont :</p>
@@ -613,3 +562,4 @@ export default function SalesHistoryPage() {
         </div>
     );
 }
+
