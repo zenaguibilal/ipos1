@@ -170,7 +170,7 @@ export function ProductDialog({ isOpen, onOpenChange, product, categories, suppl
                             </div>
                             <div>
                                 <DialogTitle className="text-lg font-semibold tracking-tight">{product ? 'Édition Elite' : 'Nouveau Produit Elite'}</DialogTitle>
-                                <DialogDescription className="font-medium">Paramétrage technique de la fiche محصول Premium.</DialogDescription>
+                                <DialogDescription className="font-medium">Paramétrage technique de la fiche produit Premium.</DialogDescription>
                             </div>
                         </div>
                     </DialogHeader>
@@ -179,7 +179,7 @@ export function ProductDialog({ isOpen, onOpenChange, product, categories, suppl
                         {error && <div className="p-4 bg-destructive/10 text-destructive rounded-2xl text-xs font-bold border border-destructive/20 text-center">{error}</div>}
                         
                         <div>
-                            <SectionTitle title="Identité & Rayon" icon={FileText} />
+                            <SectionTitle title="Identité & Catégorie" icon={FileText} />
                             <div className="grid gap-6">
                                 <div className="space-y-2">
                                     <Label htmlFor="name" className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground ml-1">Désignation *</Label>
@@ -187,7 +187,7 @@ export function ProductDialog({ isOpen, onOpenChange, product, categories, suppl
                                 </div>
                                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
                                     <div className="space-y-2">
-                                        <Label className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground ml-1">Rayون</Label>
+                                        <Label className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground ml-1">Catégorie</Label>
                                         <Select value={formState.category} onValueChange={(value) => setFormState(s => ({ ...s, category: value }))}>
                                             <SelectTrigger className="h-12 rounded-xl bg-muted/20 border-none shadow-inner font-bold"><SelectValue placeholder="Choisir..." /></SelectTrigger>
                                             <SelectContent className="rounded-2xl shadow-sm border-white/5">

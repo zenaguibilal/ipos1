@@ -232,6 +232,14 @@ function ProductsContent() {
         toast.success("Exportation terminée.");
     };
 
+    const resetFilters = () => {
+        setSearchQuery('');
+        setSelectedCategory('all');
+        setSelectedSupplier('all');
+        setStockStatus('all');
+        setSortBy('createdAt_desc');
+    };
+
     useKeyboardShortcuts([
         {
             key: 'F3',
@@ -291,11 +299,11 @@ function ProductsContent() {
                         <DropdownMenuTrigger asChild>
                             <Button variant="outline" className="h-12 rounded-xl border-white/5 bg-black/20 hover:bg-white/5 font-bold px-6">
                                 <Archive className="mr-2 h-4 w-4 opacity-50" />
-                                {selectedCategory === 'all' ? 'Tous les Rayons' : selectedCategory}
+                                {selectedCategory === 'all' ? 'Toutes Catégories' : selectedCategory}
                             </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent className="rounded-2xl border-white/5 shadow-sm min-w-[200px] max-h-80 overflow-y-auto">
-                            <DropdownMenuLabel className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Rayon / Catégorie</DropdownMenuLabel>
+                            <DropdownMenuLabel className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Catégories</DropdownMenuLabel>
                             <DropdownMenuSeparator className="opacity-10" />
                             <DropdownMenuCheckboxItem checked={selectedCategory === 'all'} onCheckedChange={() => setSelectedCategory('all')}>Toutes les catégories</DropdownMenuCheckboxItem>
                             {categories?.map(cat => (
@@ -370,7 +378,7 @@ function ProductsContent() {
                {isLoading ? (
                     viewMode === 'grid' ? <ProductGridSkeleton /> : <ProductTableSkeleton />
                ) : products.length === 0 ? (
-                    <EmptyState icon={Package} title="Silence dans le Rayon" description={isFiltered ? "Ajustez vos filtres pour trouver ce que vous cherchez." : "Commencez à bâtir votre catalogue de luxe."} />
+                    <EmptyState icon={Package} title="Catalogue Vide" description={isFiltered ? "Ajustez vos filtres pour trouver ce que vous cherchez." : "Commencez à bâtir votre catalogue de luxe."} />
                ) : (
                     viewMode === 'grid' ? (
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3">
