@@ -64,7 +64,7 @@ export function preciseMultiply(a: number, b: number): number {
     const valA = safeNumber(a);
     const valB = safeNumber(b);
     // استخدام الأعداد الصحيحة لضمان الدقة
-    return Math.round(valA * 1000 * (valB * 1000)) / 1000000;
+    return Math.round((valA * 1000) * (valB * 1000)) / 1000000;
 }
 
 export function formatDateToYYYYMMDD(date: Date): string {

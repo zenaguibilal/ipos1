@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -8,10 +7,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Plus, Trash2, Save, ShoppingBag, Truck, Building, Hash, Loader2, PackagePlus, Calculator, Coins, Sparkles, BadgePercent } from 'lucide-react';
+import { Plus, Trash2, Save, ShoppingBag, Truck, Building, Hash, Loader2, PackagePlus, Calculator, Coins, Sparkles, BadgePercent, AlertTriangle } from 'lucide-react';
 import { ProductIntakeCombobox } from './ProductIntakeCombobox';
 import type { Product, StockIntakeItem } from '@/lib/types';
-import { formatCurrency, cn, safeNumber } from '@/lib/utils';
+import { formatCurrency, cn, safeNumber, preciseMultiply } from '@/lib/utils';
 import { useAppActions } from '@/stores/appStore';
 import { toast } from 'sonner';
 import { v4 as uuidv4 } from 'uuid';
@@ -29,8 +28,12 @@ export function NewIntakeForm() {
     const [items, setItems] = useState<StockIntakeItem[]>([]);
     const [isSubmitting, setIsSaving] = useState(false);
 
+    // محرك حساب دقيق باستخدام السنتيمترات لتجنب أخطاء التقريب
     const itemsTotalValue = useMemo(() => {
-        return items.reduce((sum, item) => sum + (safeNumber(item.quantity) * safeNumber(item.purchasePrice)), 0);
+        const totalCents = items.reduce((sum, item) => {
+            return sum + Math.round(preciseMultiply(safeNumber(item.quantity), safeNumber(item.purchasePrice)) * 100);
+        }, 0);
+        return totalCents / 100;
     }, [items]);
 
     const shippingFactor = useMemo(() => {
@@ -43,7 +46,7 @@ export function NewIntakeForm() {
         const existing = items.find(i => i.productUuid === product.uuid);
         if (existing) {
             toast.info(`"${product.name}" est déjà dans le manifeste.`, {
-                description: "Modifiez la quantité directement dans le tableau."
+                description: "Modifiez la quantité directement في الجدول."
             });
             return;
         }
@@ -115,7 +118,7 @@ export function NewIntakeForm() {
             });
 
             if (success) {
-                toast.success("Manifeste validé. Stock et comptes mis à jour.");
+                toast.success("Manifestه validé. Stock et comptes mis à jour.");
                 router.push('/stock');
             }
         } catch (error: any) {
@@ -136,7 +139,7 @@ export function NewIntakeForm() {
     ], 'Logistique', items.length > 0);
 
     return (
-        <div className="grid lg:grid-cols-12 gap-6 animate-in slide-in-from-bottom-4 duration-700">
+        <div className="grid lg:grid-cols-12 gap-6 animate-in slide-in-from-bottom-4 duration-700 pb-20">
             <div className="lg:col-span-9 space-y-6">
                 <Card className="app-card rounded-lg border-white/5 bg-card/40 backdrop-blur-sm overflow-hidden shadow-sm">
                     <CardHeader className="bg-muted/20 border-b border-white/5 p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
@@ -184,7 +187,8 @@ export function NewIntakeForm() {
                                             const qty = safeNumber(item.quantity);
                                             const cost = safeNumber(item.purchasePrice);
                                             const landingCost = cost * (1 + shippingFactor);
-                                            const rowTotal = qty * cost;
+                                            const rowTotal = preciseMultiply(qty, cost);
+                                            const isSellingAtLoss = item.price < landingCost && item.price > 0;
                                             
                                             return (
                                                 <TableRow key={item.id} className="border-white/5 group hover:bg-white/5 transition-all">
@@ -215,7 +219,7 @@ export function NewIntakeForm() {
                                                                 onChange={e => updateItem(item.id, 'purchasePrice', e.target.value)}
                                                                 className={cn(
                                                                     "w-24 h-9 text-right bg-black/20 border-none shadow-inner font-mono font-black ml-auto focus-visible:ring-primary/20 pr-6",
-                                                                    cost === 0 && "text-destructive animate-pulse"
+                                                                    cost <= 0 && "text-destructive animate-pulse"
                                                                 )}
                                                                 placeholder="0.00"
                                                                 onFocus={e => e.target.select()}
@@ -232,17 +236,21 @@ export function NewIntakeForm() {
                                                         </div>
                                                     </TableCell>
                                                     <TableCell className="p-4 text-right">
-                                                        <div className="relative">
+                                                        <div className="relative group/sale-price">
                                                             <Input 
                                                                 type="number" 
                                                                 step="0.01"
                                                                 value={item.price || ''} 
                                                                 onChange={e => updateItem(item.id, 'price', e.target.value)}
-                                                                className="w-24 h-9 text-right bg-black/20 border-none shadow-inner font-mono font-black text-emerald-500 ml-auto focus-visible:ring-primary/20 pr-6"
+                                                                className={cn(
+                                                                    "w-24 h-9 text-right bg-black/20 border-none shadow-inner font-mono font-black ml-auto focus-visible:ring-primary/20 pr-6",
+                                                                    isSellingAtLoss ? "text-destructive" : "text-emerald-500"
+                                                                )}
                                                                 placeholder="0.00"
                                                                 onFocus={e => e.target.select()}
                                                             />
-                                                            <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[8px] font-bold text-emerald-500/40">DA</span>
+                                                            <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[8px] font-bold opacity-20">DA</span>
+                                                            {isSellingAtLoss && <AlertTriangle className="absolute -left-5 top-1/2 -translate-y-1/2 h-3 w-3 text-destructive animate-pulse" />}
                                                         </div>
                                                     </TableCell>
                                                     <TableCell className="p-4 text-right font-mono font-black text-sm tracking-tighter tabular-nums">
@@ -361,7 +369,7 @@ export function NewIntakeForm() {
                     </CardContent>
                     <div className="p-4 bg-muted/5 text-center">
                         <p className="text-[8px] font-black uppercase text-muted-foreground/30 flex items-center justify-center gap-2">
-                             <Calculator className="h-2.5 w-2.5" /> Précision Élite v2.4 Actif
+                             <Calculator className="h-2.5 w-2.5" /> Précision Élite v2.5 Actif
                         </p>
                     </div>
                 </Card>

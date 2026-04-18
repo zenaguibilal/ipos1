@@ -12,7 +12,7 @@ import { supplierService }       from '@/services/supplier.service';
 import { productService }        from '@/services/product.service';
 import { customerService }       from '@/services/customer.service';
 import { supabaseSyncService }   from '@/services/supabase.service';
-import { preciseMultiply, safeNumber } from '@/lib/utils';
+import { preciseMultiply, safeNumber, roundFinancial } from '@/lib/utils';
 
 interface AppState {
     companyProfile:          CompanyProfile | null;
@@ -283,7 +283,8 @@ export const useAppStore = create<AppState>()(
                                     const costCents = Math.round(safeNumber(item.purchasePrice) * 100);
                                     
                                     // حساب تكلفة الربط (Landing Cost) بدقة عالية
-                                    const landingCost = (costCents * (1 + shippingFactor)) / 100;
+                                    const landingCostCents = Math.round(costCents * (1 + shippingFactor));
+                                    const landingCost = landingCostCents / 100;
 
                                     if (item.isNew) {
                                         const newProduct =
