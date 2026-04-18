@@ -229,7 +229,7 @@ function PaymentDialogContent({
                                 <div className="flex items-start gap-3">
                                     <AlertCircle className="h-5 w-5 text-amber-600 shrink-0" />
                                     <p className="text-amber-700 dark:text-amber-500 text-xs font-medium leading-relaxed">
-                                        Une dette de <span className="font-black underline">{formatCurrency(total - amountPaid)}</span> sera imputée au compte de {customer.firstName}.
+                                        Une mémorisation de <span className="font-black underline">{formatCurrency(total - amountPaid)}</span> sera imputée au compte de {customer.firstName}.
                                     </p>
                                 </div>
 

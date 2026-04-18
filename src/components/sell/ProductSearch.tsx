@@ -59,7 +59,7 @@ export const ProductSelector = forwardRef<{ focusInput: () => void }, ProductSel
     const { isCustomItemOpen, onCustomItemOpenChange } = props;
     const { addItemToCart } = useCartActions();
     const [searchQuery, setSearchQuery] = useState('');
-    const debouncedSearchQuery = useDebounce(searchQuery, 100);
+    const debouncedSearchQuery = useDebounce(searchQuery, 50); // Reduction delay for scanning
     const deferredResults = useDeferredValue(debouncedSearchQuery);
 
     const [searchResults, setSearchResults] = useState<Product[]>([]);
@@ -88,8 +88,8 @@ export const ProductSelector = forwardRef<{ focusInput: () => void }, ProductSel
                 return cart?.items.length || 0;
             },
             () => {
-                // عند تغير عدد العناصر، قد يكون هناك إضافة جديدة
-                setTimeout(refocusInput, 50);
+                // إعادة التركيز فوراً بعد التغيير في السلة
+                setTimeout(refocusInput, 10);
             }
         );
         return () => unsubscribe();
@@ -129,8 +129,8 @@ export const ProductSelector = forwardRef<{ focusInput: () => void }, ProductSel
         addItemToCart(product);
         setSearchQuery('');
         setSearchResults([]);
-        // إعادة التركيز فوراً للمسح التالي
-        setTimeout(refocusInput, 10);
+        // Re-focus immediately for next barcode scan
+        setTimeout(refocusInput, 5);
     };
     
     const isActiveSearch = searchQuery.trim().length > 0;
