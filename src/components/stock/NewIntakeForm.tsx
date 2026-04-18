@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -7,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Plus, Trash2, Save, ShoppingBag, Truck, Building, Hash, Loader2, PackagePlus, Calculator, Coins, Sparkles, BadgePercent, AlertTriangle } from 'lucide-react';
+import { Plus, Trash2, Save, ShoppingBag, Truck, Building, Hash, Loader2, PackagePlus, Calculator, Coins, Sparkles, BadgePercent, AlertTriangle, TrendingUp } from 'lucide-react';
 import { ProductIntakeCombobox } from './ProductIntakeCombobox';
 import type { Product, StockIntakeItem } from '@/lib/types';
 import { formatCurrency, cn, safeNumber, preciseMultiply } from '@/lib/utils';
@@ -46,7 +47,7 @@ export function NewIntakeForm() {
         const existing = items.find(i => i.productUuid === product.uuid);
         if (existing) {
             toast.info(`"${product.name}" est déjà dans le manifeste.`, {
-                description: "Modifiez la quantité directement dans le tableau."
+                description: "Modifiez la quantité directement dans le جدول."
             });
             return;
         }
@@ -166,6 +167,7 @@ export function NewIntakeForm() {
                                         <TableHead className="font-black text-[10px] uppercase text-muted-foreground/60 text-right">P. Achat HT</TableHead>
                                         <TableHead className="font-black text-[10px] uppercase text-primary/60 text-right">C. Revient</TableHead>
                                         <TableHead className="font-black text-[10px] uppercase text-emerald-500/60 text-right">Prix Public</TableHead>
+                                        <TableHead className="font-black text-[10px] uppercase text-muted-foreground/60 text-right">Marge</TableHead>
                                         <TableHead className="font-black text-[10px] uppercase text-muted-foreground/60 text-right">Total HT</TableHead>
                                         <TableHead className="w-[50px]"></TableHead>
                                     </TableRow>
@@ -173,7 +175,7 @@ export function NewIntakeForm() {
                                 <TableBody>
                                     {items.length === 0 ? (
                                         <TableRow>
-                                            <TableCell colSpan={7} className="h-96 text-center p-6 opacity-20">
+                                            <TableCell colSpan={8} className="h-96 text-center p-6 opacity-20">
                                                 <div className="flex flex-col items-center justify-center gap-6">
                                                     <div className="p-8 rounded-3xl bg-muted/20 border-2 border-dashed border-white/10">
                                                         <PackagePlus className="h-16 w-16" />
@@ -189,6 +191,7 @@ export function NewIntakeForm() {
                                             const landingCost = cost * (1 + shippingFactor);
                                             const rowTotal = preciseMultiply(qty, cost);
                                             const isSellingAtLoss = item.price < landingCost && item.price > 0;
+                                            const margin = item.price > 0 ? ((item.price - landingCost) / item.price) * 100 : 0;
                                             
                                             return (
                                                 <TableRow key={item.id} className="border-white/5 group hover:bg-white/5 transition-all">
@@ -252,6 +255,14 @@ export function NewIntakeForm() {
                                                             <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[8px] font-bold opacity-20">DA</span>
                                                             {isSellingAtLoss && <AlertTriangle className="absolute -left-5 top-1/2 -translate-y-1/2 h-3 w-3 text-destructive animate-pulse" />}
                                                         </div>
+                                                    </TableCell>
+                                                    <TableCell className="p-4 text-right">
+                                                        <span className={cn(
+                                                            "text-[10px] font-black tabular-nums",
+                                                            margin < 0 ? "text-destructive" : margin < 15 ? "text-amber-500" : "text-emerald-500"
+                                                        )}>
+                                                            {margin.toFixed(1)}%
+                                                        </span>
                                                     </TableCell>
                                                     <TableCell className="p-4 text-right font-mono font-black text-sm tracking-tighter tabular-nums">
                                                         {formatCurrency(rowTotal)}
@@ -369,7 +380,7 @@ export function NewIntakeForm() {
                     </CardContent>
                     <div className="p-4 bg-muted/5 text-center">
                         <p className="text-[8px] font-black uppercase text-muted-foreground/30 flex items-center justify-center gap-2">
-                             <Calculator className="h-2.5 w-2.5" /> Précision Élite v2.5 Actif
+                             <Calculator className="h-2.5 w-2.5" /> Précision Élite v2.9 Actif
                         </p>
                     </div>
                 </Card>

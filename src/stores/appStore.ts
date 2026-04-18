@@ -1,3 +1,4 @@
+
 import { create } from 'zustand';
 import type { CompanyProfile, ReturnItem, StockIntakeItem } from '@/lib/types';
 import { toast } from 'sonner';
@@ -247,7 +248,7 @@ export const useAppStore = create<AppState>()(
 
                 processStockIntake: async (intakeData) => {
                     try {
-                        await db.transaction(
+                        return await db.transaction(
                             'rw',
                             [
                                 db.stock_intakes,
@@ -307,6 +308,7 @@ export const useAppStore = create<AppState>()(
                                                 p.uuid,
                                                 {
                                                     purchasePrice: landingCost,
+                                                    price:         safeNumber(item.price), // Mise à jour du prix de vente suggéré
                                                     dateMajPrix:   new Date(),
                                                 },
                                             );
@@ -352,15 +354,14 @@ export const useAppStore = create<AppState>()(
                                     supplier.uuid,
                                     finalTotalValue,
                                 );
+                                
+                                get().actions.triggerSmartSync();
+                                return true;
                             },
                         );
-
-                        toast.success('Réception de stock enregistrée.');
-                        get().actions.triggerSmartSync();
-                        return true;
                     } catch (err: any) {
                         console.error("Intake Error:", err);
-                        toast.error('Échec de la réception de stock.');
+                        toast.error('Échec de la réception de stock.', { description: err.message });
                         return false;
                     }
                 },
