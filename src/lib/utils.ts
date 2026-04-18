@@ -29,21 +29,21 @@ export function safeToDate(date: Date | string | undefined | null): Date {
 }
 
 /**
- * محرك الأرقام الفولاذي: يقرأ المبالغ المالية بأمان تام ويدعم كافة التنسيقات.
- * يدعم المسافات كفواصل آلاف (الجزائر/فرنسا) والفواصل العشرية المتنوعة.
+ * Moteur d'interprétation numérique intelligent.
+ * Gère les formats algériens (espaces pour les milliers, virgules pour les décimales).
  */
 export function safeNumber(val: any): number {
     if (typeof val === 'number') return isNaN(val) ? 0 : val;
     if (val === null || val === undefined || val === '') return 0;
     
-    // تنظيف السلسلة من المسافات وعلامات العملات
+    // Nettoyage radical des caractères non numériques sauf point, virgule و signe moins
     let str = String(val).trim().replace(/\s/g, '').replace(/[^\d.,-]/g, '');
     
-    // التعامل مع الفاصلة كعلامة عشرية إذا لم تكن النقطة موجودة
+    // Si virgule présente sans point, c'est le séparateur décimal (Standard FR/DZ)
     if (str.includes(',') && !str.includes('.')) {
         str = str.replace(',', '.');
     } else if (str.includes(',') && str.includes('.')) {
-        // إذا كانا موجودين، فالأخير هو الفاصل العشري
+        // En cas de mélange, le dernier signe est considéré comme le point décimal
         const lastDot = str.lastIndexOf('.');
         const lastComma = str.lastIndexOf(',');
         if (lastDot > lastComma) {
@@ -58,12 +58,12 @@ export function safeNumber(val: any): number {
 }
 
 /**
- * Multiplie deux nombres باحترافية لتجنب أخطاء الفاصلة العائمة.
+ * Multiplie deux nombres avec protection contre les erreurs de précision binaire.
  */
 export function preciseMultiply(a: number, b: number): number {
     const valA = safeNumber(a);
     const valB = safeNumber(b);
-    // استخدام الأعداد الصحيحة لضمان الدقة بالسنتيم
+    // On travaille en 1000x pour garder 3 décimales de précision intermédiaire
     return Math.round((valA * 1000) * (valB * 1000)) / 1000000;
 }
 
@@ -82,10 +82,9 @@ interface CalculableCart {
 }
 
 /**
- * محرك الحسابات المتقدم للفاتورة - دقة السنتيم المحاسبية.
+ * Calculateur de panier haute fidélité.
  */
 export function calculateCartTotals(cart: CalculableCart) {
-    // العمل بنظام السنتيم (Cents) لمنع تزيح الفاصلة العائمة
     const subtotalCents = cart.items.reduce((acc, item) => {
         return acc + Math.round(safeNumber(item.price) * safeNumber(item.cartQuantity) * 100);
     }, 0);

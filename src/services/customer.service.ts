@@ -4,8 +4,7 @@ import { v4 as uuidv4 } from 'uuid';
 import type { Customer, Sale, ImportAnalysis, Payment, ProductReturn } from '@/lib/types';
 import { db } from '@/lib/db';
 import Papa from 'papaparse';
-import { startOfMonth, subMonths, format, startOfDay } from 'date-fns';
-import { fr } from 'date-fns/locale';
+import { startOfMonth, startOfDay } from 'date-fns';
 import { safeNumber, roundFinancial } from '@/lib/utils';
 
 const triggerSync = () => {
@@ -89,25 +88,25 @@ class CustomerService {
 
         const now = new Date();
         const searchName =
-            `${customerData.firstName} ${customerData.lastName}`.toLowerCase();
+            `${customerData.firstName} ${customerData.lastName}`.toLowerCase().trim();
 
         const existing = await db.customers
             .where('searchName')
             .equals(searchName)
             .first();
         if (existing) {
-            throw new Error('Un client avec ce nom existe déjà.');
+            throw new Error('Un client avec ce nom exact existe déjà.');
         }
 
         const initialBal = roundFinancial(safeNumber(customerData.initialBalance));
 
         const newCustomer: Customer = {
             uuid: uuidv4(),
-            firstName: customerData.firstName,
-            lastName: customerData.lastName,
+            firstName: customerData.firstName.trim(),
+            lastName: customerData.lastName.trim(),
             searchName,
-            phone: customerData.phone,
-            address: customerData.address,
+            phone: customerData.phone?.trim(),
+            address: customerData.address?.trim(),
             settlementDay: customerData.settlementDay,
             creditLimit: roundFinancial(safeNumber(customerData.creditLimit)),
             initialBalance: initialBal,
@@ -130,11 +129,11 @@ class CustomerService {
         customerData: Partial<Customer>,
     ): Promise<Customer> {
         const existing = await this.getCustomerByUuid(uuid);
-        if (!existing?.id) throw new Error('Client non trouvé.');
+        if (!existing?.id) throw new Error('Client non identifié.');
 
-        const searchName = `${customerData.firstName || existing.firstName} ${
-            customerData.lastName || existing.lastName
-        }`.toLowerCase();
+        const firstName = customerData.firstName || existing.firstName;
+        const lastName = customerData.lastName || existing.lastName;
+        const searchName = `${firstName} ${lastName}`.toLowerCase().trim();
 
         const dataToUpdate: Partial<Customer> = {
             ...customerData,
@@ -151,6 +150,7 @@ class CustomerService {
 
         await db.customers.update(existing.id, dataToUpdate);
         
+        // Recalcul immédiat pour assurer la cohérence après mise à jour (notamment du solde initial)
         const updated = await this.recalculateCustomerStatus(uuid);
 
         triggerSync();
@@ -161,6 +161,7 @@ class CustomerService {
         const customer = await this.getCustomerByUuid(uuid);
         if (!customer) return;
 
+        // RÈGLE ÉLITE : Interdiction de supprimer si historique présent (audit trail)
         const [salesCount, returnsCount, paymentsCount, breadOrdersCount] =
             await Promise.all([
                 db.sales.where('customerUuid').equals(uuid).count(),
@@ -176,13 +177,14 @@ class CustomerService {
             breadOrdersCount > 0
         ) {
             throw new Error(
-                "Suppression impossible: historique de transactions existant.",
+                "Révocation impossible : ce dossier possède un historique transactionnel actif. Veuillez l'archiver plutôt.",
             );
         }
 
+        // Sécurité solde
         if (Math.abs(safeNumber(customer.outstandingBalance)) > 0.009) {
             throw new Error(
-                "Suppression impossible: le solده n'est pas nul.",
+                "Révocation impossible : le solde débiteur n'est pas nul.",
             );
         }
 
@@ -193,12 +195,13 @@ class CustomerService {
     }
 
     /**
-     * محرك إعادة حساب الوضع المالي للعميل بدقة محاسبية سنتيمترية.
+     * Moteur de recalcul souverain iPOS Zen.
+     * Utilise l'arithmétique entière (Cents) pour une précision comptable absolue.
      */
     async recalculateCustomerStatus(customerUuid: string): Promise<Customer> {
         const customer = await this.getCustomerByUuid(customerUuid);
         if (!customer?.id)
-            throw new Error('Client non trouvé lors du recalcul.');
+            throw new Error('Client introuvable lors de l\'audit financier.');
 
         const now = new Date();
         const currentDayOfMonth = now.getDate();
@@ -207,39 +210,40 @@ class CustomerService {
         const [sales, payments, returns] = await Promise.all([
             db.sales.where('customerUuid').equals(customerUuid).toArray(),
             db.payments.where('customerUuid').equals(customerUuid).toArray(),
-            db.product_returns
-                .where('customerUuid')
-                .equals(customerUuid)
-                .toArray(),
+            db.product_returns.where('customerUuid').equals(customerUuid).toArray(),
         ]);
 
-        // الحساب بالسنتيمات (Scaled Integers) لتجنب أخطاء الفاصلة العائمة
+        // HAUTE PRÉCISION : Travail en سنتيم (Scaled Integers)
         let totalDebtCents = Math.round(safeNumber(customer.initialBalance) * 100);
         let totalSpentCents = 0;
         
         sales.forEach(s => {
+            // Dette cumulée = Reste à payer sur chaque facture
             totalDebtCents += Math.round(safeNumber(s.remainingBalance) * 100);
             totalSpentCents += Math.round(safeNumber(s.total) * 100);
         });
 
         payments.forEach(p => {
+            // Les paiements réduisent la dette globale (Rapprochement)
             totalDebtCents -= Math.round(safeNumber(p.amount) * 100);
         });
 
         returns.forEach(r => {
-            // Avoir = (ValeurRetour - CashRendu)
-            const netReturnCents = Math.round(safeNumber(r.totalReturnValue) * 100) - Math.round(safeNumber(r.amountRefunded) * 100);
-            totalDebtCents -= netReturnCents;
-            // Déduction de la valeur brute du total dépensé
+            // L'avoir client = Valeur du retour - Cash remboursé
+            const netReturnCreditCents = Math.round(safeNumber(r.totalReturnValue) * 100) - Math.round(safeNumber(r.amountRefunded) * 100);
+            totalDebtCents -= netReturnCreditCents;
+            // Réduction du volume d'achat total
             totalSpentCents -= Math.round(safeNumber(r.totalReturnValue) * 100);
         });
 
         const newBalance = roundFinancial(totalDebtCents / 100);
         const totalSpent = roundFinancial(Math.max(0, totalSpentCents / 100));
 
-        const creditLimit = safeNumber(customer.creditLimit);
-        const isOverLimit = creditLimit > 0 ? newBalance > (creditLimit + 0.009) : false;
+        // Détection dépassement plafond
+        const limit = safeNumber(customer.creditLimit);
+        const isOverLimit = limit > 0 ? newBalance > (limit + 0.009) : false;
 
+        // Analyse comportementale du paiement
         const hasPaymentThisMonth = payments.some(
             p => new Date(p.paymentDate) >= currentMonthStart,
         );
@@ -253,11 +257,10 @@ class CustomerService {
             ) {
                 debtStatus = 'overdue';
             } else {
-                const unpaidSales = sales.filter(s => s.paymentStatus !== 'paid');
-                const isOverdueByDate = unpaidSales.some(
-                    s => s.dueDate && new Date(s.dueDate) < now,
+                const hasLateFactures = sales.some(
+                    s => s.paymentStatus !== 'paid' && s.dueDate && new Date(s.dueDate) < now
                 );
-                debtStatus = isOverdueByDate ? 'overdue' : 'due_soon';
+                debtStatus = hasLateFactures ? 'overdue' : 'due_soon';
             }
         }
 
@@ -296,28 +299,25 @@ class CustomerService {
                         };
 
                         for (const row of results.data as any[]) {
-                            const firstName =
-                                row.firstName || row.prenom || row.first_name || row.Prénom;
-                            const lastName =
-                                row.lastName || row.nom || row.last_name || row.Nom;
+                            const firstName = (row.firstName || row.prenom || row.Prénom || '').trim();
+                            const lastName = (row.lastName || row.nom || row.Nom || '').trim();
 
                             if (!firstName || !lastName) {
                                 analysis.errorRows.push({
                                     ...row,
-                                    error: 'Identité manquante',
+                                    error: 'Identité incomplète',
                                 });
                                 continue;
                             }
 
-                            const searchName =
-                                `${firstName} ${lastName}`.toLowerCase().trim();
+                            const searchName = `${firstName} ${lastName}`.toLowerCase().trim();
                             const existingCustomer = existingMap.get(searchName);
 
                             const customerData = {
                                 firstName,
                                 lastName,
-                                phone: row.phone || row.telephone || row.Téléphone,
-                                address: row.address || row.adresse || row.Adresse,
+                                phone: (row.phone || row.telephone || row.Téléphone || '').trim(),
+                                address: (row.address || row.adresse || row.Adresse || '').trim(),
                                 creditLimit: safeNumber(row.creditLimit || row.limite || row.Limite_Crédit),
                                 settlementDay: parseInt(row.settlementDay || row.echeance || '0'),
                                 initialBalance: safeNumber(row.initialBalance || row.solde || row.dette || row.debt || row.Solde_Impayé || '0'),
@@ -339,7 +339,7 @@ class CustomerService {
                     }
                 },
                 error: error => {
-                    reject(new Error('Erreur CSV: ' + error.message));
+                    reject(new Error('Erreur parsing CSV : ' + error.message));
                 },
             });
         });
@@ -378,12 +378,9 @@ class CustomerService {
             if (toUpdate.length > 0) await db.customers.bulkPut(toUpdate);
         });
 
-        for (const c of toUpdate) {
-            await this.recalculateCustomerStatus(c.uuid);
-        }
-        for (const c of toAdd) {
-            await this.recalculateCustomerStatus(c.uuid);
-        }
+        // Recalcul forcé de tous les imports pour garantir la précision
+        for (const c of toUpdate) await this.recalculateCustomerStatus(c.uuid);
+        for (const c of toAdd) await this.recalculateCustomerStatus(c.uuid);
 
         triggerSync();
     }
