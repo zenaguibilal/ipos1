@@ -55,13 +55,33 @@ class SupabaseSyncService {
         return data;
     }
 
+    /**
+     * Reconvertit les types JSON (Strings) en types Local (Dates, etc.)
+     * CRITICAL: Les dates doivent redevenir des objets Date pour que les index Dexie .between() fonctionnent.
+     */
     private mapToLocal(record: any): any {
         if (!record) return record;
         const clean: any = {};
         for (const key in record) {
             if (key === 'id') continue;
             const camelKey = this.snakeToCamel(key);
-            clean[camelKey] = record[key];
+            let value = record[key];
+
+            // Detection intelligente des dates
+            if (typeof value === 'string' && (
+                key.endsWith('_at') || 
+                key.endsWith('_date') || 
+                key === 'date' || 
+                key === 'date_expiration' || 
+                key === 'date_maj_prix'
+            )) {
+                const d = new Date(value);
+                if (!isNaN(d.getTime())) {
+                    value = d;
+                }
+            }
+
+            clean[camelKey] = value;
         }
         return clean;
     }

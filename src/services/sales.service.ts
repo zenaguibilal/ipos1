@@ -1,4 +1,3 @@
-
 'use client';
 
 import { v4 as uuidv4 } from 'uuid';
@@ -39,6 +38,7 @@ class SalesService {
         let collection;
 
         // ELITE NORMALIZATION: تحديد نطاق الاستعلام الأساسي باستخدام الفهارس
+        // التواريخ يجب أن تكون كائنات Date حقيقية لضمان عمل الفهرس
         const start = filters.from ? startOfDay(filters.from) : null;
         const end = filters.to ? endOfDay(filters.to) : null;
 
@@ -63,6 +63,7 @@ class SalesService {
         // محرك البحث النصي
         if (filters.query) {
             const lowerQuery = filters.query.toLowerCase().trim();
+            // البحث عن العملاء المطابقين أولاً لتحسين الأداء
             const customers = await db.customers.toArray();
             const customerUuids = new Set(
                 customers

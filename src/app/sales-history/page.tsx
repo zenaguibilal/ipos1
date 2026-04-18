@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useRef } from 'react';
@@ -114,7 +113,9 @@ export default function SalesHistoryPage() {
             current.receivedCents += Math.round(safeNumber(s.amountPaid) * 100);
             dataMap.set(dayKey, current);
         });
-        return Array.from(dataMap.values()).map(d => ({ date: d.date, total: d.totalCents / 100, received: d.receivedCents / 100 }));
+        // Limit points if range is too large
+        const results = Array.from(dataMap.values()).map(d => ({ date: d.date, total: d.totalCents / 100, received: d.receivedCents / 100 }));
+        return results.slice(-30); 
     }, [sales]);
 
     const handleToggleSelection = (uuid: string) => {
@@ -226,7 +227,7 @@ export default function SalesHistoryPage() {
                                     <DateRangePicker date={dateRange} setDate={setDate} />
                                 </div>
                                 {!dateRange && (
-                                    <div className="flex items-center gap-2 px-3 py-2 bg-primary/10 rounded-xl border border-primary/20">
+                                    <div className="flex items-center gap-2 px-3 py-2 bg-primary/10 rounded-xl border border-primary/20 animate-in zoom-in duration-300">
                                         <CalendarDays className="h-4 w-4 text-primary" />
                                         <span className="text-[9px] font-black uppercase text-primary">Mode : الأرشيف الكامل</span>
                                     </div>

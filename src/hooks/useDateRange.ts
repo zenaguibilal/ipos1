@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -23,7 +22,7 @@ export function useDateRange(defaultDays: number = 29) {
     }, [defaultDays]);
 
     /**
-     * Met à jour la plage avec normalisation forcée (00:00:00 -> 23:59:59).
+     * Met à jour la plage avec normalisation forcée (00:00:00 -> 23:59:59.999).
      * Crée systématiquement un nouvel objet pour déclencher les LiveQueries.
      */
     const setRange = useCallback((newRange?: DateRange) => {
@@ -32,6 +31,7 @@ export function useDateRange(defaultDays: number = 29) {
             return;
         }
 
+        // PROTECTION ELITE: Toujours créer un nouvel objet
         const normalized: DateRange = {
             from: newRange.from ? startOfDay(newRange.from) : undefined,
             to: newRange.to ? endOfDay(newRange.to) : undefined
