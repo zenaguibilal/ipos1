@@ -22,7 +22,8 @@ import {
     Sparkles,
     Landmark,
     X,
-    Trash2
+    Trash2,
+    CalendarDays
 } from 'lucide-react';
 import { DateRangePicker } from '@/components/ui/date-range-picker';
 import { useDateRange } from '@/hooks/useDateRange';
@@ -54,7 +55,7 @@ type SalesStatus = 'all' | 'paid' | 'partial' | 'unpaid';
 
 /**
  * صفحة سجل المبيعات Elite.
- * نظام مراقبة فائق للدقة المحاسبية والتدفقات النقدية.
+ * تم التحديث لضمان ظهور الفواتير القديمة عند مسح الفلتر الزمني.
  */
 export default function SalesHistoryPage() {
     const searchInputRef = useRef<HTMLInputElement>(null);
@@ -271,6 +272,8 @@ export default function SalesHistoryPage() {
     const resetFilters = () => {
         setSearchQuery('');
         setFilterStatus('all');
+        setDate(undefined); // هذا هو المفتاح لإظهار الفواتير القديمة
+        toast.info("Affichage de tout l'historique.");
     };
 
     useKeyboardShortcuts([
@@ -282,7 +285,7 @@ export default function SalesHistoryPage() {
         }
     ], 'Historique');
 
-    const isFiltered = searchQuery !== '' || filterStatus !== 'all';
+    const isFiltered = searchQuery !== '' || filterStatus !== 'all' || dateRange !== undefined;
     
     return (
         <div className="p-6 sm:p-4 space-y-4 max-w-[1800px] mx-auto animate-in fade-in duration-1000 pb-20">
@@ -379,8 +382,17 @@ export default function SalesHistoryPage() {
                                     </DropdownMenuContent>
                                 </DropdownMenu>
 
-                                <div className="p-1 bg-black/20 rounded-2xl border border-white/5 shadow-inner">
-                                    <DateRangePicker date={dateRange} setDate={setDate} />
+                                <div className="space-y-2">
+                                    <Label className="text-[10px] font-black uppercase text-muted-foreground/40 ml-1">Période d'Analyse</Label>
+                                    <div className="p-1 bg-black/20 rounded-2xl border border-white/5 shadow-inner">
+                                        <DateRangePicker date={dateRange} setDate={setDate} />
+                                    </div>
+                                    {!dateRange && (
+                                        <div className="flex items-center gap-2 px-3 py-1.5 bg-primary/5 rounded-lg border border-primary/10">
+                                            <CalendarDays className="h-3 w-3 text-primary" />
+                                            <span className="text-[9px] font-black uppercase text-primary">Tout l'historique affiché</span>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
 
@@ -402,7 +414,7 @@ export default function SalesHistoryPage() {
                                     <TrendingUp className="h-6 w-6" />
                                 </div>
                                 <div>
-                                    <CardTitle className="text-xl font-bold tracking-tighter uppercase">Courbe de Trésorerie</CardTitle>
+                                    <CardTitle className="text-xl font-bold tracking-tighter uppercase">Courbe de Trésorerية</CardTitle>
                                     <p className="text-[10px] font-semibold uppercase text-primary/50 tracking-widest">Flux Chronologiques</p>
                                 </div>
                             </div>
@@ -529,7 +541,7 @@ export default function SalesHistoryPage() {
                                 title="Aucune vente identifiée"
                                 description={isFiltered ? "Ajustez vos critères de recherche pour trouver le flux correspondant." : "Enregistrez votre première vente pour démarrer l'historique Elite."}
                             >
-                                {isFiltered && <Button variant="outline" onClick={resetFilters} className="rounded-2xl h-12 font-bold px-8 border-primary/20 hover:bg-primary/5 transition-all">Réinitialiser les filtres</Button>}
+                                {isFiltered && <Button variant="outline" onClick={resetFilters} className="rounded-2xl h-12 font-bold px-8 border-primary/20 hover:bg-primary/5 transition-all">Tout l'historique</Button>}
                             </EmptyState>
                         )}
                     </div>

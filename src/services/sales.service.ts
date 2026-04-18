@@ -25,6 +25,9 @@ class SalesService {
         return db.sales.where('invoiceNumber').equals(invoiceNumber).first();
     }
 
+    /**
+     * تصفية المبيعات مع دعم استرجاع البيانات القديمة عند غياب التاريخ.
+     */
     async filterSales(filters: {
         query?: string;
         from?: Date;
@@ -45,6 +48,7 @@ class SalesService {
             const end = endOfDay(filters.to);
             collection = db.sales.where('createdAt').belowOrEqual(end);
         } else {
+            // استرجاع كل شيء (بما في ذلك الفواتير القديمة) عند مسح الفلتر الزمني
             collection = db.sales.toCollection();
         }
 
@@ -72,11 +76,11 @@ class SalesService {
             );
         }
 
-        // ترتيب تنازلي لضمان تدفق "Elite Flow"
+        // ترتيب تنازلي لضمان تدفق "Elite Flow" من الأحدث للأقدم
         return sales.sort(
             (a, b) =>
-                new Date(b.createdAt!).getTime() -
-                new Date(a.createdAt!).getTime(),
+                safeToDate(b.createdAt!).getTime() -
+                safeToDate(a.createdAt!).getTime(),
         );
     }
 
