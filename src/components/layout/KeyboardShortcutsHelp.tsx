@@ -13,8 +13,8 @@ import { Button } from '@/components/ui/button';
 import { Keyboard, Command } from 'lucide-react';
 
 /**
- * نافذة المساعدة لمختصرات لوحة المفاتيح.
- * تستهلك سياق البيانات فقط، مما يضمن تحديثها فقط عند الحاجة.
+ * Fenêtre d'aide pour les raccourcis clavier.
+ * Consomme uniquement le contexte de données pour une performance optimale.
  */
 export function KeyboardShortcutsHelp() {
   const allShortcuts = useContext(KeyboardShortcutsDataContext);
@@ -22,7 +22,7 @@ export function KeyboardShortcutsHelp() {
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // تفعيل المساعدة بالضغط على '?' (عندما لا يكون أي حقل إدخال نشطاً)
+      // Activation de l'aide avec '?' (lorsqu'aucun champ n'est focalisé)
       if (e.key === '?' && !['INPUT', 'TEXTAREA'].includes(document.activeElement?.tagName || '')) {
         setIsOpen(true);
       }

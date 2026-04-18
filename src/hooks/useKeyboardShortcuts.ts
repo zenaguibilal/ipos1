@@ -33,7 +33,7 @@ const isInputFocused = (): boolean => {
 };
 
 /**
- * Hook لبرمجة مختصرات لوحة المفاتيح مع حماية ضد التكرار اللانهائية.
+ * Hook pour programmer les raccourcis clavier avec protection contre les boucles de rendu.
  */
 export function useKeyboardShortcuts(
   shortcuts: ShortcutConfig[],
@@ -42,30 +42,28 @@ export function useKeyboardShortcuts(
 ): void {
   const actions = useContext(KeyboardShortcutsActionsContext);
   
-  // استخدام مرجع لضمان أن المستمع لديه دائماً أحدث الوظائف دون إعادة تشغيل التأثير
+  // Utilisation d'une référence pour garantir que l'écouteur a toujours les dernières fonctions
   const shortcutsRef = useRef(shortcuts);
   shortcutsRef.current = shortcuts;
 
-  // تسجيل المختصرات في النظام (لنافذة المساعدة)
+  // Enregistrement des raccourcis dans le système (pour la fenêtre d'aide)
   useEffect(() => {
     if (active && actions) {
       actions.registerShortcuts(id, shortcutsRef.current);
       return () => actions.unregisterShortcuts(id);
     }
-  }, [id, active, actions]); // لا نضع 'shortcuts' هنا لمنع حلقات التكرار
+  }, [id, active, actions]);
 
-  // إدارة مستمع الأحداث
+  // Gestion de l'écouteur d'événements
   useEffect(() => {
     if (!active) return;
 
     const handleKeyDown = (event: KeyboardEvent) => {
       const pressedKey = event.key;
       
-      // Sécurité : ignorer si la touche pressée est indéfinie
       if (!pressedKey) return;
       
       for (const config of shortcutsRef.current) {
-        // Sécurité : ignorer les configurations mal formées
         if (!config.key) continue;
 
         const matchKey = config.key.toLowerCase() === pressedKey.toLowerCase();
@@ -76,7 +74,7 @@ export function useKeyboardShortcuts(
         if (matchKey && matchCtrl && matchShift && matchAlt) {
           const focused = isInputFocused();
           
-          // الحالات العالمية: Escape و Ctrl+Enter تعمل دائماً
+          // Cas universels : Escape et Ctrl+Enter fonctionnent toujours
           const isUniversal = pressedKey === 'Escape' || (pressedKey === 'Enter' && (event.ctrlKey || event.metaKey));
           
           if (!isUniversal && focused && !config.ignoreInputFocus) {
@@ -95,5 +93,5 @@ export function useKeyboardShortcuts(
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [active]); // يعتمد فقط على حالة النشاط
+  }, [active]);
 }

@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useDeferredValue, forwardRef, useImperativeHandle, useRef } from 'react';
@@ -65,7 +64,7 @@ export const ProductSelector = forwardRef<{ focusInput: () => void }, ProductSel
     const [searchError, setSearchError] = useState<string | null>(null);
     const inputRef = useRef<HTMLInputElement>(null);
 
-    // محرك التركيز التلقائي لضمان تدفق المسح بالباركود
+    // Moteur de focus automatique pour le scan code-barres
     const refocusInput = () => {
         if (inputRef.current) {
             inputRef.current.focus();
@@ -77,7 +76,7 @@ export const ProductSelector = forwardRef<{ focusInput: () => void }, ProductSel
         focusInput: refocusInput
     }));
 
-    // المراقبة: إعادة التركيز فور إضافة عنصر للسلة
+    // Surveillance : re-focus après ajout au panier
     useEffect(() => {
         const unsubscribe = useCartStore.subscribe(
             (state) => {
@@ -86,7 +85,7 @@ export const ProductSelector = forwardRef<{ focusInput: () => void }, ProductSel
                 return cart?.items.length || 0;
             },
             () => {
-                // إعادة التركيز فوراً بعد التغيير في السلة
+                // Re-focus immédiat après changement de panier
                 setTimeout(refocusInput, 10);
             }
         );
@@ -112,7 +111,7 @@ export const ProductSelector = forwardRef<{ focusInput: () => void }, ProductSel
                 }
             } catch (e: any) {
                 if (!controller.signal.aborted) {
-                    setSearchError("Moteur de recherche Roland-indisponible.");
+                    setSearchError("Moteur de recherche indisponible.");
                 }
             } finally {
                 if (!controller.signal.aborted) setIsSearching(false);
@@ -190,7 +189,7 @@ export const ProductSelector = forwardRef<{ focusInput: () => void }, ProductSel
                                 Prêt pour l'indexation [F3]
                             </p>
                             <p className="text-[10px] font-bold text-muted-foreground/10 uppercase tracking-widest">
-                                Utilisez le lecteur أو saisissez une référence
+                                Utilisez le lecteur ou saisissez une référence
                             </p>
                         </div>
                     </div>
@@ -213,7 +212,7 @@ export const ProductSelector = forwardRef<{ focusInput: () => void }, ProductSel
                         ) : !isSearching && (
                             <div className="py-24 text-center space-y-4 opacity-20 flex flex-col items-center">
                                 <ShoppingBag className="h-16 w-16 mb-4" />
-                                <p className="text-[10px] font-black uppercase tracking-[0.3em]">Silence Radio. Produit non répertوريé.</p>
+                                <p className="text-[10px] font-black uppercase tracking-[0.3em]">Aucun produit répertorié.</p>
                             </div>
                         )}
                     </div>

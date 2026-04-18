@@ -289,10 +289,10 @@ export default function ZakatPage() {
                         <CardContent className="p-4 pt-0 space-y-6">
                             <div className="p-6 bg-black/20 rounded-2xl border border-white/5 text-center">
                                 <p className="text-[9px] font-semibold uppercase text-muted-foreground/40 mb-2">Cours de référence Or</p>
-                                <p className="text-xl font-semibold text-amber-500 tracking-tighter">{formatCurrency(data.goldPrice)}/g</p>
+                                <p className="text-xl font-semibold text-amber-500 tracking-tighter">{formatCurrency(data?.goldPrice || 0)}/g</p>
                             </div>
                             <p className="text-[10px] text-muted-foreground/60 leading-relaxed italic text-center">
-                                Modifiez cette valeur dans votre <a href="/profile" className="text-primary font-semibold hover:underline">Profil Elite</a> pour ajustير le seuil.
+                                Modifiez cette valeur dans votre <a href="/profile" className="text-primary font-semibold hover:underline">Profil Elite</a> pour ajuster le seuil.
                             </p>
                         </CardContent>
                     </Card>

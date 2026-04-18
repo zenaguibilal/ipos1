@@ -1,4 +1,3 @@
-
 'use client';
 import { v4 as uuidv4 } from 'uuid';
 import type { InventoryLog, InventoryLogReason, Product } from '@/lib/types';
@@ -7,13 +6,13 @@ import { calculateStockStatus, safeNumber } from '@/lib/utils';
 import { useAppStore } from '@/stores/appStore';
 
 /**
- * @fileOverview خدمة إدارة المخزون الفائقة.
- * تضمن الربط الوثيق بين كل حركة مخزون ومصدرها (Vente, Intake, Return).
+ * @fileOverview Service de gestion de stock haute performance.
+ * Assure la traçabilité complète de chaque mouvement de stock.
  */
 class InventoryService {
 
     /**
-     * ضبط المخزون مع ضمان تسجيل "أثر" (Log) مربوط بالمصدر.
+     * Ajustement de stock avec enregistrement lié à la source.
      */
     async adjustStock(productUuid: string | null | undefined, quantityChange: number, reason: InventoryLogReason, relatedUuid?: string): Promise<void> {
         if (!productUuid || productUuid === 'BREAD_PRODUCT' || productUuid.startsWith('custom-')) {
@@ -35,14 +34,14 @@ class InventoryService {
                 updatedAt: new Date()
             });
 
-            // تسجيل لوج مربوط بـ relatedUuid لضمان تتبع المصدر
+            // Enregistrement lié au relatedUuid pour la traçabilité
             const logEntry: InventoryLog = {
                 uuid: uuidv4(),
                 productUuid: productUuid,
                 change: Number(change.toFixed(3)),
                 newQuantity: newQuantity,
                 reason: reason,
-                relatedUuid: relatedUuid, // هذا الحقل يربط اللوج بالفاتورة أو وصل الاستلام
+                relatedUuid: relatedUuid, // Ce champ lie le log à la facture ou au bon
                 createdAt: new Date(),
                 updatedAt: new Date(),
             };
@@ -72,7 +71,7 @@ class InventoryService {
         const products = await db.products.where('uuid').anyOf(productUuids).toArray();
         const productMap = new Map(products.map(p => [p.uuid, p.name]));
 
-        // استرجاع المراجع (رقم الفاتورة) عبر الربط بـ relatedUuid
+        // Récupération des références via relatedUuid
         const intakeUuids = logs.filter(l => l.reason === 'stock_intake' || l.reason === 'cancellation').map(l => l.relatedUuid).filter(Boolean) as string[];
         const saleUuids = logs.filter(l => l.reason === 'sale' || l.reason === 'cancellation').map(l => l.relatedUuid).filter(Boolean) as string[];
         

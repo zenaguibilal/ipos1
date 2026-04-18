@@ -1,7 +1,7 @@
-
+'use server';
 /**
- * @fileOverview ميزة استخراج البيانات تم تعطيلها.
+ * @fileOverview Fonctionnalité d'extraction de données par IA (OCR) désactivée.
  */
 export async function ocrInvoice(input: any): Promise<any> {
-    throw new Error("ميزة الذكاء الاصطناعي غير مفعلة.");
+    throw new Error("La fonctionnalité d'intelligence artificielle n'est pas activée.");
 }

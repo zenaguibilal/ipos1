@@ -4,8 +4,8 @@ import React, { createContext, useState, useCallback, useMemo } from 'react';
 import type { ShortcutConfig } from '@/hooks/useKeyboardShortcuts';
 
 /**
- * @fileOverview نظام إدارة مختصرات لوحة المفاتيح المتقدم.
- * تم تقسيم السياق لمنع حلقات التكرار اللانهائية (Render Loops).
+ * @fileOverview Système de gestion des raccourcis clavier avancé.
+ * Contexte divisé pour éviter les boucles de rendu inutiles.
  */
 
 interface KeyboardShortcutsActions {
@@ -13,10 +13,10 @@ interface KeyboardShortcutsActions {
   unregisterShortcuts: (id: string) => void;
 }
 
-// سياق العمليات: لا يتغير أبداً لمنع إعادة الرنة للمستهلكين
+// Contexte d'actions stable : ne change jamais pour éviter les re-rendus des consommateurs
 export const KeyboardShortcutsActionsContext = createContext<KeyboardShortcutsActions | undefined>(undefined);
 
-// سياق البيانات: تستهلكه نافذة المساعدة فقط
+// Contexte de données : consommé uniquement par la fenêtre d'aide
 export const KeyboardShortcutsDataContext = createContext<Record<string, ShortcutConfig[]>>({});
 
 export function KeyboardShortcutsProvider({ children }: { children: React.ReactNode }) {
@@ -24,7 +24,7 @@ export function KeyboardShortcutsProvider({ children }: { children: React.ReactN
 
   const registerShortcuts = useCallback((id: string, shortcuts: ShortcutConfig[]) => {
     setAllShortcuts(prev => {
-      // تجنب التحديث إذا كانت البيانات متطابقة مرجعياً (اختياري ولكن آمن)
+      // Éviter les mises à jour si les données sont identiques
       if (prev[id] === shortcuts) return prev;
       return { ...prev, [id]: shortcuts };
     });
@@ -39,7 +39,7 @@ export function KeyboardShortcutsProvider({ children }: { children: React.ReactN
     });
   }, []);
 
-  // ميموزا لعمليات التسجيل لضمان استقرارها
+  // Mémoïsation pour la stabilité des fonctions de registre
   const actions = useMemo(() => ({ registerShortcuts, unregisterShortcuts }), [registerShortcuts, unregisterShortcuts]);
 
   return (

@@ -1,5 +1,4 @@
-
 /**
- * @fileOverview محرك Genkit تم تعطيله بناءً على طلب المستخدم.
+ * @fileOverview Moteur Genkit désactivé à la demande de l'utilisateur.
  */
 export const ai = null as any;

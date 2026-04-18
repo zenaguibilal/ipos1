@@ -1,4 +1,3 @@
-
 import Dexie, { type EntityTable } from 'dexie';
 import type {
     Product, Customer, Sale, Expense, Supplier, SupplierPayment,
@@ -6,9 +5,9 @@ import type {
 } from './types';
 
 /**
- * @fileOverview معمارية قاعدة البيانات المركزية iPOS Zen.
- * تم تصميم الفهارس لضمان "ربط علاقتي" فائق السرعة بين الجداول.
- * تعتمد المعمارية على UUID كفتاح ربط أساسي لضمان سلامة البيانات عند المزامنة السحابية.
+ * @fileOverview Architecture de la base de données centrale iPOS Zen.
+ * Les index sont conçus pour garantir une relation rapide entre les tables.
+ * Utilise des UUID comme clés de liaison pour assurer l'intégrité lors de la synchronisation Cloud.
  */
 class iPOSDatabase extends Dexie {
     products!:          EntityTable<Product,        'id'>;
@@ -28,46 +27,45 @@ class iPOSDatabase extends Dexie {
         super('iPOSDatabase');
         
         /**
-         * تعريف المخطط (Schema) مع الفهارس الاستراتيجية:
-         * - الحقل المسبوق بـ '&' هو مفتاح فريد (Unique).
-         * - الحقل المسبوق بـ '++' هو مفتاح تلقائي الزيادة (Auto-increment).
-         * - باقي الحقول هي فهارس للبحث السريع (Indices).
+         * Définition du schéma avec index stratégiques :
+         * - '&' prefixe une clé unique.
+         * - '++' prefixe une clé auto-incrémentée.
          */
         this.version(2).stores({
-            // المنتجات: مربوطة بالموردين وبحالة المخزون
+            // Produits liés aux fournisseurs et à l'état du stock
             products:         '++id, &uuid, name, *barcodes, supplierUuid, stockStatus, dateExpiration',
             
-            // العملاء: مربوطة بالأرصدة وحالة الديون ونظام الخبز
+            // Clients liés aux balances, statuts de dette et logistique pain
             customers:        '++id, &uuid, searchName, debtStatus, isOverLimit, isBreadClient, bread_type_recurrence, outstandingBalance',
             
-            // المبيعات: مربوطة بالعملاء وبالتاريخ (Index للتقارير)
+            // Ventes liées aux clients et indexées par date pour les rapports
             sales:            '++id, &uuid, invoiceNumber, customerUuid, createdAt, paymentStatus',
             
-            // المصاريف: مفهرسة حسب النوع والتاريخ لتحليل السيولة
+            // Dépenses indexées par catégorie et date
             expenses:         '++id, &uuid, category, expenseDate',
             
-            // الموردون: مفتاح فريد على الاسم لمنع تكرار الشركاء
+            // Fournisseurs avec nom unique
             suppliers:        '++id, &uuid, &name',
             
-            // مدفوعات الموردين: مربوطة بالمورد وبالتاريخ
+            // Paiements fournisseurs liés au fournisseur et à la date
             supplier_payments:'++id, &uuid, supplierUuid, paymentDate',
             
-            // استلام المخزون: مربوط بالمورد وبالفاتورة الأصلية
+            // Réceptions de stock liées au fournisseur et au numéro de facture
             stock_intakes:    '++id, &uuid, supplierUuid, createdAt, invoiceNumber',
             
-            // مرتجعات المنتجات: مربوطة بالفاتورة الأصلية وبالعميل
+            // Retours produits liés à la vente d'origine et au client
             product_returns:  '++id, &uuid, originalSaleUuid, customerUuid, createdAt',
             
-            // مقبوضات العملاء: مربوطة بالعميل وبالتاريخ للتسوية المالية
+            // Paiements clients liés au client pour rapprochement
             payments:         '++id, &uuid, customerUuid, paymentDate',
             
-            // طلبات الخبز: مربوطة بالعميل وبالفاتورة الناتجة عنها
+            // Commandes de pain liées au client et à la vente générée
             bread_orders:     '++id, &uuid, date, customerUuid, venteUuid',
             
-            // ملف المؤسسة: سجل وحيد لإعدادات النظام
+            // Profil établissement : réglages système
             company_profile:  '++id, &uuid',
             
-            // سجلات المخزن: الربط الجوهري بين المنتج ومصدر الحركة (فاتورة/وصل)
+            // Logs d'inventaire : lien entre produit et source du mouvement (vente/réception)
             inventory_logs:   '++id, &uuid, productUuid, relatedUuid, reason, createdAt',
         });
     }

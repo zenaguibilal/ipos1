@@ -9,8 +9,8 @@ import { safeToDate, safeNumber, roundFinancial, preciseMultiply } from '@/lib/u
 import { startOfDay, endOfDay } from 'date-fns';
 
 /**
- * خدمة إدارة المبيعات Elite.
- * هندسة مالية دقيقة تضمن توازن المخزن ودفاتر الحسابات.
+ * Service de gestion des ventes Elite.
+ * Ingénierie financière précise pour l'équilibre du stock et de la comptabilité.
  */
 class SalesService {
 
@@ -25,8 +25,7 @@ class SalesService {
     }
 
     /**
-     * محرك تصفية المبيعات المطور - يدعم الأرشيف الكامل والفلترة الزمنية الدقيقة.
-     * يستخدم الفهارس لضمان أداء "Elite" حتى مع أحجام البيانات الكبيرة.
+     * Moteur de filtrage développé - Supporte l'archive complète et le filtrage temporel.
      */
     async filterSales(filters: {
         query?: string;
@@ -36,7 +35,7 @@ class SalesService {
     }): Promise<Sale[]> {
         let collection = db.sales.toCollection();
 
-        // تطبيق الفلترة الزمنية على مستوى الفهارس لسرعة البرق
+        // Filtrage temporel indexé
         if (filters.from && filters.to) {
             const start = startOfDay(filters.from);
             const end = endOfDay(filters.to);
@@ -49,15 +48,14 @@ class SalesService {
 
         let sales = await collection.toArray();
 
-        // تطبيق فلتر الحالة (المدفوعة، الديون، إلخ)
+        // Filtrage par statut
         if (filters.status && filters.status !== 'all') {
             sales = sales.filter(s => s.paymentStatus === filters.status);
         }
 
-        // محرك البحث النصي (رقم الفاتورة أو اسم العميل)
+        // Recherche textuelle (facture ou nom client)
         if (filters.query) {
             const lowerQuery = filters.query.toLowerCase().trim();
-            // جلب أسماء العملاء للمطابقة النصية
             const customers = await db.customers.toArray();
             const customerUuids = new Set(
                 customers
@@ -72,7 +70,7 @@ class SalesService {
             );
         }
 
-        // الترتيب التنازلي (الأحدث أولاً)
+        // Tri décroissant
         return sales.sort(
             (a, b) => safeToDate(b.createdAt!).getTime() - safeToDate(a.createdAt!).getTime()
         );

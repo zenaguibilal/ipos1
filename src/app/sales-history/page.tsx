@@ -68,7 +68,7 @@ export default function SalesHistoryPage() {
 
     const [searchQuery, setSearchQuery] = useState('');
     const [filterStatus, setFilterStatus] = useState<SalesStatus>('all');
-    // محرك النطاق الزمني Elite - يبدأ بآخر 30 يوماً افتراضياً
+    // Moteur de période Elite - Par défaut sur les 30 derniers jours
     const { dateRange, setDate } = useDateRange(29);
     const debouncedSearchQuery = useDebounce(searchQuery, 300);
     
@@ -79,7 +79,7 @@ export default function SalesHistoryPage() {
     const [isPrintOpen, setIsPrintOpen] = useState(false);
     const [isBulkCancelConfirmOpen, setIsBulkCancelConfirmOpen] = useState(false);
 
-    // استعلام حي للمبيعات مع الفلترة الذكية (تاريخ أو أرشيف كامل)
+    // Requête live des ventes avec filtrage intelligent (Période ou Archive complète)
     const sales = useLiveQuery(
         () => salesService.filterSales({
             query: debouncedSearchQuery,
@@ -95,7 +95,7 @@ export default function SalesHistoryPage() {
 
     const isLoading = sales === undefined || !isMounted;
 
-    // الإحصائيات تتحدث لحظياً بناءً على ما هو مفلتر ومعروض فقط لضمان دقة "Elite"
+    // Statistiques mises à jour en temps réel pour une précision Elite
     const stats = useMemo(() => {
         if (!sales) return { total: 0, received: 0, debt: 0, count: 0 };
         let totalCents = 0, receivedCents = 0, debtCents = 0;
@@ -107,15 +107,15 @@ export default function SalesHistoryPage() {
         return { total: totalCents / 100, received: receivedCents / 100, debt: debtCents / 100, count: sales.length };
     }, [sales]);
 
-    // الرسم البياني يعرض التدفق المالي للفترة المختارة بدقة عالية
+    // Graphique de flux financier pour la période sélectionnée
     const chartData = useMemo(() => {
         if (!sales || sales.length === 0) return [];
         const dataMap = new Map<string, { date: string, totalCents: number, receivedCents: number }>();
         
-        // الترتيب الزمني لضمان صحة المنحنى
+        // Tri chronologique pour la cohérence de la courbe
         const sortedSales = [...sales].sort((a,b) => safeToDate(a.createdAt!).getTime() - safeToDate(b.createdAt!).getTime());
         
-        // عرض عينة مناسبة لتجنب الازدحام
+        // Échantillonnage approprié pour éviter l'encombrement
         const itemsToGraph = (!dateRange?.from) ? sortedSales.slice(-50) : sortedSales;
 
         itemsToGraph.forEach(s => {
@@ -150,7 +150,7 @@ export default function SalesHistoryPage() {
         for (const uuid of uuids) {
             try { await salesService.processSaleCancellation(uuid); successCount++; } catch (e) {}
         }
-        if (successCount > 0) toast.success(`${successCount} mبيعات تم إلغاؤها.`);
+        if (successCount > 0) toast.success(`${successCount} ventes annulées.`);
         setSelectedSales(new Set());
     };
 
@@ -178,13 +178,13 @@ export default function SalesHistoryPage() {
     const resetFilters = () => {
         setSearchQuery('');
         setFilterStatus('all');
-        setDate(undefined); // فتح الأرشيف الكامل
+        setDate(undefined); // Ouverture de l'archive complète
         toast.info("Filtres réinitialisés. Affichage de l'archive complète.");
     };
 
     const toggleFullHistory = () => {
         setDate(undefined);
-        toast.success("Mode : الأرشيف الكامل فعال");
+        toast.success("Mode : Archive complète activé");
     };
 
     useKeyboardShortcuts([
@@ -197,7 +197,7 @@ export default function SalesHistoryPage() {
     
     return (
         <div className="p-6 sm:p-4 space-y-4 max-w-[1800px] mx-auto animate-in fade-in duration-1000 pb-20">
-            <PageHeader title="Registre des Ventes Elite" description="Management souverain de l'historique et des تدفقات financières">
+            <PageHeader title="Registre des Ventes Elite" description="Management souverain de l'historique et des flux financiers">
                 <div className="flex flex-wrap gap-3 w-full sm:w-auto">
                     <div className="flex items-center bg-card/40 backdrop-blur-md rounded-2xl border border-white/5 p-1 shadow-inner group">
                         <DateRangePicker date={dateRange} setDate={setDate} />
@@ -335,7 +335,7 @@ export default function SalesHistoryPage() {
                                     </div>
                                     {isFullHistory && (
                                         <div className="flex items-center gap-2 text-[10px] font-black uppercase text-muted-foreground/30 italic">
-                                            <History className="h-3.5 w-3.5" /> الأرشيف الكامل معروض حالياً
+                                            <History className="h-3.5 w-3.5" /> L'archive complète est affichée
                                         </div>
                                     )}
                                 </div>
@@ -367,7 +367,7 @@ export default function SalesHistoryPage() {
             <SaleDetailsDialog isOpen={isDetailsOpen} onOpenChange={setIsDetailsOpen} sale={selectedSale} />
             <CancelSaleDialog isOpen={isCancelOpen} onOpenChange={setIsCancelOpen} sale={selectedSale} onSuccess={() => setSelectedSales(new Set())} />
             <PrintReceiptDialog isOpen={isPrintOpen} onOpenChange={setIsPrintOpen} sale={selectedSale} customerName={selectedSale?.customerUuid ? (customerMap.get(selectedSale.customerUuid) ? `${customerMap.get(selectedSale.customerUuid)?.firstName} ${customerMap.get(selectedSale.customerUuid)?.lastName}` : undefined) : 'Client de passage'} />
-            <ConfirmAlertDialog isOpen={isBulkCancelConfirmOpen} onOpenChange={setIsBulkCancelConfirmOpen} title={`Annuler ${selectedSales.size} transactions ?`} description="Opération definitiva : رintégration stock et ajustement soldes clients." onConfirm={handleBulkCancel} confirmText="Confirmer Annulation" />
+            <ConfirmAlertDialog isOpen={isBulkCancelConfirmOpen} onOpenChange={setIsBulkCancelConfirmOpen} title={`Annuler ${selectedSales.size} transactions ?`} description="Opération définitive : réintégration du stock et ajustement des soldes clients." onConfirm={handleBulkCancel} confirmText="Confirmer Annulation" />
         </div>
     );
 }

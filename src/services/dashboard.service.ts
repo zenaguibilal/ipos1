@@ -8,7 +8,7 @@ import { preciseMultiply, safeNumber } from '@/lib/utils';
 /**
  * @fileOverview Service de pilotage analytique iPOS Zen.
  * Effectue des calculs financiers complexes avec déduction des retours et amortissement des coûts.
- * محرك الحسابات يستخدم السنتيمترات (Scaled Integers) لضمان الدقة المطلقة.
+ * Le moteur de calcul utilise les centimes pour une précision absolue.
  */
 class DashboardService {
     async getDashboardData(from: Date, to: Date): Promise<DashboardData> {
@@ -35,7 +35,7 @@ class DashboardService {
             const productPurchaseMap = new Map(allProducts.map(p => [p.uuid, safeNumber(p.purchasePrice)]));
             const customerMap = new Map(allCustomers.map(c => [c.uuid, `${c.firstName} ${c.lastName}`]));
 
-            // الحساب بالسنتيمات لتجنب أخطاء الفاصلة العائمة
+            // Calcul en centimes pour éviter les erreurs décimales
             let currRevCents = 0; let currCogsCents = 0; let currExpCents = 0; let currRetValCents = 0; let currRetCogsCents = 0; let currCount = 0;
             let prevRevCents = 0; let prevCogsCents = 0; let prevExpCents = 0; let prevRetValCents = 0; let prevRetCogsCents = 0; let prevCount = 0;
 

@@ -213,7 +213,7 @@ class CustomerService {
             db.product_returns.where('customerUuid').equals(customerUuid).toArray(),
         ]);
 
-        // HAUTE PRÉCISION : Travail en سنتيم (Scaled Integers)
+        // HAUTE PRÉCISION : Travail en centimes
         let totalDebtCents = Math.round(safeNumber(customer.initialBalance) * 100);
         let totalSpentCents = 0;
         
