@@ -52,6 +52,10 @@ import { db } from '@/lib/db';
 
 type SalesStatus = 'all' | 'paid' | 'partial' | 'unpaid';
 
+/**
+ * صفحة سجل المبيعات Elite.
+ * نظام مراقبة فائق للدقة المحاسبية والتدفقات النقدية.
+ */
 export default function SalesHistoryPage() {
     const searchInputRef = useRef<HTMLInputElement>(null);
     const { viewMode, setViewMode } = useAppStore(state => ({
@@ -73,7 +77,7 @@ export default function SalesHistoryPage() {
     const [isBulkCancelConfirmOpen, setIsBulkCancelConfirmOpen] = useState(false);
     const [isRefreshing, setIsRefreshing] = useState(false);
 
-    // مراقبة حية للمبيعات المفلترة لضمان المزامنة الفورية
+    // مراقبة حية للمبيعات المفلترة لضمان المزامنة الفورية مع محرك البحث المطور
     const sales = useLiveQuery(
         () => salesService.filterSales({
             query: debouncedSearchQuery,
@@ -118,10 +122,14 @@ export default function SalesHistoryPage() {
         };
     }, [sales]);
 
+    /**
+     * معالجة بيانات الرسم البياني بدقة يومية
+     */
     const chartData = useMemo(() => {
         if (!sales) return [];
         const dataMap = new Map<string, { date: string, totalCents: number, receivedCents: number }>();
         
+        // ترتيب المبيعات زمنياً للرسم
         const sortedSales = [...sales].sort((a,b) => safeToDate(a.createdAt!).getTime() - safeToDate(b.createdAt!).getTime());
         
         sortedSales.forEach(s => {
@@ -166,7 +174,9 @@ export default function SalesHistoryPage() {
                 successCount++;
             } catch (e) {}
         }
-        if (successCount > 0) toast.success(`${successCount} vente(s) annulée(s).`);
+        if (successCount > 0) {
+            toast.success(`${successCount} vente(s) annulée(s) avec succès.`);
+        }
         setSelectedSales(new Set());
     };
 
@@ -175,7 +185,10 @@ export default function SalesHistoryPage() {
             ? (sales?.filter(s => selectedSales.has(s.uuid)) || [])
             : (sales || []);
 
-        if (salesToExport.length === 0) return;
+        if (salesToExport.length === 0) {
+            toast.error("Aucune donnée à exporter.");
+            return;
+        }
 
         const csvData = salesToExport.map(s => {
             const customer = s.customerUuid ? customerMap.get(s.customerUuid) : null;
@@ -197,7 +210,7 @@ export default function SalesHistoryPage() {
         link.href = url;
         link.download = `ipos-ventes-${new Date().toISOString().split('T')[0]}.csv`;
         link.click();
-        toast.success("Exportation terminée.");
+        toast.success("Exportation Elite terminée.");
     };
 
     const handlePrintSummary = () => {
@@ -211,18 +224,19 @@ export default function SalesHistoryPage() {
                     <title>Rapport de Ventes - iPOS Zen</title>
                     <style>
                         body { font-family: sans-serif; padding: 40px; color: #333; }
-                        header { border-bottom: 2px solid #000; padding-bottom: 20px; margin-bottom: 30px; display: flex; justify-content: space-between; }
-                        h1 { margin: 0; font-size: 24px; text-transform: uppercase; }
-                        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+                        header { border-bottom: 2px solid #000; padding-bottom: 20px; margin-bottom: 30px; display: flex; justify-content: space-between; align-items: flex-end; }
+                        h1 { margin: 0; font-size: 24px; text-transform: uppercase; letter-spacing: -0.05em; }
+                        table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 11px; }
                         th, td { border-bottom: 1px solid #eee; padding: 12px 8px; text-align: left; }
                         th { background-color: #f9f9f9; font-weight: 900; text-transform: uppercase; font-size: 10px; }
                         .amount { text-align: right; font-family: monospace; font-size: 12px; font-weight: 700; }
+                        .total-row { background-color: #000; color: #fff; font-weight: 900; }
                     </style>
                 </head>
                 <body>
                     <header>
                         <div><h1>${profile?.companyName || 'iPOS Zen'}</h1><p>${profile?.address || ''}</p></div>
-                        <div style="text-align: right"><p>RAPPORT DE VENTES ELITE</p><p>${new Date().toLocaleDateString()}</p></div>
+                        <div style="text-align: right"><p>RAPPORT DE VENTES ELITE</p><p>${new Date().toLocaleDateString('fr-FR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p></div>
                     </header>
                     <table>
                         <thead>
@@ -239,6 +253,12 @@ export default function SalesHistoryPage() {
                                 </tr>
                             `).join('')}
                         </tbody>
+                        <tfoot>
+                            <tr class="total-row">
+                                <td colSpan="4" style="text-align: right;">TOTAL GLOBAL PÉRIODE</td>
+                                <td class="amount">${stats.total.toFixed(2)} DA</td>
+                            </tr>
+                        </tfoot>
                     </table>
                 </body>
             </html>
@@ -265,7 +285,7 @@ export default function SalesHistoryPage() {
     const isFiltered = searchQuery !== '' || filterStatus !== 'all';
     
     return (
-        <div className="p-6 sm:p-4 space-y-4 max-w-[1800px] mx-auto animate-in fade-in duration-1000">
+        <div className="p-6 sm:p-4 space-y-4 max-w-[1800px] mx-auto animate-in fade-in duration-1000 pb-20">
             <PageHeader
                 title="Registre des Ventes Elite"
                 description="Suivi souverain des flux de trésorerie و المركز المالي"
@@ -292,9 +312,9 @@ export default function SalesHistoryPage() {
             <div className="grid grid-cols-1 lg:grid-cols-4 gap-3">
                 {/* Stats Sidebar */}
                 <div className="lg:col-span-1 space-y-4">
-                    <Card className="app-card rounded-lg bg-card/40 backdrop-blur-sm border-white/5 overflow-hidden">
+                    <Card className="app-card rounded-lg bg-card/40 backdrop-blur-sm border-white/5 overflow-hidden shadow-sm">
                         <CardHeader className="bg-primary/5 border-b border-white/5 p-6">
-                            <CardTitle className="text-[10px] font-semibold uppercase text-primary flex items-center gap-2">
+                            <CardTitle className="text-[10px] font-semibold uppercase text-primary flex items-center gap-2 tracking-widest">
                                 <Sparkles className="h-3 w-3" /> Bilan des Flux
                             </CardTitle>
                         </CardHeader>
@@ -302,18 +322,18 @@ export default function SalesHistoryPage() {
                             <div className="space-y-1">
                                 <p className="text-[10px] font-semibold text-muted-foreground/40 uppercase tracking-wide">Volume d'Affaires</p>
                                 <p className="text-2xl font-black tracking-tighter text-primary tabular-nums">{formatCurrency(stats.total)}</p>
-                                <p className="text-[10px] font-bold text-muted-foreground/60">{stats.count} opérations</p>
+                                <p className="text-[10px] font-bold text-muted-foreground/60">{stats.count} opérations validées</p>
                             </div>
                             
                             <div className="grid grid-cols-1 gap-3">
                                 <div className="p-4 rounded-2xl bg-emerald-500/5 border border-emerald-500/10 group hover:bg-emerald-500/10 transition-all duration-500 shadow-inner">
-                                    <p className="text-[9px] font-semibold uppercase text-emerald-600 mb-1 flex items-center gap-2">
+                                    <p className="text-[9px] font-semibold uppercase text-emerald-600 mb-1 flex items-center gap-2 tracking-wide">
                                         <CheckCircle2 className="h-3 w-3" /> Recettes Réelles
                                     </p>
                                     <p className="font-bold text-lg text-emerald-600 tracking-tight tabular-nums">{formatCurrency(stats.received)}</p>
                                 </div>
                                 <div className="p-4 rounded-2xl bg-destructive/5 border border-destructive/10 group hover:bg-destructive/10 transition-all duration-500 shadow-inner">
-                                    <p className="text-[9px] font-semibold uppercase text-destructive mb-1 flex items-center gap-2">
+                                    <p className="text-[9px] font-semibold uppercase text-destructive mb-1 flex items-center gap-2 tracking-wide">
                                         <Landmark className="h-3 w-3" /> Créances Clients
                                     </p>
                                     <p className="font-bold text-lg text-destructive tracking-tight tabular-nums">{formatCurrency(stats.debt)}</p>
@@ -322,9 +342,9 @@ export default function SalesHistoryPage() {
                         </CardContent>
                     </Card>
 
-                    <Card className="app-card rounded-lg bg-card/40 backdrop-blur-sm border-white/5 overflow-hidden">
+                    <Card className="app-card rounded-lg bg-card/40 backdrop-blur-sm border-white/5 overflow-hidden shadow-sm">
                         <CardHeader className="p-6 pb-2">
-                            <CardTitle className="text-[10px] font-semibold uppercase text-muted-foreground opacity-40">Filtrage Précis</CardTitle>
+                            <CardTitle className="text-[10px] font-semibold uppercase text-muted-foreground opacity-40 tracking-widest">Filtrage Précis</CardTitle>
                         </CardHeader>
                         <CardContent className="p-6 space-y-6">
                             <div className="relative group">
@@ -350,7 +370,7 @@ export default function SalesHistoryPage() {
                                         </Button>
                                     </DropdownMenuTrigger>
                                     <DropdownMenuContent className="w-[240px] rounded-2xl border-none shadow-sm bg-card">
-                                        <DropdownMenuLabel className="text-[10px] font-semibold uppercase text-muted-foreground p-4">Statut de Règlement</DropdownMenuLabel>
+                                        <DropdownMenuLabel className="text-[10px] font-semibold uppercase text-muted-foreground p-4 tracking-widest">Statut de Règlement</DropdownMenuLabel>
                                         <DropdownMenuSeparator className="opacity-10" />
                                         <DropdownMenuCheckboxItem className="p-3 font-bold" checked={filterStatus === 'all'} onCheckedChange={() => setFilterStatus('all')}>Toutes les factures</DropdownMenuCheckboxItem>
                                         <DropdownMenuCheckboxItem className="p-3 font-bold" checked={filterStatus === 'paid'} onCheckedChange={() => setFilterStatus('paid')}>Entièrement payées</DropdownMenuCheckboxItem>
@@ -365,7 +385,7 @@ export default function SalesHistoryPage() {
                             </div>
 
                             {isFiltered && (
-                                <Button variant="ghost" onClick={resetFilters} className="w-full text-destructive hover:bg-destructive/10 text-[10px] font-semibold uppercase rounded-xl h-12">
+                                <Button variant="ghost" onClick={resetFilters} className="w-full text-destructive hover:bg-destructive/10 text-[10px] font-semibold uppercase rounded-xl h-12 tracking-wide">
                                     Effacer Filtres <FilterX className="ml-2 h-3.5 w-3.5" />
                                 </Button>
                             )}
@@ -375,15 +395,15 @@ export default function SalesHistoryPage() {
 
                 {/* Main Content */}
                 <div className="lg:col-span-3 space-y-4">
-                    <Card className="app-card rounded-lg bg-card/40 backdrop-blur-sm border-white/5 overflow-hidden">
+                    <Card className="app-card rounded-lg bg-card/40 backdrop-blur-sm border-white/5 overflow-hidden shadow-sm">
                         <CardHeader className="flex flex-row items-center justify-between p-4 border-b border-white/5 bg-muted/20">
                             <div className="flex items-center gap-4">
                                 <div className="p-3 rounded-2xl bg-primary text-primary-foreground shadow-sm">
                                     <TrendingUp className="h-6 w-6" />
                                 </div>
                                 <div>
-                                    <CardTitle className="text-xl font-bold tracking-tighter">Courbe de Trésorerie</CardTitle>
-                                    <p className="text-[10px] font-semibold uppercase text-primary/50">Flux Chronologiques</p>
+                                    <CardTitle className="text-xl font-bold tracking-tighter uppercase">Courbe de Trésorerie</CardTitle>
+                                    <p className="text-[10px] font-semibold uppercase text-primary/50 tracking-widest">Flux Chronologiques</p>
                                 </div>
                             </div>
                             <div className="flex items-center gap-1.5 p-1.5 bg-black/20 rounded-lg border border-white/5 shadow-inner">
@@ -446,7 +466,7 @@ export default function SalesHistoryPage() {
                                                 border: '1px solid rgba(255,255,255,0.05)'
                                             }}
                                             itemStyle={{ fontSize: '12px', fontWeight: '900', textTransform: 'uppercase' }}
-                                            formatter={(v: number, name: string) => [formatCurrency(v), name === 'total' ? 'Moyenne Ventes' : 'Encaissements']}
+                                            formatter={(v: number, name: string) => [formatCurrency(v), name === 'total' ? 'Facturation' : 'Encaissements']}
                                         />
                                         <Area type="monotone" dataKey="total" name="total" stroke="hsl(var(--chart-primary))" fillOpacity={1} fill="url(#colorTotal)" strokeWidth={5} isAnimationActive={false} />
                                         <Area type="monotone" dataKey="received" name="received" stroke="hsl(var(--chart-quaternary))" fillOpacity={0} strokeWidth={3} strokeDasharray="10 10" isAnimationActive={false} />
@@ -459,7 +479,7 @@ export default function SalesHistoryPage() {
                     <div className="min-h-[600px] animate-in fade-in slide-in-from-bottom-4 duration-1000">
                         {isLoading ? (
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                                {[...Array(6)].map((_, i) => <Skeleton key={`skel-sales-${i}`} className="h-56 w-full rounded-lg bg-card/40 animate-pulse" />)}
+                                {[...Array(6)].map((_, i) => <Skeleton key={`skel-sales-${i}`} className="h-56 w-full rounded-lg bg-card/40 animate-pulse border border-white/5" />)}
                             </div>
                         ) : sales && sales.length > 0 ? (
                             viewMode === 'list' ? (
@@ -472,7 +492,7 @@ export default function SalesHistoryPage() {
                                             className="h-5 w-5 border-primary data-[state=checked]:bg-primary"
                                         />
                                         <label htmlFor="select-all-sales" className="text-[10px] font-black uppercase text-primary cursor-pointer select-none tracking-widest">
-                                            Tout sélectionner ({selectedSales.size})
+                                            Tout sélectionner ({selectedSales.size} flux)
                                         </label>
                                     </div>
                                     <SalesHistoryTable 
@@ -507,9 +527,9 @@ export default function SalesHistoryPage() {
                             <EmptyState
                                 icon={History}
                                 title="Aucune vente identifiée"
-                                description={isFiltered ? "Ajustez vos critères de recherche." : "Enregistrez votre première vente pour démarrer l'historique."}
+                                description={isFiltered ? "Ajustez vos critères de recherche pour trouver le flux correspondant." : "Enregistrez votre première vente pour démarrer l'historique Elite."}
                             >
-                                {isFiltered && <Button variant="outline" onClick={resetFilters} className="rounded-2xl h-12 font-bold px-8 border-primary/20 hover:bg-primary/5">Réinitialiser les filtres</Button>}
+                                {isFiltered && <Button variant="outline" onClick={resetFilters} className="rounded-2xl h-12 font-bold px-8 border-primary/20 hover:bg-primary/5 transition-all">Réinitialiser les filtres</Button>}
                             </EmptyState>
                         )}
                     </div>
@@ -518,7 +538,7 @@ export default function SalesHistoryPage() {
 
             {selectedSales.size > 0 && (
                 <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 animate-in slide-in-from-bottom-10 duration-500">
-                    <div className="bg-card/80 backdrop-blur-sm border-2 border-primary/20 shadow-sm rounded-full px-8 py-4 flex items-center gap-4">
+                    <div className="bg-card/80 backdrop-blur-sm border-2 border-primary/20 shadow-2xl rounded-full px-8 py-4 flex items-center gap-4">
                         <div className="flex items-center gap-4 pr-8 border-r border-white/10">
                             <div className="h-10 w-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-black shadow-lg">
                                 {selectedSales.size}
@@ -530,7 +550,7 @@ export default function SalesHistoryPage() {
                                 <FileUp className="mr-2 h-4 w-4" /> Exporter (.csv)
                             </Button>
                             <Button variant="ghost" onClick={() => setIsBulkCancelConfirmOpen(true)} className="rounded-full h-12 px-6 font-black text-[10px] uppercase tracking-widest text-destructive hover:bg-destructive/10 transition-all">
-                                <Trash2 className="mr-2 h-4 w-4" /> Annuler Ventes
+                                <Trash2 className="mr-2 h-4 w-4" /> Annuler Flux
                             </Button>
                             <Button variant="ghost" size="icon" onClick={() => setSelectedSales(new Set())} className="rounded-full h-12 w-12 hover:bg-white/5 transition-all">
                                 <X className="h-4 w-4" />

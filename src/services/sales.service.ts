@@ -9,6 +9,10 @@ import { useAppStore } from '@/stores/appStore';
 import { safeToDate, safeNumber, roundFinancial, preciseMultiply } from '@/lib/utils';
 import { startOfDay, endOfDay } from 'date-fns';
 
+/**
+ * خدمة إدارة المبيعات Elite.
+ * هندسة مالية دقيقة تضمن توازن المخزن ودفاتر الحسابات.
+ */
 class SalesService {
 
     async getSaleByUuid(uuid: string): Promise<Sale | undefined> {
@@ -29,7 +33,7 @@ class SalesService {
     }): Promise<Sale[]> {
         let collection;
 
-        // ELITE OPTIMIZATION: Use index for date range if provided
+        // ELITE OPTIMIZATION: استخدام الفهرس الزمني مباشرة لضمان السرعة الفائقة
         if (filters.from && filters.to) {
             const start = startOfDay(filters.from);
             const end = endOfDay(filters.to);
@@ -52,7 +56,8 @@ class SalesService {
 
         if (filters.query) {
             const lowerQuery = filters.query.toLowerCase().trim();
-            // Search in invoice number and resolve customer names
+            
+            // بحث متقدم يدمج أرقام الفواتير وأسماء العملاء
             const customers = await db.customers.toArray();
             const customerUuids = new Set(
                 customers
@@ -67,7 +72,7 @@ class SalesService {
             );
         }
 
-        // Sort descending by date (Elite Flow)
+        // ترتيب تنازلي لضمان تدفق "Elite Flow"
         return sales.sort(
             (a, b) =>
                 new Date(b.createdAt!).getTime() -
@@ -105,7 +110,7 @@ class SalesService {
     }): Promise<Sale> {
         const now = new Date();
         
-        // ELITE MATH: Scaled Integer Arithmetic (Cents)
+        // ELITE MATH: العمل بالسنتيمات يمنع أخطاء التقريب القاتلة
         const subtotalCents = saleData.items.reduce(
             (acc, item) => acc + Math.round(preciseMultiply(item.price, item.cartQuantity) * 100),
             0,
@@ -123,7 +128,7 @@ class SalesService {
         const remainingCents = Math.max(0, totalCents - amountPaidCents);
 
         const paymentStatus =
-            remainingCents <= 0.9
+            remainingCents <= 0.9 // تسامح مالي 0.01
                 ? 'paid'
                 : amountPaidCents > 0
                   ? 'partial'
@@ -159,7 +164,7 @@ class SalesService {
             dueDate: saleData.dueDate,
         };
 
-        // ATOMIC TRANSACTION: Ensuring all records are updated or none
+        // ATOMIC TRANSACTION: ضمان تحديث كافة السجلات أو لا شيء
         await db.transaction(
             'rw',
             [
@@ -195,6 +200,9 @@ class SalesService {
         return newSale;
     }
 
+    /**
+     * إلغاء عملية بيع بشكل آمن ومعالجة كافة التبعات المالية والمخزنية
+     */
     async processSaleCancellation(uuid: string): Promise<void> {
         await db.transaction(
             'rw',
@@ -210,8 +218,10 @@ class SalesService {
                 const sale = await this.getSaleByUuid(uuid);
                 if (!sale || !sale.id) throw new Error('Vente non trouvée.');
 
+                // 1. حذف المبيعة
                 await db.sales.delete(sale.id);
 
+                // 2. إعادة السلع للمخزن (Audit Trail)
                 for (const item of sale.items) {
                     if (item.productUuid) {
                         await inventoryService.adjustStock(
@@ -223,6 +233,7 @@ class SalesService {
                     }
                 }
 
+                // 3. تحديث ميزانية العميل فوراً
                 if (sale.customerUuid) {
                     await customerService.recalculateCustomerStatus(
                         sale.customerUuid,
