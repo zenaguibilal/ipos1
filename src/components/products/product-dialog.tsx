@@ -305,7 +305,7 @@ export function ProductDialog({ isOpen, onOpenChange, product, categories, suppl
                         <AlertDialogTitle className="text-lg font-semibold tracking-tighter uppercase">Vente à perte détectée</AlertDialogTitle>
                     </div>
                     <AlertDialogDescription className="text-base font-medium leading-relaxed">
-                        Le prix de vente (<b>{formatCurrency(formState.price || 0)}</b>) est inférieur au coût d'achat (<b>{formatCurrency(formState.purchasePrice || 0)}</b>). Souها إليك السعر المعدل؟
+                        Le prix de vente (<b>{formatCurrency(formState.price || 0)}</b>) est inférieur au coût d'achat (<b>{formatCurrency(formState.purchasePrice || 0)}</b>). Souhaitez-vous vraiment confirmer cette tarification ?
                     </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter className="gap-3 mt-6">
