@@ -4,7 +4,7 @@ import { useState, useMemo, useRef, useEffect } from 'react';
 import { salesService } from '@/services/sales.service';
 import { useDebounce } from '@/hooks/useDebounce';
 import { useDateRange } from '@/hooks/useDateRange';
-import type { Sale, Customer } from '@/lib/types';
+import type { Sale, Customer, Payment } from '@/lib/types';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { DateRangePicker } from '@/components/ui/date-range-picker';
@@ -24,7 +24,9 @@ import {
     Sparkles,
     X,
     Trash2,
-    Calendar
+    Calendar,
+    HandCoins,
+    Receipt as ReceiptIcon
 } from 'lucide-react';
 import { SalesHistoryCard } from '@/components/sales/SalesHistoryCard';
 import { SalesHistoryTable } from '@/components/sales/SalesHistoryTable';
@@ -41,7 +43,7 @@ import { toast } from 'sonner';
 import { cn, formatCurrency, safeToDate, safeNumber } from '@/lib/utils';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
-import { format, parseISO } from 'date-fns';
+import { format, parseISO, startOfDay, endOfDay } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import Papa from 'papaparse';
 import { useAppStore } from '@/stores/appStore';
@@ -52,6 +54,11 @@ import { db } from '@/lib/db';
 import { Badge } from '@/components/ui/badge';
 
 type SalesStatus = 'all' | 'paid' | 'partial' | 'unpaid';
+
+// النوع الموحد للسجل
+export type HistoryItem = 
+    | { type: 'sale'; data: Sale; date: Date }
+    | { type: 'payment'; data: Payment; date: Date };
 
 export default function SalesHistoryPage() {
     const searchInputRef = useRef<HTMLInputElement>(null);
@@ -68,76 +75,115 @@ export default function SalesHistoryPage() {
 
     const [searchQuery, setSearchQuery] = useState('');
     const [filterStatus, setFilterStatus] = useState<SalesStatus>('all');
-    // Moteur de période Elite - Par défaut sur les 30 derniers jours
     const { dateRange, setDate } = useDateRange(29);
     const debouncedSearchQuery = useDebounce(searchQuery, 300);
     
     const [selectedSale, setSelectedSale] = useState<Sale | null>(null);
-    const [selectedSales, setSelectedSales] = useState<Set<string>>(new Set());
+    const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
     const [isDetailsOpen, setIsDetailsOpen] = useState(false);
     const [isCancelOpen, setIsCancelOpen] = useState(false);
     const [isPrintOpen, setIsPrintOpen] = useState(false);
     const [isBulkCancelConfirmOpen, setIsBulkCancelConfirmOpen] = useState(false);
 
-    // Requête live des ventes avec filtrage intelligent (Période ou Archive complète)
-    const sales = useLiveQuery(
-        () => salesService.filterSales({
+    // المورد الموحد للبيانات (مبيعات + تسديدات)
+    const historyData = useLiveQuery(async () => {
+        if (!isMounted) return undefined;
+
+        const filters = {
             query: debouncedSearchQuery,
             status: filterStatus,
             from: dateRange?.from,
             to: dateRange?.to
-        }),
-        [debouncedSearchQuery, filterStatus, dateRange]
-    );
+        };
+
+        // 1. جلب المبيعات
+        const sales = await salesService.filterSales(filters);
+
+        // 2. جلب التسديدات (Paiements)
+        let paymentsQuery = db.payments.toCollection();
+        if (dateRange?.from) {
+            paymentsQuery = db.payments.where('paymentDate').between(startOfDay(dateRange.from), endOfDay(dateRange.to || new Date()), true, true);
+        }
+        const rawPayments = await paymentsQuery.toArray();
+
+        // 3. فلترة التسديدات حسب البحث (اسم الزبون)
+        let filteredPayments = rawPayments;
+        if (debouncedSearchQuery) {
+            const q = debouncedSearchQuery.toLowerCase().trim();
+            const customers = await db.customers.toArray();
+            const matchingCustomerUuids = new Set(
+                customers
+                    .filter(c => (c.firstName + ' ' + c.lastName).toLowerCase().includes(q))
+                    .map(c => c.uuid)
+            );
+            filteredPayments = rawPayments.filter(p => matchingCustomerUuids.has(p.customerUuid));
+        }
+
+        // إذا كان هناك فلتر للحالة (دائن/مدين)، قد نرغب في إخفاء التسديدات لأنها دائماً "مدفوعة"
+        if (filterStatus !== 'all' && filterStatus !== 'paid') {
+            filteredPayments = [];
+        }
+
+        // دمج البيانات
+        const combined: HistoryItem[] = [
+            ...sales.map(s => ({ type: 'sale' as const, data: s, date: safeToDate(s.createdAt!) })),
+            ...filteredPayments.map(p => ({ type: 'payment' as const, data: p, date: safeToDate(p.paymentDate) }))
+        ];
+
+        return combined.sort((a, b) => b.date.getTime() - a.date.getTime());
+    }, [isMounted, debouncedSearchQuery, filterStatus, dateRange]);
 
     const customers = useLiveQuery(() => db.customers.toArray());
     const customerMap = useMemo(() => new Map((customers || []).map(c => [c.uuid, c])), [customers]);
 
-    const isLoading = sales === undefined || !isMounted;
+    const isLoading = historyData === undefined || !isMounted;
 
-    // Statistiques mises à jour en temps réel pour une précision Elite
+    // الإحصائيات الذكية
     const stats = useMemo(() => {
-        if (!sales) return { total: 0, received: 0, debt: 0, count: 0 };
-        let totalCents = 0, receivedCents = 0, debtCents = 0;
-        sales.forEach(s => {
-            totalCents += Math.round(safeNumber(s.total) * 100);
-            receivedCents += Math.round(safeNumber(s.amountPaid) * 100);
-            debtCents += Math.round(safeNumber(s.remainingBalance) * 100);
-        });
-        return { total: totalCents / 100, received: receivedCents / 100, debt: debtCents / 100, count: sales.length };
-    }, [sales]);
+        if (!historyData) return { totalRevenue: 0, totalReceived: 0, totalDebt: 0, count: 0 };
+        
+        let revenueCents = 0;
+        let receivedCents = 0;
+        let saleCount = 0;
 
-    /**
-     * Moteur de Graphique Elite :
-     * Calcule les flux de facturation et d'encaissement agrégés par jour.
-     */
+        historyData.forEach(item => {
+            if (item.type === 'sale') {
+                revenueCents += Math.round(safeNumber(item.data.total) * 100);
+                receivedCents += Math.round(safeNumber(item.data.amountPaid) * 100);
+                saleCount++;
+            } else {
+                // التسديدات تزيد فقط من المقبوضات ولا تزيد من رقم الأعمال (لأنها سداد لدين قديم)
+                receivedCents += Math.round(safeNumber(item.data.amount) * 100);
+            }
+        });
+
+        return {
+            totalRevenue: revenueCents / 100,
+            totalReceived: receivedCents / 100,
+            totalDebt: Math.max(0, (revenueCents - receivedCents) / 100),
+            count: saleCount
+        };
+    }, [historyData]);
+
     const chartData = useMemo(() => {
-        if (!sales || sales.length === 0) return [];
+        if (!historyData || historyData.length === 0) return [];
         
         const dataMap = new Map<string, { fullDate: string, totalCents: number, receivedCents: number }>();
         
-        // Tri chronologique préalable pour l'agrégation
-        const sortedSales = [...sales].sort((a,b) => safeToDate(a.createdAt!).getTime() - safeToDate(b.createdAt!).getTime());
-        
-        // Échantillonnage intelligent pour l'archive complète
-        const itemsToProcess = (!dateRange?.from) ? sortedSales.slice(-100) : sortedSales;
-
-        itemsToProcess.forEach(s => {
-            const dateObj = safeToDate(s.createdAt!);
-            const sortKey = format(dateObj, 'yyyy-MM-dd'); // Clé de tri unique
+        historyData.forEach(item => {
+            const sortKey = format(item.date, 'yyyy-MM-dd');
+            const current = dataMap.get(sortKey) || { fullDate: sortKey, totalCents: 0, receivedCents: 0 };
             
-            const current = dataMap.get(sortKey) || { 
-                fullDate: sortKey, 
-                totalCents: 0, 
-                receivedCents: 0 
-            };
+            if (item.type === 'sale') {
+                current.totalCents += Math.round(safeNumber(item.data.total) * 100);
+                current.receivedCents += Math.round(safeNumber(item.data.amountPaid) * 100);
+            } else {
+                current.receivedCents += Math.round(safeNumber(item.data.amount) * 100);
+            }
             
-            current.totalCents += Math.round(safeNumber(s.total) * 100);
-            current.receivedCents += Math.round(safeNumber(s.amountPaid) * 100);
             dataMap.set(sortKey, current);
         });
 
-        // Conversion finale en DA et formatage d'affichage
         return Array.from(dataMap.values())
             .sort((a, b) => a.fullDate.localeCompare(b.fullDate))
             .map(d => ({
@@ -145,10 +191,10 @@ export default function SalesHistoryPage() {
                 total: d.totalCents / 100,
                 received: d.receivedCents / 100
             }));
-    }, [sales, dateRange]);
+    }, [historyData]);
 
     const handleToggleSelection = (uuid: string) => {
-        setSelectedSales(prev => {
+        setSelectedItems(prev => {
             const newSet = new Set(prev);
             if (newSet.has(uuid)) newSet.delete(uuid);
             else newSet.add(uuid);
@@ -157,81 +203,49 @@ export default function SalesHistoryPage() {
     };
 
     const handleSelectAll = () => {
-        if (!sales) return;
-        if (selectedSales.size === sales.length) setSelectedSales(new Set());
-        else setSelectedSales(new Set(sales.map(s => s.uuid)));
+        if (!historyData) return;
+        if (selectedItems.size === historyData.length) setSelectedItems(new Set());
+        else setSelectedItems(new Set(historyData.map(item => item.type === 'sale' ? item.data.uuid : item.data.uuid)));
     };
 
     const handleBulkCancel = async () => {
-        const uuids = Array.from(selectedSales);
+        const uuids = Array.from(selectedItems);
         let successCount = 0;
         for (const uuid of uuids) {
-            try { await salesService.processSaleCancellation(uuid); successCount++; } catch (e) {}
+            try { 
+                // نلغي المبيعات فقط حالياً في هذا الإجراء الجماعي
+                await salesService.processSaleCancellation(uuid); 
+                successCount++; 
+            } catch (e) {}
         }
-        if (successCount > 0) toast.success(`${successCount} ventes annulées.`);
-        setSelectedSales(new Set());
-    };
-
-    const handleExportCsv = () => {
-        const salesToExport = selectedSales.size > 0 ? (sales?.filter(s => selectedSales.has(s.uuid)) || []) : (sales || []);
-        if (salesToExport.length === 0) { toast.error("Aucune donnée."); return; }
-        const csv = Papa.unparse(salesToExport.map(s => {
-            const customer = s.customerUuid ? customerMap.get(s.customerUuid) : null;
-            return {
-                Date: s.createdAt ? new Date(s.createdAt).toLocaleString('fr-FR') : 'N/A',
-                Facture: s.invoiceNumber,
-                Client: customer ? `${customer.firstName} ${customer.lastName}` : 'Passage',
-                Total: s.total,
-                Payé: s.amountPaid,
-                Statut: s.paymentStatus
-            };
-        }));
-        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-        const link = document.createElement('a');
-        link.href = URL.createObjectURL(blob);
-        link.download = `ventes-elite-${new Date().toISOString().split('T')[0]}.csv`;
-        link.click();
+        if (successCount > 0) toast.success(`${successCount} عمليات تم إلغاؤها.`);
+        setSelectedItems(new Set());
     };
 
     const resetFilters = () => {
         setSearchQuery('');
         setFilterStatus('all');
-        setDate(undefined); // Ouverture de l'archive complète
-        toast.info("Filtres réinitialisés. Affichage de l'archive complète.");
-    };
-
-    const toggleFullHistory = () => {
         setDate(undefined);
-        toast.success("Mode : Archive complète activé");
     };
 
     useKeyboardShortcuts([
-        { key: 'F3', action: () => searchInputRef.current?.focus(), description: 'Rechercher', ignoreInputFocus: true },
-        { key: 'h', ctrl: true, action: toggleFullHistory, description: 'Afficher tout l\'historique', ignoreInputFocus: true }
+        { key: 'F3', action: () => searchInputRef.current?.focus(), description: 'Rechercher', ignoreInputFocus: true }
     ], 'Historique');
 
     const isFiltered = searchQuery !== '' || filterStatus !== 'all' || !!dateRange?.from;
-    const isFullHistory = !dateRange?.from;
     
     return (
         <div className="p-6 sm:p-4 space-y-4 max-w-[1800px] mx-auto animate-in fade-in duration-1000 pb-20">
-            <PageHeader title="Registre des Ventes Elite" description="Management souverain de l'historique et des flux financiers">
+            <PageHeader title="Flux Financiers Elite" description="Registre unifié des ventes et encaissements de dettes">
                 <div className="flex flex-wrap gap-3 w-full sm:w-auto">
                     <div className="flex items-center bg-card/40 backdrop-blur-md rounded-2xl border border-white/5 p-1 shadow-inner group">
                         <DateRangePicker date={dateRange} setDate={setDate} />
-                        {isFullHistory ? (
+                        {!dateRange?.from && (
                             <Badge variant="outline" className="ml-2 bg-primary/10 text-primary border-primary/20 text-[8px] font-black uppercase px-3 py-1 animate-pulse">
                                 Archive Complète
                             </Badge>
-                        ) : (
-                            <button onClick={toggleFullHistory} className="h-8 w-8 ml-1 rounded-lg hover:bg-primary/10 text-primary/40 hover:text-primary transition-all flex items-center justify-center" title="Voir tout l'historique">
-                                <History className="h-4 w-4" />
-                            </button>
                         )}
                     </div>
-                    <Button variant="outline" onClick={handleExportCsv} className="flex-1 sm:flex-none h-12 rounded-2xl font-semibold text-xs uppercase border-primary/20 hover:bg-primary/5 transition-all">
-                        <FileUp className="mr-2 h-4 w-4 text-primary" /> Exporter
-                    </Button>
                     <Button variant="outline" size="icon" className="h-12 w-12 rounded-2xl border-white/5 bg-card/40 hover:bg-primary/10 transition-all" onClick={() => window.location.reload()}>
                         <RefreshCw className="h-5 w-5 text-primary" />
                     </Button>
@@ -243,23 +257,22 @@ export default function SalesHistoryPage() {
                     <Card className="app-card rounded-lg bg-card/40 backdrop-blur-sm border-white/5 overflow-hidden shadow-sm">
                         <CardHeader className="bg-primary/5 border-b border-white/5 p-6">
                             <CardTitle className="text-[10px] font-black uppercase text-primary flex items-center gap-2 tracking-widest">
-                                <Sparkles className="h-3.5 w-3.5" /> Bilan de la Période
+                                <Sparkles className="h-3.5 w-3.5" /> Bilan des Flux
                             </CardTitle>
                         </CardHeader>
                         <CardContent className="p-6 space-y-6">
                             <div className="space-y-1">
-                                <p className="text-[10px] font-semibold text-muted-foreground/40 uppercase">Chiffre d'Affaires Net</p>
-                                <p className="text-3xl font-black tracking-tighter text-primary tabular-nums">{formatCurrency(stats.total)}</p>
-                                <p className="text-[10px] font-bold text-muted-foreground/60">{stats.count} factures identifiées</p>
+                                <p className="text-[10px] font-semibold text-muted-foreground/40 uppercase">Ventes de la Période</p>
+                                <p className="text-3xl font-black tracking-tighter text-primary tabular-nums">{formatCurrency(stats.totalRevenue)}</p>
                             </div>
                             <div className="grid grid-cols-1 gap-3 pt-2">
                                 <div className="p-4 rounded-2xl bg-emerald-500/5 border border-emerald-500/10 shadow-inner group hover:bg-emerald-500/10 transition-all">
-                                    <p className="text-[9px] font-semibold uppercase text-emerald-600 mb-1">Total Encaissé</p>
-                                    <p className="font-bold text-xl text-emerald-600 tracking-tight tabular-nums">{formatCurrency(stats.received)}</p>
+                                    <p className="text-[9px] font-semibold uppercase text-emerald-600 mb-1">Total Encaissé (Ventes + Dettes)</p>
+                                    <p className="font-bold text-xl text-emerald-600 tracking-tight tabular-nums">{formatCurrency(stats.totalReceived)}</p>
                                 </div>
                                 <div className="p-4 rounded-2xl bg-destructive/5 border border-destructive/10 shadow-inner group hover:bg-destructive/10 transition-all">
-                                    <p className="text-[9px] font-semibold uppercase text-destructive mb-1">Dettes en Souffrance</p>
-                                    <p className="font-bold text-xl text-destructive tracking-tight tabular-nums">{formatCurrency(stats.debt)}</p>
+                                    <p className="text-[9px] font-semibold uppercase text-destructive mb-1">Reste à Recouvrer</p>
+                                    <p className="font-bold text-xl text-destructive tracking-tight tabular-nums">{formatCurrency(stats.totalDebt)}</p>
                                 </div>
                             </div>
                         </CardContent>
@@ -268,14 +281,14 @@ export default function SalesHistoryPage() {
                     <Card className="app-card rounded-lg bg-card/40 backdrop-blur-sm border-white/5 p-6 space-y-6 shadow-sm">
                         <div className="relative group">
                             <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
-                            <Input ref={searchInputRef} placeholder="N° Facture, Client... [F3]" className="pl-11 h-12 rounded-xl bg-black/20 border-none shadow-inner font-bold text-lg" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
+                            <Input ref={searchInputRef} placeholder="Chercher un flux... [F3]" className="pl-11 h-12 rounded-xl bg-black/20 border-none shadow-inner font-bold text-lg" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
                         </div>
                         <div className="space-y-4">
-                            <Label className="text-[10px] font-black uppercase text-muted-foreground/40 ml-1">Filtrer par Règlement</Label>
+                            <Label className="text-[10px] font-black uppercase text-muted-foreground/40 ml-1">Filtrer les Ventes</Label>
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
                                     <Button variant="outline" className="w-full justify-between rounded-xl h-12 bg-black/20 border-white/5 text-xs font-semibold uppercase">
-                                        <div className="flex items-center gap-3"><Banknote className="h-4 w-4 text-primary" />{filterStatus === 'all' ? 'Tous règlements' : filterStatus === 'paid' ? 'Payés' : filterStatus === 'partial' ? 'Partiels' : 'Dettes'}</div>
+                                        <div className="flex items-center gap-3"><Banknote className="h-4 w-4 text-primary" />{filterStatus === 'all' ? 'Toutes les ventes' : filterStatus === 'paid' ? 'Payées' : filterStatus === 'partial' ? 'Partielles' : 'Dettes'}</div>
                                         <ChevronRight className="h-3 w-3 opacity-30" />
                                     </Button>
                                 </DropdownMenuTrigger>
@@ -301,10 +314,8 @@ export default function SalesHistoryPage() {
                             <div className="flex items-center gap-4">
                                 <div className="p-3 rounded-2xl bg-primary text-primary-foreground shadow-sm"><TrendingUp className="h-6 w-6" /></div>
                                 <div>
-                                    <CardTitle className="text-xl font-bold tracking-tighter uppercase">Analyse des Flux</CardTitle>
-                                    <p className="text-[10px] font-semibold uppercase text-primary/50 tracking-widest">
-                                        {isFullHistory ? 'Performance Historique (Tendance)' : 'Variation journalière sur la période'}
-                                    </p>
+                                    <CardTitle className="text-xl font-bold tracking-tighter uppercase"> نبض السيولة (Liquidité)</CardTitle>
+                                    <p className="text-[10px] font-semibold uppercase text-primary/50 tracking-widest">Variation des revenus et des remboursements</p>
                                 </div>
                             </div>
                             <div className="flex items-center gap-1.5 p-1.5 bg-black/20 rounded-lg border border-white/5 shadow-inner">
@@ -329,36 +340,15 @@ export default function SalesHistoryPage() {
                                             </linearGradient>
                                         </defs>
                                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border) / 0.2)" />
-                                        <XAxis 
-                                            dataKey="date" 
-                                            fontSize={10} 
-                                            fontWeight="900" 
-                                            tickLine={false} 
-                                            axisLine={false} 
-                                            stroke="hsl(var(--muted-foreground) / 0.4)" 
-                                            dy={15}
-                                        />
-                                        <YAxis 
-                                            fontSize={10} 
-                                            fontWeight="900" 
-                                            tickLine={false} 
-                                            axisLine={false} 
-                                            stroke="hsl(var(--muted-foreground) / 0.4)" 
-                                            dx={-15} 
-                                            tickFormatter={(v) => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : v}
-                                        />
-                                        <Tooltip 
-                                            contentStyle={{ backgroundColor: 'hsl(var(--card) / 0.9)', backdropFilter: 'blur(16px)', borderRadius: '1.5rem', border: '1px solid rgba(255,255,255,0.05)'}} 
-                                            itemStyle={{ fontSize: '12px', fontWeight: '900', textTransform: 'uppercase' }} 
-                                            formatter={(v: number, name: string) => [formatCurrency(v), name === 'total' ? 'Facturation' : 'Encaissements']}
-                                        />
+                                        <XAxis dataKey="date" fontSize={10} fontWeight="900" tickLine={false} axisLine={false} stroke="hsl(var(--muted-foreground) / 0.4)" dy={15} />
+                                        <YAxis fontSize={10} fontWeight="900" tickLine={false} axisLine={false} stroke="hsl(var(--muted-foreground) / 0.4)" dx={-15} tickFormatter={(v) => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : v} />
+                                        <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--card) / 0.9)', backdropFilter: 'blur(16px)', borderRadius: '1.5rem', border: '1px solid rgba(255,255,255,0.05)'}} itemStyle={{ fontSize: '12px', fontWeight: '900', textTransform: 'uppercase' }} formatter={(v: number, name: string) => [formatCurrency(v), name === 'total' ? 'Chiffre Affaire' : 'Flux Reçu']} />
                                         <Area type="monotone" dataKey="total" name="total" stroke="hsl(var(--chart-primary))" fillOpacity={1} fill="url(#colorTotal)" strokeWidth={4} isAnimationActive={false} />
                                         <Area type="monotone" dataKey="received" name="received" stroke="hsl(var(--chart-tertiary))" fillOpacity={1} fill="url(#colorReceived)" strokeWidth={2} strokeDasharray="5 5" isAnimationActive={false} />
                                     </AreaChart>
                                 </ResponsiveContainer>
                             ) : <div className="h-full flex flex-col items-center justify-center opacity-20 uppercase text-[10px] font-black italic gap-4">
-                                <Calendar className="h-12 w-12" />
-                                Aucun flux détecté sur cette période
+                                <Calendar className="h-12 w-12" /> Aucun flux détecté
                             </div>}
                         </CardContent>
                     </Card>
@@ -368,25 +358,58 @@ export default function SalesHistoryPage() {
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                                 {[...Array(6)].map((_, i) => <Skeleton key={i} className="h-56 w-full rounded-lg bg-card/40 animate-pulse border border-white/5" />)}
                             </div>
-                        ) : sales && sales.length > 0 ? (
+                        ) : historyData && historyData.length > 0 ? (
                             <div className="space-y-4">
-                                <div className="flex items-center justify-between px-2">
-                                    <div className="flex items-center gap-4 px-6 py-3 bg-primary/5 rounded-2xl border border-primary/10 w-fit shadow-inner">
-                                        <Checkbox id="select-all-sales" checked={selectedSales.size === sales.length && sales.length > 0} onCheckedChange={handleSelectAll} className="h-6 w-6 border-primary data-[state=checked]:bg-primary rounded-xl" />
-                                        <label htmlFor="select-all-sales" className="text-[10px] font-black uppercase text-primary cursor-pointer tracking-widest">Tout sélectionner ({selectedSales.size} flux)</label>
-                                    </div>
-                                    {isFullHistory && (
-                                        <div className="flex items-center gap-2 text-[10px] font-black uppercase text-muted-foreground/30 italic">
-                                            <History className="h-3.5 w-3.5" /> L'archive complète est affichée
-                                        </div>
-                                    )}
-                                </div>
-                                
                                 {viewMode === 'list' ? (
-                                    <SalesHistoryTable sales={sales} customerMap={customerMap} selectedSales={selectedSales} onToggleSelection={handleToggleSelection} onViewDetails={(s) => { setSelectedSale(s); setIsDetailsOpen(true); }} onPrint={(s) => { setSelectedSale(s); setIsPrintOpen(true); }} onCancel={(s) => { setSelectedSale(s); setIsCancelOpen(true); }} />
+                                    <SalesHistoryTable 
+                                        historyItems={historyData} 
+                                        customerMap={customerMap} 
+                                        selectedItems={selectedItems} 
+                                        onToggleSelection={handleToggleSelection} 
+                                        onViewDetails={(s) => { setSelectedSale(s); setIsDetailsOpen(true); }} 
+                                        onPrint={(s) => { setSelectedSale(s); setIsPrintOpen(true); }} 
+                                        onCancel={(s) => { setSelectedSale(s); setIsCancelOpen(true); }} 
+                                    />
                                 ) : (
                                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                                        {sales.map(s => <SalesHistoryCard key={s.uuid} sale={s} customerName={s.customerUuid ? `${customerMap.get(s.customerUuid)?.firstName} ${customerMap.get(s.customerUuid)?.lastName}` : 'Client de passage'} isSelected={selectedSales.has(s.uuid)} onToggleSelection={() => handleToggleSelection(s.uuid)} onViewDetails={(sale) => { setSelectedSale(sale); setIsDetailsOpen(true); }} onCancelSale={(sale) => { setSelectedSale(sale); setIsCancelOpen(true); }} />)}
+                                        {historyData.map(item => (
+                                            item.type === 'sale' ? (
+                                                <SalesHistoryCard 
+                                                    key={item.data.uuid} 
+                                                    sale={item.data} 
+                                                    customerName={item.data.customerUuid ? `${customerMap.get(item.data.customerUuid)?.firstName} ${customerMap.get(item.data.customerUuid)?.lastName}` : 'Client de passage'} 
+                                                    isSelected={selectedItems.has(item.data.uuid)} 
+                                                    onToggleSelection={() => handleToggleSelection(item.data.uuid)} 
+                                                    onViewDetails={(sale) => { setSelectedSale(sale); setIsDetailsOpen(true); }} 
+                                                    onCancelSale={(sale) => { setSelectedSale(sale); setIsCancelOpen(true); }} 
+                                                />
+                                            ) : (
+                                                <Card key={item.data.uuid} className="app-card group bg-emerald-500/5 backdrop-blur-sm border-emerald-500/10 relative overflow-hidden rounded-lg p-6">
+                                                    <div className="absolute -right-4 -top-4 opacity-[0.05] text-emerald-500 group-hover:opacity-10 transition-opacity">
+                                                        <HandCoins className="h-32 w-32 rotate-12" />
+                                                    </div>
+                                                    <div className="flex justify-between items-start mb-6">
+                                                        <div className="p-3 rounded-2xl bg-emerald-500/10 text-emerald-500 shadow-inner">
+                                                            <HandCoins className="h-6 w-6" />
+                                                        </div>
+                                                        <Badge className="bg-emerald-500 text-white border-none uppercase text-[8px] font-black px-3 py-1">Paiement Reçu</Badge>
+                                                    </div>
+                                                    <div className="space-y-1">
+                                                        <p className="text-[10px] font-semibold text-muted-foreground/40 uppercase">Encaissement Dette</p>
+                                                        <p className="text-2xl font-black text-emerald-600 tracking-tighter tabular-nums">{formatCurrency(item.data.amount)}</p>
+                                                    </div>
+                                                    <div className="mt-4 flex flex-col gap-2">
+                                                        <p className="font-bold text-sm tracking-tight truncate">
+                                                            {customerMap.get(item.data.customerUuid)?.firstName} {customerMap.get(item.data.customerUuid)?.lastName}
+                                                        </p>
+                                                        <div className="flex items-center gap-2 text-[10px] text-muted-foreground/40 font-semibold uppercase tracking-wide">
+                                                            <Clock className="h-3 w-3 opacity-50" />
+                                                            {format(item.date, 'd MMMM, HH:mm', { locale: fr })}
+                                                        </div>
+                                                    </div>
+                                                </Card>
+                                            )
+                                        ))}
                                     </div>
                                 )}
                             </div>
@@ -395,21 +418,20 @@ export default function SalesHistoryPage() {
                 </div>
             </div>
 
-            {selectedSales.size > 0 && (
+            {selectedItems.size > 0 && (
                 <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 animate-in slide-in-from-bottom-10 duration-500">
                     <div className="bg-card/80 backdrop-blur-sm border-2 border-primary/20 shadow-2xl rounded-full px-8 py-4 flex items-center gap-4">
-                        <div className="flex items-center gap-4 pr-8 border-r border-white/10"><div className="h-10 w-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-black">{selectedSales.size}</div><span className="text-[10px] font-black uppercase text-muted-foreground">Flux Sélectionnés</span></div>
-                        <Button variant="ghost" onClick={handleExportCsv} className="rounded-full h-12 px-6 font-black text-[10px] uppercase hover:bg-primary/10 hover:text-primary transition-all"><FileUp className="mr-2 h-4 w-4" /> Exporter</Button>
-                        <Button variant="ghost" onClick={() => setIsBulkCancelConfirmOpen(true)} className="rounded-full h-12 px-6 font-black text-[10px] uppercase text-destructive hover:bg-destructive/10 transition-all"><Trash2 className="mr-2 h-4 w-4" /> Annuler Flux</Button>
-                        <Button variant="ghost" size="icon" onClick={() => setSelectedSales(new Set())} className="rounded-full h-12 w-12 hover:bg-white/5"><X className="h-4 w-4" /></Button>
+                        <div className="flex items-center gap-4 pr-8 border-r border-white/10"><div className="h-10 w-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-black">{selectedItems.size}</div><span className="text-[10px] font-black uppercase text-muted-foreground">Sélections</span></div>
+                        <Button variant="ghost" onClick={() => setIsBulkCancelConfirmOpen(true)} className="rounded-full h-12 px-6 font-black text-[10px] uppercase text-destructive hover:bg-destructive/10 transition-all"><Trash2 className="mr-2 h-4 w-4" /> Annuler Ventes</Button>
+                        <Button variant="ghost" size="icon" onClick={() => setSelectedItems(new Set())} className="rounded-full h-12 w-12 hover:bg-white/5"><X className="h-4 w-4" /></Button>
                     </div>
                 </div>
             )}
 
             <SaleDetailsDialog isOpen={isDetailsOpen} onOpenChange={setIsDetailsOpen} sale={selectedSale} />
-            <CancelSaleDialog isOpen={isCancelOpen} onOpenChange={setIsCancelOpen} sale={selectedSale} onSuccess={() => setSelectedSales(new Set())} />
+            <CancelSaleDialog isOpen={isCancelOpen} onOpenChange={setIsCancelOpen} sale={selectedSale} onSuccess={() => setSelectedItems(new Set())} />
             <PrintReceiptDialog isOpen={isPrintOpen} onOpenChange={setIsPrintOpen} sale={selectedSale} customerName={selectedSale?.customerUuid ? (customerMap.get(selectedSale.customerUuid) ? `${customerMap.get(selectedSale.customerUuid)?.firstName} ${customerMap.get(selectedSale.customerUuid)?.lastName}` : undefined) : 'Client de passage'} />
-            <ConfirmAlertDialog isOpen={isBulkCancelConfirmOpen} onOpenChange={setIsBulkCancelConfirmOpen} title={`Annuler ${selectedSales.size} transactions ?`} description="Opération définitive : réintégration du stock et ajustement des soldes clients." onConfirm={handleBulkCancel} confirmText="Confirmer Annulation" />
+            <ConfirmAlertDialog isOpen={isBulkCancelConfirmOpen} onOpenChange={setIsBulkCancelConfirmOpen} title={`Annuler ${selectedItems.size} transactions ?`} description="Opération définitive : réintégration du stock et ajustement des soldes clients." onConfirm={handleBulkCancel} confirmText="Confirmer Annulation" />
         </div>
     );
 }
