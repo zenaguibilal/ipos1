@@ -41,7 +41,7 @@ import { toast } from 'sonner';
 import { cn, formatCurrency, safeToDate, safeNumber } from '@/lib/utils';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
-import { format } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import Papa from 'papaparse';
 import { useAppStore } from '@/stores/appStore';
@@ -107,26 +107,44 @@ export default function SalesHistoryPage() {
         return { total: totalCents / 100, received: receivedCents / 100, debt: debtCents / 100, count: sales.length };
     }, [sales]);
 
-    // Graphique de flux financier pour la période sélectionnée
+    /**
+     * Moteur de Graphique Elite :
+     * Calcule les flux de facturation et d'encaissement agrégés par jour.
+     */
     const chartData = useMemo(() => {
         if (!sales || sales.length === 0) return [];
-        const dataMap = new Map<string, { date: string, totalCents: number, receivedCents: number }>();
         
-        // Tri chronologique pour la cohérence de la courbe
+        const dataMap = new Map<string, { fullDate: string, totalCents: number, receivedCents: number }>();
+        
+        // Tri chronologique préalable pour l'agrégation
         const sortedSales = [...sales].sort((a,b) => safeToDate(a.createdAt!).getTime() - safeToDate(b.createdAt!).getTime());
         
-        // Échantillonnage approprié pour éviter l'encombrement
-        const itemsToGraph = (!dateRange?.from) ? sortedSales.slice(-50) : sortedSales;
+        // Échantillonnage intelligent pour l'archive complète
+        const itemsToProcess = (!dateRange?.from) ? sortedSales.slice(-100) : sortedSales;
 
-        itemsToGraph.forEach(s => {
+        itemsToProcess.forEach(s => {
             const dateObj = safeToDate(s.createdAt!);
-            const dayKey = format(dateObj, 'dd/MM');
-            const current = dataMap.get(dayKey) || { date: dayKey, totalCents: 0, receivedCents: 0 };
+            const sortKey = format(dateObj, 'yyyy-MM-dd'); // Clé de tri unique
+            
+            const current = dataMap.get(sortKey) || { 
+                fullDate: sortKey, 
+                totalCents: 0, 
+                receivedCents: 0 
+            };
+            
             current.totalCents += Math.round(safeNumber(s.total) * 100);
             current.receivedCents += Math.round(safeNumber(s.amountPaid) * 100);
-            dataMap.set(dayKey, current);
+            dataMap.set(sortKey, current);
         });
-        return Array.from(dataMap.values());
+
+        // Conversion finale en DA et formatage d'affichage
+        return Array.from(dataMap.values())
+            .sort((a, b) => a.fullDate.localeCompare(b.fullDate))
+            .map(d => ({
+                date: format(parseISO(d.fullDate), 'dd/MM'),
+                total: d.totalCents / 100,
+                received: d.receivedCents / 100
+            }));
     }, [sales, dateRange]);
 
     const handleToggleSelection = (uuid: string) => {
@@ -206,9 +224,9 @@ export default function SalesHistoryPage() {
                                 Archive Complète
                             </Badge>
                         ) : (
-                            <Button variant="ghost" size="icon" onClick={toggleFullHistory} className="h-8 w-8 ml-1 rounded-lg hover:bg-primary/10 text-primary/40 hover:text-primary transition-all" title="Voir tout l'historique">
+                            <button onClick={toggleFullHistory} className="h-8 w-8 ml-1 rounded-lg hover:bg-primary/10 text-primary/40 hover:text-primary transition-all flex items-center justify-center" title="Voir tout l'historique">
                                 <History className="h-4 w-4" />
-                            </Button>
+                            </button>
                         )}
                     </div>
                     <Button variant="outline" onClick={handleExportCsv} className="flex-1 sm:flex-none h-12 rounded-2xl font-semibold text-xs uppercase border-primary/20 hover:bg-primary/5 transition-all">
@@ -305,13 +323,37 @@ export default function SalesHistoryPage() {
                                                 <stop offset="5%" stopColor="hsl(var(--chart-primary))" stopOpacity={0.4}/>
                                                 <stop offset="95%" stopColor="hsl(var(--chart-primary))" stopOpacity={0}/>
                                             </linearGradient>
+                                            <linearGradient id="colorReceived" x1="0" y1="0" x2="0" y2="1">
+                                                <stop offset="5%" stopColor="hsl(var(--chart-tertiary))" stopOpacity={0.3}/>
+                                                <stop offset="95%" stopColor="hsl(var(--chart-tertiary))" stopOpacity={0}/>
+                                            </linearGradient>
                                         </defs>
                                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border) / 0.2)" />
-                                        <XAxis dataKey="date" fontSize={10} fontWeight="900" tickLine={false} axisLine={false} stroke="hsl(var(--muted-foreground) / 0.4)" dy={15}/>
-                                        <YAxis fontSize={10} fontWeight="900" tickLine={false} axisLine={false} stroke="hsl(var(--muted-foreground) / 0.4)" dx={-15} tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`}/>
-                                        <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--card) / 0.9)', backdropFilter: 'blur(16px)', borderRadius: '1.5rem', border: '1px solid rgba(255,255,255,0.05)'}} itemStyle={{ fontSize: '12px', fontWeight: '900', textTransform: 'uppercase' }} formatter={(v: number, name: string) => [formatCurrency(v), name === 'total' ? 'Facturation' : 'Encaissements']}/>
-                                        <Area type="monotone" dataKey="total" name="total" stroke="hsl(var(--chart-primary))" fillOpacity={1} fill="url(#colorTotal)" strokeWidth={5} isAnimationActive={false} />
-                                        <Area type="monotone" dataKey="received" name="received" stroke="hsl(var(--chart-quaternary))" fillOpacity={0} strokeWidth={3} strokeDasharray="10 10" isAnimationActive={false} />
+                                        <XAxis 
+                                            dataKey="date" 
+                                            fontSize={10} 
+                                            fontWeight="900" 
+                                            tickLine={false} 
+                                            axisLine={false} 
+                                            stroke="hsl(var(--muted-foreground) / 0.4)" 
+                                            dy={15}
+                                        />
+                                        <YAxis 
+                                            fontSize={10} 
+                                            fontWeight="900" 
+                                            tickLine={false} 
+                                            axisLine={false} 
+                                            stroke="hsl(var(--muted-foreground) / 0.4)" 
+                                            dx={-15} 
+                                            tickFormatter={(v) => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : v}
+                                        />
+                                        <Tooltip 
+                                            contentStyle={{ backgroundColor: 'hsl(var(--card) / 0.9)', backdropFilter: 'blur(16px)', borderRadius: '1.5rem', border: '1px solid rgba(255,255,255,0.05)'}} 
+                                            itemStyle={{ fontSize: '12px', fontWeight: '900', textTransform: 'uppercase' }} 
+                                            formatter={(v: number, name: string) => [formatCurrency(v), name === 'total' ? 'Facturation' : 'Encaissements']}
+                                        />
+                                        <Area type="monotone" dataKey="total" name="total" stroke="hsl(var(--chart-primary))" fillOpacity={1} fill="url(#colorTotal)" strokeWidth={4} isAnimationActive={false} />
+                                        <Area type="monotone" dataKey="received" name="received" stroke="hsl(var(--chart-tertiary))" fillOpacity={1} fill="url(#colorReceived)" strokeWidth={2} strokeDasharray="5 5" isAnimationActive={false} />
                                     </AreaChart>
                                 </ResponsiveContainer>
                             ) : <div className="h-full flex flex-col items-center justify-center opacity-20 uppercase text-[10px] font-black italic gap-4">
@@ -321,7 +363,7 @@ export default function SalesHistoryPage() {
                         </CardContent>
                     </Card>
 
-                    <div className="min-h-[600px] animate-in fade-in slide-in-from-bottom-4 duration-1000">
+                    <div className="min-h-[600px] animate-in fade-in duration-500">
                         {isLoading ? (
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                                 {[...Array(6)].map((_, i) => <Skeleton key={i} className="h-56 w-full rounded-lg bg-card/40 animate-pulse border border-white/5" />)}
