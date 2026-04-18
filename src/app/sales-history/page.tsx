@@ -24,9 +24,7 @@ import {
     Sparkles,
     X,
     Trash2,
-    CalendarDays,
-    Calendar,
-    ArrowRight
+    Calendar
 } from 'lucide-react';
 import { SalesHistoryCard } from '@/components/sales/SalesHistoryCard';
 import { SalesHistoryTable } from '@/components/sales/SalesHistoryTable';
@@ -70,6 +68,7 @@ export default function SalesHistoryPage() {
 
     const [searchQuery, setSearchQuery] = useState('');
     const [filterStatus, setFilterStatus] = useState<SalesStatus>('all');
+    // محرك النطاق الزمني Elite - يبدأ بآخر 30 يوماً افتراضياً
     const { dateRange, setDate } = useDateRange(29);
     const debouncedSearchQuery = useDebounce(searchQuery, 300);
     
@@ -96,7 +95,7 @@ export default function SalesHistoryPage() {
 
     const isLoading = sales === undefined || !isMounted;
 
-    // الإحصائيات تتحدث لحظياً بناءً على ما هو مفلتر ومعروض فقط
+    // الإحصائيات تتحدث لحظياً بناءً على ما هو مفلتر ومعروض فقط لضمان دقة "Elite"
     const stats = useMemo(() => {
         if (!sales) return { total: 0, received: 0, debt: 0, count: 0 };
         let totalCents = 0, receivedCents = 0, debtCents = 0;
@@ -108,7 +107,7 @@ export default function SalesHistoryPage() {
         return { total: totalCents / 100, received: receivedCents / 100, debt: debtCents / 100, count: sales.length };
     }, [sales]);
 
-    // الرسم البياني يعرض التدفق المالي للفترة المختارة (أو آخر 30 يوماً في حال الأرشيف)
+    // الرسم البياني يعرض التدفق المالي للفترة المختارة بدقة عالية
     const chartData = useMemo(() => {
         if (!sales || sales.length === 0) return [];
         const dataMap = new Map<string, { date: string, totalCents: number, receivedCents: number }>();
@@ -116,7 +115,7 @@ export default function SalesHistoryPage() {
         // الترتيب الزمني لضمان صحة المنحنى
         const sortedSales = [...sales].sort((a,b) => safeToDate(a.createdAt!).getTime() - safeToDate(b.createdAt!).getTime());
         
-        // في حال الأرشيف الكامل، نكتفي بعرض آخر 30 يوماً من النشاط المسجل لمنع ازدحام الرسم
+        // عرض عينة مناسبة لتجنب الازدحام
         const itemsToGraph = (!dateRange?.from) ? sortedSales.slice(-50) : sortedSales;
 
         itemsToGraph.forEach(s => {
@@ -151,7 +150,7 @@ export default function SalesHistoryPage() {
         for (const uuid of uuids) {
             try { await salesService.processSaleCancellation(uuid); successCount++; } catch (e) {}
         }
-        if (successCount > 0) toast.success(`${successCount} مبيعات تم إلغاؤها.`);
+        if (successCount > 0) toast.success(`${successCount} mبيعات تم إلغاؤها.`);
         setSelectedSales(new Set());
     };
 
@@ -179,7 +178,7 @@ export default function SalesHistoryPage() {
     const resetFilters = () => {
         setSearchQuery('');
         setFilterStatus('all');
-        setDate(undefined); // هذا يقوم بفتح الأرشيف الكامل
+        setDate(undefined); // فتح الأرشيف الكامل
         toast.info("Filtres réinitialisés. Affichage de l'archive complète.");
     };
 
@@ -198,7 +197,7 @@ export default function SalesHistoryPage() {
     
     return (
         <div className="p-6 sm:p-4 space-y-4 max-w-[1800px] mx-auto animate-in fade-in duration-1000 pb-20">
-            <PageHeader title="Registre des Ventes Elite" description="Management souverain de l'historique et des flux financiers">
+            <PageHeader title="Registre des Ventes Elite" description="Management souverain de l'historique et des تدفقات financières">
                 <div className="flex flex-wrap gap-3 w-full sm:w-auto">
                     <div className="flex items-center bg-card/40 backdrop-blur-md rounded-2xl border border-white/5 p-1 shadow-inner group">
                         <DateRangePicker date={dateRange} setDate={setDate} />

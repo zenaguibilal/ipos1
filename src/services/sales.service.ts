@@ -26,6 +26,7 @@ class SalesService {
 
     /**
      * محرك تصفية المبيعات المطور - يدعم الأرشيف الكامل والفلترة الزمنية الدقيقة.
+     * يستخدم الفهارس لضمان أداء "Elite" حتى مع أحجام البيانات الكبيرة.
      */
     async filterSales(filters: {
         query?: string;
@@ -36,7 +37,6 @@ class SalesService {
         let collection = db.sales.toCollection();
 
         // تطبيق الفلترة الزمنية على مستوى الفهارس لسرعة البرق
-        // نستخدم الفهارس إذا توفر تاريخ واحد على الأقل
         if (filters.from && filters.to) {
             const start = startOfDay(filters.from);
             const end = endOfDay(filters.to);
@@ -57,6 +57,7 @@ class SalesService {
         // محرك البحث النصي (رقم الفاتورة أو اسم العميل)
         if (filters.query) {
             const lowerQuery = filters.query.toLowerCase().trim();
+            // جلب أسماء العملاء للمطابقة النصية
             const customers = await db.customers.toArray();
             const customerUuids = new Set(
                 customers
@@ -71,7 +72,7 @@ class SalesService {
             );
         }
 
-        // الترتيب التنازلي (الأحدث أولاً) لضمان رؤية آخر النشاطات
+        // الترتيب التنازلي (الأحدث أولاً)
         return sales.sort(
             (a, b) => safeToDate(b.createdAt!).getTime() - safeToDate(a.createdAt!).getTime()
         );
