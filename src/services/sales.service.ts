@@ -1,3 +1,4 @@
+
 'use client';
 
 import { v4 as uuidv4 } from 'uuid';
@@ -27,7 +28,7 @@ class SalesService {
 
     /**
      * تصفية المبيعات مع دعم "Période d'Analyse" الذكي.
-     * تم تحسين المحرك لاستخدام الفهارس (Indexed Querying) لأقصى أداء مع الأرشيف الكامل.
+     * تم تحسين المحرك لاستخدام الفهارس (Indexed Querying) لضمان الدقة في النطاقات الزمنية.
      */
     async filterSales(filters: {
         query?: string;
@@ -37,34 +38,31 @@ class SalesService {
     }): Promise<Sale[]> {
         let collection;
 
-        // ELITE OPTIMIZATION: تحديد نطاق الاستعلام الأساسي باستخدام الفهرس الزمني
-        if (filters.from && filters.to) {
-            const start = startOfDay(filters.from);
-            const end = endOfDay(filters.to);
+        // ELITE NORMALIZATION: تحديد نطاق الاستعلام الأساسي باستخدام الفهارس
+        const start = filters.from ? startOfDay(filters.from) : null;
+        const end = filters.to ? endOfDay(filters.to) : null;
+
+        if (start && end) {
             collection = db.sales.where('createdAt').between(start, end, true, true);
-        } else if (filters.from) {
-            const start = startOfDay(filters.from);
+        } else if (start) {
             collection = db.sales.where('createdAt').aboveOrEqual(start);
-        } else if (filters.to) {
-            const end = endOfDay(filters.to);
+        } else if (end) {
             collection = db.sales.where('createdAt').belowOrEqual(end);
         } else {
-            // FIX: استرجاع الأرشيف الكامل (بما في ذلك الفواتير القديمة) عند مسح الفلتر الزمني تماماً
+            // استرجاع الأرشيف الكامل عند مسح الفلتر
             collection = db.sales.toCollection();
         }
 
-        // تطبيق فلتر الحالة إذا وجد
+        // تطبيق فلتر الحالة
         if (filters.status && filters.status !== 'all') {
             collection = collection.filter(s => s.paymentStatus === filters.status);
         }
 
         let sales = await collection.toArray();
 
-        // تطبيق محرك البحث النصي المتقدم
+        // محرك البحث النصي
         if (filters.query) {
             const lowerQuery = filters.query.toLowerCase().trim();
-            
-            // جلب أسماء العملاء للمطابقة
             const customers = await db.customers.toArray();
             const customerUuids = new Set(
                 customers
@@ -79,7 +77,7 @@ class SalesService {
             );
         }
 
-        // الترتيب التنازلي (الأحدث أولاً) لضمان تدفق بصري منطقي
+        // الترتيب التنازلي (الأحدث أولاً)
         return sales.sort(
             (a, b) =>
                 safeToDate(b.createdAt!).getTime() -
@@ -90,11 +88,9 @@ class SalesService {
     private async generateInvoiceNumber(): Promise<string> {
         const now = new Date();
         const year = now.getFullYear();
-        
         const profile = await db.company_profile.toCollection().first();
         const currentCounter = profile?.invoice_counter || 1;
         const prefix = profile?.invoice_prefix || String(year);
-
         const invoiceNumber = `${prefix}-${String(currentCounter).padStart(6, '0')}`;
 
         if (profile?.id) {
@@ -103,7 +99,6 @@ class SalesService {
                 updatedAt: new Date()
             });
         }
-
         return invoiceNumber;
     }
 
@@ -116,7 +111,6 @@ class SalesService {
         dueDate?: Date;
     }): Promise<Sale> {
         const now = new Date();
-        
         const subtotalCents = saleData.items.reduce(
             (acc, item) => acc + Math.round(preciseMultiply(item.price, item.cartQuantity) * 100),
             0,
@@ -133,13 +127,7 @@ class SalesService {
         const amountPaidCents = Math.round(safeNumber(saleData.amountPaid) * 100);
         const remainingCents = Math.max(0, totalCents - amountPaidCents);
 
-        const paymentStatus =
-            remainingCents <= 0.9 
-                ? 'paid'
-                : amountPaidCents > 0
-                  ? 'partial'
-                  : 'unpaid';
-
+        const paymentStatus = remainingCents <= 0.9 ? 'paid' : amountPaidCents > 0 ? 'partial' : 'unpaid';
         const profile = await db.company_profile.toCollection().first();
 
         const saleItems: SaleItem[] = saleData.items.map(item => ({
@@ -152,7 +140,6 @@ class SalesService {
         }));
 
         const invoiceNumber = await this.generateInvoiceNumber();
-
         const newSale: Sale = {
             uuid: uuidv4(),
             invoiceNumber,
@@ -170,80 +157,36 @@ class SalesService {
             dueDate: saleData.dueDate,
         };
 
-        await db.transaction(
-            'rw',
-            [
-                db.sales,
-                db.products,
-                db.inventory_logs,
-                db.customers,
-                db.payments,
-                db.product_returns,
-                db.company_profile
-            ],
-            async () => {
-                await db.sales.add(newSale);
-
-                for (const item of saleData.items) {
-                    await inventoryService.adjustStock(
-                        item.uuid,
-                        -item.cartQuantity,
-                        'sale',
-                        newSale.uuid,
-                    );
-                }
-
-                if (newSale.customerUuid) {
-                    await customerService.recalculateCustomerStatus(
-                        newSale.customerUuid,
-                    );
-                }
-            },
-        );
+        await db.transaction('rw', [db.sales, db.products, db.inventory_logs, db.customers, db.payments, db.product_returns, db.company_profile], async () => {
+            await db.sales.add(newSale);
+            for (const item of saleData.items) {
+                await inventoryService.adjustStock(item.uuid, -item.cartQuantity, 'sale', newSale.uuid);
+            }
+            if (newSale.customerUuid) {
+                await customerService.recalculateCustomerStatus(newSale.customerUuid);
+            }
+        });
 
         useAppStore.getState().actions.triggerSmartSync();
         return newSale;
     }
 
     async processSaleCancellation(uuid: string): Promise<void> {
-        await db.transaction(
-            'rw',
-            [
-                db.sales,
-                db.products,
-                db.customers,
-                db.inventory_logs,
-                db.payments,
-                db.product_returns,
-            ],
-            async () => {
-                const sale = await this.getSaleByUuid(uuid);
-                if (!sale || !sale.id) throw new Error('Vente non trouvée.');
-
-                await db.sales.delete(sale.id);
-
-                for (const item of sale.items) {
-                    if (item.productUuid) {
-                        await inventoryService.adjustStock(
-                            item.productUuid,
-                            item.quantity,
-                            'cancellation',
-                            sale.uuid,
-                        );
-                    }
+        await db.transaction('rw', [db.sales, db.products, db.customers, db.inventory_logs, db.payments, db.product_returns], async () => {
+            const sale = await this.getSaleByUuid(uuid);
+            if (!sale || !sale.id) throw new Error('Vente non trouvée.');
+            await db.sales.delete(sale.id);
+            for (const item of sale.items) {
+                if (item.productUuid) {
+                    await inventoryService.adjustStock(item.productUuid, item.quantity, 'cancellation', sale.uuid);
                 }
-
-                if (sale.customerUuid) {
-                    await customerService.recalculateCustomerStatus(
-                        sale.customerUuid,
-                    );
-                }
-            },
-        );
-
+            }
+            if (sale.customerUuid) {
+                await customerService.recalculateCustomerStatus(sale.customerUuid);
+            }
+        });
         useAppStore.getState().actions.triggerSmartSync();
     }
 }
 
 export const salesService = new SalesService();
-

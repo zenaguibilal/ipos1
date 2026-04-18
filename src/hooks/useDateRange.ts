@@ -1,14 +1,15 @@
+
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import type { DateRange } from 'react-day-picker';
 import { subDays, startOfDay, endOfDay } from 'date-fns';
 
 /**
- * useDateRange — Hook pour définir une plage de dates.
- * Initialisé à undefined pour éviter les erreurs de Hydration (conflit serveur/client).
+ * useDateRange — Hook Elite pour la gestion des plages temporelles.
+ * Garantit l'immutabilité des objets pour une réactivité React parfaite.
  */
-export function useDateRange(defaultDays: number = 6) {
+export function useDateRange(defaultDays: number = 29) {
     const [dateRange, setDateRange] = useState<DateRange | undefined>();
     const [isMounted, setIsMounted] = useState(false);
 
@@ -21,14 +22,23 @@ export function useDateRange(defaultDays: number = 6) {
         setIsMounted(true);
     }, [defaultDays]);
 
-    const setRange = (newRange?: DateRange) => {
-        if (newRange?.from && newRange.to) {
-            // Force hours normalization
-            newRange.from = startOfDay(newRange.from);
-            newRange.to = endOfDay(newRange.to);
+    /**
+     * Met à jour la plage avec normalisation forcée (00:00:00 -> 23:59:59).
+     * Crée systématiquement un nouvel objet pour déclencher les LiveQueries.
+     */
+    const setRange = useCallback((newRange?: DateRange) => {
+        if (!newRange) {
+            setDateRange(undefined);
+            return;
         }
-        setDateRange(newRange);
-    }
+
+        const normalized: DateRange = {
+            from: newRange.from ? startOfDay(newRange.from) : undefined,
+            to: newRange.to ? endOfDay(newRange.to) : undefined
+        };
+        
+        setDateRange(normalized);
+    }, []);
 
     return { dateRange, setDate: setRange, isMounted };
 }
