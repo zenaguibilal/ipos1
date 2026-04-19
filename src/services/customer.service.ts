@@ -160,7 +160,6 @@ class CustomerService {
         const customer = await this.getCustomerByUuid(uuid);
         if (!customer) return;
 
-        // RÈGLE ÉLITE : Interdiction de supprimer si historique présent (audit trail)
         const [salesCount, returnsCount, paymentsCount, breadOrdersCount] =
             await Promise.all([
                 db.sales.where('customerUuid').equals(uuid).count(),
@@ -192,10 +191,6 @@ class CustomerService {
         }
     }
 
-    /**
-     * Moteur de recalcul souverain iPOS Zen.
-     * Utilise l'arithmétique entière (Cents) pour une précision comptable absolue.
-     */
     async recalculateCustomerStatus(customerUuid: string): Promise<Customer> {
         const customer = await this.getCustomerByUuid(customerUuid);
         if (!customer?.id)
@@ -211,7 +206,6 @@ class CustomerService {
             db.product_returns.where('customerUuid').equals(customerUuid).toArray(),
         ]);
 
-        // Moteur de calcul en centimes pour une précision absolue
         let totalDebtCents = Math.round(safeNumber(customer.initialBalance) * 100);
         let totalSpentCents = 0;
         
@@ -268,6 +262,93 @@ class CustomerService {
         await db.customers.update(customer.id, customerUpdate);
         triggerSync();
         return { ...customer, ...customerUpdate };
+    }
+
+    async getCustomerActivity(customerUuid: string, page: number = 1, limit: number = 10): Promise<any[]> {
+        const [sales, payments, returns] = await Promise.all([
+            db.sales.where('customerUuid').equals(customerUuid).toArray(),
+            db.payments.where('customerUuid').equals(customerUuid).toArray(),
+            db.product_returns.where('customerUuid').equals(customerUuid).toArray(),
+        ]);
+
+        const customer = await this.getCustomerByUuid(customerUuid);
+
+        const activity: any[] = [
+            ...sales.map(s => ({ ...s, type: 'sale', date: s.createdAt })),
+            ...payments.map(p => ({ ...p, type: 'payment', date: p.paymentDate })),
+            ...returns.map(r => ({ ...r, type: 'return', date: r.createdAt })),
+        ];
+
+        if (customer && Math.abs(safeNumber(customer.initialBalance)) > 0.009) {
+            activity.push({
+                uuid: 'initial-balance-' + customer.uuid,
+                type: 'initial_balance',
+                date: customer.createdAt || new Date(0),
+                amount: customer.initialBalance,
+                notes: 'Report de solde initial lors de l\'ouverture du dossier.'
+            });
+        }
+
+        activity.sort((a, b) => new Date(b.date!).getTime() - new Date(a.date!).getTime());
+
+        const start = (page - 1) * limit;
+        return activity.slice(start, start + limit);
+    }
+
+    async getCustomerMonthlySpending(customerUuid: string): Promise<{ month: string, total: number }[]> {
+        const sales = await db.sales.where('customerUuid').equals(customerUuid).toArray();
+        const returns = await db.product_returns.where('customerUuid').equals(customerUuid).toArray();
+
+        const last6Months: { month: string, totalCents: number, timestamp: number }[] = [];
+        const now = new Date();
+
+        for (let i = 5; i >= 0; i--) {
+            const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+            last6Months.push({
+                month: d.toLocaleString('fr-FR', { month: 'short' }),
+                totalCents: 0,
+                timestamp: d.getTime()
+            });
+        }
+
+        sales.forEach(s => {
+            const saleDate = new Date(s.createdAt!);
+            const startOfSaleMonth = new Date(saleDate.getFullYear(), saleDate.getMonth(), 1).getTime();
+            const monthIdx = last6Months.findIndex(m => m.timestamp === startOfSaleMonth);
+            if (monthIdx !== -1) {
+                last6Months[monthIdx].totalCents += Math.round(safeNumber(s.total) * 100);
+            }
+        });
+
+        returns.forEach(r => {
+            const retDate = new Date(r.createdAt!);
+            const startOfRetMonth = new Date(retDate.getFullYear(), retDate.getMonth(), 1).getTime();
+            const monthIdx = last6Months.findIndex(m => m.timestamp === startOfRetMonth);
+            if (monthIdx !== -1) {
+                last6Months[monthIdx].totalCents -= Math.round(safeNumber(r.totalReturnValue) * 100);
+            }
+        });
+
+        return last6Months.map(m => ({
+            month: m.month,
+            total: Math.max(0, m.totalCents / 100)
+        }));
+    }
+
+    async getCustomerStatementData(customerUuid: string): Promise<{ customer: Customer, unpaidSales: Sale[] }> {
+        const customer = await this.getCustomerByUuid(customerUuid);
+        if (!customer) throw new Error("Client non trouvé");
+
+        const unpaidSales = await db.sales
+            .where('customerUuid')
+            .equals(customerUuid)
+            .filter(s => s.paymentStatus !== 'paid')
+            .toArray();
+
+        return {
+            customer,
+            unpaidSales: unpaidSales.sort((a, b) => new Date(b.createdAt!).getTime() - new Date(a.createdAt!).getTime())
+        };
     }
 
     async analyzeImport(file: File): Promise<ImportAnalysis> {
