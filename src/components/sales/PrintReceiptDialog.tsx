@@ -112,14 +112,17 @@ export function PrintReceiptDialog({
         setIsGenerating(true);
 
         try {
-            const { jsPDF } = await import('jspdf');
-            const html2canvas = (await import('html2canvas')).default;
+            // Importation dynamique pour optimiser les performances
+            const [{ jsPDF }, html2canvas] = await Promise.all([
+                import('jspdf'),
+                import('html2canvas').then(m => m.default)
+            ]);
 
             const element = document.getElementById('receipt-render-target-inner');
             if (!element) throw new Error("Source de rendu HD manquante");
 
             const canvas = await html2canvas(element, {
-                scale: 4, // Ultra-HD pour WhatsApp
+                scale: 4, // Résolution Elite Ultra-HD
                 useCORS: true,
                 backgroundColor: "#ffffff",
                 logging: false,
@@ -159,23 +162,24 @@ export function PrintReceiptDialog({
                     text: `Bonjour, voici votre facture #${sale.invoiceNumber} de l'établissement ${profile?.companyName || 'iPOS'}. Cordialement.`
                 };
 
+                // Vérification finale de compatibilité de partage de fichier
                 if (navigator.canShare && navigator.canShare({ files: [file] })) {
                     try {
                         await navigator.share(shareData);
-                        toast.success("Partage WhatsApp effectué.");
+                        toast.success("Partage effectué avec succès.");
                     } catch (e: any) {
                         if (e.name !== 'AbortError') {
                             pdf.save(fileName);
-                            toast.info("Sauvegarde locale effectuée.");
+                            toast.info("Partage annulé ou non supporté. Fichier sauvegardé localement.");
                         }
                     }
                 } else {
                     pdf.save(fileName);
-                    toast.warning("Partage direct non supporté par ce navigateur. Fichier téléchargé.");
+                    toast.warning("Le partage direct n'est pas supporté. Document téléchargé.");
                 }
             } else {
                 pdf.save(fileName);
-                toast.success("Document exporté en format PDF.");
+                toast.success("Exportation PDF terminée.");
             }
         } catch (error: any) {
             console.error("Génération PDF échouée:", error);
