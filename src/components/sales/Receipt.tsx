@@ -248,12 +248,12 @@ export const Receipt = React.forwardRef<HTMLDivElement, ReceiptProps>(
           <div className="mb-10">
             <table className="w-full border-collapse">
               <thead className="table-header-group">
-                <tr className="bg-[#111827] text-white">
-                  <th className="text-center w-12 rounded-tl-xl p-4 text-[10px] font-black uppercase">N°</th>
+                <tr className="bg-white text-black border-y-2 border-black">
+                  <th className="text-center w-12 p-4 text-[10px] font-black uppercase">N°</th>
                   <th className="text-left p-4 text-[10px] font-black uppercase">Désignation</th>
                   <th className="text-center w-20 p-4 text-[10px] font-black uppercase">Qté</th>
                   <th className="text-right w-32 p-4 text-[10px] font-black uppercase">P.U (DA)</th>
-                  <th className="text-right w-32 rounded-tr-xl p-4 text-[10px] font-black uppercase">Total (DA)</th>
+                  <th className="text-right w-32 p-4 text-[10px] font-black uppercase">Total (DA)</th>
                 </tr>
               </thead>
               <tbody>
@@ -305,7 +305,7 @@ export const Receipt = React.forwardRef<HTMLDivElement, ReceiptProps>(
                   <span>Versement / Paiement (Recu)</span>
                   <span className="font-mono">-{formatNum(docData.payment)} DA</span>
                 </div>
-                <div className="bg-[#111827] text-white p-6 rounded-2xl flex justify-between items-center mt-6 shadow-xl">
+                <div className="bg-white text-black p-6 rounded-2xl flex justify-between items-center mt-6 border-2 border-black">
                   <span className="text-xs font-black uppercase tracking-widest opacity-60">NET A PAYER (DA)</span>
                   <span className="text-3xl font-black font-mono tracking-tighter">{formatNum(docData.newBalance)}</span>
                 </div>
