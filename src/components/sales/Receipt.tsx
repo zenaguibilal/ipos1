@@ -33,7 +33,7 @@ interface DeliveryNoteData {
 }
 
 /**
- * Convertit un nombre en lettres francaises.
+ * Convertit un nombre en lettres françaises.
  */
 function numberToWordsFR(n: number): string {
   const intPart = Math.floor(Math.abs(n));
@@ -129,8 +129,8 @@ export const Receipt = React.forwardRef<HTMLDivElement, ReceiptProps>(
       totalQty: sale.items.reduce((sum, i) => sum + i.quantity, 0),
       grandTotal: sale.total,
       oldBalance: oldBalance,
-      payment: sale.amountPaid,
-      newBalance: (oldBalance + sale.total) - sale.amountPaid,
+      payment: sale.amountPaid || 0,
+      newBalance: (oldBalance + sale.total) - (sale.amountPaid || 0),
       amountInWords: numberToWordsFR(sale.total),
     };
 
@@ -301,8 +301,8 @@ export const Receipt = React.forwardRef<HTMLDivElement, ReceiptProps>(
                     <span className="font-mono text-[#111827]">{formatNum(docData.oldBalance)} DA</span>
                   </div>
                 )}
-                <div className="flex justify-between px-4 py-2 text-sm font-bold text-emerald-600">
-                  <span>Versement / Paiement (Recu)</span>
+                <div className="flex justify-between px-4 py-2 text-sm font-bold text-emerald-600 bg-emerald-50/50">
+                  <span>Versement / Paiement (Reçu)</span>
                   <span className="font-mono">-{formatNum(docData.payment)} DA</span>
                 </div>
                 <div className="bg-white text-black p-6 rounded-2xl flex justify-between items-center mt-6 border-2 border-black">
