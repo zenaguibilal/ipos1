@@ -4,7 +4,7 @@ import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Receipt } from './Receipt';
-import { Printer, X, FileText, Smartphone, MessageCircle, Loader2, Download, Share2 } from 'lucide-react';
+import { Printer, X, FileText, Smartphone, MessageCircle, Loader2, Download } from 'lucide-react';
 import type { Sale, Customer } from '@/lib/types';
 import { useAppStore } from '@/stores/appStore';
 import { Switch } from '@/components/ui/switch';
@@ -21,8 +21,8 @@ interface PrintReceiptDialogProps {
 }
 
 /**
- * Composant de gestion documentaire Elite.
- * Gère l'impression physique et la génération de PDF haute fidélité pour partage WhatsApp.
+ * Composant de gestion documentaire Elite iPOS Zen.
+ * Gère l'impression physique et le partage numérique HD via WhatsApp/PDF.
  */
 export function PrintReceiptDialog({
     isOpen,
@@ -62,7 +62,7 @@ export function PrintReceiptDialog({
     }, [customer, customerName]);
 
     /**
-     * handlePrint - Déclenche le flux d'impression natif.
+     * handlePrint - Flux d'impression système direct.
      */
     const handlePrint = useCallback(() => {
         if (!sale) return;
@@ -71,7 +71,7 @@ export function PrintReceiptDialog({
         const sourceElement = document.getElementById('receipt-render-target-inner');
 
         if (!printablePortal || !sourceElement) {
-            toast.error("Canal de sortie introuvable.");
+            toast.error("Erreur : Canal de sortie introuvable.");
             return;
         }
 
@@ -105,8 +105,7 @@ export function PrintReceiptDialog({
     ], 'Impression', isOpen);
 
     /**
-     * handleGeneratePDF - Moteur de rendu haute densité pour PDF.
-     * Supporte le partage direct via API Web Share (WhatsApp, Email, etc.)
+     * handleGeneratePDF - Génération PDF Ultra-HD et partage WhatsApp.
      */
     const handleGeneratePDF = useCallback(async (isShare: boolean) => {
         if (!sale) return;
@@ -117,11 +116,10 @@ export function PrintReceiptDialog({
             const html2canvas = (await import('html2canvas')).default;
 
             const element = document.getElementById('receipt-render-target-inner');
-            if (!element) throw new Error("Source de rendu manquante");
+            if (!element) throw new Error("Source de rendu HD manquante");
 
-            // Rendu Ultra-HD pour garantir la netteté des polices
             const canvas = await html2canvas(element, {
-                scale: 3, 
+                scale: 4, // Ultra-HD pour WhatsApp
                 useCORS: true,
                 backgroundColor: "#ffffff",
                 logging: false,
@@ -151,22 +149,20 @@ export function PrintReceiptDialog({
             
             const fileName = `Facture_${sale.invoiceNumber}_iPOS.pdf`;
 
-            // Protocole de partage Elite
             if (isShare && typeof navigator !== 'undefined' && navigator.share) {
                 const pdfBlob = pdf.output('blob');
                 const file = new File([pdfBlob], fileName, { type: 'application/pdf' });
                 
                 const shareData = {
                     files: [file],
-                    title: `Facture #${sale.invoiceNumber} - ${profile?.companyName || 'iPOS'}`,
-                    text: `Bonjour, voici votre facture #${sale.invoiceNumber}. Cordialement.`
+                    title: `Facture #${sale.invoiceNumber}`,
+                    text: `Bonjour, voici votre facture #${sale.invoiceNumber} de l'établissement ${profile?.companyName || 'iPOS'}. Cordialement.`
                 };
 
-                // Vérification de compatibilité de partage de fichier
                 if (navigator.canShare && navigator.canShare({ files: [file] })) {
                     try {
                         await navigator.share(shareData);
-                        toast.success("Partage effectué.");
+                        toast.success("Partage WhatsApp effectué.");
                     } catch (e: any) {
                         if (e.name !== 'AbortError') {
                             pdf.save(fileName);
@@ -175,15 +171,15 @@ export function PrintReceiptDialog({
                     }
                 } else {
                     pdf.save(fileName);
-                    toast.warning("Partage direct indisponible. Fichier téléchargé.");
+                    toast.warning("Partage direct non supporté par ce navigateur. Fichier téléchargé.");
                 }
             } else {
                 pdf.save(fileName);
-                toast.success("Document exporté en PDF.");
+                toast.success("Document exporté en format PDF.");
             }
         } catch (error: any) {
             console.error("Génération PDF échouée:", error);
-            toast.error("Erreur de génération HD.");
+            toast.error("Erreur de génération du document HD.");
         } finally {
             setIsGenerating(false);
         }
@@ -202,7 +198,7 @@ export function PrintReceiptDialog({
                             </div>
                             <div>
                                 <DialogTitle className="text-lg font-bold tracking-tight">Gestion Documentaire Elite</DialogTitle>
-                                <DialogDescription className="text-[10px] uppercase font-semibold text-primary/50">Référence : #{sale.invoiceNumber}</DialogDescription>
+                                <DialogDescription className="text-[10px] uppercase font-semibold text-primary/50">Facture : #{sale.invoiceNumber}</DialogDescription>
                             </div>
                         </div>
                         <div className="flex items-center gap-4 bg-background/50 p-1.5 rounded-xl border border-primary/10">

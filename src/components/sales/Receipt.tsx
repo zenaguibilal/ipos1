@@ -200,7 +200,6 @@ export const Receipt = React.forwardRef<HTMLDivElement, ReceiptProps>(
           <footer className="text-center mt-8 pt-4 border-t border-dashed border-gray-400">
             <p className="font-bold uppercase text-[8pt]">Merci de votre confiance !</p>
             <p className="text-[6.5pt] opacity-40 mt-2">SYSTÈME iPOS ZEN ELITE</p>
-            <p className="text-[6.5pt] opacity-40">www.ipos-zen.dz</p>
           </footer>
         </div>
       );
