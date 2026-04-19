@@ -1,3 +1,4 @@
+
 /** @type {import('next').NextConfig} */
 
 const nextConfig = {
@@ -19,6 +20,14 @@ const nextConfig = {
             },
         ],
     },
+    // Optimisation du serveur de développement pour l'environnement cloud
+    devIndicators: {
+        buildActivity: false,
+    },
+    experimental: {
+        // Correction pour l'avertissement "allowedDevOrigins" et les blocages potentiels de HMR
+        allowedDevOrigins: ["*"],
+    }
 };
 
 module.exports = nextConfig;
