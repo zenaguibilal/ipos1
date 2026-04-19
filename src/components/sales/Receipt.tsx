@@ -33,7 +33,7 @@ interface DeliveryNoteData {
 }
 
 /**
- * Convertit un nombre en lettres françaises (Optimisé pour iPOS Elite).
+ * Convertit un nombre en lettres francaises.
  */
 function numberToWordsFR(n: number): string {
   const intPart = Math.floor(Math.abs(n));
@@ -85,7 +85,7 @@ function numberToWordsFR(n: number): string {
     return res.trim();
   }
 
-  if (intPart === 0 && decPart === 0) return "ZÉRO DINAR";
+  if (intPart === 0 && decPart === 0) return "ZERO DINAR";
   let finalStr = n < 0 ? "MOINS " : "";
   if (intPart > 0) finalStr += getWords(intPart) + (intPart > 1 ? " DINARS" : " DINAR");
   if (decPart > 0) {
@@ -112,11 +112,11 @@ export const Receipt = React.forwardRef<HTMLDivElement, ReceiptProps>(
       docNumber: sale.invoiceNumber,
       date: sale.createdAt ? format(new Date(sale.createdAt), 'dd/MM/yyyy HH:mm') : format(new Date(), 'dd/MM/yyyy HH:mm'),
       companyName: profile?.companyName || 'iPOS ZEN ELITE',
-      companyAddress: profile?.address || 'ALGÉRIE',
+      companyAddress: profile?.address || 'ALGERIE',
       companyPhone: profile?.phone || '',
       clientName: customerName || 'Client de passage',
-      clientAddress: 'ALGÉRIE',
-      paymentMode: sale.paymentStatus === 'paid' ? 'COMPTANT' : sale.paymentStatus === 'partial' ? 'PARTIEL' : 'À CRÉDIT',
+      clientAddress: 'ALGERIE',
+      paymentMode: sale.paymentStatus === 'paid' ? 'COMPTANT' : sale.paymentStatus === 'partial' ? 'PARTIEL' : 'A CREDIT',
       seller: 'ADMIN',
       orderRef: 'Vente Directe',
       items: sale.items.map((item, idx) => ({
@@ -140,7 +140,7 @@ export const Receipt = React.forwardRef<HTMLDivElement, ReceiptProps>(
           <header className="text-center mb-4">
             <p className="font-bold uppercase text-base">{docData.companyName}</p>
             <p className="text-[7pt] mt-1">{docData.companyAddress}</p>
-            {docData.companyPhone && <p className="text-[7pt]">Tél: {docData.companyPhone}</p>}
+            {docData.companyPhone && <p className="text-[7pt]">Tel: {docData.companyPhone}</p>}
           </header>
           
           <div className="border-b border-black border-dashed my-2" />
@@ -155,8 +155,8 @@ export const Receipt = React.forwardRef<HTMLDivElement, ReceiptProps>(
           <table className="w-full text-left text-[8pt] mb-4 border-collapse">
             <thead className="table-header-group">
               <tr className="border-b border-black">
-                <th className="text-left py-1">DÉSIGNATION</th>
-                <th className="text-center py-1">QTÉ</th>
+                <th className="text-left py-1">DESIGNATION</th>
+                <th className="text-center py-1">QTE</th>
                 <th className="text-right py-1">TOTAL</th>
               </tr>
             </thead>
@@ -187,19 +187,19 @@ export const Receipt = React.forwardRef<HTMLDivElement, ReceiptProps>(
             )}
             
             <div className="flex justify-between text-[9pt] text-emerald-700 bg-emerald-50 px-1">
-                <span className="font-bold">VERSEMENT (REÇU):</span>
+                <span className="font-bold">VERSEMENT (RECU):</span>
                 <span className="font-bold">-{formatNum(docData.payment)} DA</span>
             </div>
             
             <div className="flex justify-between border-t border-black pt-2 text-[10pt] bg-gray-100 px-1">
-                <span className="font-black">NET À PAYER:</span>
+                <span className="font-black">NET A PAYER:</span>
                 <span className="font-black">{formatNum(docData.newBalance)} DA</span>
             </div>
           </div>
           
           <footer className="text-center mt-8 pt-4 border-t border-dashed border-gray-400">
             <p className="font-bold uppercase text-[8pt]">Merci de votre confiance !</p>
-            <p className="text-[6.5pt] opacity-40 mt-2">SYSTÈME iPOS ZEN ELITE</p>
+            <p className="text-[6.5pt] opacity-40 mt-2">SYSTEME iPOS ZEN ELITE</p>
           </footer>
         </div>
       );
@@ -213,13 +213,13 @@ export const Receipt = React.forwardRef<HTMLDivElement, ReceiptProps>(
             <div className="flex flex-col gap-1 max-w-[60%]">
               <h1 className="text-3xl font-black uppercase tracking-tight text-[#111827]">{docData.companyName}</h1>
               <p className="text-sm font-semibold opacity-70 mt-2">{docData.companyAddress}</p>
-              <p className="text-sm font-bold">Tél: {docData.companyPhone}</p>
+              <p className="text-sm font-bold">Tel: {docData.companyPhone}</p>
             </div>
             <div className="flex flex-col items-end">
               <h2 className="text-3xl font-black text-blue-600 uppercase tracking-tighter">Bon de Livraison</h2>
               <div className="mt-4 text-right">
                 <p className="font-mono font-bold text-lg">N° : {docData.docNumber}</p>
-                <p className="text-sm font-bold text-gray-500 uppercase">Émis le : {docData.date.split(' ')[0]}</p>
+                <p className="text-sm font-bold text-gray-500 uppercase">Emis le : {docData.date.split(' ')[0]}</p>
               </div>
             </div>
           </div>
@@ -281,14 +281,14 @@ export const Receipt = React.forwardRef<HTMLDivElement, ReceiptProps>(
                   </p>
                 </div>
                 <div className="flex justify-between items-start pt-4 border-t border-dashed border-gray-200">
-                  <p className="text-[9px] font-black uppercase text-gray-400 tracking-widest">Visa Établissement</p>
+                  <p className="text-[9px] font-black uppercase text-gray-400 tracking-widest">Visa Etablissement</p>
                   <p className="text-[9px] font-black uppercase text-gray-400 tracking-widest">Signature Client</p>
                 </div>
               </div>
 
               <div className="space-y-2">
                 <div className="flex justify-between px-4 py-2 text-sm font-bold text-gray-500">
-                  <span>Articles (Qté Totale)</span>
+                  <span>Articles (Qte Totale)</span>
                   <span className="font-mono text-[#111827]">{docData.totalQty}</span>
                 </div>
                 <div className="flex justify-between px-4 py-2 text-sm font-bold text-[#111827] border-b border-gray-100">
@@ -302,11 +302,11 @@ export const Receipt = React.forwardRef<HTMLDivElement, ReceiptProps>(
                   </div>
                 )}
                 <div className="flex justify-between px-4 py-2 text-sm font-bold text-emerald-600">
-                  <span>Versement / Paiement (Reçu)</span>
+                  <span>Versement / Paiement (Recu)</span>
                   <span className="font-mono">-{formatNum(docData.payment)} DA</span>
                 </div>
                 <div className="bg-[#111827] text-white p-6 rounded-2xl flex justify-between items-center mt-6 shadow-xl">
-                  <span className="text-xs font-black uppercase tracking-widest opacity-60">NET À PAYER (DA)</span>
+                  <span className="text-xs font-black uppercase tracking-widest opacity-60">NET A PAYER (DA)</span>
                   <span className="text-3xl font-black font-mono tracking-tighter">{formatNum(docData.newBalance)}</span>
                 </div>
               </div>

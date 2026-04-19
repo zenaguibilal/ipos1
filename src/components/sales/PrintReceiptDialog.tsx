@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Receipt } from './Receipt';
@@ -49,7 +49,7 @@ export function PrintReceiptDialog({
                 .then(c => {
                     if (c) setCustomer(c);
                 })
-                .catch(() => console.warn("Échec récupération client"));
+                .catch(() => console.warn("Echec recuperation client"));
         } else {
             setCustomer(null);
         }
@@ -62,7 +62,7 @@ export function PrintReceiptDialog({
     }, [customer, customerName]);
 
     /**
-     * handlePrint - Flux d'impression système direct.
+     * handlePrint - Flux d'impression systeme direct.
      */
     const handlePrint = useCallback(() => {
         if (!sale) return;
@@ -99,13 +99,13 @@ export function PrintReceiptDialog({
         {
             key: 'Escape',
             action: () => onOpenChange(false),
-            description: 'Fermer la fenêtre',
+            description: 'Fermer la fenetre',
             ignoreInputFocus: true
         }
     ], 'Impression', isOpen);
 
     /**
-     * handleGeneratePDF - Génération PDF Ultra-HD et partage WhatsApp.
+     * handleGeneratePDF - Generation PDF Ultra-HD et partage WhatsApp.
      */
     const handleGeneratePDF = useCallback(async (isShare: boolean) => {
         if (!sale) return;
@@ -122,7 +122,7 @@ export function PrintReceiptDialog({
             if (!element) throw new Error("Source de rendu HD manquante");
 
             const canvas = await html2canvas(element, {
-                scale: 4, // Résolution Elite Ultra-HD
+                scale: 3, // Resolution Ultra-HD optimisee pour WhatsApp
                 useCORS: true,
                 backgroundColor: "#ffffff",
                 logging: false,
@@ -159,31 +159,30 @@ export function PrintReceiptDialog({
                 const shareData = {
                     files: [file],
                     title: `Facture #${sale.invoiceNumber}`,
-                    text: `Bonjour, voici votre facture #${sale.invoiceNumber} de l'établissement ${profile?.companyName || 'iPOS'}. Cordialement.`
+                    text: `Bonjour, voici votre facture #${sale.invoiceNumber} de l'etablissement ${profile?.companyName || 'iPOS'}. Cordialement.`
                 };
 
-                // Vérification finale de compatibilité de partage de fichier
                 if (navigator.canShare && navigator.canShare({ files: [file] })) {
                     try {
                         await navigator.share(shareData);
-                        toast.success("Partage effectué avec succès.");
+                        toast.success("Partage effectue avec succes.");
                     } catch (e: any) {
                         if (e.name !== 'AbortError') {
                             pdf.save(fileName);
-                            toast.info("Partage annulé ou non supporté. Fichier sauvegardé localement.");
+                            toast.info("Partage annule ou non supporte. Fichier sauvegarde.");
                         }
                     }
                 } else {
                     pdf.save(fileName);
-                    toast.warning("Le partage direct n'est pas supporté. Document téléchargé.");
+                    toast.warning("Le partage direct n'est pas supporte. Document telecharge.");
                 }
             } else {
                 pdf.save(fileName);
-                toast.success("Exportation PDF terminée.");
+                toast.success("Exportation PDF terminee.");
             }
         } catch (error: any) {
-            console.error("Génération PDF échouée:", error);
-            toast.error("Erreur de génération du document HD.");
+            console.error("Generation PDF echouee:", error);
+            toast.error("Erreur de generation du document HD.");
         } finally {
             setIsGenerating(false);
         }
