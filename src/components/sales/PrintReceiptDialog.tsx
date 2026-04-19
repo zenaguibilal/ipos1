@@ -119,23 +119,14 @@ export function PrintReceiptDialog({
             ]);
 
             const element = document.getElementById('receipt-render-target-inner');
-            if (!element) throw new Error("Source de rendu HD manquante");
+            if (!element) throw new Error("Source de rendu introuvable");
 
+            // Capture avec echelle moderee pour stabilite maximale
             const canvas = await html2canvas(element, {
-                scale: 3, // Resolution Ultra-HD optimisee pour WhatsApp
+                scale: 2, 
                 useCORS: true,
                 backgroundColor: "#ffffff",
                 logging: false,
-                onclone: (clonedDoc) => {
-                    const target = clonedDoc.getElementById('receipt-render-target-inner');
-                    if (target) {
-                        target.style.transform = 'none';
-                        target.style.display = 'block';
-                        target.style.position = 'relative';
-                        target.style.width = receiptType === 'a4' ? '210mm' : '80mm';
-                        target.style.boxShadow = 'none';
-                    }
-                }
             });
 
             const imgData = canvas.toDataURL('image/png', 1.0);
@@ -150,39 +141,32 @@ export function PrintReceiptDialog({
 
             pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight, undefined, 'FAST');
             
-            const fileName = `Facture_${sale.invoiceNumber}_iPOS.pdf`;
+            const fileName = `Facture_${sale.invoiceNumber}.pdf`;
 
             if (isShare && typeof navigator !== 'undefined' && navigator.share) {
                 const pdfBlob = pdf.output('blob');
                 const file = new File([pdfBlob], fileName, { type: 'application/pdf' });
                 
-                const shareData = {
-                    files: [file],
-                    title: `Facture #${sale.invoiceNumber}`,
-                    text: `Bonjour, voici votre facture #${sale.invoiceNumber} de l'etablissement ${profile?.companyName || 'iPOS'}. Cordialement.`
-                };
-
-                if (navigator.canShare && navigator.canShare({ files: [file] })) {
-                    try {
-                        await navigator.share(shareData);
-                        toast.success("Partage effectue avec succes.");
-                    } catch (e: any) {
-                        if (e.name !== 'AbortError') {
-                            pdf.save(fileName);
-                            toast.info("Partage annule ou non supporte. Fichier sauvegarde.");
-                        }
+                try {
+                    await navigator.share({
+                        files: [file],
+                        title: `Facture #${sale.invoiceNumber}`,
+                        text: `Bonjour, voici votre facture #${sale.invoiceNumber} de l'etablissement ${profile?.companyName || 'iPOS'}. Cordialement.`
+                    });
+                    toast.success("Partage effectue avec succes.");
+                } catch (e: any) {
+                    if (e.name !== 'AbortError') {
+                        pdf.save(fileName);
+                        toast.info("Partage indisponible. Fichier telecharge.");
                     }
-                } else {
-                    pdf.save(fileName);
-                    toast.warning("Le partage direct n'est pas supporte. Document telecharge.");
                 }
             } else {
                 pdf.save(fileName);
                 toast.success("Exportation PDF terminee.");
             }
         } catch (error: any) {
-            console.error("Generation PDF echouee:", error);
-            toast.error("Erreur de generation du document HD.");
+            console.error("PDF Generation Error:", error);
+            toast.error("Erreur de generation du document HD. Veuillez reessayer.");
         } finally {
             setIsGenerating(false);
         }
