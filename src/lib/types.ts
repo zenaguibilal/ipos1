@@ -87,6 +87,19 @@ export interface Sale {
     dueDate?: Date;
 }
 
+export interface ProformaInvoice {
+    id?: number;
+    uuid: string;
+    proformaNumber: string;
+    items: SaleItem[];
+    subtotal: number;
+    total: number;
+    customerUuid?: string;
+    status: 'draft' | 'sent';
+    createdAt: Date;
+    updatedAt: Date;
+}
+
 export interface Payment {
     id?: number;
     uuid: string;
@@ -117,18 +130,18 @@ export interface CompanyProfile {
     supabase_key?: string;
     last_sync_at?: Date;
     
-    // Champs fiscaux algériens
-    rc_number?:           string; // Registre de Commerce
-    nif?:                 string; // Numéro Identification Fiscale
-    ai_number?:           string; // Article d'Imposition
-    nis_number?:          string; // Numéro Statistique
+    rc_number?:           string; 
+    nif?:                 string; 
+    ai_number?:           string; 
+    nis_number?:          string; 
     tva_number?:          string;
-    legal_form?:          string; // SARL, EURL, SNC, EI, Auto-entrepreneur
-    tva_rate?:            number; // 0 | 9 | 19
+    legal_form?:          string; 
+    tva_rate?:            number; 
     is_tva_exempt?:       boolean;
     tva_exempt_reason?:   string;
     invoice_prefix?:      string;
     invoice_counter?:     number;
+    proforma_counter?:    number;
 }
 
 export interface StockIntakeItem {
@@ -214,15 +227,16 @@ export type InventoryLogReason =
     | 'return'
     | 'stock_intake'
     | 'cancellation'
-    | 'manual_adjustment';
+    | 'manual_adjustment'
+    | 'create_proforma_from_pos';
 
 export interface InventoryLog {
     id?: number;
     uuid: string;
-    productUuid: string;
+    productUuid: string | null;
     change: number;
     newQuantity: number;
-    reason: InventoryLogReason;
+    reason: InventoryLogReason | string;
     relatedUuid?: string;
     createdAt: Date;
     updatedAt?: Date;
