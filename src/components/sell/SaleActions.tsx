@@ -3,7 +3,7 @@
 
 import React, { useState, useEffect, memo } from 'react';
 import { Button } from '@/components/ui/button';
-import { Wallet, FileText, Loader2 } from 'lucide-react';
+import { Wallet, FileText, Loader2, Sparkles } from 'lucide-react';
 import { DraftsDropdown } from './DraftsDropdown';
 import { CustomerCombobox } from './CustomerCombobox';
 import { useActiveCart } from '@/stores/cartStore';
@@ -35,7 +35,9 @@ function SaleActionsContent({ customerComboRef, onOpenPayment }: SaleActionsProp
 
     useEffect(() => {
         if (cart?.customerUuid) {
-            customerService.getCustomerByUuid(cart.customerUuid).then(c => setSelectedCustomer(c || null));
+            customerService.getCustomerByUuid(cart.customerUuid)
+                .then(c => setSelectedCustomer(c || null))
+                .catch(() => setSelectedCustomer(null));
         } else {
             setSelectedCustomer(null);
         }
@@ -43,7 +45,7 @@ function SaleActionsContent({ customerComboRef, onOpenPayment }: SaleActionsProp
 
     const handleCreateProforma = async () => {
         if (!cart || cart.items.length === 0) {
-            toast.error("Le panier est vide");
+            toast.error("Le panier est vide. Impossible de générer un devis.");
             return;
         }
 
@@ -52,9 +54,9 @@ function SaleActionsContent({ customerComboRef, onOpenPayment }: SaleActionsProp
             const pf = await proformaService.createProformaFromCart(cart);
             setGeneratedProforma(pf);
             setIsProformaDialogOpen(true);
-            toast.success("Facture Proforma générée");
+            toast.success("Facture Proforma générée avec succès.");
         } catch (e: any) {
-            toast.error(e.message || "Erreur de génération");
+            toast.error(e.message || "Erreur lors de la génération du devis.");
         } finally {
             setIsProformaLoading(false);
         }
@@ -64,28 +66,32 @@ function SaleActionsContent({ customerComboRef, onOpenPayment }: SaleActionsProp
 
     return (
         <>
-            <div className="flex items-center gap-2">
-                <DraftsDropdown />
-                <CustomerCombobox ref={customerComboRef} />
+            <div className="flex flex-wrap items-center gap-3">
+                <div className="flex items-center gap-2">
+                    <DraftsDropdown />
+                    <CustomerCombobox ref={customerComboRef} />
+                </div>
                 
-                <Button
-                    variant="outline"
-                    className="h-9 font-semibold gap-2 border-primary/20 hover:bg-primary/5 hidden sm:flex"
-                    onClick={handleCreateProforma}
-                    disabled={!hasItems || isProformaLoading}
-                >
-                    {isProformaLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileText className="h-4 w-4" />}
-                    Proforma
-                </Button>
+                <div className="flex flex-1 items-center gap-3">
+                    <Button
+                        variant="outline"
+                        className="h-10 px-6 font-bold gap-2 border-primary/20 bg-card/40 hover:bg-primary/5 transition-all group flex-1 sm:flex-none"
+                        onClick={handleCreateProforma}
+                        disabled={!hasItems || isProformaLoading}
+                    >
+                        {isProformaLoading ? <Loader2 className="h-4 w-4 animate-spin text-primary" /> : <FileText className="h-4 w-4 text-primary group-hover:scale-110 transition-transform" />}
+                        <span className="text-[10px] font-black uppercase tracking-widest">Facture Proforma</span>
+                    </Button>
 
-                <Button
-                    className="flex-1 h-9 font-semibold gap-2 shadow-lg shadow-primary/20 active:scale-95 transition-all"
-                    onClick={onOpenPayment}
-                    disabled={!hasItems}
-                >
-                    <Wallet className="h-4 w-4" />
-                    Payer [F10]
-                </Button>
+                    <Button
+                        className="flex-1 h-10 px-8 font-black text-[10px] uppercase tracking-[0.2em] shadow-xl shadow-primary/20 active:scale-95 transition-all gap-3"
+                        onClick={onOpenPayment}
+                        disabled={!hasItems}
+                    >
+                        <Wallet className="h-4 w-4" />
+                        Payer [F10]
+                    </Button>
+                </div>
             </div>
 
             <ProformaDialog 

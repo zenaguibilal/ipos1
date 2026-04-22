@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import {
     Dialog,
     DialogContent,
@@ -35,13 +35,16 @@ interface ProformaDialogProps {
 }
 
 /**
- * Dialogue de gestion documentaire pour Facture Proforma.
- * Supporte Impression, Export PDF et Partage WhatsApp natif.
+ * Dialogue de gestion documentaire pour Facture Proforma Elite.
+ * Supporte Impression locale, Export PDF HD et Partage WhatsApp natif sans cloud tiers.
  */
 export function ProformaDialog({ isOpen, onOpenChange, proforma, profile, customerName }: ProformaDialogProps) {
     const [receiptType, setReceiptType] = useState<'a4' | 'thermal'>('a4');
     const [isGenerating, setIsGenerating] = useState(false);
 
+    /**
+     * handlePrint - Flux d'impression système direct.
+     */
     const handlePrint = useCallback(() => {
         if (!proforma) return;
         
@@ -64,6 +67,9 @@ export function ProformaDialog({ isOpen, onOpenChange, proforma, profile, custom
         }, 300);
     }, [proforma, receiptType]);
 
+    /**
+     * generatePDFFile - Moteur de génération PDF HD côté client.
+     */
     const generatePDFFile = async (): Promise<File | null> => {
         try {
             const [{ jsPDF }, html2canvas] = await Promise.all([
@@ -75,9 +81,10 @@ export function ProformaDialog({ isOpen, onOpenChange, proforma, profile, custom
             if (!element) throw new Error("Source de rendu introuvable");
 
             const canvas = await html2canvas(element, { 
-                scale: 2.5, 
+                scale: 3, 
                 backgroundColor: "#ffffff",
-                useCORS: true
+                useCORS: true,
+                logging: false
             });
             
             const imgData = canvas.toDataURL('image/png', 1.0);
@@ -93,7 +100,8 @@ export function ProformaDialog({ isOpen, onOpenChange, proforma, profile, custom
             pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight, undefined, 'FAST');
             
             const blob = pdf.output('blob');
-            return new File([blob], `Proforma_${proforma?.proformaNumber}.pdf`, { type: 'application/pdf' });
+            const fileName = `Proforma_${proforma?.proformaNumber || 'Elite'}.pdf`;
+            return new File([blob], fileName, { type: 'application/pdf' });
         } catch (e) {
             console.error("PDF Engine Error:", e);
             return null;
@@ -113,35 +121,49 @@ export function ProformaDialog({ isOpen, onOpenChange, proforma, profile, custom
             URL.revokeObjectURL(url);
             toast.success("Document exporté avec succès.");
         } else {
-            toast.error("Échec de la génération du document.");
+            toast.error("Échec de la génération du document HD.");
         }
         setIsGenerating(false);
     };
 
+    /**
+     * handleWhatsAppShare - Partage natif via Web Share API v2.
+     * Envoie le fichier PDF réel si supporté, sinon bascule sur un lien texte.
+     */
     const handleWhatsAppShare = async () => {
         if (!proforma) return;
         setIsGenerating(true);
         
-        const file = await generatePDFFile();
-        
-        if (file && typeof navigator !== 'undefined' && navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
-            try {
-                await navigator.share({
-                    files: [file],
-                    title: `Facture Proforma ${proforma.proformaNumber}`,
-                    text: `Bonjour, voici votre facture proforma ${proforma.proformaNumber} de l'établissement ${profile?.companyName || 'iPOS'}. Total: ${proforma.total} DZD.`,
-                });
+        try {
+            const file = await generatePDFFile();
+            const shareData = {
+                title: `Facture Proforma ${proforma.proformaNumber}`,
+                text: `Bonjour, voici votre facture proforma ${proforma.proformaNumber} de l'établissement ${profile?.companyName || 'iPOS'}. Total: ${proforma.total} DZD.`,
+                files: file ? [file] : undefined
+            };
+
+            if (file && typeof navigator !== 'undefined' && navigator.canShare && navigator.canShare({ files: [file] })) {
+                await navigator.share(shareData);
                 toast.success("Document partagé avec succès.");
-            } catch (e: any) {
-                if (e.name !== 'AbortError') toast.error("Échec du partage direct.");
+            } else {
+                // Fallback : Envoi du texte seulement vers WhatsApp
+                const msg = encodeURIComponent(shareData.text);
+                window.open(`https://wa.me/?text=${msg}`, '_blank');
+                toast.info("Partage de fichier non supporté. Lien texte envoyé.");
+                if (file) {
+                    // Téléchargement automatique pour que l'utilisateur puisse l'envoyer manuellement
+                    const url = URL.createObjectURL(file);
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = file.name;
+                    link.click();
+                }
             }
-        } else {
-            // Fallback pour desktop ou navigateurs limités
-            const msg = encodeURIComponent(`Bonjour, voici le détail de votre facture proforma ${proforma.proformaNumber}, total : ${proforma.total} DZD. Le document PDF vous sera transmis séparément.`);
-            window.open(`https://wa.me/?text=${msg}`, '_blank');
-            toast.info("Lien de notification envoyé. Pensez à joindre le PDF manuellement.");
+        } catch (e: any) {
+            if (e.name !== 'AbortError') toast.error("Le partage a été interrompu.");
+        } finally {
+            setIsGenerating(false);
         }
-        setIsGenerating(false);
     };
 
     if (!proforma) return null;
@@ -157,7 +179,7 @@ export function ProformaDialog({ isOpen, onOpenChange, proforma, profile, custom
                             </div>
                             <div>
                                 <DialogTitle className="text-xl font-black tracking-tight uppercase">Facture Proforma Elite</DialogTitle>
-                                <DialogDescription className="text-xs font-bold uppercase text-primary/40 tracking-widest">Document : {proforma.proformaNumber}</DialogDescription>
+                                <DialogDescription className="text-xs font-bold uppercase text-primary/40 tracking-widest">Document souverain : {proforma.proformaNumber}</DialogDescription>
                             </div>
                         </div>
                         <div className="flex items-center gap-4 bg-background/50 p-1.5 rounded-xl border border-primary/10">
@@ -205,7 +227,7 @@ export function ProformaDialog({ isOpen, onOpenChange, proforma, profile, custom
                         Partager WhatsApp
                     </Button>
                     <Button onClick={handlePrint} className="rounded-xl h-11 font-black text-xs uppercase tracking-widest flex-1 shadow-xl transition-all active:scale-95 gap-3">
-                        <Printer className="h-5 w-5" /> Imprimer Document
+                        <Printer className="h-5 w-5" /> Imprimer [Thermal/A4]
                     </Button>
                 </DialogFooter>
             </DialogContent>

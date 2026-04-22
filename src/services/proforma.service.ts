@@ -8,8 +8,8 @@ import { safeNumber, preciseMultiply } from '@/lib/utils';
 import { useAppStore } from '@/stores/appStore';
 
 /**
- * Service de gestion des factures proforma (Devis).
- * Système purement documentaire sans impact sur les stocks réels.
+ * Service de gestion des factures proforma (Devis) Elite.
+ * Système local-first avec synchronisation Supabase et traçabilité auditée.
  */
 class ProformaService {
     
@@ -19,10 +19,14 @@ class ProformaService {
         }
     }
 
+    /**
+     * Génère un numéro de proforma unique séquentiel.
+     */
     async generateProformaNumber(): Promise<string> {
         const profile = await db.company_profile.toCollection().first();
         const currentCounter = profile?.proforma_counter || 1;
-        const number = `PF-${String(currentCounter).padStart(6, '0')}`;
+        const prefix = profile?.invoice_prefix || 'PF';
+        const number = `${prefix}-${String(currentCounter).padStart(6, '0')}`;
 
         if (profile?.id) {
             await db.company_profile.update(profile.id, {
@@ -33,9 +37,13 @@ class ProformaService {
         return number;
     }
 
+    /**
+     * Crée une proforma à partir du panier actuel.
+     * N'affecte pas les stocks réels ni la comptabilité financière.
+     */
     async createProformaFromCart(cart: Cart): Promise<ProformaInvoice> {
         if (!cart.items || cart.items.length === 0) {
-            throw new Error("Le panier est vide");
+            throw new Error("Le panier est vide. Impossible de générer un devis.");
         }
 
         const now = new Date();
@@ -75,11 +83,11 @@ class ProformaService {
             updatedAt: now,
         };
 
-        // Utilisation d'une transaction pour garantir l'intégrité et le logging
+        // Utilisation d'une transaction pour garantir l'intégrité et le logging audit
         await db.transaction('rw', [db.proforma_invoices, db.inventory_logs, db.company_profile], async () => {
             await db.proforma_invoices.add(newProforma);
             
-            // Traçabilité obligatoire dans le journal d'audit
+            // Traçabilité obligatoire dans le journal d'audit (sans impact stock)
             await db.inventory_logs.add({
                 uuid: uuidv4(),
                 productUuid: null,
