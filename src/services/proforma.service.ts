@@ -5,8 +5,20 @@ import { v4 as uuidv4 } from 'uuid';
 import { db } from '@/lib/db';
 import type { ProformaInvoice, Cart, SaleItem } from '@/lib/types';
 import { safeNumber, preciseMultiply } from '@/lib/utils';
+import { useAppStore } from '@/stores/appStore';
 
+/**
+ * Service de gestion des factures proforma (Devis).
+ * Système purement documentaire sans impact sur les stocks réels.
+ */
 class ProformaService {
+    
+    private triggerSync() {
+        if (typeof window !== 'undefined') {
+            useAppStore.getState().actions.triggerSmartSync();
+        }
+    }
+
     async generateProformaNumber(): Promise<string> {
         const profile = await db.company_profile.toCollection().first();
         const currentCounter = profile?.proforma_counter || 1;
@@ -63,10 +75,11 @@ class ProformaService {
             updatedAt: now,
         };
 
-        await db.transaction('rw', [db.proforma_invoices, db.inventory_logs], async () => {
+        // Utilisation d'une transaction pour garantir l'intégrité et le logging
+        await db.transaction('rw', [db.proforma_invoices, db.inventory_logs, db.company_profile], async () => {
             await db.proforma_invoices.add(newProforma);
             
-            // Logging
+            // Traçabilité obligatoire dans le journal d'audit
             await db.inventory_logs.add({
                 uuid: uuidv4(),
                 productUuid: null,
@@ -79,6 +92,7 @@ class ProformaService {
             });
         });
 
+        this.triggerSync();
         return newProforma;
     }
 

@@ -26,7 +26,7 @@ class SupabaseSyncService {
         { name: 'bread_orders',      table: db.bread_orders },
         { name: 'inventory_logs',    table: db.inventory_logs },
         { name: 'supplier_payments', table: db.supplier_payments },
-        { name: 'proforma_invoices', table: db.proforma_invoices },
+        { name: 'proforma_invoices', table: db.proforma_invoices }, // Ajout de la table Proforma au moteur de sync
     ];
 
     private camelToSnake(str: string): string {
