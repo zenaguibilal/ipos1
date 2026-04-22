@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import {
     Dialog,
     DialogContent,
@@ -36,7 +36,7 @@ interface ProformaDialogProps {
 
 /**
  * Dialogue de gestion documentaire pour Facture Proforma Elite.
- * Supporte Impression locale, Export PDF HD et Partage WhatsApp natif sans cloud tiers.
+ * Supporte Impression locale, Export PDF HD et Partage WhatsApp natif sans stockage tiers.
  */
 export function ProformaDialog({ isOpen, onOpenChange, proforma, profile, customerName }: ProformaDialogProps) {
     const [receiptType, setReceiptType] = useState<'a4' | 'thermal'>('a4');
@@ -80,11 +80,16 @@ export function ProformaDialog({ isOpen, onOpenChange, proforma, profile, custom
             const element = document.getElementById('proforma-render-inner');
             if (!element) throw new Error("Source de rendu introuvable");
 
+            // Capture Ultra-HD (Scale 4)
             const canvas = await html2canvas(element, { 
-                scale: 3, 
+                scale: 4, 
                 backgroundColor: "#ffffff",
                 useCORS: true,
-                logging: false
+                logging: false,
+                onclone: (clonedDoc) => {
+                    const el = clonedDoc.getElementById('proforma-render-inner');
+                    if (el) el.style.transform = 'none';
+                }
             });
             
             const imgData = canvas.toDataURL('image/png', 1.0);
@@ -127,8 +132,8 @@ export function ProformaDialog({ isOpen, onOpenChange, proforma, profile, custom
     };
 
     /**
-     * handleWhatsAppShare - Partage natif via Web Share API v2.
-     * Envoie le fichier PDF réel si supporté, sinon bascule sur un lien texte.
+     * handleWhatsAppShare - Partage natif sans cloud.
+     * Envoie le fichier PDF réel si supporté par le navigateur mobile.
      */
     const handleWhatsAppShare = async () => {
         if (!proforma) return;
@@ -136,22 +141,21 @@ export function ProformaDialog({ isOpen, onOpenChange, proforma, profile, custom
         
         try {
             const file = await generatePDFFile();
-            const shareData = {
+            const shareData: any = {
                 title: `Facture Proforma ${proforma.proformaNumber}`,
-                text: `Bonjour, voici votre facture proforma ${proforma.proformaNumber} de l'établissement ${profile?.companyName || 'iPOS'}. Total: ${proforma.total} DZD.`,
-                files: file ? [file] : undefined
+                text: `Bonjour, voici votre facture proforma ${proforma.proformaNumber} de l'établissement ${profile?.companyName || 'iPOS'}. Total: ${proforma.total} DA.`,
             };
 
             if (file && typeof navigator !== 'undefined' && navigator.canShare && navigator.canShare({ files: [file] })) {
+                shareData.files = [file];
                 await navigator.share(shareData);
                 toast.success("Document partagé avec succès.");
             } else {
-                // Fallback : Envoi du texte seulement vers WhatsApp
+                // Fallback : Message texte WhatsApp + Téléchargement auto
                 const msg = encodeURIComponent(shareData.text);
                 window.open(`https://wa.me/?text=${msg}`, '_blank');
-                toast.info("Partage de fichier non supporté. Lien texte envoyé.");
+                toast.info("Le partage direct de fichier n'est pas supporté. Le document a été téléchargé.");
                 if (file) {
-                    // Téléchargement automatique pour que l'utilisateur puisse l'envoyer manuellement
                     const url = URL.createObjectURL(file);
                     const link = document.createElement('a');
                     link.href = url;
@@ -160,7 +164,7 @@ export function ProformaDialog({ isOpen, onOpenChange, proforma, profile, custom
                 }
             }
         } catch (e: any) {
-            if (e.name !== 'AbortError') toast.error("Le partage a été interrompu.");
+            if (e.name !== 'AbortError') toast.error("Le partage a été annulé ou a échoué.");
         } finally {
             setIsGenerating(false);
         }
@@ -185,12 +189,12 @@ export function ProformaDialog({ isOpen, onOpenChange, proforma, profile, custom
                         <div className="flex items-center gap-4 bg-background/50 p-1.5 rounded-xl border border-primary/10">
                             <div className={cn("flex items-center gap-2 px-3 py-1.5 rounded-lg transition-all", receiptType === 'thermal' ? "bg-primary text-primary-foreground shadow-sm" : "opacity-40")}>
                                 <Smartphone className="h-3.5 w-3.5" />
-                                <span className="text-[10px] font-bold">Ticket</span>
+                                <span className="text-[10px] font-bold uppercase">Ticket</span>
                             </div>
                             <Switch checked={receiptType === 'a4'} onCheckedChange={v => setReceiptType(v ? 'a4' : 'thermal')} />
                             <div className={cn("flex items-center gap-2 px-3 py-1.5 rounded-lg transition-all", receiptType === 'a4' ? "bg-primary text-primary-foreground shadow-sm" : "opacity-40")}>
                                 <FileText className="h-3.5 w-3.5" />
-                                <span className="text-[10px] font-bold">A4</span>
+                                <span className="text-[10px] font-bold uppercase">A4</span>
                             </div>
                         </div>
                     </div>

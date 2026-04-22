@@ -15,12 +15,15 @@ class ProformaService {
     
     private triggerSync() {
         if (typeof window !== 'undefined') {
-            useAppStore.getState().actions.triggerSmartSync();
+            const state = useAppStore.getState();
+            if (state && state.actions) {
+                state.actions.triggerSmartSync();
+            }
         }
     }
 
     /**
-     * Génère un numéro de proforma unique séquentiel.
+     * Génère un numéro de proforma unique séquentiel (PF-XXXXXX).
      */
     async generateProformaNumber(): Promise<string> {
         const profile = await db.company_profile.toCollection().first();
@@ -49,6 +52,7 @@ class ProformaService {
         const now = new Date();
         const proformaNumber = await this.generateProformaNumber();
 
+        // Calcul précision Elite en centimes
         const subtotalCents = cart.items.reduce(
             (acc, item) => acc + Math.round(preciseMultiply(item.price, item.cartQuantity) * 100),
             0,
@@ -83,7 +87,7 @@ class ProformaService {
             updatedAt: now,
         };
 
-        // Utilisation d'une transaction pour garantir l'intégrité et le logging audit
+        // Transaction atomique pour garantir l'intégrité et le logging audit
         await db.transaction('rw', [db.proforma_invoices, db.inventory_logs, db.company_profile], async () => {
             await db.proforma_invoices.add(newProforma);
             

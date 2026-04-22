@@ -20,7 +20,7 @@ const nextConfig = {
             },
         ],
     },
-    // Optimisation du serveur de développement pour l'environnement cloud
+    // Optimisation pour l'environnement de développement cloud
     devIndicators: {
         buildActivity: false,
     }
