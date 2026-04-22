@@ -17,7 +17,6 @@ export const ProformaReceipt = React.forwardRef<HTMLDivElement, ProformaReceiptP
   ({ proforma, profile, receiptType, customerName }, ref) => {
     const isThermal = receiptType === 'thermal';
     const formatNum = (val: number) => val.toLocaleString('fr-DZ', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-
     const dateStr = format(new Date(proforma.createdAt), 'dd/MM/yyyy HH:mm');
 
     if (isThermal) {
@@ -27,16 +26,13 @@ export const ProformaReceipt = React.forwardRef<HTMLDivElement, ProformaReceiptP
             <p className="font-bold uppercase text-base">{profile?.companyName || 'iPOS ZEN ELITE'}</p>
             <p className="text-[7pt] mt-1">{profile?.address}</p>
           </header>
-          
           <div className="border-b border-black border-dashed my-2" />
-          
           <div className="space-y-0.5 mb-4 text-[8pt]">
             <p className="font-bold text-center underline mb-2 text-[9pt]">FACTURE PROFORMA</p>
             <p><span className="font-bold">N°:</span> {proforma.proformaNumber}</p>
             <p><span className="font-bold">DATE:</span> {dateStr}</p>
             <p><span className="font-bold">CLIENT:</span> {customerName || 'Client de passage'}</p>
           </div>
-          
           <table className="w-full text-left text-[8pt] mb-4 border-collapse">
             <thead>
               <tr className="border-b border-black">
@@ -55,14 +51,11 @@ export const ProformaReceipt = React.forwardRef<HTMLDivElement, ProformaReceiptP
               ))}
             </tbody>
           </table>
-          
           <div className="border-t border-black border-dashed my-2" />
-          
-          <div className="flex justify-between text-[10pt] font-black bg-gray-100 px-1 py-1">
+          <div className="flex justify-between text-[10pt] font-black bg-white border border-black px-1 py-2">
             <span>TOTAL PROFORMA:</span>
             <span>{formatNum(proforma.total)} DA</span>
           </div>
-          
           <footer className="text-center mt-6 pt-2 border-t border-dashed border-gray-400">
             <p className="font-bold text-[7pt] italic">Cette facture est une facture proforma sans valeur comptable.</p>
             <p className="text-[6.5pt] opacity-40 mt-2">SYSTEME iPOS ZEN</p>
@@ -87,18 +80,16 @@ export const ProformaReceipt = React.forwardRef<HTMLDivElement, ProformaReceiptP
               </div>
             </div>
         </div>
-
         <div className="mb-10 bg-gray-50 p-6 rounded-2xl border border-gray-200">
             <h3 className="text-[10px] font-black uppercase text-gray-400 tracking-widest mb-2">Client</h3>
             <p className="text-2xl font-black text-[#111827]">{customerName || 'Client de passage'}</p>
         </div>
-
         <table className="w-full border-collapse mb-10">
             <thead>
-              <tr className="border-y-2 border-black">
-                <th className="text-left p-4 text-xs font-black uppercase">Désignation</th>
-                <th className="text-center p-4 text-xs font-black uppercase">Qté</th>
-                <th className="text-right p-4 text-xs font-black uppercase">Prix Unitaire</th>
+              <tr className="border-y-2 border-black bg-white text-black">
+                <th className="text-left p-4 text-xs font-black uppercase border-r border-black/10">Désignation</th>
+                <th className="text-center p-4 text-xs font-black uppercase border-r border-black/10">Qté</th>
+                <th className="text-right p-4 text-xs font-black uppercase border-r border-black/10">Prix Unitaire</th>
                 <th className="text-right p-4 text-xs font-black uppercase">Total</th>
               </tr>
             </thead>
@@ -113,18 +104,15 @@ export const ProformaReceipt = React.forwardRef<HTMLDivElement, ProformaReceiptP
               ))}
             </tbody>
         </table>
-
         <div className="flex justify-end">
-            <div className="w-80 bg-black text-white p-6 rounded-2xl flex justify-between items-center">
+            <div className="w-80 bg-white text-black border-2 border-black p-6 rounded-2xl flex justify-between items-center">
                 <span className="text-xs font-black uppercase tracking-widest opacity-60">TOTAL HT (DA)</span>
                 <span className="text-3xl font-black tracking-tighter">{formatNum(proforma.total)}</span>
             </div>
         </div>
-
         <div className="mt-20 p-6 border-2 border-dashed border-gray-200 rounded-2xl text-center">
             <p className="text-sm font-bold text-gray-400 italic">"Cette facture est une facture proforma sans valeur comptable."</p>
         </div>
-
         <footer className="mt-auto pt-10 text-center text-[8px] font-bold text-gray-300 uppercase tracking-widest">
             Document généré par iPOS ZEN ELITE - {new Date().toLocaleDateString()}
         </footer>

@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback } from 'react';
 import {
     Dialog,
     DialogContent,
@@ -34,79 +34,48 @@ interface ProformaDialogProps {
     customerName?: string;
 }
 
-/**
- * Dialogue de gestion documentaire pour Facture Proforma Elite.
- * Supporte Impression locale, Export PDF HD et Partage WhatsApp natif sans stockage tiers.
- */
 export function ProformaDialog({ isOpen, onOpenChange, proforma, profile, customerName }: ProformaDialogProps) {
     const [receiptType, setReceiptType] = useState<'a4' | 'thermal'>('a4');
     const [isGenerating, setIsGenerating] = useState(false);
 
-    /**
-     * handlePrint - Flux d'impression système direct.
-     */
     const handlePrint = useCallback(() => {
         if (!proforma) return;
-        
         const printablePortal = document.getElementById('receipt-for-print');
         const sourceElement = document.getElementById('proforma-render-inner');
-
         if (!printablePortal || !sourceElement) {
             toast.error("Erreur technique : Canal de sortie introuvable.");
             return;
         }
-
         const clone = sourceElement.cloneNode(true) as HTMLDivElement;
         clone.style.width = receiptType === 'a4' ? '210mm' : '80mm';
-        
         printablePortal.innerHTML = '';
         printablePortal.appendChild(clone);
-
-        setTimeout(() => {
-            window.print();
-        }, 300);
+        setTimeout(() => { window.print(); }, 300);
     }, [proforma, receiptType]);
 
-    /**
-     * generatePDFFile - Moteur de génération PDF HD côté client.
-     */
-    const generatePDFFile = async (): Promise<File | null> => {
+    const generatePDFFile = async (customScale = 3): Promise<File | null> => {
         try {
             const [{ jsPDF }, html2canvas] = await Promise.all([
                 import('jspdf'),
                 import('html2canvas').then(m => m.default)
             ]);
-
             const element = document.getElementById('proforma-render-inner');
-            if (!element) throw new Error("Source de rendu introuvable");
+            if (!element) return null;
 
-            // Capture Ultra-HD (Scale 4)
             const canvas = await html2canvas(element, { 
-                scale: 4, 
+                scale: customScale, 
                 backgroundColor: "#ffffff",
                 useCORS: true,
                 logging: false,
-                onclone: (clonedDoc) => {
-                    const el = clonedDoc.getElementById('proforma-render-inner');
-                    if (el) el.style.transform = 'none';
-                }
             });
             
             const imgData = canvas.toDataURL('image/png', 1.0);
             const pdfWidth = receiptType === 'a4' ? 210 : 80;
             const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-
-            const pdf = new jsPDF({
-                orientation: 'portrait',
-                unit: 'mm',
-                format: [pdfWidth, pdfHeight]
-            });
-
+            const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: [pdfWidth, pdfHeight] });
             pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight, undefined, 'FAST');
-            
             const blob = pdf.output('blob');
-            const fileName = `Proforma_${proforma?.proformaNumber || 'Elite'}.pdf`;
-            return new File([blob], fileName, { type: 'application/pdf' });
+            return new File([blob], `Proforma_${proforma?.proformaNumber.replace(/\s/g, '_')}.pdf`, { type: 'application/pdf' });
         } catch (e) {
             console.error("PDF Engine Error:", e);
             return null;
@@ -116,7 +85,7 @@ export function ProformaDialog({ isOpen, onOpenChange, proforma, profile, custom
     const handleDownload = async () => {
         if (!proforma) return;
         setIsGenerating(true);
-        const file = await generatePDFFile();
+        const file = await generatePDFFile(3);
         if (file) {
             const url = URL.createObjectURL(file);
             const link = document.createElement('a');
@@ -124,47 +93,48 @@ export function ProformaDialog({ isOpen, onOpenChange, proforma, profile, custom
             link.download = file.name;
             link.click();
             URL.revokeObjectURL(url);
-            toast.success("Document exporté avec succès.");
+            toast.success("Document exporté.");
         } else {
-            toast.error("Échec de la génération du document HD.");
+            toast.error("Erreur de génération.");
         }
         setIsGenerating(false);
     };
 
-    /**
-     * handleWhatsAppShare - Partage natif sans cloud.
-     * Envoie le fichier PDF réel si supporté par le navigateur mobile.
-     */
     const handleWhatsAppShare = async () => {
         if (!proforma) return;
         setIsGenerating(true);
-        
         try {
-            const file = await generatePDFFile();
-            const shareData: any = {
-                title: `Facture Proforma ${proforma.proformaNumber}`,
-                text: `Bonjour, voici votre facture proforma ${proforma.proformaNumber} de l'établissement ${profile?.companyName || 'iPOS'}. Total: ${proforma.total} DA.`,
-            };
+            const file = await generatePDFFile(2); // Scale reduit pour mobile
+            const shareText = `Bonjour, voici votre facture proforma ${proforma.proformaNumber} de l'établissement ${profile?.companyName || 'iPOS'}. Total: ${proforma.total} DA.`;
+            
+            const canShare = typeof navigator !== 'undefined' && navigator.share && navigator.canShare && navigator.canShare({ files: [file!] });
 
-            if (file && typeof navigator !== 'undefined' && navigator.canShare && navigator.canShare({ files: [file] })) {
-                shareData.files = [file];
-                await navigator.share(shareData);
-                toast.success("Document partagé avec succès.");
+            if (canShare && file) {
+                await navigator.share({
+                    files: [file],
+                    title: `Proforma ${proforma.proformaNumber}`,
+                    text: shareText
+                });
+                toast.success("Partage effectué.");
             } else {
-                // Fallback : Message texte WhatsApp + Téléchargement auto
-                const msg = encodeURIComponent(shareData.text);
+                // Fallback direct
+                const msg = encodeURIComponent(shareText);
                 window.open(`https://wa.me/?text=${msg}`, '_blank');
-                toast.info("Le partage direct de fichier n'est pas supporté. Le document a été téléchargé.");
                 if (file) {
                     const url = URL.createObjectURL(file);
                     const link = document.createElement('a');
                     link.href = url;
                     link.download = file.name;
                     link.click();
+                    toast.info("Le document a été téléchargé pour envoi manuel.");
                 }
             }
         } catch (e: any) {
-            if (e.name !== 'AbortError') toast.error("Le partage a été annulé ou a échoué.");
+            if (e.name !== 'AbortError') {
+                const msg = encodeURIComponent(`Proforma ${proforma.proformaNumber} - Total: ${proforma.total} DA.`);
+                window.open(`https://wa.me/?text=${msg}`, '_blank');
+                toast.info("Lien envoyé. Pensez à joindre le fichier manuellement.");
+            }
         } finally {
             setIsGenerating(false);
         }
@@ -212,29 +182,20 @@ export function ProformaDialog({ isOpen, onOpenChange, proforma, profile, custom
                     <Button variant="ghost" onClick={() => onOpenChange(false)} className="rounded-xl h-11 font-bold px-6">
                         <X className="mr-2 h-4 w-4" /> Fermer
                     </Button>
-                    <Button 
-                        variant="outline" 
-                        onClick={handleDownload} 
-                        disabled={isGenerating} 
-                        className="rounded-xl h-11 font-bold gap-2 border-primary/20 hover:bg-primary/5"
-                    >
+                    <Button variant="outline" onClick={handleDownload} disabled={isGenerating} className="rounded-xl h-11 font-bold gap-2 border-primary/20 hover:bg-primary/5">
                         {isGenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
-                        Télécharger PDF
+                        PDF
                     </Button>
-                    <Button 
-                        variant="outline" 
-                        onClick={handleWhatsAppShare} 
-                        disabled={isGenerating} 
-                        className="rounded-xl h-11 font-bold gap-2 border-emerald-500/20 bg-emerald-500/5 text-emerald-600 hover:bg-emerald-500 hover:text-white"
-                    >
+                    <Button variant="outline" onClick={handleWhatsAppShare} disabled={isGenerating} className="rounded-xl h-11 font-bold gap-2 border-emerald-500/20 bg-emerald-500/5 text-emerald-600 hover:bg-emerald-500 hover:text-white">
                         {isGenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : <MessageCircle className="h-4 w-4" />}
-                        Partager WhatsApp
+                        Partager
                     </Button>
                     <Button onClick={handlePrint} className="rounded-xl h-11 font-black text-xs uppercase tracking-widest flex-1 shadow-xl transition-all active:scale-95 gap-3">
-                        <Printer className="h-5 w-5" /> Imprimer [Thermal/A4]
+                        <Printer className="h-5 w-5" /> Imprimer
                     </Button>
                 </DialogFooter>
             </DialogContent>
         </Dialog>
     );
 }
+
