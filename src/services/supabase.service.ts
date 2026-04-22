@@ -1,3 +1,4 @@
+
 'use client';
 
 import { db } from '@/lib/db';
@@ -25,6 +26,7 @@ class SupabaseSyncService {
         { name: 'bread_orders',      table: db.bread_orders },
         { name: 'inventory_logs',    table: db.inventory_logs },
         { name: 'supplier_payments', table: db.supplier_payments },
+        { name: 'proforma_invoices', table: db.proforma_invoices },
     ];
 
     private camelToSnake(str: string): string {
@@ -60,7 +62,6 @@ class SupabaseSyncService {
             const camelKey = this.snakeToCamel(key);
             let value = record[key];
 
-            // Détection des champs de date pour IndexedDB (format local-first)
             const dateFields = [
                 'created_at', 'updated_at', 'expense_date', 'invoice_date', 
                 'payment_date', 'due_date', 'date_expiration', 'date_maj_prix', 'last_sync_at'
@@ -69,7 +70,7 @@ class SupabaseSyncService {
             if (typeof value === 'string' && (dateFields.includes(key) || key.endsWith('_at') || key.endsWith('_date'))) {
                 const d = new Date(value);
                 if (!isNaN(d.getTime())) {
-                    value = d; // Conversion impérative en objet Date pour les index Dexie
+                    value = d;
                 }
             }
 

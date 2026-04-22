@@ -61,9 +61,7 @@ export function ProformaDialog({ isOpen, onOpenChange, proforma, profile, custom
         }, 300);
     }, [proforma, receiptType]);
 
-    const handleDownloadPDF = async () => {
-        if (!proforma) return;
-        setIsGenerating(true);
+    const generatePDFBlob = async (): Promise<Blob | null> => {
         try {
             const [{ jsPDF }, html2canvas] = await Promise.all([
                 import('jspdf'),
@@ -86,20 +84,57 @@ export function ProformaDialog({ isOpen, onOpenChange, proforma, profile, custom
             });
 
             pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-            pdf.save(`Proforma_${proforma.proformaNumber}.pdf`);
-            toast.success("PDF téléchargé");
+            return pdf.output('blob');
         } catch (e) {
-            toast.error("Erreur génération PDF");
-        } finally {
-            setIsGenerating(false);
+            console.error(e);
+            return null;
         }
     };
 
-    const handleWhatsApp = () => {
+    const handleDownloadPDF = async () => {
         if (!proforma) return;
-        const msg = encodeURIComponent(`Bonjour, voici votre facture proforma ${proforma.proformaNumber}, total: ${proforma.total} DZD. Cordialement.`);
-        window.open(`https://wa.me/?text=${msg}`, '_blank');
-        toast.success("Redirection WhatsApp...");
+        setIsGenerating(true);
+        const blob = await generatePDFBlob();
+        if (blob) {
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `Proforma_${proforma.proformaNumber}.pdf`;
+            link.click();
+            URL.revokeObjectURL(url);
+            toast.success("Document exporté");
+        } else {
+            toast.error("Erreur de génération PDF");
+        }
+        setIsGenerating(false);
+    };
+
+    const handleWhatsAppShare = async () => {
+        if (!proforma) return;
+        setIsGenerating(true);
+        
+        const blob = await generatePDFBlob();
+        const fileName = `Proforma_${proforma.proformaNumber}.pdf`;
+
+        if (blob && navigator.share && navigator.canShare && navigator.canShare({ files: [new File([blob], fileName, { type: 'application/pdf' })] })) {
+            try {
+                const file = new File([blob], fileName, { type: 'application/pdf' });
+                await navigator.share({
+                    files: [file],
+                    title: `Facture Proforma ${proforma.proformaNumber}`,
+                    text: `Bonjour, voici votre facture proforma ${proforma.proformaNumber}, total: ${proforma.total} DZD.`,
+                });
+                toast.success("Document partagé");
+            } catch (e: any) {
+                if (e.name !== 'AbortError') toast.error("Échec du partage");
+            }
+        } else {
+            // Fallback simple message si le partage de fichier n'est pas supporté
+            const msg = encodeURIComponent(`Bonjour, voici votre facture proforma ${proforma.proformaNumber}, total: ${proforma.total} DZD. Document disponible sur demande.`);
+            window.open(`https://wa.me/?text=${msg}`, '_blank');
+            toast.info("Lien de texte partagé (partage de fichier non supporté)");
+        }
+        setIsGenerating(false);
     };
 
     if (!proforma) return null;
@@ -114,8 +149,8 @@ export function ProformaDialog({ isOpen, onOpenChange, proforma, profile, custom
                                 <FileText className="h-6 w-6" />
                             </div>
                             <div>
-                                <DialogTitle className="text-xl font-black tracking-tight">OPTIONS PROFORMA</DialogTitle>
-                                <DialogDescription className="text-xs font-bold uppercase opacity-50">Référence : {proforma.proformaNumber}</DialogDescription>
+                                <DialogTitle className="text-xl font-black tracking-tight uppercase">Facture Proforma</DialogTitle>
+                                <DialogDescription className="text-xs font-bold uppercase opacity-50">Document documentaire : {proforma.proformaNumber}</DialogDescription>
                             </div>
                         </div>
                         <div className="flex items-center gap-4 bg-background/50 p-1.5 rounded-xl border border-white/5">
@@ -132,27 +167,32 @@ export function ProformaDialog({ isOpen, onOpenChange, proforma, profile, custom
                     </div>
                 </DialogHeader>
 
-                <div className="flex-grow overflow-y-auto bg-muted/40 p-6 flex justify-center">
-                    <div id="proforma-render-container" className={cn("bg-white shadow-2xl", receiptType === 'a4' ? "w-[210mm]" : "w-[80mm]")}>
+                <div className="flex-grow overflow-y-auto bg-muted/40 p-6 flex justify-center custom-scrollbar">
+                    <div id="proforma-render-container" className={cn("bg-white shadow-2xl transition-all", receiptType === 'a4' ? "w-[210mm]" : "w-[80mm]")}>
                         <div id="proforma-render-inner">
                             <ProformaReceipt proforma={proforma} profile={profile} receiptType={receiptType} customerName={customerName} />
                         </div>
                     </div>
                 </div>
 
-                <DialogFooter className="p-4 bg-card border-t border-white/5 flex gap-3">
-                    <Button variant="ghost" onClick={() => onOpenChange(false)} className="rounded-xl h-12 font-bold px-6">
+                <DialogFooter className="p-4 bg-card border-t border-white/5 flex flex-wrap gap-3">
+                    <Button variant="ghost" onClick={() => onOpenChange(false)} className="rounded-xl h-11 font-bold px-6">
                         <X className="mr-2 h-4 w-4" /> Fermer
                     </Button>
-                    <Button variant="outline" onClick={handleDownloadPDF} disabled={isGenerating} className="rounded-xl h-12 font-bold gap-2">
+                    <Button variant="outline" onClick={handleDownloadPDF} disabled={isGenerating} className="rounded-xl h-11 font-bold gap-2">
                         {isGenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
-                        Télécharger PDF
+                        Exporter PDF
                     </Button>
-                    <Button variant="outline" onClick={handleWhatsApp} className="rounded-xl h-12 font-bold gap-2 border-emerald-500/20 bg-emerald-500/5 text-emerald-600 hover:bg-emerald-500 hover:text-white">
-                        <MessageCircle className="h-4 w-4" />
-                        WhatsApp
+                    <Button 
+                        variant="outline" 
+                        onClick={handleWhatsAppShare} 
+                        disabled={isGenerating} 
+                        className="rounded-xl h-11 font-bold gap-2 border-emerald-500/20 bg-emerald-500/5 text-emerald-600 hover:bg-emerald-500 hover:text-white"
+                    >
+                        {isGenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : <MessageCircle className="h-4 w-4" />}
+                        Partager
                     </Button>
-                    <Button onClick={handlePrint} className="rounded-xl h-12 font-black text-xs uppercase tracking-widest flex-1 shadow-xl gap-3">
+                    <Button onClick={handlePrint} className="rounded-xl h-11 font-black text-xs uppercase tracking-widest flex-1 shadow-xl gap-3">
                         <Printer className="h-5 w-5" /> Imprimer
                     </Button>
                 </DialogFooter>
